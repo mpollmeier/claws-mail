@@ -483,11 +483,8 @@ static gint inc_start(IncProgressDialog *inc_dialog)
 
 		new_msgs += pop3_state->cur_total_num;
 
-		if (!prefs_common.scan_all_after_inc) {
-			folder_item_scan_foreach(pop3_state->folder_table);
-			folderview_update_item_foreach
-				(pop3_state->folder_table);
-		}
+		folderview_update_item_foreach
+			(pop3_state->folder_table);
 
 		if (pop3_state->error_val == PS_AUTHFAIL &&
 		    pop3_state->ac_prefs->tmp_pass) {
@@ -1066,7 +1063,6 @@ static gint get_spool(FolderItem *dest, const gchar *mbox)
 		}
 		g_hash_table_destroy(folder_table);
 	} else if (!prefs_common.scan_all_after_inc) {
-		folder_item_scan(dest);
 		folderview_update_item(dest, FALSE);
 	}
 

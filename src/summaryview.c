@@ -3785,7 +3785,7 @@ void summary_processing(SummaryView *summaryview, GSList * mlist)
 					      summaryview->folder_table);
 	}
 	
-	folder_item_scan_foreach(summaryview->folder_table);
+	/* folder_item_scan_foreach(summaryview->folder_table); */
 	folderview_update_item_foreach(summaryview->folder_table);
 	
 	g_hash_table_destroy(summaryview->folder_table);
@@ -3843,7 +3843,7 @@ void summary_filter(SummaryView *summaryview)
 
 		gtk_clist_thaw(GTK_CLIST(summaryview->ctree));
 
-		folder_item_scan_foreach(summaryview->folder_table);
+		/* folder_item_scan_foreach(summaryview->folder_table); */
 		folderview_update_item_foreach(summaryview->folder_table);
 
 		g_hash_table_destroy(summaryview->folder_table);

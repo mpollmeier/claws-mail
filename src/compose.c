@@ -104,6 +104,7 @@
 #include "template.h"
 #include "undo.h"
 #include "foldersel.h"
+#include "prefs_actions.h"
 
 #if USE_GPGME
 #  include "rfc2015.h"
@@ -570,6 +571,8 @@ static GtkItemFactoryEntry compose_entries[] =
 					"<control><alt>L", compose_wrap_line_all, 0, NULL},
 	{N_("/_Edit/Edit with e_xternal editor"),
 					"<shift><control>X", compose_ext_editor_cb, 0, NULL},
+	{N_("/_Edit/---"),		NULL, NULL, 0, "<Separator>"},
+	{N_("/_Edit/Actio_ns"),		NULL, NULL, 0, "<Branch>"},
 #if USE_PSPELL
 	{N_("/_Spelling"),		NULL, NULL, 0, "<Branch>"},
 	{N_("/_Spelling/_Check all or check selection"),
@@ -4563,6 +4566,8 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 	}
 #endif
 
+	update_compose_actions_menu(ifactory, "/Edit/Actions", compose);
+
 	switch (prefs_common.toolbar_style) {
 	case TOOLBAR_NONE:
 		gtk_widget_hide(handlebox);
@@ -4670,7 +4675,7 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 			menuitem = gtk_item_factory_get_item(ifactory, "/Spelling/Spelling Configuration");
 			gtkpspell_populate_submenu(gtkpspell, menuitem);
 			menu_set_sensitive(ifactory, "/Spelling", TRUE);
-		}
+			}
         }
 #endif
 

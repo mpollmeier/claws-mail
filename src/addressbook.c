@@ -383,8 +383,8 @@ static GtkItemFactoryEntry addressbook_entries[] =
 	{N_("/_Address/_Edit"),		"<alt>Return",	addressbook_edit_address_cb,    0, NULL},
 	{N_("/_Address/_Delete"),	NULL,		addressbook_delete_address_cb,  0, NULL},
 	{N_("/_Tools/---"),		NULL,		NULL, 0, "<Separator>"},
-	{N_("/_Tools/Import _LDIF"),	NULL,           addressbook_import_ldif_cb,	0, NULL},
-	{N_("/_Tools/Import M_utt"),	NULL,           addressbook_import_mutt_cb,	0, NULL},
+	{N_("/_Tools/Import _LDIF file"), NULL,		addressbook_import_ldif_cb,	0, NULL},
+	{N_("/_Tools/Import M_utt file"), NULL,         addressbook_import_mutt_cb,	0, NULL},
 	{N_("/_Help"),			NULL,		NULL, 0, "<LastBranch>"},
 	{N_("/_Help/_About"),		NULL,		about_show, 0, NULL}
 };
@@ -1029,7 +1029,10 @@ gchar *addressbook_format_address( AddrItemObject * aio ) {
 	}
 	if( address ) {
 		if( name ) {
-			buf = g_strdup_printf( "%s <%s>", name, address );
+			if( strchr_with_skip_quote( name, '"', ',' ) )
+				buf = g_strdup_printf( "\"%s\" <%s>", name, address );
+			else
+				buf = g_strdup_printf( "%s <%s>", name, address );
 		}
 		else {
 			buf = g_strdup( address );

@@ -608,10 +608,6 @@ void procmsg_move_messages(GSList *mlist)
 
 	if (!mlist) return;
 
-	hash = procmsg_to_folder_hash_table_create(mlist);
-	folder_item_scan_foreach(hash);
-	g_hash_table_destroy(hash);
-
 	for (cur = mlist; cur != NULL; cur = cur->next) {
 		msginfo = (MsgInfo *)cur->data;
 		if (!dest) {
@@ -763,26 +759,30 @@ void procmsg_empty_trash(void)
 gint procmsg_send_queue(void)
 {
 	FolderItem *queue;
-	gint i;
 	gint ret = 0;
+	GSList *list, *elem;
 
 	queue = folder_get_default_queue();
-	g_return_val_if_fail(queue != NULL, -1);
-	if (queue->last_num < 0) return -1;
-	else if (queue->last_num == 0) return 0;
+	if(!queue->cache)
+		folder_item_read_cache(queue);
+	list = msgcache_get_msg_list(queue->cache);
 
-	for (i = 1; i <= queue->last_num; i++) {
+	for(elem = list; elem != NULL; elem = elem->next) {
 		gchar *file;
+		MsgInfo *msginfo;
+		
+		msginfo = (MsgInfo *)(elem->data);
 
-		file = folder_item_fetch_msg(queue, i);
+		file = folder_item_fetch_msg(queue, msginfo->msgnum);
 		if (file) {
 			if (procmsg_send_message_queue(file) < 0) {
-				g_warning(_("Sending queued message %d failed.\n"), i);
+				g_warning(_("Sending queued message %d failed.\n"), msginfo->msgnum);
 				ret = -1;
 			} else
-				folder_item_remove_msg(queue, i);
+				folder_item_remove_msg(queue, msginfo->msgnum);
 			g_free(file);
 		}
+		procmsg_msginfo_free(msginfo);
 	}
 
 	folderview_update_item(queue, FALSE);

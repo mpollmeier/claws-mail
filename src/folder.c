@@ -737,11 +737,11 @@ void folder_item_scan(FolderItem *item)
 			if(folder->is_msg_changed(folder, item, msginfo)) {
 				MsgInfo *newmsginfo;
 
+				msgcache_remove_msg(item->cache, msginfo->msgnum);
+
 				newmsginfo = folder->fetch_msginfo(folder, item, num);
 				msgcache_add_msg(item->cache, newmsginfo);
 				procmsg_msginfo_free(newmsginfo);
-
-				msgcache_remove_msg(item->cache, msginfo->msgnum);
 
 				debug_print(_("Updated msginfo for message %d.\n"), num);
 			}
@@ -826,7 +826,6 @@ gint folder_item_add_msg(FolderItem *dest, const gchar *file,
 	Folder *folder;
 	gint num;
 	MsgInfo *msginfo;
-	MsgFlags default_flags;
 
 	g_return_val_if_fail(dest != NULL, -1);
 	g_return_val_if_fail(file != NULL, -1);
@@ -838,24 +837,22 @@ gint folder_item_add_msg(FolderItem *dest, const gchar *file,
 	if (!dest->cache)
 		folder_item_read_cache(dest);
 
-	folder_item_set_default_flags(dest, &default_flags);
-        msginfo = procheader_parse(file, default_flags, TRUE, FALSE);
 
 	num = folder->add_msg(folder, dest, file, remove_source);
 
         if (num > 0) {
-		if(MSG_IS_NEW(default_flags))
+    		msginfo = folder->fetch_msginfo(folder, dest, num);
+
+		if(MSG_IS_NEW(msginfo->flags))
 			dest->new++;
-		if(MSG_IS_UNREAD(default_flags))
+		if(MSG_IS_UNREAD(msginfo->flags))
 			dest->unread++;
 		dest->total++;
 
-		msginfo->msgnum = num;
-		msginfo->folder = dest;
                 dest->last_num = num;
                 msgcache_add_msg(dest->cache, msginfo);
+    		procmsg_msginfo_free(msginfo);
         }
-        procmsg_msginfo_free(msginfo);
 
 	return num;
 }

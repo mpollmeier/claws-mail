@@ -2219,9 +2219,6 @@ static gint find_gtkpspeller(gconstpointer aa, gconstpointer bb)
 	Dictionary *a = ((GtkPspeller *) aa)->dictionary;
 	Dictionary *b = ((GtkPspeller *) bb)->dictionary;
 
-	if (!a || !b)
-		return 1;
-
 	if (a && b && a->fullname && b->fullname  &&
 	    strcmp(a->fullname, b->fullname) == 0 &&
 	    a->encoding && b->encoding)
