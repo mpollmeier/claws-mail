@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 2001 Match Grun
+ * Copyright (C) 2002 Match Grun
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,18 +18,34 @@
  */
 
 /*
- * Import LDIF data.
+ * Address book base data.
  */
 
-#ifndef __IMPORT_LDIF_H__
-#define __IMPORT_LDIF_H__
+#ifndef __ADBOOKBASE_H__
+#define __ADBOOKBASE_H__
 
-/* Function prototypes */
-AddressBookFile *addressbook_imp_ldif( AddressIndex *addrIndex );
+#include <glib.h>
 
-#endif /* __IMPORT_LDIF_H__ */
+#include "addrcache.h"
+
+typedef enum {
+	ADBOOKTYPE_NONE,
+	ADBOOKTYPE_BOOK,
+	ADBOOKTYPE_VCARD,
+	ADBOOKTYPE_JPILOT,
+	ADBOOKTYPE_LDAP
+} AddressBookType;
 
 /*
-* End of Source.
-*/
+ * All address book interfaces should implement the following data
+ * structure at the start of their data structure.
+ */
+typedef struct _AddrBook_Base AddrBookBase;
+struct _AddrBook_Base {
+	AddressBookType type;
+	AddressCache    *addressCache;
+};
+
+#endif /* __ADBOOKBASE_H__ */
+
 
