@@ -34,6 +34,9 @@
 #include "log.h"
 #include "logwindow.h"
 #include "prefs_common.h"
+#ifdef WIN32
+#include "defs.h"
+#endif
 
 #define ALERT_PANEL_WIDTH	380
 #define TITLE_HEIGHT		72

@@ -31,9 +31,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <unistd.h>
+#ifdef WIN32
+# include <sys/stat.h>
+# include <w32lib.h>
+# include "utils.h"
+# include "w32_mailcap.h"
+#else
+# include <unistd.h>
+#endif
 #include <time.h>
-#include <sys/stat.h>
 #include <sys/types.h>
 #include <signal.h>
 
@@ -81,7 +87,9 @@
 
 #include "version.h"
 
+#ifndef WIN32
 #include "crash.h"
+#endif
 
 gchar *prog_version;
 #ifdef CRASH_DIALOG
@@ -109,9 +117,11 @@ static struct RemoteCmd {
 	GPtrArray *status_folders;
 	GPtrArray *status_full_folders;
 	gboolean send;
-	gboolean crash;
 	int online_mode;
+#ifndef WIN32
+	gboolean crash;
 	gchar   *crash_params;
+#endif
 } cmd;
 
 static void parse_cmd_opt(int argc, char *argv[]);
@@ -163,11 +173,46 @@ _("File `%s' already exists.\n"
 
 static MainWindow *static_mainwindow;
 
+#ifdef WIN32
+int main_real(int argc, char *argv[])
+#else
 int main(int argc, char *argv[])
+#endif
 {
 	gchar *userrc;
 	MainWindow *mainwin;
 	FolderView *folderview;
+#ifdef WIN32
+	guint log_hid,gtklog_hid, gdklog_hid;
+	HWND hWndConsole;
+
+#ifdef _DEBUG
+	debug_set_mode(TRUE) ;
+#else
+	debug_set_mode(FALSE) ;
+	/* avoid consoles popping up on actions */
+	AllocConsole();
+	SetConsoleTitle("sylpheed_hidden_console");
+	while ((hWndConsole=FindWindow(NULL, "sylpheed_hidden_console")) == 0)
+		Sleep(1);
+	ShowWindow(hWndConsole, SW_HIDE);
+#endif
+	log_hid = g_log_set_handler(NULL, 
+		G_LOG_LEVEL_MASK |
+		G_LOG_FLAG_FATAL |
+		G_LOG_FLAG_RECURSION, 
+		w32_log_handler, NULL);
+	gtklog_hid = g_log_set_handler("Gtk", 
+		G_LOG_LEVEL_MASK |
+		G_LOG_FLAG_FATAL |
+		G_LOG_FLAG_RECURSION, 
+		w32_log_handler, NULL);
+	gdklog_hid = g_log_set_handler("Gdk", 
+		G_LOG_LEVEL_MASK |
+		G_LOG_FLAG_FATAL |
+		G_LOG_FLAG_RECURSION, 
+		w32_log_handler, NULL);
+#endif
 
 	if (!sylpheed_init(&argc, &argv)) {
 		return 0;
@@ -191,6 +236,16 @@ int main(int argc, char *argv[])
 #endif
 	install_basic_sighandlers();
 
+#ifdef WIN32
+	{ /* Initialize WinSock Library. */
+		WORD wVersionRequested = MAKEWORD(1, 1);
+		WSADATA	wsaData;
+		if (WSAStartup(wVersionRequested, &wsaData) != 0){
+			perror("WSAStartup");
+			return -1;
+		}
+	}
+#endif
 	/* check and create unix domain socket */
 	lock_socket = prohibit_duplicate_launch();
 	if (lock_socket < 0) return 0;
@@ -212,6 +267,20 @@ int main(int argc, char *argv[])
 	g_thread_init(NULL);
 	if (!g_thread_supported())
 		g_error(_("g_thread is not supported by glib.\n"));
+#endif
+
+#ifdef WIN32
+#if HAVE_LIBJCONV
+	{
+		gchar *conf;
+		conf = g_strconcat(get_installed_dir(), G_DIR_SEPARATOR_S,
+				   SYSCONFDIR, G_DIR_SEPARATOR_S,
+				   "libjconv", G_DIR_SEPARATOR_S,
+				   "default.conf", NULL);
+		jconv_info_init(conf);
+		g_free(conf);
+	}
+#endif
 #endif
 
 	/* parse gtkrc files */
@@ -244,6 +313,11 @@ int main(int argc, char *argv[])
 
 	set_log_file(RC_DIR G_DIR_SEPARATOR_S "sylpheed.log");
 
+#ifdef WIN32
+	prefs_common_init_config();
+	start_mswin_helper();
+	w32_mailcap_create();
+#endif
 	folder_system_init();
 	prefs_common_init();
 	prefs_common_read_config();
@@ -273,6 +347,9 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef USE_ASPELL
+#ifdef WIN32
+	w32_aspell_init();
+#endif
 	gtkaspell_checkers_init();
 	prefs_spelling_init();
 #endif
@@ -319,10 +396,17 @@ int main(int argc, char *argv[])
 	folder_func_to_all_folders(initial_processing, (gpointer *)mainwin);
 
 	/* if Sylpheed crashed, rebuild caches */
+#ifdef WIN32
+	if (is_file_exist(get_crashfile_name())) {
+#else
 	if (!cmd.crash && is_file_exist(get_crashfile_name())) {
+#endif
 		debug_print("Sylpheed crashed, checking for new messages in local folders\n");
 		folderview_check_new(NULL);
 	}
+#ifdef WIN32
+	remove_all_files(get_tmp_dir());
+#endif
 	/* make the crash-indicator file */
 	str_write_to_file("foo", get_crashfile_name());
 
@@ -386,6 +470,19 @@ int main(int argc, char *argv[])
 #endif
 	sylpheed_done();
 
+#ifdef WIN32
+	stop_mswin_helper();
+	g_log_remove_handler("Gtk", gtklog_hid);
+	g_log_remove_handler("Gdk", gdklog_hid);
+	g_log_remove_handler(NULL, log_hid);
+
+	/* De-Initialize WinSock Library. */
+	WSACleanup();
+
+	unlink_tempfiles();
+	w32_mailcap_free();
+#endif
+
 	return 0;
 }
 
@@ -417,7 +514,12 @@ static void parse_cmd_opt(int argc, char *argv[])
 			while (p && *p != '\0' && *p != '-') {
 				if (!cmd.attach_files)
 					cmd.attach_files = g_ptr_array_new();
+#ifdef WIN32
+				if (!((*p == G_DIR_SEPARATOR)
+					|| ( *(p+1) && *(p+1) == ':' )))
+#else
 				if (*p != G_DIR_SEPARATOR)
+#endif
 					file = g_strconcat(sylpheed_get_startup_dir(),
 							   G_DIR_SEPARATOR_S,
 							   p, NULL);
@@ -483,10 +585,12 @@ static void parse_cmd_opt(int argc, char *argv[])
 			puts(_("  --config-dir           output configuration directory"));
 
 			exit(1);
+#ifndef WIN32
 		} else if (!strncmp(argv[i], "--crash", 7)) {
 			cmd.crash = TRUE;
 			cmd.crash_params = g_strdup(argv[i + 1]);
 			i++;
+#endif
 		} else if (!strncmp(argv[i], "--config-dir", sizeof "--config-dir" - 1)) {
 			puts(RC_DIR);
 			exit(0);
@@ -654,11 +758,16 @@ void app_will_exit(GtkWidget *widget, gpointer data)
 
 	/* delete temporary files */
 	remove_all_files(get_mime_tmp_dir());
+#ifdef WIN32
+	remove_all_files(w32_get_exec_dir());
+#endif
 
 	close_log_file();
 
 	/* delete crashfile */
+#ifndef WIN32
 	if (!cmd.crash)
+#endif
 		unlink(get_crashfile_name());
 
 	lock_socket_remove();
@@ -708,6 +817,27 @@ static gchar *get_crashfile_name(void)
 
 static gint prohibit_duplicate_launch(void)
 {
+#ifdef WIN32
+	SockInfo *lock_sock;
+	gchar *path;
+        gchar *portstr;
+	gint lockport = 0;
+	gint uxsock;
+	
+	path = NULL;
+	if (portstr = read_w32_registry_string(NULL,
+		"Software\\Sylpheed", "LockPort")) {
+		lockport = atoi(portstr);
+		g_free(portstr);
+	}
+	if (!lockport)
+		lockport = LOCK_PORT ;
+	lock_sock = sock_connect("localhost", lockport);
+	if (!lock_sock) {
+		return fd_open_lock_service(lockport);
+	}
+	uxsock = lock_sock->sock;
+#else
 	gint uxsock;
 	gchar *path;
 
@@ -717,6 +847,7 @@ static gint prohibit_duplicate_launch(void)
 		unlink(path);
 		return fd_open_unix(path);
 	}
+#endif
 
 	/* remote command mode */
 
@@ -782,7 +913,11 @@ static gint prohibit_duplicate_launch(void)
  		}
  		fd_write_all(uxsock, ".\n", 2);
  		for (;;) {
+#ifdef WIN32
+			sock_gets(lock_sock, buf, sizeof(buf));
+#else
  			fd_gets(uxsock, buf, sizeof(buf));
+#endif
  			if (!strncmp(buf, ".\n", 2)) break;
  			fputs(buf, stdout);
  		}
@@ -849,9 +984,10 @@ static void lock_socket_input_cb(gpointer data,
 		inc_mail(mainwin, prefs_common.newmail_notify_manu);
 	} else if (!strncmp(buf, "compose_attach", 14)) {
 		GPtrArray *files;
-		gchar *mailto;
+		gchar *mailto=NULL;
 
-		mailto = g_strdup(buf + strlen("compose_attach") + 1);
+		if (strlen(buf) > strlen("compose_attach")+1)
+			mailto = g_strdup(buf + strlen("compose_attach") + 1);
 		files = g_ptr_array_new();
 		while (fd_gets(sock, buf, sizeof(buf)) > 0) {
 			if (buf[0] == '.' && buf[1] == '\n') break;
@@ -933,6 +1069,7 @@ static void quit_signal_handler(int sig)
 
 static void install_basic_sighandlers()
 {
+#ifndef WIN32
 	sigset_t    mask;
 	struct sigaction act;
 
@@ -957,4 +1094,5 @@ static void install_basic_sighandlers()
 #endif	
 
 	sigprocmask(SIG_UNBLOCK, &mask, 0);
+#endif
 }

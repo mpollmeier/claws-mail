@@ -52,7 +52,11 @@ struct _NNTPSession
 #define NN_AUTHREQ	8
 #define NN_AUTHCONT	9
 
+#ifdef WIN32
+#define NNTPBUFSIZE	8191
+#else
 #define NNTPBUFSIZE	8192
+#endif
 
 #if USE_OPENSSL
 Session *nntp_session_new	(const gchar	*server,

@@ -210,7 +210,6 @@ void gpgmegtk_sig_status_update(GpgmegtkSigStatus hd, GpgmeCtx ctx)
 	while (gtk_events_pending())
 		gtk_main_iteration();
 }
-
 const char *gpgmegtk_sig_status_to_string(GpgmeSigStat status)
 {
 	const char *result = "?";

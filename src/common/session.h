@@ -27,8 +27,12 @@
 #include <glib.h>
 
 #include <time.h>
+#ifdef WIN32
+# include "w32lib.h"
+#else
 #include <sys/time.h>
 #include <unistd.h>
+#endif
 
 #include "socket.h"
 
@@ -107,11 +111,15 @@ struct _Session
 
 	gint io_tag;
 
+#ifdef WIN32 /* 093claws19 not synced */
+	GString *read_buf;
+#else
 	gchar read_buf[SESSION_BUFFSIZE];
 	gchar *read_buf_p;
 	gint read_buf_len;
 
 	GString *read_msg_buf;
+#endif
 	GByteArray *read_data_buf;
 	gchar *read_data_terminator;
 

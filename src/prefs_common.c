@@ -29,7 +29,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef WIN32
+#include <w32lib.h>
+#else
 #include <unistd.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -199,11 +203,12 @@ static struct Interface {
  	GtkWidget *optmenu_nextunreadmsgdialog;
 	GtkWidget *entry_pixmap_theme;
 	GtkWidget *combo_pixmap_theme;
-} interface;
+} Xinterface;
 
 static struct Other {
 	GtkWidget *uri_combo;
 	GtkWidget *uri_entry;
+	GtkWidget *printcmd_combo;
 	GtkWidget *printcmd_entry;
 	GtkWidget *exteditor_combo;
 	GtkWidget *exteditor_entry;
@@ -443,6 +448,12 @@ static PrefParam param[] = {
 	{"quote_chars", ">", &prefs_common.quote_chars, P_STRING,
 	 &quote.entry_quote_chars, prefs_set_data_from_entry, prefs_set_entry},
 
+/*
+   parameter name, default value, pointer to the prefs variable, data type,
+   pointer to the widget pointer,
+   pointer to the function for data setting,
+   pointer to the function for widget setting
+ */
 	/* Display */
 	{"widget_font", NULL, &prefs_common.widgetfont, P_STRING,
 	 NULL, NULL, NULL},
@@ -493,7 +504,6 @@ static PrefParam param[] = {
 	{"title_font_gtk2", DEFAULT_TITLE_FONT, &prefs_common.titlefont, P_STRING,
 	 NULL, NULL, NULL},
 #endif
-
 
 	{"display_folder_unread_num", "TRUE",
 	 &prefs_common.display_folder_unread, P_BOOL,
@@ -770,29 +780,29 @@ static PrefParam param[] = {
 	 NULL, NULL, NULL}, */
 	{"always_show_message_when_selected", "FALSE",
 	 &prefs_common.always_show_msg,
-	 P_BOOL, &interface.checkbtn_always_show_msg,
+	 P_BOOL, &Xinterface.checkbtn_always_show_msg,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
 	{"open_unread_on_enter", "FALSE", &prefs_common.open_unread_on_enter,
-	 P_BOOL, &interface.checkbtn_openunread,
+	 P_BOOL, &Xinterface.checkbtn_openunread,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
 	{"mark_as_read_on_new_window", "FALSE",
 	 &prefs_common.mark_as_read_on_new_window,
-	 P_BOOL, &interface.checkbtn_mark_as_read_on_newwin,
+	 P_BOOL, &Xinterface.checkbtn_mark_as_read_on_newwin,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
 	{"open_inbox_on_inc", "FALSE", &prefs_common.open_inbox_on_inc,
-	 P_BOOL, &interface.checkbtn_openinbox,
+	 P_BOOL, &Xinterface.checkbtn_openinbox,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
 	{"immediate_execution", "TRUE", &prefs_common.immediate_exec, P_BOOL,
-	 &interface.checkbtn_immedexec,
+	 &Xinterface.checkbtn_immedexec,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
 	{"nextunreadmsg_dialog", NULL, &prefs_common.next_unread_msg_dialog, P_ENUM,
-	 &interface.optmenu_nextunreadmsgdialog,
+	 &Xinterface.optmenu_nextunreadmsgdialog,
 	 prefs_nextunreadmsgdialog_set_data_from_optmenu,
 	 prefs_nextunreadmsgdialog_set_optmenu},
 
 	{"pixmap_theme_path", DEFAULT_PIXMAP_THEME, 
 	 &prefs_common.pixmap_theme_path, P_STRING,
-	 &interface.entry_pixmap_theme,	prefs_set_data_from_entry, prefs_set_entry},
+	 &Xinterface.entry_pixmap_theme,	prefs_set_data_from_entry, prefs_set_entry},
 
 	{"hover_timeout", "500", &prefs_common.hover_timeout, P_INT,
 	 NULL, NULL, NULL},
@@ -801,11 +811,19 @@ static PrefParam param[] = {
 	{"uri_open_command", DEFAULT_BROWSER_CMD,
 	 &prefs_common.uri_cmd, P_STRING,
 	 &other.uri_entry, prefs_set_data_from_entry, prefs_set_entry},
+#ifdef WIN32
+	{"print_command", "notepad /p \"%s\"", &prefs_common.print_cmd, P_STRING,
+	 &other.printcmd_entry, prefs_set_data_from_entry, prefs_set_entry},
+	{"ext_editor_command", "notepad \"%s\"",
+	 &prefs_common.ext_editor_cmd, P_STRING,
+	 &other.exteditor_entry, prefs_set_data_from_entry, prefs_set_entry},
+#else
 	{"print_command", "lpr %s", &prefs_common.print_cmd, P_STRING,
 	 &other.printcmd_entry, prefs_set_data_from_entry, prefs_set_entry},
 	{"ext_editor_command", "gedit %s",
 	 &prefs_common.ext_editor_cmd, P_STRING,
 	 &other.exteditor_entry, prefs_set_data_from_entry, prefs_set_entry},
+#endif
 
 	{"add_address_by_click", "FALSE", &prefs_common.add_address_by_click,
 	 P_BOOL, &other.checkbtn_addaddrbyclick,
@@ -865,6 +883,7 @@ static void prefs_common_create		(void);
 static void prefs_receive_create	(void);
 static void prefs_send_create		(void);
 static void prefs_compose_create	(void);
+static void prefs_spelling_create	(void);
 static void prefs_quote_create		(void);
 static void prefs_display_create	(void);
 static void prefs_message_create	(void);
@@ -944,6 +963,13 @@ void prefs_common_init(void)
 {
 	prefs_common.disphdr_list = NULL;
 }
+
+#ifdef WIN32
+void prefs_common_init_config(void)
+{
+	prefs_init_config(param);
+}
+#endif
 
 PrefsCommon *prefs_common_get(void)
 {
@@ -1459,6 +1485,16 @@ static void prefs_send_create(void)
 	SET_MENUITEM(_("Korean (EUC-KR)"),		 CS_EUC_KR);
 	SET_MENUITEM(_("Thai (TIS-620)"),		 CS_TIS_620);
 	SET_MENUITEM(_("Thai (Windows-874)"),		 CS_WINDOWS_874);
+#ifdef WIN32
+	SET_MENUITEM(_("WinLatin1 (Windows-1250)"),	 CS_WINDOWS_1250);
+	SET_MENUITEM(_("WinLatin2 (Windows-1252)"),	 CS_WINDOWS_1252);
+	SET_MENUITEM(_("WinGreek (Windows-1253)"),	 CS_WINDOWS_1253);
+	SET_MENUITEM(_("WinTurkish (Windows-1254)"),	 CS_WINDOWS_1254);
+	SET_MENUITEM(_("WinHebrew (Windows-1255)"),	 CS_WINDOWS_1255);
+	SET_MENUITEM(_("WinArabic (Windows-1256)"),	 CS_WINDOWS_1256);
+	SET_MENUITEM(_("WinBaltic (Windows-1257)"),	 CS_WINDOWS_1257);
+	SET_MENUITEM(_("WinVietnamnese (Windows-1258)"), CS_WINDOWS_1258);
+#endif
 
 	gtk_option_menu_set_menu (GTK_OPTION_MENU (optmenu_charset),
 				  optmenu_menu);
@@ -2509,15 +2545,15 @@ static void prefs_interface_create(void)
 	stock_pixmap_themes_list_free(avail_pixmap_themes);
 
 	/* interface.checkbtn_emacs          = checkbtn_emacs; */
-	interface.checkbtn_always_show_msg    = checkbtn_always_show_msg;
-	interface.checkbtn_openunread         = checkbtn_openunread;
-	interface.checkbtn_mark_as_read_on_newwin
+	Xinterface.checkbtn_always_show_msg    = checkbtn_always_show_msg;
+	Xinterface.checkbtn_openunread         = checkbtn_openunread;
+	Xinterface.checkbtn_mark_as_read_on_newwin
 					      = checkbtn_mark_as_read_on_newwin;
-	interface.checkbtn_openinbox          = checkbtn_openinbox;
-	interface.checkbtn_immedexec          = checkbtn_immedexec;
-	interface.optmenu_nextunreadmsgdialog = optmenu_nextunreadmsgdialog;
-	interface.combo_pixmap_theme	      = combo_pixmap_theme;
- 	interface.entry_pixmap_theme	      = entry_pixmap_theme;
+	Xinterface.checkbtn_openinbox          = checkbtn_openinbox;
+	Xinterface.checkbtn_immedexec          = checkbtn_immedexec;
+	Xinterface.optmenu_nextunreadmsgdialog = optmenu_nextunreadmsgdialog;
+	Xinterface.combo_pixmap_theme	      = combo_pixmap_theme;
+ 	Xinterface.entry_pixmap_theme	      = entry_pixmap_theme;
 }
 
 static void prefs_other_create(void)
@@ -2532,6 +2568,7 @@ static void prefs_other_create(void)
 	GtkWidget *uri_entry;
 
 	GtkWidget *printcmd_label;
+	GtkWidget *printcmd_combo;
 	GtkWidget *printcmd_entry;
 
 	GtkWidget *exteditor_label;
@@ -2596,6 +2633,12 @@ static void prefs_other_create(void)
 			  GTK_EXPAND | GTK_FILL, 0, 0, 0);
 	gtkut_combo_set_items (GTK_COMBO (uri_combo),
 			       DEFAULT_BROWSER_CMD,
+#ifdef WIN32
+			       "\"?p\\internet explorer\\iexplore\" \"%s\"",
+			       "\"?p\\netscape\\communicator\\program\\netscape\" -remote \"openURL(%s,raise)\"",
+			       "\"?p\\netscape\\communicator\\program\\netscape\" \"%s\"",
+			       "\"?p\\k-meleon\\k-meleon.exe\" \"%s\"",
+#else
 			       "galeon --new-tab '%s'",
 			       "galeon '%s'",
 			       "mozilla -remote 'openurl(%s,new-window)'",
@@ -2606,6 +2649,7 @@ static void prefs_other_create(void)
 			       "opera -newwindow '%s'",
 			       "kterm -e w3m '%s'",
 			       "kterm -e lynx '%s'",
+#endif
 			       NULL);
 	uri_entry = GTK_COMBO (uri_combo)->entry;
 
@@ -2615,10 +2659,23 @@ static void prefs_other_create(void)
 			  GTK_FILL, GTK_EXPAND | GTK_FILL, 0, 0);
 	gtk_misc_set_alignment (GTK_MISC (printcmd_label), 1, 0.5);
 
-	printcmd_entry = gtk_entry_new ();
-	gtk_widget_show (printcmd_entry);
-	gtk_table_attach (GTK_TABLE (ext_table), printcmd_entry, 1, 2, 1, 2,
+	printcmd_combo = gtk_combo_new ();
+	gtk_widget_show (printcmd_combo);
+	gtk_table_attach (GTK_TABLE (ext_table), printcmd_combo, 1, 2, 1, 2,
 			  GTK_EXPAND | GTK_FILL, 0, 0, 0);
+	gtkut_combo_set_items (GTK_COMBO (printcmd_combo),
+#ifdef WIN32
+			       "notepad /p \"%s\"",
+			       "@wordpad /p \"%s\"",
+			       "@lpr -P dummy -S localhost \"%s\"",
+#endif
+			       "lpr \"%s\"",
+			       "@sylprint.pl -v \"%s\"",
+			       "@a2ps -RB \"%s\"",
+			       "@enscript -jG -E email \"%s\"",
+			       "@muttprint -2 -f \"%s\" -p - | ghostview -",
+			       NULL);
+	printcmd_entry = GTK_COMBO (printcmd_combo)->entry;
 
 	exteditor_label = gtk_label_new (_("Editor"));
 	gtk_widget_show (exteditor_label);
@@ -2631,6 +2688,10 @@ static void prefs_other_create(void)
 	gtk_table_attach (GTK_TABLE (ext_table), exteditor_combo, 1, 2, 2, 3,
 			  GTK_EXPAND | GTK_FILL, 0, 0, 0);
 	gtkut_combo_set_items (GTK_COMBO (exteditor_combo),
+#ifdef WIN32
+			       "notepad \"%s\"",
+#endif
+			       "gvim -f -c \"set syn=mail\" \"%s\"",
 			       "gedit %s",
 			       "kedit %s",
 			       "mgedit --no-fork %s",
@@ -2748,6 +2809,7 @@ static void prefs_other_create(void)
 
 	other.uri_combo = uri_combo;
 	other.uri_entry = uri_entry;
+	other.printcmd_combo = printcmd_combo;
 	other.printcmd_entry = printcmd_entry;
 
 	other.exteditor_combo = exteditor_combo;
@@ -3945,7 +4007,7 @@ static void prefs_common_send_dialog_set_data_from_optmenu(PrefParam *pparam)
 	menu = gtk_option_menu_get_menu(GTK_OPTION_MENU(*pparam->widget));
 	menuitem = gtk_menu_get_active(GTK_MENU(menu));
 	*((SendDialogMode *)pparam->data) = GPOINTER_TO_INT
-		(g_object_get_data(G_OBJECT(menuitem), MENU_VAL_ID));
+		(gtk_object_get_user_data(GTK_OBJECT(menuitem)));
 }
 
 static void prefs_common_send_dialog_set_optmenu(PrefParam *pparam)
@@ -4000,7 +4062,7 @@ static void prefs_common_apply(void)
 	gboolean update_pixmap_theme;
 	gchar *backup_theme_path;
 	
-	entry_pixmap_theme_str = gtk_entry_get_text(GTK_ENTRY(interface.entry_pixmap_theme));
+	entry_pixmap_theme_str = gtk_entry_get_text(GTK_ENTRY(Xinterface.entry_pixmap_theme));
 	if (entry_pixmap_theme_str && 
 		(strcmp(prefs_common.pixmap_theme_path, entry_pixmap_theme_str) != 0) )
 		update_pixmap_theme = TRUE;
@@ -4040,7 +4102,7 @@ static void prefs_nextunreadmsgdialog_set_data_from_optmenu(PrefParam *pparam)
 	menu = gtk_option_menu_get_menu(GTK_OPTION_MENU(*pparam->widget));
 	menuitem = gtk_menu_get_active(GTK_MENU(menu));
 	*((NextUnreadMsgDialogShow *)pparam->data) = GPOINTER_TO_INT
-		(g_object_get_data(G_OBJECT(menuitem), MENU_VAL_ID));
+		(gtk_object_get_user_data(GTK_OBJECT(menuitem)));
 }
 
 static void prefs_nextunreadmsgdialog_set_optmenu(PrefParam *pparam)

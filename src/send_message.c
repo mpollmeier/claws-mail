@@ -106,7 +106,13 @@ gint send_message(const gchar *file, PrefsAccount *ac_prefs, GSList *to_list)
 		val = send_message_local(ac_prefs->mail_command, fp);
 		fclose(fp);
 		return val;
-	} else {
+	}
+	else if (prefs_common.use_extsend && prefs_common.extsend_cmd) {
+		val = send_message_local(prefs_common.extsend_cmd, fp);
+		fclose(fp);
+		return val;
+	}
+	else {
 		val = send_message_smtp(ac_prefs, to_list, fp);
 		
 		fclose(fp);
@@ -246,7 +252,9 @@ gint send_message_local(const gchar *command, FILE *fp)
 	FILE *pipefp;
 	gchar buf[BUFFSIZE];
 	int r;
+#ifndef WIN32
 	sigset_t osig, mask;
+#endif
 
 	g_return_val_if_fail(command != NULL, -1);
 	g_return_val_if_fail(fp != NULL, -1);
@@ -262,7 +270,7 @@ gint send_message_local(const gchar *command, FILE *fp)
 		fputs(buf, pipefp);
 		fputc('\n', pipefp);
 	}
-
+#ifndef WIN32
 	/* we need to block SIGCHLD, otherwise pspell's handler will wait()
 	 * the pipecommand away and pclose will return -1 because of its
 	 * failed wait4().
@@ -270,14 +278,16 @@ gint send_message_local(const gchar *command, FILE *fp)
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGCHLD);
 	sigprocmask(SIG_BLOCK, &mask, &osig);
-	
+#endif	
 	r = pclose(pipefp);
 
+#ifndef WIN32
 	sigprocmask(SIG_SETMASK, &osig, NULL);
 	if (r != 0) {
 		g_warning("external command `%s' failed with code `%i'\n", command, r);
 		return -1;
 	}
+#endif
 
 	return 0;
 }
@@ -608,7 +618,7 @@ static void send_put_error(Session *session)
 	if (log_msg)
 		log_warning("%s\n", log_msg);
 	if (err_msg) {
-		alertpanel_error_log("%s", err_msg);
+		alertpanel_error_log(err_msg);
 		g_free(err_msg);
 	}
 }

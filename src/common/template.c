@@ -22,7 +22,11 @@
 
 #include <glib.h>
 #include <stdio.h>
-#include <dirent.h>
+#ifdef WIN32
+# include <w32lib.h>
+#else
+# include <dirent.h>
+#endif
 #include <sys/stat.h>
 #include <ctype.h>
 
@@ -39,7 +43,9 @@ static Template *template_load(gchar *filename)
 	FILE *fp;
 	gchar buf[BUFFSIZE];
 	gint bytes_read;
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 	const gchar *src_codeset = conv_get_current_charset_str();
 	const gchar *dest_codeset = CS_UTF_8;
 
@@ -205,7 +211,9 @@ void template_write_config(GSList *tmpl_list)
 
 	for (cur = tmpl_list, tmpl_num = 1; cur != NULL;
 	     cur = cur->next, tmpl_num++) {
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 		const gchar *src_codeset = CS_UTF_8;
 		const gchar *dest_codeset = conv_get_current_charset_str();
 		gchar *tmp = NULL;

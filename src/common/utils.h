@@ -28,7 +28,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
+#ifdef WIN32
+ #include <w32lib.h>
+#else
+ #include <unistd.h>
+#endif
 #include <sys/types.h>
 #include <time.h>
 #if HAVE_ALLOCA_H
@@ -129,6 +133,41 @@
 	ptr = __tmp; \
 }
 
+#ifdef WIN32
+#define Xlocale_to_utf8_a(ptr, str, iffail) \
+{ \
+	gchar *__tmp; \
+	gchar *__tmputf8 = g_locale_to_utf8(str, -1, NULL, NULL, NULL); \
+ \
+	if ((__tmp = alloca(strlen(__tmputf8) + 1)) == NULL) { \
+	  	g_free(__tmputf8); \
+		g_warning("can't allocate memory\n"); \
+		iffail; \
+	} else \
+		strcpy(__tmp, __tmputf8); \
+ \
+	g_free(__tmputf8); \
+	ptr = __tmp; \
+}
+
+#define Xlocale_a_from_utf8_a(ptr, str, iffail) \
+{ \
+	gchar *__tmp; \
+	gchar *__tmputf8 = g_locale_from_utf8(str, -1, NULL, NULL, NULL); \
+ \
+	if ((__tmp = alloca(strlen(__tmputf8) + 1)) == NULL) { \
+	  	g_free(__tmputf8); \
+		g_warning("can't allocate memory\n"); \
+		iffail; \
+	} else \
+		strcpy(__tmp, __tmputf8); \
+ \
+	g_free(__tmputf8); \
+	ptr = __tmp; \
+}
+
+#endif /* WIN32 */
+
 #define FILE_OP_ERROR(file, func) \
 { \
 	fprintf(stderr, "%s: ", file); \
@@ -206,7 +245,9 @@ wchar_t *wcsncpy	(wchar_t       *dest,
 			 size_t		n);
 #endif
 
+#ifndef WIN32	/* MSVCRT */
 wchar_t *wcsdup			(const wchar_t *s);
+#endif
 wchar_t *wcsndup		(const wchar_t *s,
 				 size_t		n);
 wchar_t *strdup_mbstowcs	(const gchar   *s);
@@ -428,5 +469,31 @@ gint g_int_compare	(gconstpointer a, gconstpointer b);
 
 gchar *generate_msgid		(const gchar *address, gchar *buf, gint len);
 gchar *generate_mime_boundary	(void);
+
+#ifdef WIN32
+#undef isspace
+#define isspace iswspace
+#endif
+
+gchar *w32_parse_path(gchar *const);
+gchar *get_installed_dir(void);
+void translate_strs(gchar *str, gchar *str_src, gchar *str_dst);
+int calc_child(const gchar *path);
+int Xrename(const char *oldpath, const char *newpath);
+void w32_log_handler(const gchar *log_domain, GLogLevelFlags log_level,
+					 const gchar *message, gpointer user_data);
+void locale_to_utf8(gchar **buf);
+void locale_from_utf8(gchar **buf);
+
+void unlink_tempfiles(void);
+
+/* timer needed for socket(gdk_input) */
+gint mswin_helper_timeout_tag;
+void start_mswin_helper(void);
+void stop_mswin_helper(void);
+static gint mswin_helper_timeout_cb(gpointer *data);
+
+gchar *w32_get_exec_dir();
+gchar *w32_move_to_exec_dir(const gchar *filename);
 
 #endif /* __UTILS_H__ */

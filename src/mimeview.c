@@ -40,6 +40,10 @@
 #include <gtk/gtkcontainer.h>
 #include <gtk/gtkbutton.h>
 #include <stdio.h>
+#ifdef WIN32
+# include <w32lib.h>
+# include "w32_mailcap.h"
+#endif
 
 #ifndef HAVE_APACHE_FNMATCH
 /* kludge: apache's fnmatch clashes with <regex.h>, don't include
@@ -258,8 +262,11 @@ MimeView *mimeview_create(MainWindow *mainwin)
 	gtk_box_pack_start(GTK_BOX(icon_mainbox), mime_toggle, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(icon_mainbox), icon_scroll, TRUE, TRUE, 3);
 	gtk_box_pack_end(GTK_BOX(icon_mainbox), scrollbutton, FALSE, FALSE, 0);
+//XXX:tm-gtk2 recursion. why?
+#ifndef WIN32
 	g_signal_connect(G_OBJECT(icon_mainbox), "size_allocate", 
 			 G_CALLBACK(icon_scroll_size_allocate_cb), mimeview);
+#endif
 	
 	ctree_mainbox = gtk_hbox_new(FALSE, 0);	
 	gtk_box_pack_start(GTK_BOX(ctree_mainbox), scrolledwin, TRUE, TRUE, 0);
@@ -668,7 +675,9 @@ static gboolean mimeview_show_part(MimeView *mimeview, MimeInfo *partinfo)
 	}
 	viewer->show_mimepart(viewer, mimeview->file, partinfo);
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2 Is it correct?
+#endif
 	return FALSE;
 }
 
@@ -700,6 +709,7 @@ static void mimeview_change_view_type(MimeView *mimeview, MimeViewType type)
 static void mimeview_clear(MimeView *mimeview)
 {
 	GtkCList *clist = GTK_CLIST(mimeview->ctree);
+	GtkAdjustment *adj;
 
 	procmime_mimeinfo_free_all(mimeview->mimeinfo);
 	mimeview->mimeinfo = NULL;
@@ -715,6 +725,8 @@ static void mimeview_clear(MimeView *mimeview)
 	mimeview->file = NULL;
 
 	icon_list_clear(mimeview);
+	adj  = gtk_layout_get_vadjustment(GTK_LAYOUT(mimeview->icon_scroll));
+	adj->value = 0;
 
 	if (!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mimeview->mime_toggle)))
 		gtk_notebook_set_page(GTK_NOTEBOOK(mimeview->notebook), 0);
@@ -858,7 +870,9 @@ void mimeview_pass_key_press_event(MimeView *mimeview, GdkEventKey *event)
 #define BREAK_ON_MODIFIER_KEY() \
 	if ((event->state & (GDK_MOD1_MASK|GDK_CONTROL_MASK)) != 0) break
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 #define KEY_PRESS_EVENT_STOP() \
 	if (gtk_signal_n_emissions_by_name \
@@ -1096,10 +1110,33 @@ static void mimeview_save_as(MimeView *mimeview)
 			(_("Can't save the part of multipart message."));
 }
 
+#ifdef WIN32
+static gchar *w32_get_open_cmd(filename)
+{
+	gchar *open_cmd;
+	if ( (open_cmd=g_strdup(w32_mailcap_lookup(filename)))==NULL) {
+		open_cmd = g_malloc(MAX_PATH);
+		FindExecutable(filename, NULL, open_cmd);
+		if (!(open_cmd && *open_cmd)){
+			g_free(open_cmd);
+			open_cmd = NULL;
+		} else {
+			gchar *p = g_strdup(open_cmd);
+			open_cmd = g_strconcat("\"", p, "\"", " \"%s\"", NULL);
+			g_free(p);
+		}
+	}
+	return open_cmd;
+}
+#endif
+
 static void mimeview_launch(MimeView *mimeview)
 {
 	MimeInfo *partinfo;
 	gchar *filename;
+#ifdef WIN32
+	gchar *open_cmd;
+#endif
 
 	if (!mimeview->opened) return;
 	if (!mimeview->file) return;
@@ -1116,11 +1153,25 @@ static void mimeview_launch(MimeView *mimeview)
 
 	filename = procmime_get_tmp_file_name(partinfo);
 
+#ifdef WIN32
+	if (procmime_get_part(filename, mimeview->file, partinfo) < 0) {
+		alertpanel_error
+			(_("Can't save the part of multipart message."));
+		g_free(filename);
+		return;
+	}
+
+	filename = g_strdup(w32_move_to_exec_dir(filename));
+	open_cmd = w32_get_open_cmd(filename);
+	mimeview_view_file(filename, partinfo, open_cmd);
+	g_free(open_cmd);
+#else
 	if (procmime_get_part(filename, mimeview->file, partinfo) < 0)
 		alertpanel_error
 			(_("Can't save the part of multipart message."));
 	else
 		mimeview_view_file(filename, partinfo, NULL);
+#endif
 
 	g_free(filename);
 }
@@ -1130,6 +1181,9 @@ static void mimeview_open_with(MimeView *mimeview)
 	MimeInfo *partinfo;
 	gchar *filename;
 	gchar *cmd;
+#ifdef WIN32
+	gchar *open_cmd;
+#endif
 
 	if (!mimeview->opened) return;
 	if (!mimeview->file) return;
@@ -1157,11 +1211,20 @@ static void mimeview_open_with(MimeView *mimeview)
 		prefs_common.mime_open_cmd_history =
 			add_history(NULL, prefs_common.mime_open_cmd);
 
+#ifdef WIN32
+	filename = g_strdup(w32_move_to_exec_dir(filename));
+	open_cmd = w32_get_open_cmd(filename);
+#endif
+
 	cmd = input_dialog_combo
 		(_("Open with"),
 		 _("Enter the command line to open file:\n"
 		   "(`%s' will be replaced with file name)"),
+#ifdef WIN32
+		 open_cmd,
+#else
 		 prefs_common.mime_open_cmd,
+#endif
 		 prefs_common.mime_open_cmd_history,
 		 TRUE);
 	if (cmd) {
@@ -1172,6 +1235,9 @@ static void mimeview_open_with(MimeView *mimeview)
 			add_history(prefs_common.mime_open_cmd_history, cmd);
 	}
 
+#ifdef WIN32
+	g_free(open_cmd);
+#endif
 	g_free(filename);
 }
 
@@ -1368,7 +1434,9 @@ static void icon_selected (MimeView *mimeview, gint num, MimeInfo *partinfo)
 	}
 }		
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 #undef  KEY_PRESS_EVENT_STOP
 #define KEY_PRESS_EVENT_STOP() \
@@ -1660,7 +1728,9 @@ static void icon_scroll_size_allocate_cb(GtkWidget *widget,
 	vbox_size = &mimeview->icon_vbox->allocation;
 	layout_size = &mimeview->icon_scroll->allocation;
 	
+#ifndef _MSC_VER
 #warning FIXME_GTK2 /* this code cause hang up. */
+#endif
 #if 0
 	/* centralise the vbox */
 	gtk_layout_move(GTK_LAYOUT(mimeview->icon_scroll), mimeview->icon_vbox, 

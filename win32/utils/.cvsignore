@@ -1,0 +1,6 @@
+*.swp
+*~
+apps
+auto_src
+locale
+Output

@@ -48,6 +48,9 @@
 #include "manage_window.h"
 #include "folder.h"
 #include "codeconv.h"
+#ifdef WIN32
+#include "common/utils.h"
+#endif
 
 static GtkWidget *window;
 static GtkWidget *file_entry;
@@ -102,7 +105,9 @@ gint import_mbox(FolderItem *default_dest)
 			const gchar *dest_codeset = conv_get_current_charset_str();
 			gchar *filename;
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2 /* should we use g_filename_from_utf8? */
+#endif
 			filename = conv_codeset_strdup(utf8filename,
 						       src_codeset,
 						       dest_codeset);

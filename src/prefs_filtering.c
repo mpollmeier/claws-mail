@@ -491,6 +491,10 @@ static gboolean prefs_filtering_rename_path_func(GNode *node, gpointer data)
                 }
         }
         
+#ifdef WIN32
+	g_free(old_path);
+	g_free(new_path);
+#endif
 	g_free(old_path_with_sep);
 	prefs_matcher_write_config();
 

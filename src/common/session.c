@@ -15,6 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ *
+ * TODO (Win32): Sync rev. 1.21 (2003/07/16 11:53:42)
+ * 	- uidl rx hangs waiting for next data (if data>bufsize)
+ * 	- no callback after rx'ing list reply
  */
 
 #ifdef HAVE_CONFIG_H
@@ -29,10 +33,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#ifdef WIN32
+#include <fcntl.h>
+#include <process.h>
+#else
 #include <unistd.h>
 #include <sys/signal.h>
 #include <sys/wait.h>
 #include <sys/time.h>
+#endif
 #include <errno.h>
 
 #include "session.h"
@@ -41,9 +50,6 @@
 static gint session_connect_cb		(SockInfo	*sock,
 					 gpointer	 data);
 static gint session_close		(Session	*session);
-
-static gboolean session_recv_msg_idle_cb	(gpointer	 data);
-static gboolean session_recv_data_idle_cb	(gpointer	 data);
 
 static gboolean session_read_msg_cb	(SockInfo	*source,
 					 GIOCondition	 condition,
@@ -68,7 +74,6 @@ void session_init(Session *session)
 #if USE_OPENSSL
 	session->ssl_type = SSL_NONE;
 #endif
-	session->nonblocking = TRUE;
 	session->state = SESSION_READY;
 	session->last_access_time = time(NULL);
 
@@ -78,10 +83,7 @@ void session_init(Session *session)
 
 	session->io_tag = 0;
 
-	session->read_buf_p = session->read_buf;
-	session->read_buf_len = 0;
-
-	session->read_msg_buf = g_string_sized_new(1024);
+	session->read_buf = g_string_sized_new(1024);
 	session->read_data_buf = g_byte_array_new();
 
 	session->write_buf = NULL;
@@ -145,7 +147,7 @@ static gint session_connect_cb(SockInfo *sock, gpointer data)
 	}
 #endif
 
-	sock_set_nonblocking_mode(sock, session->nonblocking);
+	sock_set_nonblocking_mode(sock, TRUE);
 
 	debug_print("session (%p): connected\n", session);
 
@@ -156,6 +158,9 @@ static gint session_connect_cb(SockInfo *sock, gpointer data)
 
 	return 0;
 }
+#ifdef WIN32
+#undef _exit
+#endif
 
 /*!
  *\brief	child and parent: send DISCONNECT message to other process
@@ -183,7 +188,7 @@ void session_destroy(Session *session)
 	session_close(session);
 	session->destroy(session);
 	g_free(session->server);
-	g_string_free(session->read_msg_buf, TRUE);
+	g_string_free(session->read_buf, TRUE);
 	g_byte_array_free(session->read_data_buf, TRUE);
 	g_free(session->read_data_terminator);
 	g_free(session->write_buf);
@@ -289,7 +294,7 @@ gint session_start_tls(Session *session)
 	}
 
 	if (nb_mode)
-		sock_set_nonblocking_mode(session->sock, session->nonblocking);
+		sock_set_nonblocking_mode(session->sock, TRUE);
 
 	return 0;
 }
@@ -321,31 +326,14 @@ gint session_send_msg(Session *session, SessionMsgType type, const gchar *msg)
 
 gint session_recv_msg(Session *session)
 {
-	g_return_val_if_fail(session->read_msg_buf->len == 0, -1);
+	g_return_val_if_fail(session->read_buf->len == 0, -1);
 
 	session->state = SESSION_RECV;
 
-	if (session->read_buf_len > 0)
-		g_idle_add(session_recv_msg_idle_cb, session);
-	else
-		session->io_tag = sock_add_watch(session->sock, G_IO_IN,
-						 session_read_msg_cb, session);
+	session->io_tag = sock_add_watch(session->sock, G_IO_IN,
+					 session_read_msg_cb, session);
 
 	return 0;
-}
-
-static gboolean session_recv_msg_idle_cb(gpointer data)
-{
-	Session *session = SESSION(data);
-	gboolean ret;
-
-	ret = session_read_msg_cb(session->sock, G_IO_IN, session);
-
-	if (ret == TRUE)
-		session->io_tag = sock_add_watch(session->sock, G_IO_IN,
-						 session_read_msg_cb, session);
-
-	return FALSE;
 }
 
 /*!
@@ -396,27 +384,10 @@ gint session_recv_data(Session *session, guint size, const gchar *terminator)
 	session->read_data_terminator = g_strdup(terminator);
 	gettimeofday(&session->tv_prev, NULL);
 
-	if (session->read_buf_len > 0)
-		g_idle_add(session_recv_data_idle_cb, session);
-	else
-		session->io_tag = sock_add_watch(session->sock, G_IO_IN,
-						 session_read_data_cb, session);
+	session->io_tag = sock_add_watch(session->sock, G_IO_IN,
+					 session_read_data_cb, session);
 
 	return 0;
-}
-
-static gboolean session_recv_data_idle_cb(gpointer data)
-{
-	Session *session = SESSION(data);
-	gboolean ret;
-
-	ret = session_read_data_cb(session->sock, G_IO_IN, session);
-
-	if (ret == TRUE)
-		session->io_tag = sock_add_watch(session->sock, G_IO_IN,
-						 session_read_data_cb, session);
-
-	return FALSE;
 }
 
 static gboolean session_read_msg_cb(SockInfo *source, GIOCondition condition,
@@ -424,82 +395,66 @@ static gboolean session_read_msg_cb(SockInfo *source, GIOCondition condition,
 {
 	Session *session = SESSION(data);
 	gchar buf[SESSION_BUFFSIZE];
-	gint line_len;
+	gint read_len;
+	gint to_read_len;
 	gchar *newline;
 	gchar *msg;
 	gint ret;
 
+#ifdef WIN32 /* XXX:tm nonblock */
+	g_return_val_if_fail(condition == G_IO_IN, TRUE); /* Keep watching... cond==0 sometimes(if data follows)? */
+	Sleep(0);
+#else
 	g_return_val_if_fail(condition == G_IO_IN, FALSE);
+#endif
 
-	if (session->read_buf_len == 0) {
-		gint read_len;
+	read_len = sock_peek(session->sock, buf, sizeof(buf) - 1);
 
-		read_len = sock_read(session->sock, session->read_buf,
-				     SESSION_BUFFSIZE - 1);
-
-		if (read_len == -1 && session->state == SESSION_DISCONNECTED) {
-			g_warning ("sock_read: session disconnected\n");
-			if (session->io_tag > 0) {
-				g_source_remove(session->io_tag);
-				session->io_tag = 0;
-			}
+	if (read_len < 0) {
+		switch (errno) {
+		case EAGAIN:
+			return TRUE;
+		default:
+			g_warning("sock_peek: %s\n", g_strerror(errno));
+			session->state = SESSION_ERROR;
 			return FALSE;
 		}
-		
-		if (read_len == 0) {
-			g_warning("sock_read: received EOF\n");
-			session->state = SESSION_EOF;
-			return FALSE;
-		}
-
-		if (read_len < 0) {
-			switch (errno) {
-			case EAGAIN:
-				return TRUE;
-			default:
-				g_warning("sock_read: %s\n", g_strerror(errno));
-				session->state = SESSION_ERROR;
-				return FALSE;
-			}
-		}
-
-		session->read_buf_len = read_len;
 	}
 
-	if ((newline = memchr(session->read_buf_p, '\n', session->read_buf_len))
-		!= NULL)
-		line_len = newline - session->read_buf_p + 1;
+	if ((newline = memchr(buf, '\n', read_len)) != NULL)
+		to_read_len = newline - buf + 1;
 	else
-		line_len = session->read_buf_len;
+		to_read_len = read_len;
 
-	if (line_len == 0)
-		return TRUE;
+	read_len = sock_read(session->sock, buf, to_read_len);
 
-	memcpy(buf, session->read_buf_p, line_len);
-	buf[line_len] = '\0';
+	/* this should always succeed */
+	if (read_len < 0) {
+		g_warning("sock_read: %s\n", g_strerror(errno));
+		session->state = SESSION_ERROR;
+		return FALSE;
+	}
 
-	g_string_append(session->read_msg_buf, buf);
-
-	session->read_buf_len -= line_len;
-	if (session->read_buf_len == 0)
-		session->read_buf_p = session->read_buf;
-	else
-		session->read_buf_p += line_len;
+	buf[read_len] = '\0';
 
 	/* incomplete read */
-	if (buf[line_len - 1] != '\n')
+	if (read_len == 0 || buf[read_len - 1] != '\n') {
+		g_string_append(session->read_buf, buf);
 		return TRUE;
+	}
 
 	/* complete */
+	strretchomp(buf);
+	g_string_append(session->read_buf, buf);
+
 	if (session->io_tag > 0) {
 		g_source_remove(session->io_tag);
 		session->io_tag = 0;
 	}
 
 	/* callback */
-	msg = g_strdup(session->read_msg_buf->str);
-	strretchomp(msg);
-	g_string_truncate(session->read_msg_buf, 0);
+	msg = g_strdup(session->read_buf->str);
+	g_string_truncate(session->read_buf, 0);
 
 	ret = session->recv_msg(session, msg);
 	session->recv_msg_notify(session, msg, session->recv_msg_notify_data);
@@ -516,54 +471,38 @@ static gboolean session_read_data_cb(SockInfo *source, GIOCondition condition,
 				     gpointer data)
 {
 	Session *session = SESSION(data);
+	gchar buf[SESSION_BUFFSIZE];
 	GByteArray *data_buf;
+	gint read_len;
 	gint terminator_len;
 	gboolean complete = FALSE;
 	guint data_len;
 	gint ret;
 
+#ifdef WIN32 /* XXX:tm nonblock */
+	g_return_val_if_fail(condition == G_IO_IN, TRUE);
+#endif
 	g_return_val_if_fail(condition == G_IO_IN, FALSE);
 
-	if (session->read_buf_len == 0) {
-		gint read_len;
-
-		read_len = sock_read(session->sock, session->read_buf,
-				     SESSION_BUFFSIZE);
-
-		if (read_len == 0) {
-			g_warning("sock_read: received EOF\n");
-			session->state = SESSION_EOF;
+	read_len = sock_read(session->sock, buf, sizeof(buf));
+	if (read_len < 0) {
+		switch (errno) {
+		case EAGAIN:
+			return TRUE;
+		default:
+			g_warning("sock_read: %s\n", g_strerror(errno));
+			session->state = SESSION_ERROR;
 			return FALSE;
 		}
-
-		if (read_len < 0) {
-			switch (errno) {
-			case EAGAIN:
-				return TRUE;
-			default:
-				g_warning("sock_read: %s\n", g_strerror(errno));
-				session->state = SESSION_ERROR;
-				return FALSE;
-			}
-		}
-
-		session->read_buf_len = read_len;
 	}
 
 	data_buf = session->read_data_buf;
+
+	g_byte_array_append(data_buf, buf, read_len);
 	terminator_len = strlen(session->read_data_terminator);
 
-	if (session->read_buf_len == 0)
-		return TRUE;
-
-	g_byte_array_append(data_buf, session->read_buf_p,
-			    session->read_buf_len);
-
-	session->read_buf_len = 0;
-	session->read_buf_p = session->read_buf;
-
 	/* check if data is terminated */
-	if (data_buf->len >= terminator_len) {
+	if (read_len > 0 && data_buf->len >= terminator_len) {
 		if (memcmp(data_buf->data, session->read_data_terminator,
 			   terminator_len) == 0)
 			complete = TRUE;

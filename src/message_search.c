@@ -118,7 +118,9 @@ static void message_search_create(MessageView *messageview)
 	gtk_box_pack_start (GTK_BOX (vbox1), checkbtn_hbox, TRUE, TRUE, 0);
 	gtk_container_set_border_width (GTK_CONTAINER (checkbtn_hbox), 8);
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 	case_checkbtn = gtk_check_button_new_with_label (_("Case sensitive (Broken)"));
 	gtk_widget_show (case_checkbtn);
 	gtk_box_pack_start (GTK_BOX (checkbtn_hbox), case_checkbtn,

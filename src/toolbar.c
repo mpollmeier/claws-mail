@@ -30,7 +30,11 @@
 #include <glib.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef WIN32
+#include <w32lib.h>
+#else
 #include <dirent.h>
+#endif
 #include <sys/stat.h>
 #include <math.h>
 #include <setjmp.h>
@@ -525,8 +529,10 @@ void toolbar_save_config_file(ToolbarType source)
 
 		for (cur = toolbar_config[source].item_list; cur != NULL; cur = cur->next) {
 			ToolbarItem *toolbar_item = (ToolbarItem*) cur->data;
-			
+
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 			if (toolbar_item->index != A_SEPARATOR) {
 				fprintf(fp, "\t<%s %s=\"%s\" %s=\"",
 					TOOLBAR_TAG_ITEM, 
@@ -595,7 +601,6 @@ void toolbar_read_config_file(ToolbarType source)
 				toolbar_config[source].item_list = 
 					g_slist_append(toolbar_config[source].item_list, item);
 			}
-
 		}
 		xml_close_file(file);
 	}

@@ -29,12 +29,18 @@
 #include <gtk/gtksignal.h>
 #include <gtk/gtkprogressbar.h>
 #include <stdio.h>
+#ifdef WIN32
+#include <w32lib.h>
+#else
 #include <unistd.h>
+#endif
 #include <string.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifndef WIN32
 #include <sys/wait.h>
+#endif
 #include <signal.h>
 #include <errno.h>
 
@@ -77,7 +83,11 @@ static GdkBitmap *errorxpmmask;
 static GdkPixmap *okxpm;
 static GdkBitmap *okxpmmask;
 
+#ifdef WIN32
+#define MSGBUFSIZE	8191
+#else
 #define MSGBUFSIZE	8192
+#endif
 
 static void inc_finished		(MainWindow		*mainwin,
 					 gboolean		 new_messages);

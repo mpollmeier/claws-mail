@@ -30,7 +30,11 @@
 #include <gtk/gtkhbbox.h>
 #include <gtk/gtksignal.h>
 #include <stdio.h>
+#ifdef WIN32
+#include <w32lib.h>
+#else
 #include <unistd.h>
+#endif
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>

@@ -74,6 +74,8 @@ NoticeView *noticeview_create(MainWindow *mainwin)
 	/* also possible... */
 	icon = gtk_pixmap_new(NULL, NULL);
 #endif
+//XXX:tm-gtk2
+if (icon)
 	gtk_widget_show(icon);
 	
 	gtk_box_pack_start(GTK_BOX(hbox), icon, FALSE, TRUE, 0);

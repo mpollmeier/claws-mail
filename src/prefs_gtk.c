@@ -25,7 +25,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <errno.h>
 
 #include "intl.h"
@@ -48,6 +50,13 @@ typedef enum
 {
 	DUMMY_PARAM
 } DummyEnum;
+
+#ifdef WIN32
+void prefs_init_config(PrefParam *param)
+{
+  //XXX
+}
+#endif
 
 void prefs_read_config(PrefParam *param, const gchar *label,
 		       const gchar *rcfile)
@@ -118,7 +127,9 @@ void prefs_config_parse_one_line(PrefParam *param, const gchar *buf)
 		switch (param[i].type) {
 		case P_STRING:
 		{
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 			gchar *tmp;
 
 			tmp = *value ?
@@ -271,7 +282,9 @@ gint prefs_write_param(PrefParam *param, FILE *fp)
 		switch (param[i].type) {
 		case P_STRING:
 		{
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 			gchar *tmp = NULL;
 
 			if (*((gchar **)param[i].data)) {
@@ -354,7 +367,9 @@ void prefs_set_default(PrefParam *param)
 		if (!param[i].data) continue;
 
 		switch (param[i].type) {
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 		case P_STRING:
 		case P_PASSWORD:
 			g_free(*((gchar **)param[i].data));
@@ -557,7 +572,9 @@ void prefs_set_dialog_to_default(PrefParam *param)
 		switch (tmpparam.type) {
 		case P_STRING:
 		case P_PASSWORD:
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 			if (tmpparam.defval) {
 				if (!strncasecmp(tmpparam.defval, "ENV_", 4)) {
 					str_data = g_strdup(g_getenv(param[i].defval + 4));

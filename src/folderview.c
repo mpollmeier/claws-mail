@@ -594,6 +594,11 @@ void folderview_init(FolderView *folderview)
 			gtk_style_unref(style);
 		} 
 		else 
+#ifdef WIN32
+		if (prefs_common.smallfont)
+			normalfont = gtkut_font_load(prefs_common.normalfont);
+		else
+#endif
 			normalfont = gtkut_font_load(NORMAL_FONT);
 	}
 	
@@ -605,6 +610,11 @@ void folderview_init(FolderView *folderview)
 			gtk_style_unref(style);
 		}
 		else
+#ifdef WIN32
+		if (prefs_common.boldfont)
+			boldfont = gtkut_font_load(prefs_common.boldfont);
+		else
+#endif
 			boldfont = gtkut_font_load(BOLD_FONT);
 	}
 #endif
@@ -2029,7 +2039,9 @@ static void folderview_rename_folder_cb(FolderView *folderview, guint action,
 		g_free(new_folder);
 		return;
 	}
+#ifndef WIN32 /* why ? g_free(new_folder) frees item->path...  */
 	g_free(new_folder);
+#endif
 
 	/* if (FOLDER_TYPE(item->folder) == F_MH)
 		prefs_filtering_rename_path(old_path, item->path); */
@@ -2132,6 +2144,7 @@ static void folderview_delete_folder_cb(FolderView *folderview, guint action,
 	g_return_if_fail(item->folder != NULL);
 
 	name_ = trim_string(item->name, 32);
+
 	Xstrdup_a(name, name_, return);
 	g_free(name_);
 	message = g_strdup_printf

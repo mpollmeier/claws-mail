@@ -979,6 +979,7 @@ static gboolean prefs_filtering_action_key_pressed(GtkWidget *widget,
 {
 	if (event && event->keyval == GDK_Escape)
 		prefs_filtering_action_cancel();
+	return FALSE;
 }
 
 /*!

@@ -229,6 +229,8 @@ static void prefs_account_nntpauth_toggled(GtkToggleButton *button,
 					   gpointer user_data);
 static void prefs_account_mailcmd_toggled(GtkToggleButton *button,
 					  gpointer user_data);
+static void prefs_account_smtp_userid_cb(GtkEditable *editable,
+					 gpointer smtp_passwd);
 
 static PrefParam param[] = {
 	/* Basic */
@@ -2436,7 +2438,7 @@ static void prefs_account_imap_auth_type_set_data_from_optmenu(PrefParam *pparam
 	menu = gtk_option_menu_get_menu(GTK_OPTION_MENU(*pparam->widget));
 	menuitem = gtk_menu_get_active(GTK_MENU(menu));
 	*((RecvProtocol *)pparam->data) = GPOINTER_TO_INT
-		(g_object_get_data(G_OBJECT(menuitem), MENU_VAL_ID));
+		(gtk_object_get_user_data(GTK_OBJECT(menuitem)));
 }
 
 static void prefs_account_imap_auth_type_set_optmenu(PrefParam *pparam)

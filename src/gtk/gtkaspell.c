@@ -32,17 +32,25 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <sys/types.h>
+#ifndef WIN32
 #include <sys/wait.h>
+#endif
 #include <signal.h>
 #include <ctype.h>
 #include <string.h>
 #include <errno.h>
+#ifndef WIN32
 #include <sys/time.h>
+#endif
 #include <fcntl.h>
 #include <time.h>
+#ifndef WIN32
 #include <dirent.h>
+#endif
 
 #include <glib.h>
 
@@ -53,7 +61,11 @@
 #include <gtk/gtkmenuitem.h>
 #include <gdk/gdkkeysyms.h>
 
+#ifdef WIN32
+#include "w32_aspell_init.h"
+#else
 #include <aspell.h>
+#endif
 
 #include "intl.h"
 #include "gtkstext.h"
@@ -414,7 +426,7 @@ void gtkaspell_delete(GtkAspell * gtkaspell)
 		free_suggestions_list(gtkaspell);
 
 	g_free((gchar *)gtkaspell->dictionary_path);
-
+	
 	debug_print("Aspell: deleting gtkaspell %0x\n", (guint) gtkaspell);
 
 	g_free(gtkaspell);
@@ -553,6 +565,9 @@ static GtkAspeller *gtkaspeller_new(Dictionary *dictionary)
 	g_return_val_if_fail(gtkaspellcheckers, NULL);
 
 	g_return_val_if_fail(dictionary, NULL);
+#ifdef WIN32
+	g_return_val_if_fail(w32_aspell_loaded(), NULL);
+#endif
 
 	if (dictionary->fullname == NULL)
 		gtkaspell_checkers_error_message(g_strdup(_("No dictionary selected.")));
@@ -563,6 +578,9 @@ static GtkAspeller *gtkaspeller_new(Dictionary *dictionary)
 		gchar *tmp;
 
 		tmp = strrchr(dictionary->fullname, G_DIR_SEPARATOR);
+#ifdef WIN32
+		if (!tmp) tmp = strrchr(dictionary->fullname, '/');
+#endif
 
 		if (tmp == NULL)
 			dictionary->dictname = dictionary->fullname;
@@ -878,7 +896,6 @@ static guchar get_text_index_whar(GtkAspell *gtkaspell, int pos)
 				      pos + 1);
 	if (text == NULL) 
 		return 0;
-
 	a = (guchar) *text;
 
 	g_free(text);
@@ -976,6 +993,10 @@ static gboolean check_at(GtkAspell *gtkaspell, gint from_pos)
 	gint	      start, end;
 	unsigned char buf[GTKASPELLWORDSIZE];
 	GtkSText     *gtktext;
+#ifdef WIN32
+	unsigned char *locbuf;
+	gsize oldsize,newsize;
+#endif
 
 	g_return_val_if_fail(from_pos >= 0, FALSE);
     
@@ -1521,6 +1542,12 @@ GSList *gtkaspell_get_dictionary_list(const gchar *aspell_path, gint refresh)
 	else
 		gtkaspell_free_dictionary_list(gtkaspellcheckers->dictionary_list);
 	list = NULL;
+
+#ifdef WIN32
+	g_return_val_if_fail(w32_aspell_loaded(), NULL);
+	if (!aspell_path)
+		aspell_path = "";
+#endif /* WIN32 */
 
 	config = new_aspell_config();
 #if 0 

@@ -83,6 +83,9 @@ static void parse_parameter(int *argc, char ***argv)
 
 gboolean sylpheed_init(int *argc, char ***argv)
 {
+#ifdef WIN32
+	gchar *locale_dir;
+#endif
 	if (sylpheed_initialized)
 		return TRUE;
 
@@ -93,8 +96,16 @@ gboolean sylpheed_init(int *argc, char ***argv)
 	debug_print("Starting sylpheed version %08x\n", VERSION_NUMERIC);
 
 	setlocale(LC_ALL, "");
+#ifdef WIN32
+	locale_dir = g_strconcat(get_installed_dir(), G_DIR_SEPARATOR_S,
+				LOCALEDIR, NULL);
+	bindtextdomain(PACKAGE, locale_dir);
+	bind_textdomain_codeset (PACKAGE, "UTF-8");
+	g_free(locale_dir);
+#else
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	bind_textdomain_codeset (PACKAGE, "UTF-8");
+#endif
 	textdomain(PACKAGE);
 	putenv("G_BROKEN_FILENAMES=1");
 

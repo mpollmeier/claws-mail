@@ -22,8 +22,9 @@
 #include <gtk/gtkwidget.h>
 #include <gtk/gtkimage.h>
 #include <string.h>
-#include <dirent.h>
-
+#ifndef WIN32
+# include <dirent.h>
+#endif
 #include "stock_pixmap.h"
 #include "gtkutils.h"
 #include "utils.h"
@@ -339,9 +340,13 @@ GList *stock_pixmap_themes_list_new(void)
 	userthemes   = g_strconcat(get_home_dir(), G_DIR_SEPARATOR_S,
 				   RC_DIR, G_DIR_SEPARATOR_S, 
 				   PIXMAP_THEME_DIR, NULL);
+#ifdef WIN32
+	systemthemes = g_strconcat(get_installed_dir(), G_DIR_SEPARATOR_S,
+				   PIXMAP_THEME_DIR, NULL);
+#else
 	systemthemes = g_strconcat(PACKAGE_DATA_DIR, G_DIR_SEPARATOR_S,
 				   PIXMAP_THEME_DIR, NULL);
-
+#endif
 	list = g_list_append(list, defaulttheme);
 	
 	stock_pixmap_find_themes_in_dir(&list, userthemes);

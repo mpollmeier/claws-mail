@@ -29,7 +29,9 @@
 #include <gtk/gtkbutton.h>
 #include <gtk/gtkctree.h>
 #include <gtk/gtkcombo.h>
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 /* #include <gtk/gtkthemes.h> */
 #include <gtk/gtkbindings.h>
 #include <stdlib.h>
@@ -50,7 +52,9 @@
 #include "menu.h"
 #include "prefs_account.h"
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 gboolean gtkut_get_font_size(GtkWidget *widget,
 			     gint *width, gint *height)
 {
@@ -321,7 +325,9 @@ static void gtkut_check_before_remove(GtkWidget *widget, gpointer unused)
 	if (GTK_IS_CONTAINER(widget))
 		gtk_container_forall(GTK_CONTAINER(widget),
 				     gtkut_check_before_remove, NULL);
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 	if (GTK_IS_EDITABLE(widget))
 		gtk_editable_claim_selection(GTK_EDITABLE(widget),
@@ -393,7 +399,9 @@ void gtkut_widget_get_uposition(GtkWidget *widget, gint *px, gint *py)
 
 void gtkut_widget_disable_theme_engine(GtkWidget *widget)
 {
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 	GtkStyle *style, *new_style;
 
@@ -535,7 +543,9 @@ void gtkut_set_widget_bgcolor_rgb(GtkWidget *widget, guint rgbvalue)
 	gtk_widget_set_style(widget, newstyle);
 }
   
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 1 /* FIXME_GTK2 */
 gboolean gtkut_text_buffer_match_string(GtkTextBuffer *textbuf, gint pos, gunichar *wcs,
 					gint len, gboolean case_sens)

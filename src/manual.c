@@ -44,7 +44,11 @@ static gchar *get_language()
 	gchar *language;
 	gchar *c;
 
+#ifdef WIN32
+	language = g_strdup(gtk_set_locale());
+#else
 	language = g_strdup(setlocale(LC_MESSAGES, NULL));
+#endif
 	if((c = strchr(language, ',')) != NULL)
 		*c = '\0';
 	if((c = strchr(language, '_')) != NULL)
@@ -58,12 +62,22 @@ static gchar *get_local_path_with_locale(gchar *rootpath)
 	gchar *lang_str, *dir;
 
 	lang_str = get_language();
+#ifdef WIN32
+	dir = g_strconcat(get_installed_dir(), G_DIR_SEPARATOR_S,
+			  rootpath, G_DIR_SEPARATOR_S,
+#else
 	dir = g_strconcat(rootpath, G_DIR_SEPARATOR_S, 
+#endif
 			  lang_str, NULL);
 	g_free(lang_str);
 	if(!is_dir_exist(dir)) {
 		g_free(dir);
+#ifdef WIN32
+		dir = g_strconcat(get_installed_dir(), G_DIR_SEPARATOR_S,
+				  rootpath, G_DIR_SEPARATOR_S,
+#else
 		dir = g_strconcat(rootpath, G_DIR_SEPARATOR_S,
+#endif
 				  "en", NULL);
 		if(!is_dir_exist(dir)) {
 			g_free(dir);
@@ -159,6 +173,9 @@ void manual_open(ManualType type)
 		default:
 			break;
 	}
+#ifdef WIN32
+	translate_strs(uri, G_DIR_SEPARATOR_S, "/");
+#endif
 	open_uri(uri, prefs_common.uri_cmd);
 	g_free(uri);
 }

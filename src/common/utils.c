@@ -28,6 +28,10 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#ifdef WIN32
+# include <process.h>
+# include <fcntl.h>
+#endif
 
 #if (HAVE_WCTYPE_H && HAVE_WCHAR_H)
 #  include <wchar.h>
@@ -35,11 +39,8 @@
 #endif
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <stdarg.h>
 #include <sys/types.h>
-#include <sys/wait.h>
-#include <dirent.h>
 #include <time.h>
 #include <regex.h>
 
@@ -48,11 +49,44 @@
 #include "socket.h"
 #include "../codeconv.h"
 
+#ifdef WIN32
+# include "codeconv.h"
+#endif
+
+#ifdef WIN32
+#define BUFFSIZE	8191
+#else
 #define BUFFSIZE	8192
+#endif
 
 static gboolean debug_mode = FALSE;
 
 static void hash_free_strings_func(gpointer key, gpointer value, gpointer data);
+
+#ifdef WIN32
+static GSList *tempfiles=NULL;
+
+static char *GetExeDir(void);
+static char *GetIniFileName(void);
+static char *GetIniHomeDir(void);
+#endif
+
+#ifdef WIN32
+gint mkstemp(const gchar const *template)
+{
+	static gulong count=0; /* W32-_mktemp only supports up to 27 tempfiles... */
+	gchar *name_used = g_strdup_printf("%s.%d",_mktemp(template),count++);
+	int tmpfd = _open(name_used, _O_CREAT | _O_RDWR | _O_BINARY );
+
+	tempfiles=g_slist_append(tempfiles, name_used);
+	if (tmpfd<0) {
+		perror(g_strdup_printf("cant create %s",name_used));
+		return -1;
+	}
+	else
+		return (fdopen(tmpfd,"w+b"));
+}
+#endif
 
 void list_free_strings(GList *list)
 {
@@ -216,7 +250,6 @@ gint path_cmp(const gchar *s1, const gchar *s2)
 
 	if (s1[len1 - 1] == G_DIR_SEPARATOR) len1--;
 	if (s2[len2 - 1] == G_DIR_SEPARATOR) len2--;
-
 	return strncmp(s1, s2, MAX(len1, len2));
 }
 
@@ -382,6 +415,7 @@ wchar_t *wcsncpy (wchar_t *dest, const wchar_t *src, size_t n)
 }
 #endif
 
+#ifndef WIN32	/* MSVCRT */
 /* Duplicate S, returning an identical malloc'd string. */
 wchar_t *wcsdup(const wchar_t *s)
 {
@@ -395,6 +429,7 @@ wchar_t *wcsdup(const wchar_t *s)
 
 	return new_str;
 }
+#endif
 
 /* Duplicate no more than N wide-characters of S,
    returning an identical malloc'd string. */
@@ -1037,7 +1072,11 @@ void subst_chars(gchar *str, gchar *orig, gchar subst)
 
 void subst_for_filename(gchar *str)
 {
+#ifdef WIN32
+	subst_chars(str, " \t\r\n\"/\\:()", '_');
+#else
 	subst_chars(str, " \t\r\n\"/\\", '_');
+#endif
 }
 
 gboolean is_header_line(const gchar *str)
@@ -1327,7 +1366,14 @@ gchar **strsplit_with_quote(const gchar *str, const gchar *delim,
 
 	str_array[i--] = NULL;
 	for (slist = string_list; slist; slist = slist->next)
+#ifdef WIN32
+		if (i)
+			str_array[i--] = g_strconcat("\"", slist->data, "\"", NULL);
+		else
+			str_array[i--] = g_strdup(slist->data);
+#else
 		str_array[i--] = slist->data;
+#endif
 
 	g_slist_free(string_list);
 
@@ -1418,7 +1464,9 @@ GList *uri_list_extract_filenames(const gchar *uri_list)
 					strncpy(escaped_utf8uri, p, q - p + 1);
 					escaped_utf8uri[q - p + 1] = '\0';
 					decode_uri(file, escaped_utf8uri);
+#ifndef _MSC_VER
 #warning FIXME_GTK2 /* should we use g_filename_from_utf8()? */
+#endif
                     /*
 		     * g_filename_from_uri() rejects escaped/locale encoded uri
 		     * string which come from Nautilus.
@@ -1523,21 +1571,37 @@ gint scan_mailto_url(const gchar *mailto, gchar **to, gchar **cc, gchar **bcc,
 const gchar *get_home_dir(void)
 {
 #if HAVE_DOSISH_SYSTEM
-    static gchar *home_dir;
+    static gchar *home_dir = NULL;
+    int i;
 
-    if (!home_dir) {
-        home_dir = read_w32_registry_string(NULL,
+    if (!home_dir || !*home_dir) {
+	if (is_file_exist(GetIniFileName()) && GetIniHomeDir()) 
+		/* sylpheed.ini exists: override registry */
+		home_dir = g_strdup(GetIniHomeDir());
+	
+	if (!home_dir || !*home_dir)
+	        home_dir = read_w32_registry_string(NULL,
                                             "Software\\Sylpheed", "HomeDir" );
         if (!home_dir || !*home_dir) {
-            if (getenv ("HOMEDRIVE") && getenv("HOMEPATH")) {
+            if (getenv ("HOMEDRIVE") && getenv("HOMEPATH") || (getenv("HOME")) ) {
                 const char *s = g_get_home_dir();
                 if (s && *s)
                     home_dir = g_strdup (s);
             }
             if (!home_dir || !*home_dir) 
-                home_dir = g_strdup ("c:\\sylpheed");
+#ifdef WIN32
+			home_dir = get_installed_dir();
+            if (!home_dir || !*home_dir) 
+#endif
+                	home_dir = g_strdup ("c:\\sylpheed");
         }
         debug_print("initialized home_dir to `%s'\n", home_dir);
+    }
+    for (i = strlen(home_dir) - 1; 0 <= i; i--) {
+	    if (*(home_dir + i) == '\\' || *(home_dir + i) == '/') {
+		    *(home_dir + i) = '\0';
+	    } else 
+		    break;
     }
     return home_dir;
 #else /* standard glib */
@@ -1830,7 +1894,12 @@ gint make_dir_hier(const gchar *dir)
 
 	for (p = dir; (p = strchr(p, G_DIR_SEPARATOR)) != NULL; p++) {
 		parent_dir = g_strndup(dir, p - dir);
+#ifdef WIN32
+		if (*parent_dir != '\0' &&
+		    *(parent_dir + strlen(parent_dir) - 1) != ':') {
+#else
 		if (*parent_dir != '\0') {
+#endif
 			if (!is_dir_exist(parent_dir)) {
 				if (make_dir(parent_dir) < 0) {
 					g_free(parent_dir);
@@ -2149,7 +2218,7 @@ gint copy_file(const gchar *src, const gchar *dest)
 
 	if (is_file_exist(dest)) {
 		dest_bak = g_strconcat(dest, ".bak", NULL);
-		if (rename(dest, dest_bak) < 0) {
+		if (Xrename(dest, dest_bak) < 0) {
 			FILE_OP_ERROR(dest, "rename");
 			close(src_fd);
 			g_free(dest_bak);
@@ -2161,7 +2230,7 @@ gint copy_file(const gchar *src, const gchar *dest)
 		FILE_OP_ERROR(dest, "open");
 		close(src_fd);
 		if (dest_bak) {
-			if (rename(dest_bak, dest) < 0)
+			if (Xrename(dest_bak, dest) < 0)
 				FILE_OP_ERROR(dest_bak, "rename");
 			g_free(dest_bak);
 		}
@@ -2180,7 +2249,7 @@ gint copy_file(const gchar *src, const gchar *dest)
 				close(src_fd);
 				unlink(dest);
 				if (dest_bak) {
-					if (rename(dest_bak, dest) < 0)
+					if (Xrename(dest_bak, dest) < 0)
 						FILE_OP_ERROR(dest_bak, "rename");
 					g_free(dest_bak);
 				}
@@ -2198,7 +2267,7 @@ gint copy_file(const gchar *src, const gchar *dest)
 		g_warning("File copy from %s to %s failed.\n", src, dest);
 		unlink(dest);
 		if (dest_bak) {
-			if (rename(dest_bak, dest) < 0)
+			if (Xrename(dest_bak, dest) < 0)
 				FILE_OP_ERROR(dest_bak, "rename");
 			g_free(dest_bak);
 		}
@@ -2283,7 +2352,7 @@ gint copy_file(const gchar *src, const gchar *dest, gboolean keep_backup)
 	}
 	if (is_file_exist(dest)) {
 		dest_bak = g_strconcat(dest, ".bak", NULL);
-		if (rename(dest, dest_bak) < 0) {
+		if (Xrename(dest, dest_bak) < 0) {
 			FILE_OP_ERROR(dest, "rename");
 			fclose(src_fp);
 			g_free(dest_bak);
@@ -2295,7 +2364,7 @@ gint copy_file(const gchar *src, const gchar *dest, gboolean keep_backup)
 		FILE_OP_ERROR(dest, "fopen");
 		fclose(src_fp);
 		if (dest_bak) {
-			if (rename(dest_bak, dest) < 0)
+			if (Xrename(dest_bak, dest) < 0)
 				FILE_OP_ERROR(dest_bak, "rename");
 			g_free(dest_bak);
 		}
@@ -2316,7 +2385,7 @@ gint copy_file(const gchar *src, const gchar *dest, gboolean keep_backup)
 			fclose(src_fp);
 			unlink(dest);
 			if (dest_bak) {
-				if (rename(dest_bak, dest) < 0)
+				if (Xrename(dest_bak, dest) < 0)
 					FILE_OP_ERROR(dest_bak, "rename");
 				g_free(dest_bak);
 			}
@@ -2337,7 +2406,7 @@ gint copy_file(const gchar *src, const gchar *dest, gboolean keep_backup)
 	if (err) {
 		unlink(dest);
 		if (dest_bak) {
-			if (rename(dest_bak, dest) < 0)
+			if (Xrename(dest_bak, dest) < 0)
 				FILE_OP_ERROR(dest_bak, "rename");
 			g_free(dest_bak);
 		}
@@ -2359,7 +2428,7 @@ gint move_file(const gchar *src, const gchar *dest, gboolean overwrite)
 		return -1;
 	}
 
-	if (rename(src, dest) == 0) return 0;
+	if (Xrename(src, dest) == 0) return 0;
 
 	if (EXDEV != errno) {
 		FILE_OP_ERROR(src, "rename");
@@ -2716,9 +2785,24 @@ gint change_file_mode_rw(FILE *fp, const gchar *file)
 #endif
 }
 
+#ifdef WIN32
+void unlink_tempfile_cb(gchar *data, gpointer user_data)
+{
+	chmod(data, _S_IREAD | _S_IWRITE);
+	unlink(data);
+	g_free(data);
+}
+
+void unlink_tempfiles(void)
+{
+	g_slist_foreach(tempfiles, unlink_tempfile_cb, NULL);
+	g_slist_free (tempfiles);
+}
+#endif
+
 FILE *my_tmpfile(void)
 {
-#if HAVE_MKSTEMP
+#if HAVE_MKSTEMP || WIN32
 	const gchar suffix[] = ".XXXXXX";
 	const gchar *tmpdir;
 	guint tmplen;
@@ -2744,6 +2828,9 @@ FILE *my_tmpfile(void)
 	if (fd < 0)
 		return tmpfile();
 
+#ifdef WIN32
+	return fd;
+#else
 	unlink(fname);
 
 	fp = fdopen(fd, "w+b");
@@ -2751,6 +2838,7 @@ FILE *my_tmpfile(void)
 		close(fd);
 	else
 		return fp;
+#endif
 #endif /* HAVE_MKSTEMP */
 
 	return tmpfile();
@@ -2869,6 +2957,38 @@ gchar *file_read_stream_to_str(FILE *fp)
 
 gint execute_async(gchar *const argv[])
 {
+#ifdef WIN32
+	gint n,len=0;
+	gchar *fullname;
+	gchar **parsed_argv;
+
+	fullname = w32_parse_path(argv[0]);
+	len = strlen(fullname);
+	for (n=1; argv[n]; len+=strlen(argv[n++]));
+	parsed_argv=g_new0(char*, len);
+
+	parsed_argv[0]=g_strdup_printf("\"%s\"",fullname);
+
+	for (n=0; argv[n]; n++) {
+		gchar buf[BUFSIZ];
+		if (n) parsed_argv[n]=g_strdup(argv[n]);
+		if (GetShortPathName(parsed_argv[n], buf, sizeof(buf))){
+			g_free(parsed_argv[n]);
+			parsed_argv[n] = g_strdup(buf);
+		}
+	}
+
+	if (spawnvp(P_NOWAIT, fullname, parsed_argv) < 0) {
+		gchar *p_fullname = g_strdup_printf(_("Cannot execute\n%s"),fullname);
+		g_warning(p_fullname);
+		g_free(p_fullname);
+		return -1;
+	}
+
+	for(n=0; parsed_argv[n]; g_free(parsed_argv[n++]));
+	g_free(parsed_argv);
+	g_free(fullname);
+#else
 	pid_t pid;
 
 	if ((pid = fork()) < 0) {
@@ -2895,12 +3015,45 @@ gint execute_async(gchar *const argv[])
 	}
 
 	waitpid(pid, NULL, 0);
+#endif
 
 	return 0;
 }
 
 gint execute_sync(gchar *const argv[])
 {
+#ifdef WIN32
+	gint n,len=0;
+	gchar *fullname;
+	gchar **parsed_argv;
+
+	fullname = w32_parse_path(argv[0]);
+	len = strlen(fullname);
+	for (n=1; argv[n]; len+=strlen(argv[n++]));
+	parsed_argv=g_new0(char*, len);
+
+	parsed_argv[0]=g_strdup_printf("\"%s\"",fullname);
+
+	for (n=0; argv[n]; n++) {
+		gchar buf[BUFSIZ];
+		if (n) parsed_argv[n]=g_strdup(argv[n]);
+		if (GetShortPathName(parsed_argv[n], buf, sizeof(buf))){
+			g_free(parsed_argv[n]);
+			parsed_argv[n] = g_strdup(buf);
+		}
+	}
+
+	if (spawnvp(P_WAIT, fullname, parsed_argv) < 0) {
+		gchar *p_fullname = g_strdup_printf(_("Cannot execute\n%s"),fullname);
+		g_warning(p_fullname);
+		g_free(p_fullname);
+		return -1;
+	}
+
+	for(n=0; parsed_argv[n]; g_free(parsed_argv[n++]));
+	g_free(parsed_argv);
+	g_free(fullname);
+#else
 	pid_t pid;
 
 	if ((pid = fork()) < 0) {
@@ -2916,7 +3069,7 @@ gint execute_sync(gchar *const argv[])
 	}
 
 	waitpid(pid, NULL, 0);
-
+#endif
 	return 0;
 }
 
@@ -2942,20 +3095,38 @@ gchar *get_command_output(const gchar *cmdline)
 	FILE *fp;
 	GString *str;
 	gchar *ret;
+#ifdef WIN32
+	gchar *tmp;
+	gchar *cmd;
+#endif
 
 	g_return_val_if_fail(cmdline != NULL, NULL);
 
+#ifdef WIN32
+	tmp = get_tmp_file();
+	cmd = g_strdup_printf("%s > %s",cmdline ,tmp);
+	system(cmd);
+	fp = fopen(tmp, "r");
+#else
 	if ((fp = popen(cmdline, "r")) == NULL) {
 		FILE_OP_ERROR(cmdline, "popen");
 		return NULL;
 	}
+#endif
 
 	str = g_string_new("");
 
 	while (fgets(buf, sizeof(buf), fp) != NULL)
 		g_string_append(str, buf);
 
+#ifdef WIN32
+	fclose(fp);
+	unlink(tmp);
+	g_free(tmp);
+	g_free(cmd);
+#else
 	pclose(fp);
+#endif
 
 	ret = str->str;
 	g_string_free(str, FALSE);
@@ -3076,8 +3247,20 @@ gint open_uri(const gchar *uri, const gchar *cmdline)
 	gchar buf[BUFFSIZE];
 	gchar *p;
 	gchar encoded_uri[BUFFSIZE];
+#ifdef WIN32
+	/*XXX:tm */
+	gchar *enc_encoded_uri;
+	gint uri_len;
+#endif
 	
 	g_return_val_if_fail(uri != NULL, -1);
+
+#ifdef WIN32
+	uri_len = strlen(uri) * 2;
+	enc_encoded_uri = g_malloc(uri_len);
+	strncpy2(enc_encoded_uri, uri, uri_len);
+	escape_not_printable_chars(enc_encoded_uri, uri_len);
+#endif
 
 	/* an option to choose whether to use encode_uri or not ? */
 	encode_uri(encoded_uri, BUFFSIZE, uri);
@@ -3085,7 +3268,11 @@ gint open_uri(const gchar *uri, const gchar *cmdline)
 	if (cmdline &&
 	    (p = strchr(cmdline, '%')) && *(p + 1) == 's' &&
 	    !strchr(p + 2, '%'))
+#ifdef WIN32
+		g_snprintf(buf, sizeof(buf), cmdline, enc_encoded_uri);
+#else
 		g_snprintf(buf, sizeof(buf), cmdline, encoded_uri);
+#endif
 	else {
 		if (cmdline)
 			g_warning("Open URI command line is invalid: `%s'",
@@ -3097,6 +3284,41 @@ gint open_uri(const gchar *uri, const gchar *cmdline)
 
 	return 0;
 }
+
+#ifdef WIN32
+int escape_not_printable_chars(gchar *src, int len)
+{
+	gchar *buf, *bottom;
+	int i;
+
+	bottom = buf = g_malloc(len * 2);
+	*bottom = '\0';
+	for (i = 0; *(src + i) != '\0' && bottom - buf < len * 2; i++) {
+		if (!g_ascii_isgraph(*(src + i))){
+			int high, low;
+			high = (int)(*(src + i) / 16);
+			low  = (int)(*(src + i) % 16);
+
+#define TO_HEX(x) (x < 10) ? (x + '0') : (x - 10 + 'A');
+
+			*bottom++ = '%';
+			*bottom++ = TO_HEX(high);
+			*bottom++ = TO_HEX(low);
+			*bottom   = '\0';
+#undef TO_HEX
+			continue;
+		} else {
+			*bottom++ = *(src + i);
+			*bottom   = '\0';
+		}
+	}
+
+	g_realloc(src, strlen(buf) + 1);
+	strcpy(src, buf);
+	g_free(buf);
+	return 0;
+}
+#endif
 
 time_t remote_tzoffset_sec(const gchar *zone)
 {
@@ -3653,7 +3875,11 @@ gchar *generate_mime_boundary(void)
 	 */
 	equal = -1;
 	for (i = 0; i < sizeof(bufuniq) - 1; i++) {
+#ifdef WIN32
+		bufuniq[i] = tbl[(rand() ^ pid) % (sizeof(tbl) - 1)];	/* fill with random */
+#else
 		bufuniq[i] = tbl[(lrand48() ^ pid) % (sizeof(tbl) - 1)];	/* fill with random */
+#endif
 		if (bufuniq[i] == '=' && equal == -1)
 			equal = i;
 	}
@@ -3676,3 +3902,367 @@ gchar *generate_mime_boundary(void)
 	return g_strdup_printf("Multipart_%s_%s",
 			       bufdate, bufuniq);
 }
+
+#ifdef WIN32
+/* -------------------------------------------------------------------------
+ * w32_parse_path - substitute placesholders with directory names
+ *   ?p : program files (e.g. "C:\Program files")
+ *   ?w : windows dir (e.g. "C:\Windows")
+ *   ?s : system dir (e.g. "C:\Windows\system")
+ *   ?t : temp dir (e.g. "C:\TEMP")
+ *   ?? : question mark
+ */
+
+#define BUFSIZE 4096
+#define REPLACE_PATHNAME(directory) \
+	cur++; \
+	sprintf(&dest[dest_idx],"%s",directory); \
+	dest_idx += strlen(directory);
+
+gchar *w32_parse_path(gchar* const src)
+{
+	gchar *cur;
+	gchar dest[BUFSIZE] = {0};
+	gint  dest_idx = 0;
+
+	gchar *winprg = g_malloc0(BUFSIZE);
+	gchar *windir = g_malloc0(BUFSIZE);
+	gchar *winsys = g_malloc0(BUFSIZE);
+	gchar *wintmp = g_malloc0(BUFSIZE);
+
+	ExpandEnvironmentStrings("%ProgramFiles%",winprg,BUFSIZE);
+	ExpandEnvironmentStrings("%TEMP%",wintmp,BUFSIZE);
+	GetWindowsDirectory(windir,BUFSIZE);
+	GetSystemDirectory(winsys,BUFSIZE);
+
+	for (cur=src;cur[0];cur++) {
+		if (cur[0] == '?')
+			switch (cur[1]) {
+				case '?' : 
+					cur++;
+					dest[dest_idx++] = cur[0];
+					continue;
+				case 'p' : 
+					REPLACE_PATHNAME( winprg );
+					continue;
+				case 's' : 
+					REPLACE_PATHNAME( winsys );
+					continue;
+				case 't' : 
+					REPLACE_PATHNAME( wintmp );
+					continue;
+				case 'w' : 
+					REPLACE_PATHNAME( windir );
+					continue;
+#ifdef __MINGW32__
+				case 0 :
+#else	
+				case NULL :
+#endif
+					continue;
+			}
+		else
+			dest[dest_idx++] = cur[0];
+	}
+
+	g_free(winprg);
+	g_free(windir);
+	g_free(winsys);
+	g_free(wintmp);
+
+	return g_strdup(dest);
+}
+
+#undef REPLACE_PATH
+#undef BUFSIZE
+
+/* ------------------------------------------------------------------------- */
+
+/* return directory where sylpheed.exe got started */
+static char *GetExeDir(void) {
+	static char ExeDir[MAX_PATH] = {0};
+	char *dirptr;
+	int len;
+
+	if (*ExeDir) return ExeDir;
+
+	if (len = GetModuleFileName( NULL, ExeDir, sizeof(ExeDir))) {
+		for (dirptr = strrchr(ExeDir, '\\')-1;
+			*dirptr && *dirptr != '\\'; dirptr--);
+		*dirptr = NULL;
+		return ExeDir;
+	} else
+		return NULL;
+}
+
+/* return path+filename of sylpheed.ini */
+static char *GetIniFileName(void) {
+	static char IniFileName[MAX_PATH] = {0};
+
+	if (*IniFileName) return IniFileName;
+
+	if (GetExeDir()) {
+		sprintf(&IniFileName, "%s\\%s", GetExeDir(), "sylpheed.ini");
+		return IniFileName;
+	} else
+		return NULL;
+}
+
+/* return HomeDir defined in sylpheed.ini */
+static char *GetIniHomeDir(void) {
+	char *IniName = GetIniFileName();
+	static char IniHomeDir[MAX_PATH] = {0};
+	DWORD res;
+
+	if (*IniHomeDir) return IniHomeDir;
+	if (!GetIniFileName()) return NULL;
+
+	if (res = GetPrivateProfileString(
+		"Settings",		/* points to section name */
+		"HomeDir",		/* points to key name */
+		GetExeDir(),		/* points to default string */
+		IniHomeDir,		/* points to destination buffer */
+		sizeof(IniHomeDir),	/* size of destination buffer */
+		GetIniFileName()	/* points to initialization filename */
+	))
+		return IniHomeDir;
+	else
+		return NULL;
+}
+
+gchar *get_installed_dir(void)
+{
+	static gchar *installed_dir;
+	int i;
+
+	if (!installed_dir) {
+		if (is_file_exist(GetIniFileName())) {
+			installed_dir = g_strdup(GetExeDir());
+			return installed_dir;
+		}
+
+		installed_dir = read_w32_registry_string(NULL,
+					"Software\\Sylpheed", "InstalledDir" );
+		if (!installed_dir || !*installed_dir)
+			installed_dir = g_strdup ("c:\\sylpheed");
+	}
+
+	for (i = strlen(installed_dir) - 1; 0 <= i; i--) {
+		if (*(installed_dir + i) == '\\' || *(installed_dir + i) == '/') {
+			*(installed_dir + i) = '\0';
+		} else 
+			break;
+	}
+
+	return installed_dir;
+}
+
+void translate_strs(gchar *str, gchar *str_src, gchar *str_dst)
+{
+	gchar *p, *tmp;
+
+	tmp = g_strdup(str);
+	while (p = g_strrstr(tmp, str_src)){
+		*p = '\0';
+		p += strlen(str_src);
+		tmp = g_strconcat(tmp, str_dst, p, NULL);
+	}
+	*str = '\0';
+	g_realloc(str, strlen(tmp) + 1);
+	strcpy(str, tmp);
+	g_free(tmp);
+}
+
+int calc_child(const gchar *path){
+	DIR *dir;
+	struct dirent *p_dirent;
+	int nchild;
+
+	dir = opendir(path);
+	if (!dir) return -1;
+	nchild = 0;
+	while (p_dirent = readdir(dir)){
+		nchild++;
+		g_free(p_dirent);
+	}
+	closedir(dir);
+
+	return nchild;
+}
+
+int Xrename(const char *oldpath, const char *newpath){
+	int ret;
+	char cur_dir[BUFSIZ];
+
+	if (getcwd(cur_dir, sizeof(cur_dir))){
+		if (!strcmp(cur_dir, oldpath)){
+			gchar *p;
+			p = g_strdup_printf("%s\\..", cur_dir);
+			chdir(p);
+			g_free(p);
+		}
+	}
+	unlink(newpath);
+	ret = rename(oldpath, newpath);
+	/* unlink(oldpath); */
+	return ret;
+}
+
+void w32_debug_message_write_to_file(char *filename, gchar *message){
+	FILE *fp;
+
+	fp = fopen(filename, "ab");
+	if (fp){
+		fwrite(message, strlen(message), 1, fp);
+		fclose(fp);
+	}
+}
+
+void w32_log_handler(const gchar *log_domain, 
+					 GLogLevelFlags log_level,
+					 const gchar *message,
+					 gpointer user_data){
+	if (debug_mode == TRUE){
+		gchar *p_msg;
+		static gchar *logfile = NULL;
+
+		p_msg = g_strdup(message);
+//XXX:tm-gtk
+//		locale_from_utf8(&p_msg);
+
+		/* g_log_default_handler(log_domain, log_level, p_msg, user_data); */
+
+		if (!logfile)
+			logfile = g_strconcat(get_rc_dir(), G_DIR_SEPARATOR_S, 
+					      "debug.log", NULL);
+		w32_debug_message_write_to_file(logfile, p_msg);
+
+		g_free(p_msg);
+	}
+}
+
+#if 0
+//XXX:tm-gtk2
+void locale_to_utf8(gchar **buf){
+	if (*buf && 0 < strlen(*buf)){
+		gchar *_tmp_p;
+		int _tmp_len = strlen(*buf) * 6;
+		_tmp_p = g_malloc(_tmp_len);
+		strncpy(_tmp_p, *buf, _tmp_len);
+		conv_X_locale_to_utf8(_tmp_p, _tmp_len);
+		g_free(*buf);
+		*buf = g_strdup(_tmp_p);
+		g_free(_tmp_p);
+	}
+}
+void locale_from_utf8(gchar **buf){
+	if (*buf && 0 < strlen(*buf)){
+		gchar *_tmp_p;
+		int _tmp_len = strlen(*buf) * 6;
+		_tmp_p = g_malloc(_tmp_len);
+		strncpy(_tmp_p, *buf, _tmp_len);
+		conv_X_locale_from_utf8(_tmp_p, _tmp_len);
+		g_free(*buf);
+		*buf = g_strdup(_tmp_p);
+		g_free(_tmp_p);
+	}
+}
+#endif
+
+/* glib otherwise gets stuck on pop3 */
+void start_mswin_helper(void) {
+	mswin_helper_timeout_tag = gtk_timeout_add( 1, mswin_helper_timeout_cb, NULL );
+}
+
+void stop_mswin_helper(void) {
+	gtk_timeout_remove( mswin_helper_timeout_tag );
+}
+
+static gint mswin_helper_timeout_cb(gpointer *data) {
+	return(TRUE);
+}
+
+gchar *w32_get_exec_dir()
+{
+	static gchar *exec_dir=NULL;
+
+	if (!exec_dir)
+		exec_dir = getenv("SYLPHEED_TEMPEXEC")
+		    ? getenv("SYLPHEED_TEMPEXEC")
+		    : g_strdup_printf("%s\\TempExec", get_home_dir());
+	make_dir_hier(exec_dir);
+	return exec_dir;
+}
+
+/* execute/open attachments in separate dir for easier avscan */
+gchar *w32_move_to_exec_dir(const gchar *filename)
+{
+	gint res=0;
+	G_CONST_RETURN gchar *exec_dir;
+	G_CONST_RETURN gchar *basename;
+	static gchar *exec_name;
+	
+	exec_dir = w32_get_exec_dir();
+	basename=g_basename(filename);
+	exec_name=g_strdup_printf("%s\\%s", exec_dir, basename);
+	res = CopyFile(filename, exec_name, FALSE);
+	return exec_name;
+}
+/*----------------------------------------------------------------------*/
+/* GCC cant handle inline declaration of gai_strerror() */
+#if defined(INET6) && defined(__MINGW32__)
+/* WARNING: The gai_strerror inline functions below use static buffers, 
+ * and hence are not thread-safe.  We'll use buffers long enough to hold 
+ * 1k characters.  Any system error messages longer than this will be 
+ * returned as empty strings.  However 1k should work for the error codes 
+ * used by getaddrinfo().
+ */
+#define GAI_STRERROR_BUFFER_SIZE 1024
+
+/* WS2TCPIP_INLINE */ 
+char *
+WSAAPI
+gai_strerrorA(
+    IN int ecode)
+{
+    DWORD dwMsgLen;
+    static char buff[GAI_STRERROR_BUFFER_SIZE + 1];
+
+    dwMsgLen = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM
+                             |FORMAT_MESSAGE_IGNORE_INSERTS
+                             |FORMAT_MESSAGE_MAX_WIDTH_MASK,
+                              NULL,
+                              ecode,
+                              MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                              (LPSTR)buff,
+                              GAI_STRERROR_BUFFER_SIZE,
+                              NULL);
+
+    return buff;
+}
+
+/* WS2TCPIP_INLINE */
+WCHAR *
+WSAAPI
+gai_strerrorW(
+    IN int ecode
+    )
+{
+    DWORD dwMsgLen;
+    static WCHAR buff[GAI_STRERROR_BUFFER_SIZE + 1];
+
+    dwMsgLen = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM
+                             |FORMAT_MESSAGE_IGNORE_INSERTS
+                             |FORMAT_MESSAGE_MAX_WIDTH_MASK,
+                              NULL,
+                              ecode,
+                              MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                              (LPWSTR)buff,
+                              GAI_STRERROR_BUFFER_SIZE,
+                              NULL);
+
+    return buff;
+}
+#endif /* defined(INET6) && defined(__MINGW32__) */
+
+#endif /* WIN32 */

@@ -331,4 +331,3 @@ guint colorlabel_get_color_menu_active_item(GtkWidget *menu)
 	return color;
 }
 
-

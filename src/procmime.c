@@ -885,7 +885,9 @@ FILE *procmime_get_text_content(MimeInfo *mimeinfo, FILE *infp)
 		dup2(oldout, 1);
 	} else if (mimeinfo->mime_type == MIME_TEXT) {
 		while (fgets(buf, sizeof(buf), tmpfp) != NULL) {
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 			str = conv_codeset_strdup(buf, src_codeset, CS_UTF_8);
 			if (str) {
 				fputs(str, outfp);
@@ -1123,6 +1125,10 @@ gchar *procmime_get_mime_type(const gchar *filename)
 
 	Xstrdup_a(ext, p + 1, return NULL);
 	g_strdown(ext);
+
+#ifdef WIN32
+	if (mime_type_table) {
+#endif
 	mime_type = g_hash_table_lookup(mime_type_table, ext);
 	if (mime_type) {
 		gchar *str;
@@ -1132,7 +1138,13 @@ gchar *procmime_get_mime_type(const gchar *filename)
 		return str;
 	}
 
+#ifdef WIN32
+	}
+
+	return get_content_type_from_registry_with_ext( ext );
+#else
 	return NULL;
+#endif
 }
 
 static guint procmime_str_hash(gconstpointer gptr)
@@ -1202,12 +1214,23 @@ GList *procmime_get_mime_type_list(void)
 	gchar buf[BUFFSIZE];
 	gchar *p, *delim;
 	MimeType *mime_type;
+ 		gchar *mimetypes_filename;
 
 	if (mime_type_list) 
 		return mime_type_list;
 
+#ifdef WIN32
+		mimetypes_filename = g_strconcat(get_installed_dir(), G_DIR_SEPARATOR_S,
+						SYSCONFDIR "/mime.types", NULL);
+#endif
+
 	if ((fp = fopen("/etc/mime.types", "rb")) == NULL) {
+#ifdef WIN32
+		if ((fp = fopen(mimetypes_filename, "rb")) == NULL) {
+	 		g_free(mimetypes_filename);
+#else
 		if ((fp = fopen(SYSCONFDIR "/mime.types", "rb")) == NULL) {
+#endif
 			FILE_OP_ERROR(SYSCONFDIR "/mime.types", "fopen");
 			return NULL;
 		}

@@ -307,13 +307,7 @@ sig_status_full (GpgmeCtx ctx)
 						   _("Key fingerprint: %s\n"),
 						   fpr);
 		} else {
-			const char *key_id_str;
-			
 			sig_status_for_key (str, ctx, status, key, fpr);
-			key_id_str = gpgme_key_get_string_attr(key, 
-					   	GPGME_ATTR_KEYID, NULL, 0);
-			key_id_str += 8;
-			g_string_sprintfa (str, _("Key ID: %s\n"), key_id_str);
 			gpgme_key_unref (key);
 		}
 		g_string_append (str, "\n\n");
@@ -656,13 +650,13 @@ void rfc2015_decrypt_message (MsgInfo *msginfo, MimeInfo *mimeinfo, FILE *fp)
     FILE *dstfp;
     size_t nread;
     char buf[BUFFSIZE];
-    int in_cline;
     GpgmeError err;
 
     g_return_if_fail (msginfo != NULL);
     g_return_if_fail (mimeinfo != NULL);
     g_return_if_fail (fp != NULL);
-    g_return_if_fail (mimeinfo->mime_type == MIME_MULTIPART);
+    g_return_if_fail ((mimeinfo->mime_type == MIME_MULTIPART) || 
+                      (mimeinfo->mime_type == MIME_APPLICATION_PGP));
 
     debug_print ("** decrypting multipart/encrypted message\n");
 
@@ -670,28 +664,49 @@ void rfc2015_decrypt_message (MsgInfo *msginfo, MimeInfo *mimeinfo, FILE *fp)
     if (fseek(fp, mimeinfo->fpos, SEEK_SET) < 0)
         perror("fseek");
     tmpinfo = procmime_scan_mime_header(fp);
-    if (!tmpinfo || tmpinfo->mime_type != MIME_MULTIPART) {
+    if (!tmpinfo) {
         DECRYPTION_ABORT();
     }
 
     procmime_scan_multipart_message(tmpinfo, fp);
+   
+    switch (tmpinfo->mime_type) {
+    case MIME_APPLICATION_PGP:
+	/* Support for mutt-style application/pgp content */
 
-    /* check that we have the 2 parts */
-    partinfo = tmpinfo->children;
-    if (!partinfo || !partinfo->next) {
+        /* check that we have the 1 part */
+        partinfo = tmpinfo->children;
+        
+	/* Fixme: check that the version is 1 */
+        ver_ok = 1;
+        break;
+    case MIME_MULTIPART:
+    
+        /* check that we have the 2 parts */
+        partinfo = tmpinfo->children;
+        if (!partinfo || !partinfo->next) {
+            DECRYPTION_ABORT();
+        }
+        if (!g_strcasecmp (partinfo->content_type, "application/pgp-encrypted")) {
+            /* Fixme: check that the version is 1 */
+            ver_ok = 1;
+        }
+        partinfo = partinfo->next;
+        if (!g_strcasecmp (partinfo->content_type, "application/octet-stream")) 
+	{
+            if (partinfo->next)
+                g_warning ("oops: pgp_encrypted with more than 2 parts");
+        }
+        else {
+            DECRYPTION_ABORT();
+        }
+	break;
+    default:
         DECRYPTION_ABORT();
     }
-    if (!g_strcasecmp (partinfo->content_type, "application/pgp-encrypted")) {
-        /* Fixme: check that the version is 1 */
-        ver_ok = 1;
-    }
-    partinfo = partinfo->next;
-    if (ver_ok &&
-        !g_strcasecmp (partinfo->content_type, "application/octet-stream")) {
-        if (partinfo->next)
-            g_warning ("oops: pgp_encrypted with more than 2 parts");
-    }
-    else {
+   
+    if (!ver_ok) {
+	debug_print("incorrect version\n");
         DECRYPTION_ABORT();
     }
 
@@ -715,17 +730,9 @@ void rfc2015_decrypt_message (MsgInfo *msginfo, MimeInfo *mimeinfo, FILE *fp)
     if (fseek(fp, tmpinfo->fpos, SEEK_SET) < 0)
         perror("fseek");
 
-    in_cline = 0;
     while (fgets(buf, sizeof(buf), fp)) {
-        if (headerp (buf, content_names)) {
-            in_cline = 1;
+        if (headerp (buf, content_names))
             continue;
-        }
-        if (in_cline) {
-            if (buf[0] == ' ' || buf[0] == '\t')
-                continue;
-            in_cline = 0;
-        }
         if (buf[0] == '\r' || buf[0] == '\n')
             break;
         fputs (buf, dstfp);
@@ -844,9 +851,7 @@ rfc2015_encrypt (const char *file, GSList *recp_list, gboolean ascii_armored)
     GpgmeRecipients rset = NULL;
     size_t nread;
     int mime_version_seen = 0;
-    char *boundary;
-
-    boundary = generate_mime_boundary ("Encrypt");
+    char *boundary = generate_mime_boundary ();
 
     /* Create the list of recipients */
     rset = gpgmegtk_recipient_selection (recp_list);
@@ -870,7 +875,7 @@ rfc2015_encrypt (const char *file, GSList *recp_list, gboolean ascii_armored)
     }
 
     /* get the content header lines from the source */
-    clineidx = 0;
+    clineidx=0;
     saved_last = 0;
     while (!err && fgets(buf, sizeof(buf), fp)) {
         /* fixme: check for overlong lines */
@@ -884,13 +889,13 @@ rfc2015_encrypt (const char *file, GSList *recp_list, gboolean ascii_armored)
             continue;
         }
         if (saved_last) {
+            saved_last = 0;
             if (*buf == ' ' || *buf == '\t') {
-                char *last = clines[clineidx - 1];
-                clines[clineidx - 1] = g_strconcat (last, buf, NULL);
+                char *last = clines[clineidx-1];
+                clines[clineidx-1] = g_strconcat (last, buf, NULL);
                 g_free (last);
                 continue;
             }
-            saved_last = 0;
         }
 
         if (headerp (buf, mime_version_name)) 
@@ -1178,11 +1183,9 @@ rfc2015_sign (const char *file, GSList *key_list)
     GpgmeData sigdata = NULL;
     size_t nread;
     int mime_version_seen = 0;
-    char *boundary;
+    char *boundary = generate_mime_boundary ();
     char *micalg = NULL;
     char *siginfo;
-
-    boundary = generate_mime_boundary ("Signature");
 
     /* Open the source file */
     if ((fp = fopen(file, "rb")) == NULL) {
@@ -1213,13 +1216,13 @@ rfc2015_sign (const char *file, GSList *key_list)
             continue;
         }
         if (saved_last) {
+            saved_last = 0;
             if (*buf == ' ' || *buf == '\t') {
                 char *last = clines[clineidx - 1];
                 clines[clineidx - 1] = g_strconcat (last, buf, NULL);
                 g_free (last);
                 continue;
             }
-            saved_last = 0;
         }
 
         if (headerp (buf, mime_version_name)) 
@@ -1296,7 +1299,7 @@ rfc2015_sign (const char *file, GSList *key_list)
     fprintf (fp, "Content-Type: multipart/signed; "
              "protocol=\"application/pgp-signature\";\r\n");
     if (micalg)
-        fprintf (fp, " micalg=\"%s\";\r\n", micalg);
+        fprintf (fp, " micalg=\"%s\";", micalg);
     fprintf (fp, " boundary=\"%s\"\r\n", boundary);
 
     /* Part 1: signed material */

@@ -153,7 +153,9 @@ void source_window_append(SourceWindow *sourcewin, const gchar *str)
 
 	len = strlen(str) + 1;
 	Xalloca(out, len, return);
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 	conv_localetodisp(out, len, str);
 
 	gtk_text_buffer_get_iter_at_offset(buffer, &iter, -1);
@@ -187,6 +189,13 @@ static gboolean key_pressed(GtkWidget *widget, GdkEventKey *event,
 		if ((event->state & GDK_CONTROL_MASK) != 0)
 			gtk_editable_select_region(GTK_EDITABLE(sourcewin->text), 0, -1);
 		break;
+#ifdef WIN32
+	case GDK_C:
+	case GDK_c:
+		if ((event->state & GDK_CONTROL_MASK) != 0)
+			gtk_editable_copy_clipboard(GTK_EDITABLE(sourcewin->text));
+		break;
+#endif
 	case GDK_Escape:
 		gtk_widget_destroy(sourcewin->window);
 		break;

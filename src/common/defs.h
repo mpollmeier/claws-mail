@@ -38,7 +38,7 @@
 #define DRAFT_DIR		"draft"
 #define TRASH_DIR		"trash"
 #ifndef CLAWS /* easier to sync */
-#define RC_DIR			".sylpheed"
+#define RC_DIR			".sylpheed-gtk2"
 #else
 #define RC_DIR			CFG_RC_DIR	
 #endif /* CLAWS */
@@ -84,7 +84,11 @@
 /* #define DEFAULT_INC_PATH	"/usr/bin/imget" */
 /* #define DEFAULT_INC_PROGRAM	"imget" */
 #define DEFAULT_SENDMAIL_CMD	"/usr/sbin/sendmail -t -i"
+#ifdef WIN32
+#define DEFAULT_BROWSER_CMD	"?p\\mozilla.org\\Mozilla\\mozilla.exe -remote openURL \"%s\""
+#else
 #define DEFAULT_BROWSER_CMD	"mozilla -remote 'openURL(%s, new-window)'"
+#endif
 
 #ifdef _PATH_MAILDIR
 #  define DEFAULT_SPOOL_PATH	_PATH_MAILDIR
@@ -92,7 +96,11 @@
 #  define DEFAULT_SPOOL_PATH	"/var/spool/mail"
 #endif
 
+#ifdef WIN32
+#define BUFFSIZE			8191
+#else
 #define BUFFSIZE			8192
+#endif
 
 #ifndef MAXPATHLEN
 #  define MAXPATHLEN			4095
@@ -119,5 +127,25 @@
 
 #define DEFAULT_PIXMAP_THEME	"INTERNAL_DEFAULT"
 #define PIXMAP_THEME_DIR		"themes"
+
+#ifdef WIN32
+# define LOCK_PORT			54321
+# define W32_MAILCAP_NAME "mailcap.win32"
+
+# define F_EXISTS	00 /* Existence only            */
+# define W_OK		02 /* Write permission          */
+# define R_OK		04 /* Read permission           */
+# define F_OK		06 /* Read and write permission */
+
+# define S_IRGRP	_S_IREAD
+# define S_IWGRP	_S_IWRITE
+# define S_IXGRP	_S_IEXEC
+# define S_IRWXG	(_S_IREAD|_S_IWRITE|_S_IEXEC)
+# define S_IROTH	_S_IREAD
+# define S_IWOTH	_S_IWRITE
+# define S_IXOTH	_S_IEXEC
+# define S_IRWXO	(_S_IREAD|_S_IWRITE|_S_IEXEC)
+#endif /* WIN32 */
+
 
 #endif /* __DEFS_H__ */

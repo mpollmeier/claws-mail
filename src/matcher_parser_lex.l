@@ -23,6 +23,7 @@
 
 #include "matcher_parser_lex.h"
 #include "matcher_parser_parse.h"
+#include <glib.h>
 
 #define MAX_STR_CONST 512
 #define YY_NO_UNPUT 1

@@ -151,7 +151,9 @@ static void textview_show_header	(TextView	*textview,
 static gint textview_key_pressed	(GtkWidget	*widget,
 					 GdkEventKey	*event,
 					 TextView	*textview);
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 static gint textview_button_pressed	(GtkWidget	*widget,
 					 GdkEventButton	*event,
@@ -294,7 +296,9 @@ static void textview_create_tags(GtkTextView *text, TextView *textview)
 
 void textview_init(TextView *textview)
 {
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 	gtkut_widget_disable_theme_engine(textview->text);
 #endif
@@ -532,7 +536,9 @@ static void textview_add_part(TextView *textview, MimeInfo *mimeinfo, FILE *fp)
 
 #if USE_GPGME
 	if (mimeinfo->sigstatus && !mimeinfo->sigstatus_full) {
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 		gchar *tmp;
 		/* use standard font */
@@ -837,7 +843,11 @@ static GHashTable *create_domain_tab(void)
 
 static gboolean is_toplvl_domain(GHashTable *tab, const gchar *first, const gchar *last)
 {
+#ifdef _MSC_VER /*WIN32*/
+	#define MAX_LVL_DOM_NAME_LEN 6
+#else
 	const gint MAX_LVL_DOM_NAME_LEN = 6;
+#endif
 	gchar buf[MAX_LVL_DOM_NAME_LEN + 1];
 	const gchar *m = buf + MAX_LVL_DOM_NAME_LEN + 1;
 	register gchar *p;
@@ -971,7 +981,11 @@ static gboolean get_email_part(const gchar *start, const gchar *scanpos,
 			&& (((bp_ + 1) < ep_)    && isalnum(*(bp_ + 1)))) {
 				/* hyphens are allowed, but only in
 				   between alnums */
+#ifdef WIN32
+			} else if (!ispunct((int)*bp_)) {
+#else
 			} else if (!ispunct(*bp_)) {
+#endif
 				/* but anything not being a punctiation
 				   is ok */
 			} else {
@@ -1163,7 +1177,9 @@ static void textview_write_line(TextView *textview, const gchar *str,
 	buffer = gtk_text_view_get_buffer(text);
 	gtk_text_buffer_get_end_iter(buffer, &iter);
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 	if (!conv) {
 		if (textview->text_is_mb)
@@ -1240,7 +1256,9 @@ void textview_write_link(TextView *textview, const gchar *str,
 	buffer = gtk_text_view_get_buffer(text);
 	gtk_text_buffer_get_end_iter(buffer, &iter);
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 	if (!conv) {
 		if (textview->text_is_mb)
@@ -1430,7 +1448,9 @@ static void textview_show_header(TextView *textview, GPtrArray *headers)
 			(buffer, &iter, header->name, -1,
 			 "header_title", "header", NULL);
 		if (header->name[strlen(header->name) - 1] != ' ')
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 			gtk_stext_insert(text, textview->boldfont,
 					NULL, NULL, " ", 1);
@@ -1446,7 +1466,9 @@ static void textview_show_header(TextView *textview, GPtrArray *headers)
 		    procheader_headername_equal(header->name, "Cc"))
 			unfold_line(header->body);
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 		if (textview->text_is_mb == TRUE)
 			conv_unreadable_locale(header->body);
@@ -1477,7 +1499,9 @@ static void textview_show_header(TextView *textview, GPtrArray *headers)
 gboolean textview_search_string(TextView *textview, const gchar *str,
 				gboolean case_sens)
 {
+#ifndef _MSC_VER
 #warning FIXME_GTK2 /* currently, these search functions ignores case_sens */
+#endif
 #if 0
 	GtkSText *text = GTK_STEXT(textview->text);
 	gint pos;
@@ -1539,7 +1563,9 @@ gboolean textview_search_string(TextView *textview, const gchar *str,
 gboolean textview_search_string_backward(TextView *textview, const gchar *str,
 					 gboolean case_sens)
 {
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 	GtkSText *text = GTK_STEXT(textview->text);
 	gint pos;
@@ -1701,7 +1727,9 @@ static void textview_smooth_scroll_do(TextView *textview,
 		up = TRUE;
 	}
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 	/* gdk_key_repeat_disable(); */
 
 	for (i = step; i <= change_value; i += step) {
@@ -1713,7 +1741,9 @@ static void textview_smooth_scroll_do(TextView *textview,
 	vadj->value = last_value;
 	g_signal_emit_by_name(G_OBJECT(vadj), "value_changed", 0);
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 	/* gdk_key_repeat_restore(); */
 }
 
@@ -1793,7 +1823,9 @@ static gboolean textview_smooth_scroll_page(TextView *textview, gboolean up)
 	return TRUE;
 }
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 #define KEY_PRESS_EVENT_STOP() \
 	if (gtk_signal_n_emissions_by_name \
@@ -1891,7 +1923,9 @@ static gint show_url_timeout_cb(gpointer data)
 		return FALSE;
 }
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 static gint textview_button_pressed(GtkWidget *widget, GdkEventButton *event,
 				    TextView *textview)
@@ -1909,6 +1943,9 @@ static gint textview_button_released(GtkWidget *widget, GdkEventButton *event,
 
 	if (event && 
 	    ((event->button == 1)
+#ifdef WIN32
+	     || event->state == GDK_SHIFT_MASK
+#endif
 	     || event->button == 2 || event->button == 3)) {
 		GSList *cur;
 

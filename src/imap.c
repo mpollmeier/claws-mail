@@ -27,8 +27,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#ifdef WIN32
+#include <w32lib.h>
+#else
 #include <dirent.h>
 #include <unistd.h>
+#endif
 #include <ctype.h>
 #include <time.h>
 #if HAVE_ICONV
@@ -107,7 +111,12 @@ struct _IMAPNameSpace
 #define IMAP_IOERR	6
 #define IMAP_ERROR	7
 
+#ifdef WIN32
+#define IMAPBUFSIZE	8191
+#else
 #define IMAPBUFSIZE	8192
+#endif
+#define IMAPCMDLIMIT	1000
 
 typedef enum
 {
@@ -805,6 +814,9 @@ gchar *imap_fetch_msg(Folder *folder, FolderItem *item, gint uid)
 	g_return_val_if_fail(item != NULL, NULL);
 
 	path = folder_item_get_path(item);
+#ifdef WIN32
+	subst_char(path, '/', G_DIR_SEPARATOR);
+#endif
 	if (!is_dir_exist(path))
 		make_dir_hier(path);
 	filename = g_strconcat(path, G_DIR_SEPARATOR_S, itos(uid), NULL);
@@ -1078,6 +1090,9 @@ gint imap_remove_msg(Folder *folder, FolderItem *item, gint uid)
 	}
 
 	dir = folder_item_get_path(item);
+#ifdef WIN32
+	subst_char(dir, '/', G_DIR_SEPARATOR);
+#endif
 	if (is_dir_exist(dir))
 		remove_numbered_files(dir, uid, uid);
 	g_free(dir);
@@ -1116,6 +1131,9 @@ gint imap_remove_all_msg(Folder *folder, FolderItem *item)
 	}
 
 	dir = folder_item_get_path(item);
+#ifdef WIN32
+	subst_char(dir, '/', G_DIR_SEPARATOR);
+#endif
 	if (is_dir_exist(dir))
 		remove_all_numbered_files(dir);
 	g_free(dir);
@@ -1300,7 +1318,18 @@ static gint imap_scan_tree_recursive(IMAPSession *session, FolderItem *item)
 		} else if (!item->parent || item->stype == F_INBOX) {
 			const gchar *base;
 
+#ifdef WIN32
+			base = g_strrstr(new_item->path, "/");
+			if (!base)
+				base = new_item->path;
+			else {
+				base++;
+				if (!*base)
+					base = new_item->path;
+			}
+#else
 			base = g_basename(new_item->path);
+#endif
 
 			if (!folder->outbox && !strcasecmp(base, "Sent")) {
 				new_item->stype = F_OUTBOX;
@@ -1388,7 +1417,18 @@ static GSList *imap_parse_list(IMAPFolder *folder, IMAPSession *session,
 
 		if (separator_str[0] != '\0')
 			subst_char(buf, separator_str[0], '/');
+#ifdef WIN32
+		name = g_strrstr(buf, "/");
+		if (!name)
+			name = buf;
+		else {
+			name++;
+			if (!*name)
+				name = buf;
+		}
+#else
 		name = g_basename(buf);
+#endif
 		if (name[0] == '.') continue;
 
 		loc_name = imap_modified_utf7_to_utf8(name);
@@ -1505,7 +1545,11 @@ static gchar *imap_item_get_path(Folder *folder, FolderItem *item)
 	folder_path = imap_folder_get_path(folder);
 
 	g_return_val_if_fail(folder_path != NULL, NULL);
+#ifdef WIN32
+	if (folder_path[0] == G_DIR_SEPARATOR || folder_path[1] == ':') {
+#else
         if (folder_path[0] == G_DIR_SEPARATOR) {
+#endif
                 if (item->path)
                         path = g_strconcat(folder_path, G_DIR_SEPARATOR_S,
                                            item->path, NULL);
@@ -1522,6 +1566,9 @@ static gchar *imap_item_get_path(Folder *folder, FolderItem *item)
         }
         g_free(folder_path);
 
+#ifdef WIN32
+	subst_char(path, '/', G_DIR_SEPARATOR);
+#endif
 	return path;
 }
 
@@ -1614,6 +1661,9 @@ FolderItem *imap_create_folder(Folder *folder, FolderItem *parent,
 	g_free(dirpath);
 
 	dirpath = folder_item_get_path(new_item);
+#ifdef WIN32
+	subst_char(dirpath, '/', G_DIR_SEPARATOR);
+#endif
 	if (!is_dir_exist(dirpath))
 		make_dir_hier(dirpath);
 	g_free(dirpath);
@@ -1656,12 +1706,30 @@ gint imap_rename_folder(Folder *folder, FolderItem *item, const gchar *name)
 	}
 
 	separator = imap_get_path_separator(IMAP_FOLDER(folder), item->path);
+#ifdef WIN32
+	{
+		gchar *base;
+
+		base = g_strrstr(item->path, "/");
+		if (!base)
+			newpath = g_strdup(item->name);
+		else {
+			base++;
+			if (!*base)
+				base = item->path;
+			dirpath = g_strndup(item->path, base - item->path - 1);
+			newpath = g_strconcat(dirpath, "/", name, NULL);
+			g_free(dirpath);
+		}
+	}
+#else
 	if (strchr(item->path, G_DIR_SEPARATOR)) {
 		dirpath = g_dirname(item->path);
 		newpath = g_strconcat(dirpath, G_DIR_SEPARATOR_S, name, NULL);
 		g_free(dirpath);
 	} else
 		newpath = g_strdup(name);
+#endif
 
 	real_newpath = imap_utf8_to_modified_utf7(newpath);
 	imap_path_separator_subst(real_newpath, separator);
@@ -1686,8 +1754,14 @@ gint imap_rename_folder(Folder *folder, FolderItem *item, const gchar *name)
 	g_node_traverse(item->node, G_PRE_ORDER, G_TRAVERSE_ALL, -1,
 			imap_rename_folder_func, paths);
 
+#ifdef WIN32
+	subst_char(old_cache_dir, '/', G_DIR_SEPARATOR);
+#endif
 	if (is_dir_exist(old_cache_dir)) {
 		new_cache_dir = folder_item_get_path(item);
+#ifdef WIN32
+	subst_char(new_cache_dir, '/', G_DIR_SEPARATOR);
+#endif
 		if (rename(old_cache_dir, new_cache_dir) < 0) {
 			FILE_OP_ERROR(old_cache_dir, "rename");
 		}
@@ -1737,6 +1811,9 @@ gint imap_remove_folder(Folder *folder, FolderItem *item)
 
 	g_free(path);
 	cache_dir = folder_item_get_path(item);
+#ifdef WIN32
+	subst_char(cache_dir, '/', G_DIR_SEPARATOR);
+#endif
 	if (is_dir_exist(cache_dir) && remove_dir_recursive(cache_dir) < 0)
 		g_warning("can't remove directory '%s'\n", cache_dir);
 	g_free(cache_dir);
@@ -1835,6 +1912,9 @@ static void imap_delete_all_cached_messages(FolderItem *item)
 	debug_print("Deleting all cached messages...\n");
 
 	dir = folder_item_get_path(item);
+#ifdef WIN32
+	subst_char(dir, '/', G_DIR_SEPARATOR);
+#endif
 	if (is_dir_exist(dir))
 		remove_all_numbered_files(dir);
 	g_free(dir);
@@ -2175,6 +2255,16 @@ static gchar *imap_get_header(SockInfo *sock, gchar *cur_pos, gchar **headers,
 	do {
 		if ((nextline = sock_getline(sock)) == NULL)
 			return cur_pos;
+#ifdef WIN32
+#ifdef USE_OPENSSL
+		if (!sock->ssl)
+#endif /* USE_OPENSSL */
+		{
+			gchar *newstr = g_strdup_printf("%s%c", nextline, 0x0a);
+			g_free(nextline);
+			nextline=newstr;
+		}
+#endif /* WIN32 */
 		block_len += strlen(nextline);
 		g_string_append(str, nextline);
 		cur_pos = str->str;

@@ -22,7 +22,13 @@
 #include <glib.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef WIN32
+#include <w32lib.h>
+#include "defs.h"
+#include "utils.h"
+#else
 #include <dirent.h>
+#endif
 #include <sys/stat.h>
 #include <math.h>
 #include <setjmp.h>

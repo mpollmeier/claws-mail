@@ -28,7 +28,9 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
+#ifndef WIN32
+# include <unistd.h>
+#endif
 #include <stdlib.h>
 
 #include "intl.h"
@@ -209,6 +211,9 @@ FolderItem *folder_item_new(Folder *folder, const gchar *name, const gchar *path
 	item->apply_sub = FALSE;
 	item->mark_queue = NULL;
 	item->data = NULL;
+#ifdef WIN32
+	item->n_child = calc_child(item->path);
+#endif
 
 	item->prefs = folder_item_prefs_new();
 
@@ -1573,7 +1578,6 @@ MsgInfo *folder_item_get_msginfo_by_msgid(FolderItem *item, const gchar *msgid)
 	MsgInfo *msginfo;
 	
 	g_return_val_if_fail(item != NULL, NULL);
-	g_return_val_if_fail(msgid != NULL, NULL);
 	
 	folder = item->folder;
 	if (!item->cache)
@@ -1858,7 +1862,15 @@ FolderItem *folder_item_move_recursive(FolderItem *src, FolderItem *dest)
 
 	/* move messages */
 	debug_print("Moving %s to %s\n", src->path, dest->path);
+#ifdef WIN32
+	{
+		gchar *p_path = g_strdup(src->path);
+		subst_char(p_path, '/', G_DIR_SEPARATOR);
+		new_item = folder_create_folder(dest, g_basename(p_path));
+	}
+#else
 	new_item = folder_create_folder(dest, g_basename(src->path));
+#endif
 	if (new_item == NULL) {
 		printf("Can't create folder\n");
 		return NULL;
@@ -1967,11 +1979,45 @@ gint folder_item_move_to(FolderItem *src, FolderItem *dest, FolderItem **new_ite
 	return F_MOVE_OK;
 }
 
+gint folder_item_move_msg(FolderItem *dest, MsgInfo *msginfo)
+{
+	GSList *list = NULL;
+	gint ret;
+
+	list = g_slist_append(list, msginfo);
+	ret = folder_item_move_msgs(dest, list);
+	g_slist_free(list);
+	
+	return ret;
+}
+
+/*
+gint folder_item_move_msgs_with_dest(FolderItem *dest, GSList *msglist)
+{
+	Folder *folder;
+	gint num;
+
+	g_return_val_if_fail(dest != NULL, -1);
+	g_return_val_if_fail(msglist != NULL, -1);
+
+	folder = dest->folder;
+	if (dest->last_num < 0) folder->scan(folder, dest);
+
+	num = folder->move_msgs_with_dest(folder, dest, msglist);
+	if (num > 0) dest->last_num = num;
+	else dest->op_count = 0;
+
+	return num;
+}
+*/
+
 /**
- * Copy a list of message to a new folder and remove
- * source messages if wanted
+ * Copy a list of messages to a new folder.
+ *
+ * \param dest Destination folder
+ * \param msglist List of messages
  */
-static gint do_copy_msgs(FolderItem *dest, GSList *msglist, gboolean remove_source)
+gint folder_item_move_msgs(FolderItem *dest, GSList *msglist)
 {
 	Folder *folder;
 	GSList *l;
@@ -1988,7 +2034,6 @@ static gint do_copy_msgs(FolderItem *dest, GSList *msglist, gboolean remove_sour
 
 	relation = g_relation_new(2);
 	g_relation_index(relation, 0, g_direct_hash, g_direct_equal);
-	g_relation_index(relation, 1, g_direct_hash, g_direct_equal);
 
 	/* 
 	 * Copy messages to destination folder and 
@@ -2015,11 +2060,6 @@ static gint do_copy_msgs(FolderItem *dest, GSList *msglist, gboolean remove_sour
 	 * Fetch new MsgInfos for new messages in dest folder,
 	 * add them to the msgcache and update folder message counts
 	 */
-	if (g_relation_count(relation, GINT_TO_POINTER(0), 1) > 0) {
-		folder_item_scan_full(dest, FALSE);
-		folderscan = TRUE;
-	}
-
 	for (l = msglist; l != NULL; l = g_slist_next(l)) {
 		MsgInfo *msginfo = (MsgInfo *) l->data;
                 GTuples *tuples;
@@ -2031,123 +2071,206 @@ static gint do_copy_msgs(FolderItem *dest, GSList *msglist, gboolean remove_sour
 		if (num >= 0) {
 			MsgInfo *newmsginfo;
 
-			if (folderscan) {
-				if (msginfo->msgid != NULL) {
-					newmsginfo = folder_item_get_msginfo_by_msgid(dest, msginfo->msgid);
-					if (newmsginfo != NULL) {
-						copy_msginfo_flags(msginfo, newmsginfo);
-						num = newmsginfo->msgnum;
-						procmsg_msginfo_free(newmsginfo);
-					}
+			if (num == 0) {
+				gchar *file;
+
+				if (!folderscan) {
+					folder_item_scan_full(dest, FALSE);
+					folderscan = TRUE;
 				}
-			} else {
-				newmsginfo = folder->klass->get_msginfo(folder, dest, num);
-				if (newmsginfo != NULL) {
-					add_msginfo_to_cache(dest, newmsginfo, msginfo);
-					procmsg_msginfo_free(newmsginfo);
-				}
+				file = folder_item_fetch_msg(msginfo->folder, msginfo->msgnum);
+				num = folder_item_get_msg_num_by_file(dest, file);
+				g_free(file);
 			}
 
 			if (num > lastnum)
 				lastnum = num;
-		}
-	}
 
-	if (remove_source) {
-		/*
-		 * Remove source messages from their folders if
-		 * copying was successfull and update folder
-		 * message counts
-		 */
-		for (l = msglist; l != NULL; l = g_slist_next(l)) {
-			MsgInfo *msginfo = (MsgInfo *) l->data;
-			FolderItem *item = msginfo->folder;
-            	        GTuples *tuples;
+			if (num == 0)
+				continue;
 
-            		tuples = g_relation_select(relation, msginfo, 0);
-            	        num = GPOINTER_TO_INT(g_tuples_index(tuples, 0, 1));
-            		g_tuples_destroy(tuples);
-
-			if ((num >= 0) && (item->folder->klass->remove_msg != NULL)) {
-				item->folder->klass->remove_msg(item->folder,
-					    		        msginfo->folder,
-						    		msginfo->msgnum);
-				remove_msginfo_from_cache(item, msginfo);
+			if (!folderscan && 
+			    ((newmsginfo = folder->klass->get_msginfo(folder, dest, num)) != NULL)) {
+				add_msginfo_to_cache(dest, newmsginfo, msginfo);
+				procmsg_msginfo_free(newmsginfo);
+			} else if ((newmsginfo = msgcache_get_msg(dest->cache, num)) != NULL) {
+				copy_msginfo_flags(msginfo, newmsginfo);
+				procmsg_msginfo_free(newmsginfo);
 			}
 		}
 	}
 
+	/*
+	 * Remove source messages from their folders if
+	 * copying was successfull and update folder
+	 * message counts
+	 */
+	for (l = msglist; l != NULL; l = g_slist_next(l)) {
+		MsgInfo *msginfo = (MsgInfo *) l->data;
+		FolderItem *item = msginfo->folder;
+                GTuples *tuples;
+
+                tuples = g_relation_select(relation, msginfo, 0);
+                num = GPOINTER_TO_INT(g_tuples_index(tuples, 0, 1));
+                g_tuples_destroy(tuples);
+
+		if ((num >= 0) && (item->folder->klass->remove_msg != NULL)) {
+			item->folder->klass->remove_msg(item->folder,
+					    	        msginfo->folder,
+						        msginfo->msgnum);
+			remove_msginfo_from_cache(item, msginfo);
+		}
+	}
+
 	if (folder->klass->finished_copy)
-	    	folder->klass->finished_copy(folder, dest);
+		folder->klass->finished_copy(folder, dest);
 
 	g_relation_destroy(relation);
 	return lastnum;
 }
 
-/**
- * Move a message to a new folder.
- *
- * \param dest Destination folder
- * \param msginfo The message
- */
-gint folder_item_move_msg(FolderItem *dest, MsgInfo *msginfo)
+/*
+gint folder_item_copy_msg(FolderItem *dest, MsgInfo *msginfo)
 {
-	GSList list;
+	Folder *folder;
+	gint num;
 
 	g_return_val_if_fail(dest != NULL, -1);
 	g_return_val_if_fail(msginfo != NULL, -1);
 
-	list.data = msginfo;
-	list.next = NULL;
+	folder = dest->folder;
+	if (dest->last_num < 0) folder->scan(folder, dest);
 
-	return do_copy_msgs(dest, &list, TRUE);
+	num = folder->copy_msg(folder, dest, msginfo);
+	if (num > 0) dest->last_num = num;
+
+	return num;
 }
+*/
 
-/**
- * Move a list of messages to a new folder.
- *
- * \param dest Destination folder
- * \param msglist List of messages
- */
-gint folder_item_move_msgs(FolderItem *dest, GSList *msglist)
-{
-	g_return_val_if_fail(dest != NULL, -1);
-	g_return_val_if_fail(msglist != NULL, -1);
-
-	return do_copy_msgs(dest, msglist, TRUE);
-}
-
-/**
- * Copy a message to a new folder.
- *
- * \param dest Destination folder
- * \param msginfo The message
- */
 gint folder_item_copy_msg(FolderItem *dest, MsgInfo *msginfo)
 {
-	GSList list;
+	GSList msglist;
 
 	g_return_val_if_fail(dest != NULL, -1);
 	g_return_val_if_fail(msginfo != NULL, -1);
     
-	list.data = msginfo;
-	list.next = NULL;
+	msglist.data = msginfo;
+	msglist.next = NULL;
 	
-	return do_copy_msgs(dest, &list, FALSE);
+	return folder_item_copy_msgs(dest, &msglist);
 }
 
-/**
- * Copy a list of messages to a new folder.
- *
- * \param dest Destination folder
- * \param msglist List of messages
- */
-gint folder_item_copy_msgs(FolderItem *dest, GSList *msglist)
+/*
+gint folder_item_copy_msgs_with_dest(FolderItem *dest, GSList *msglist)
 {
+	Folder *folder;
+	gint num;
+
 	g_return_val_if_fail(dest != NULL, -1);
 	g_return_val_if_fail(msglist != NULL, -1);
 
-	return do_copy_msgs(dest, msglist, FALSE);
+	folder = dest->folder;
+	if (dest->last_num < 0) folder->scan(folder, dest);
+
+	num = folder->copy_msgs_with_dest(folder, dest, msglist);
+	if (num > 0) dest->last_num = num;
+	else dest->op_count = 0;
+
+	return num;
+}
+*/
+
+gint folder_item_copy_msgs(FolderItem *dest, GSList *msglist)
+{
+	Folder *folder;
+	gint num, lastnum = -1;
+	GSList *l;
+	gboolean folderscan = FALSE;
+	GRelation *relation;
+
+	g_return_val_if_fail(dest != NULL, -1);
+	g_return_val_if_fail(msglist != NULL, -1);
+
+	folder = dest->folder;
+ 
+	g_return_val_if_fail(folder->klass->copy_msg != NULL, -1);
+
+        relation = g_relation_new(2);
+        g_relation_index(relation, 0, g_direct_hash, g_direct_equal);
+
+	/*
+	 * Copy messages to destination folder and 
+	 * store new message numbers in newmsgnums
+	 */
+	if (folder->klass->copy_msgs != NULL) {
+		if (folder->klass->copy_msgs(folder, dest, msglist, relation) < 0) {
+			g_relation_destroy(relation);
+			return -1;
+		}
+	} else {
+		for (l = msglist ; l != NULL ; l = g_slist_next(l)) {
+			MsgInfo * msginfo = (MsgInfo *) l->data;
+
+			num = folder->klass->copy_msg(folder, dest, msginfo);
+			g_relation_insert(relation, msginfo, GINT_TO_POINTER(num));
+		}
+	}
+
+	/* Read cache for dest folder */
+	if (!dest->cache) folder_item_read_cache(dest);
+
+	/* 
+	 * Fetch new MsgInfos for new messages in dest folder,
+	 * add them to the msgcache and update folder message counts
+	 */
+	for (l = msglist; l != NULL; l = g_slist_next(l)) {
+		MsgInfo *msginfo = (MsgInfo *) l->data;
+                GTuples *tuples;
+
+                tuples = g_relation_select(relation, msginfo, 0);
+                num = GPOINTER_TO_INT(g_tuples_index(tuples, 0, 1));
+                g_tuples_destroy(tuples);
+
+		if (num >= 0) {
+			MsgInfo *newmsginfo;
+
+			if (num == 0) {
+				gchar *file;
+
+				if (!folderscan) {
+					folder_item_scan_full(dest, FALSE);
+					folderscan = TRUE;
+				}
+				file = folder_item_fetch_msg(msginfo->folder, msginfo->msgnum);
+				num = folder_item_get_msg_num_by_file(dest, file);
+				g_free(file);
+			}
+	
+			if (num > lastnum)
+				lastnum = num;
+
+			if (num == 0)
+				continue;
+
+			if (!folderscan && 
+			    ((newmsginfo = folder->klass->get_msginfo(folder, dest, num)) != NULL)) {
+				newmsginfo = folder->klass->get_msginfo(folder, dest, num);
+				add_msginfo_to_cache(dest, newmsginfo, msginfo);
+				procmsg_msginfo_free(newmsginfo);
+			} else if ((newmsginfo = msgcache_get_msg(dest->cache, num)) != NULL) {
+				copy_msginfo_flags(msginfo, newmsginfo);
+				procmsg_msginfo_free(newmsginfo);
+			}
+		}
+	}
+	
+	if (folder->klass->finished_copy)
+		folder->klass->finished_copy(folder, dest);
+
+	g_relation_destroy(relation);
+
+	return lastnum;
 }
 
 gint folder_item_remove_msg(FolderItem *item, gint num)
@@ -2528,7 +2651,7 @@ static gchar *folder_get_list_path(void)
 	fputs(" " attr "=\"", fp);			\
 	xml_file_put_escape_str(fp, str);		\
 	fputs("\"", fp);				\
-}
+}                                                       
 
 static void folder_write_list_recursive(GNode *node, gpointer data)
 {
@@ -2726,7 +2849,13 @@ static void folder_create_processing_folder(void)
 	g_assert(processing_folder != NULL);
 
 	debug_print("tmpparentroot %s\n", LOCAL_FOLDER(processing_folder)->rootpath);
+#ifdef WIN32
+	if (LOCAL_FOLDER(processing_folder)->rootpath[0] == '/'
+		|| LOCAL_FOLDER(processing_folder)->rootpath[0] == G_DIR_SEPARATOR
+		|| LOCAL_FOLDER(processing_folder)->rootpath[1] == ':')
+#else
 	if (LOCAL_FOLDER(processing_folder)->rootpath[0] == '/')
+#endif
 		tmpname = g_strconcat(LOCAL_FOLDER(processing_folder)->rootpath,
 				      G_DIR_SEPARATOR_S, PROCESSING_FOLDER_ITEM,
 				      NULL);

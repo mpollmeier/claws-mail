@@ -24,9 +24,13 @@
 #include "defs.h"
 
 #include <glib.h>
-#include <dirent.h>
+#ifdef WIN32
+# include <w32lib.h>
+#else
+# include <dirent.h>
+# include <unistd.h>
+#endif
 #include <sys/stat.h>
-#include <unistd.h>
 #include <string.h>
 #include <errno.h>
 
@@ -43,6 +47,9 @@
 #include "procheader.h"
 #include "utils.h"
 #include "codeconv.h"
+#ifdef WIN32
+#include "codeconv.h"
+#endif
 
 static void mh_folder_init(Folder * folder,
 			   const gchar * name, const gchar * path);
@@ -380,6 +387,13 @@ gint mh_copy_msg(Folder *folder, FolderItem *dest, MsgInfo *msginfo)
 	prefs = dest->prefs;
 
 	srcfile = procmsg_get_message_file(msginfo);
+#ifdef WIN32
+	/* after a crash/kill, folderdata (cache?) can be wrong */
+	if(!srcfile) {
+		g_warning(_("mh_copy_msg:srcfile not found. Run View/Update Summary to clean up."));
+		return -1;
+	}
+#endif
 	destfile = mh_get_new_msg_filename(dest);
 	if (!destfile) {
 		g_free(srcfile);
@@ -539,7 +553,11 @@ gchar *mh_item_get_path(Folder *folder, FolderItem *item)
 	folder_path = g_strdup(LOCAL_FOLDER(folder)->rootpath);
 	g_return_val_if_fail(folder_path != NULL, NULL);
 
+#ifdef WIN32
+	if (folder_path[0] == G_DIR_SEPARATOR || folder_path[1] == ':') {
+#else
         if (folder_path[0] == G_DIR_SEPARATOR) {
+#endif
                 if (item->path)
                         path = g_strconcat(folder_path, G_DIR_SEPARATOR_S,
                                            item->path, NULL);
@@ -556,6 +574,9 @@ gchar *mh_item_get_path(Folder *folder, FolderItem *item)
         }
 	g_free(folder_path);
 
+#ifdef WIN32
+	subst_char(path, '/', G_DIR_SEPARATOR);
+#endif
 	return path;
 }
 
@@ -633,7 +654,7 @@ gint mh_rename_folder(Folder *folder, FolderItem *item, const gchar *name)
 	newpath = g_strconcat(dirname, G_DIR_SEPARATOR_S, real_name, NULL);
 	g_free(real_name);
 
-	if (rename(oldpath, newpath) < 0) {
+	if (Xrename(oldpath, newpath) < 0) {
 		FILE_OP_ERROR(oldpath, "rename");
 		g_free(oldpath);
 		g_free(newpath);
@@ -932,7 +953,9 @@ static gboolean mh_rename_folder_func(GNode *node, gpointer data)
 	return FALSE;
 }
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2 /* should we use g_filename_from_utf8()? */
+#endif
 static gchar *mh_filename_from_utf8(const gchar *path)
 {
 	const gchar *src_codeset = CS_UTF_8;
@@ -949,7 +972,9 @@ static gchar *mh_filename_from_utf8(const gchar *path)
 	return real_path;
 }
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2 /* should we use g_filename_to_utf8()? */
+#endif
 static gchar *mh_filename_to_utf8(const gchar *path)
 {
 	const gchar *src_codeset = conv_get_current_charset_str();

@@ -800,11 +800,15 @@ void summary_init(SummaryView *summaryview)
 	pixmap = stock_pixmap_widget(summaryview->hbox_l, STOCK_PIXMAP_DIR_OPEN);
 	gtk_box_pack_start(GTK_BOX(summaryview->hbox_l), pixmap, FALSE, FALSE, 4);
 	gtk_box_reorder_child(GTK_BOX(summaryview->hbox_l), pixmap, 0);
+//XXX:tm-gtk2
+if (pixmap)
 	gtk_widget_show(pixmap);
 	summaryview->folder_pixmap = pixmap;
 
 	pixmap = stock_pixmap_widget(summaryview->hbox, STOCK_PIXMAP_QUICKSEARCH);
 	gtk_container_add (GTK_CONTAINER(summaryview->toggle_search), pixmap);
+//XXX:tm-gtk2
+if (pixmap)
 	gtk_widget_show(pixmap);
 	summaryview->quick_search_pixmap = pixmap;
 	
@@ -1447,9 +1451,17 @@ void summary_select_next_unread(SummaryView *summaryview)
  			}
 
 			if (val == G_ALERTDEFAULT) {
-				gtk_signal_emit_stop_by_name(GTK_OBJECT(ctree),
+#ifndef _MSC_VER
+#warning FIXME_GTK2
+#endif
+#if 0
+				if (gtk_signal_n_emissions_by_name
+					(GTK_OBJECT(ctree), "key_press_event") > 0)
+						gtk_signal_emit_stop_by_name
+							(GTK_OBJECT(ctree),
 							 "key_press_event");
 				folderview_select_next_unread(summaryview->folderview);
+#endif
 				return;
 			} 
 			else
@@ -1499,7 +1511,9 @@ void summary_select_next_new(SummaryView *summaryview)
 				   "Go to next folder?"),
 				 _("Yes"), _("Search again"), _("No"));
 		if (val == G_ALERTDEFAULT) {
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 			if (gtk_signal_n_emissions_by_name
 				(GTK_OBJECT(ctree), "key_press_event") > 0)
@@ -2003,7 +2017,9 @@ static void summary_status_show(SummaryView *summaryview)
 	g_free(str);
 	g_free(sel);
 	g_free(del);
+#ifndef WIN32 /* Why this code invoke some exception...? */
 	g_free(mv);
+#endif
 	g_free(cp);
 	g_free(itstr);
 
@@ -2424,7 +2440,7 @@ static void summary_set_header(SummaryView *summaryview, gchar *text[],
 			_("(No Subject)");
 	else 
 		text[col_pos[S_COL_SUBJECT]] = msginfo->subject ? msginfo->subject :
-			_("(No Subject)");
+		_("(No Subject)");
 }
 
 static void summary_display_msg(SummaryView *summaryview, GtkCTreeNode *row)
@@ -3495,11 +3511,16 @@ void summary_print(SummaryView *summaryview)
 
 	if (clist->selection == NULL) return;
 
-	cmdline = input_dialog(_("Print"),
+	if (prefs_common.print_cmd && prefs_common.print_cmd[0]=='@')
+		cmdline = g_strdup(prefs_common.print_cmd + sizeof(gchar));
+	else {
+		cmdline = input_dialog(_("Print"),
 			       _("Enter the print command line:\n"
 				 "(`%s' will be replaced with file name)"),
 			       prefs_common.print_cmd);
+	}
 	if (!cmdline) return;
+	
 	if (!(p = strchr(cmdline, '%')) || *(p + 1) != 's' ||
 	    strchr(p + 2, '%')) {
 		alertpanel_error(_("Print command line is invalid:\n`%s'"),

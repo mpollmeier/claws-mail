@@ -233,7 +233,9 @@ static void summary_search_create(SummaryView *summaryview)
    } \
 }
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 static void summary_search_execute(GtkButton *button, gpointer data)
 {
 	SummaryView *summaryview = data;

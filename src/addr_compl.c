@@ -105,6 +105,7 @@ static GSList	   *g_completion_addresses;	/* unique addresses found in the
 static gchar	   *g_completion_prefix;	/* last prefix. (this is cached here
 						 * because the prefix passed to g_completion
 						 * is g_strdown()'ed */
+void clear_completion_cache(void);
 
 /*******************************************************************************/
 

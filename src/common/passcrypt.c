@@ -24,7 +24,9 @@
 #include <memory.h>
 #include <ctype.h>
 #include <stdlib.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 
 #include <glib.h>
 
@@ -81,7 +83,11 @@ crypt_cfb_buf(const char key[8], unsigned char *buf, unsigned len,
 		if (!decrypt)
 			crypt_cfb_shift(crypt_cfb_iv, buf, chunksize);
 		len -= chunksize;
+#ifdef WIN32
+		(char*)buf += chunksize;
+#else
 		buf += chunksize;
+#endif
 	}
 }
 

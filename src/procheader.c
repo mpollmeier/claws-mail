@@ -307,7 +307,16 @@ GPtrArray *procheader_get_header_array_asis(FILE *fp)
 				header = g_new(Header, 1);
 				header->name = g_strndup(buf, p - buf);
 				p++;
+#ifdef WIN32
+				{
+					gchar *hdr = g_strdup("X-Face");
+					if (strcasecmp(header->name, hdr))
+						conv_unmime_header(tmp, sizeof(tmp), p, NULL);
+					g_free(hdr);
+				}
+#else
 				conv_unmime_header(tmp, sizeof(tmp), p, NULL);
+#endif
 				header->body = g_strdup(tmp);
 
 				g_ptr_array_add(headers, header);
@@ -397,7 +406,17 @@ Header * procheader_parse_header(gchar * buf)
 			header->name = g_strndup(buf, p - buf + 1);
 			p++;
 			while (*p == ' ' || *p == '\t') p++;
+#ifdef WIN32
+//XXX:tm gtk-2 why?
+			{
+				gchar *hdr = g_strdup("X-Face");
+				if (strcasecmp(header->name, hdr))
+					conv_unmime_header(tmp, sizeof(tmp), p, NULL);
+				g_free(hdr);
+			}
+#else				
 			conv_unmime_header(tmp, sizeof(tmp), p, NULL);
+#endif
 			if(tmp == NULL) 
 				header->body = g_strdup(p);
 			else	
@@ -882,6 +901,9 @@ time_t procheader_date_parse(gchar *dest, const gchar *src, gint len)
 	t.tm_isdst = -1;
 
 	timer = mktime(&t);
+#ifdef WIN32
+	if (timer < 0) return 0 ;
+#endif
 	tz_offset = remote_tzoffset_sec(zone);
 	if (tz_offset != -1)
 		timer += tzoffset_sec(&timer) - tz_offset;
@@ -904,7 +926,9 @@ void procheader_date_get_localtime(gchar *dest, gint len, const time_t timer)
 	else
 		strftime(dest, len, default_format, lt);
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 1
 	{
 		gchar *str;

@@ -1,0 +1,26 @@
+# sample %HOME%\mailcap.win32
+# format : <pattern><tabs><commandline>
+# lines starting with '#' are regarded as comments
+# patterns are not case sensitive, wilcards (?,*) are supported
+# note: only tabs are valid separators, dont use spaces
+
+.BAT	notepad "%s"
+.CMD	notepad "%s"
+#.COM	"?p\AntiVirus\VirusChecker.exe" "%s"
+#.CPL	"?p\AntiVirus\VirusChecker.exe" "%s"
+#.EXE	"?p\AntiVirus\VirusChecker.exe" "%s"
+#.LNK	"?p\AntiVirus\VirusChecker.exe" "%s"
+#.OCX	"?p\AntiVirus\VirusChecker.exe" "%s"
+#.PIF	"?p\AntiVirus\VirusChecker.exe" "%s"
+#.SCR	"?p\AntiVirus\VirusChecker.exe" "%s"
+#.SHS	"?p\AntiVirus\VirusChecker.exe" "%s"
+#.VB?	"?p\AntiVirus\VirusChecker.exe" "%s"
+#.WS?	"?p\AntiVirus\VirusChecker.exe" "%s"
+
+.eml	notepad "%s"
+#.do?	wordpad "%s"
+
+#.do?	"?p\Word Viewer\wordview.exe" "%s"
+#.xl?	"?p\XLView\xlview.exe" "%s"
+#.pp?	"?p\PowerPoint Viewer\ppview32.exe" "%s"
+#.snp	"?p\Snapshot Viewer\snapview.exe" "%s"

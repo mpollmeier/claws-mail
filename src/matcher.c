@@ -100,8 +100,8 @@ static const MatchParser matchparser_tab[] = {
 	{MATCHCRITERIA_NOT_MESSAGE, "~message"},
 	{MATCHCRITERIA_BODY_PART, "body_part"},
 	{MATCHCRITERIA_NOT_BODY_PART, "~body_part"},
-	{MATCHCRITERIA_TEST, "test"},
-	{MATCHCRITERIA_NOT_TEST, "~test"},
+	{MATCHCRITERIA_EXECUTE, "execute"},
+	{MATCHCRITERIA_NOT_EXECUTE, "~execute"},
 
 	/* match type */
 	{MATCHTYPE_MATCHCASE, "matchcase"},
@@ -446,19 +446,19 @@ static gboolean matcherprop_string_match(MatcherProp *prop, const gchar *str)
  *
  *\return	gboolean TRUE if command was executed succesfully
  */
-static gboolean matcherprop_match_test(const MatcherProp *prop, 
+static gboolean matcherprop_match_execute(const MatcherProp *prop, 
 					  MsgInfo *info)
 {
 	gchar *file;
 	gchar *cmd;
 	gint retval;
 
-	file = procmsg_get_message_file(info);
+	file = procmsg_get_message_file((MsgInfo*)info);
 	if (file == NULL)
 		return FALSE;
 	g_free(file);		
 
-	cmd = matching_build_command(prop->expr, info);
+	cmd = matching_build_command(prop->expr, (MsgInfo*)info);
 	if (cmd == NULL)
 		return FALSE;
 
@@ -577,10 +577,10 @@ gboolean matcherprop_match(MatcherProp *prop,
 		return matcherprop_string_match(prop, info->references);
 	case MATCHCRITERIA_NOT_REFERENCES:
 		return !matcherprop_string_match(prop, info->references);
-	case MATCHCRITERIA_TEST:
-		return matcherprop_match_test(prop, info);
-	case MATCHCRITERIA_NOT_TEST:
-		return !matcherprop_match_test(prop, info);
+	case MATCHCRITERIA_EXECUTE:
+		return matcherprop_match_execute(prop, info);
+	case MATCHCRITERIA_NOT_EXECUTE:
+		return !matcherprop_match_execute(prop, info);
 	default:
 		return 0;
 	}
@@ -1028,8 +1028,8 @@ gboolean matcherlist_match(MatcherList *matchers, MsgInfo *info)
 		case MATCHCRITERIA_SIZE_GREATER:
 		case MATCHCRITERIA_SIZE_SMALLER:
 		case MATCHCRITERIA_SIZE_EQUAL:
-		case MATCHCRITERIA_TEST:
-		case MATCHCRITERIA_NOT_TEST:
+		case MATCHCRITERIA_EXECUTE:
+		case MATCHCRITERIA_NOT_EXECUTE:
 			if (matcherprop_match(matcher, info)) {
 				if (!matchers->bool_and) {
 					return TRUE;
@@ -1110,8 +1110,8 @@ gchar *matcherprop_to_string(MatcherProp *matcher)
 	case MATCHCRITERIA_IGNORE_THREAD:
 	case MATCHCRITERIA_NOT_IGNORE_THREAD:
 		return g_strdup(criteria_str);
-	case MATCHCRITERIA_TEST:
-	case MATCHCRITERIA_NOT_TEST:
+	case MATCHCRITERIA_EXECUTE:
+	case MATCHCRITERIA_NOT_EXECUTE:
                 expr = matcher_escape_str(matcher->expr);
 		matcher_str = g_strdup_printf("%s \"%s\"", criteria_str, expr);
                 g_free((gpointer) expr);

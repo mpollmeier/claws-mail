@@ -86,6 +86,13 @@ static void add_buffer(const gchar *s)
 	bufsize += len;
 }
 
+static void flush_buffer(void)
+{
+	if (buffer != NULL)
+		*buffer = '\0';
+	bufsize = 0;
+}
+
 gchar *quote_fmt_get_buffer(void)
 {
 	if (error != 0)
@@ -590,7 +597,7 @@ insert:
 			FILE *file;
 			char buffer[256];
 			
-			if((file = fopen($3, "rb")) != NULL) {
+			if(file = fopen($3, "rb")) {
 				while(fgets(buffer, sizeof(buffer), file)) {
 					INSERT(buffer);
 				}
@@ -603,12 +610,26 @@ insert:
 		{
 			FILE *file;
 			char buffer[256];
-
-			if((file = popen($3, "r")) != NULL) {
+#ifdef WIN32
+			gint retval;
+			gchar *tmp = get_tmp_file();
+			gchar *cmd = g_strdup_printf("%s > %s",$3,tmp);
+			
+			retval = system(cmd);
+			if(!retval && (file = fopen(tmp, "r")))
+#else
+			if(file = popen($3, "r"))
+#endif			/* bison ignores #ifdef'd "{" - cant follow k&r style */
+			{
 				while(fgets(buffer, sizeof(buffer), file)) {
 					INSERT(buffer);
 				}
 				fclose(file);
 			}
+#ifdef WIN32
+			unlink(tmp);
+			g_free(tmp);
+			g_free(cmd);
+#endif
 		}
 	};

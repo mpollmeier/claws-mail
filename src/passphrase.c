@@ -17,14 +17,16 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#  include <config.h>
+#  include "config.h"
 #endif
 
 #if USE_GPGME
 
 #include <string.h>
 #include <sys/types.h>
+#ifndef WIN32
 #include <sys/mman.h>
+#endif
 #include <glib.h>
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtkmain.h>
@@ -281,7 +283,9 @@ create_description (const gchar *desc)
 static int free_passphrase(gpointer _unused)
 {
     if (last_pass != NULL) {
+#ifndef WIN32
         munlock(last_pass, strlen(last_pass));
+#endif
         g_free(last_pass);
         last_pass = NULL;
         debug_print("%% passphrase removed");
@@ -316,8 +320,10 @@ gpgmegtk_passphrase_cb (void *opaque, const char *desc, void **r_hd)
     else {
         if (prefs_common.store_passphrase) {
             last_pass = g_strdup(pass);
+#ifndef WIN32
             if (mlock(last_pass, strlen(last_pass)) == -1)
                 debug_print("%% locking passphrase failed");
+#endif
 
             if (prefs_common.store_passphrase_timeout > 0) {
                 gtk_timeout_add(prefs_common.store_passphrase_timeout*60*1000,

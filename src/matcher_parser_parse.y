@@ -262,7 +262,7 @@ int matcher_parserwrap(void)
 
 %token <str> MATCHER_STRING
 %token <str> MATCHER_SECTION
-%token <str> MATCHER_INTEGER
+%token <value> MATCHER_INTEGER
 
 %%
 

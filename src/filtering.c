@@ -40,8 +40,12 @@ static gboolean filtering_is_final_action(FilteringAction *filtering_action);
 
 #define STRLEN_WITH_CHECK(expr) \
         strlen_with_check(#expr, __LINE__, expr)
-	        
+
+#ifdef WIN32
+static gint strlen_with_check (const gchar *expr, gint fline, const gchar *str)
+#else
 static inline gint strlen_with_check(const gchar *expr, gint fline, const gchar *str)
+#endif	        
 {
         if (str) 
 		return strlen(str);
@@ -337,23 +341,6 @@ static gboolean filteringaction_apply(FilteringAction * action, MsgInfo * info)
 		break;
 	}
 	return FALSE;
-}
-
-gboolean filteringaction_apply_action_list(GSList *action_list, MsgInfo *info)
-{
-	GSList *p;
-	g_return_val_if_fail(action_list, FALSE);
-	g_return_val_if_fail(info, FALSE);
-	for (p = action_list; p && p->data; p = g_slist_next(p)) {
-		FilteringAction *a = (FilteringAction *) p->data;
-		if (filteringaction_apply(a, info)) {
-			if (filtering_is_final_action(a))
-				break;
-		} else
-			return FALSE;
-		
-	}
-	return TRUE;
 }
 
 static gboolean filtering_match_condition(FilteringProp *filtering, MsgInfo *info)

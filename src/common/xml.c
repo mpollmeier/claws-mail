@@ -265,7 +265,9 @@ gint xml_parse_next_tag(XMLFile *file)
 		xml_unescape_str(attr_value);
 
 		attr = g_new(XMLAttr, 1);
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 		utf8attr_name  = conv_codeset_strdup
 					(attr_name,
 					 conv_get_current_charset_str(),
@@ -486,7 +488,9 @@ gint xml_unescape_str(gchar *str)
 	return 0;
 }
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 gint xml_file_put_escape_str(FILE *fp, const gchar *str)
 {
 	const gchar *src_codeset = CS_UTF_8;

@@ -107,7 +107,9 @@ static void factory_print_func(gpointer data, gchar *string)
 	g_string_append_c(out_str, '\n');
 }
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 GString *menu_factory_get_rc(const gchar *path)
 {
@@ -279,7 +281,9 @@ static void menu_item_add_accel( GtkWidget *widget, guint accel_signal_id, GtkAc
 				 guint accel_key, GdkModifierType accel_mods, GtkAccelFlags accel_flags,
 				 gpointer user_data)
 {
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 	GtkWidget *connected = GTK_WIDGET(user_data);	
 	if (gtk_signal_n_emissions_by_name(GTK_OBJECT(widget),"add_accelerator") > 1 ) return;
@@ -299,7 +303,9 @@ static void menu_item_remove_accel(GtkWidget *widget, GtkAccelGroup *accel_group
 			           guint accel_key, GdkModifierType accel_mods,
 			           gpointer user_data)
 {	
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 	GtkWidget *wid = GTK_WIDGET(user_data);
 

@@ -596,6 +596,25 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	 CODESET_ACTION(C_TIS_620)},
 	{N_("/_View/_Code set/Thai (Windows-874)"),
 	 CODESET_ACTION(C_WINDOWS_874)},
+#ifdef WIN32
+	CODESET_SEPARATOR,
+	{N_("/_View/_Code set/WinLatin2 (Windows-1250)"),
+	 CODESET_ACTION(C_WINDOWS_1250)},
+	{N_("/_View/_Code set/WinLatin1 (Windows-1252)"),
+	 CODESET_ACTION(C_WINDOWS_1252)},
+	{N_("/_View/_Code set/WinGreek (Windows-1253)"),
+	 CODESET_ACTION(C_WINDOWS_1253)},
+	{N_("/_View/_Code set/WinTurkish (Windows-1254)"),
+	 CODESET_ACTION(C_WINDOWS_1254)},
+	{N_("/_View/_Code set/WinHebrew (Windows-1255)"),
+	 CODESET_ACTION(C_WINDOWS_1255)},
+	{N_("/_View/_Code set/WinArabic (Windows-1256)"),
+	 CODESET_ACTION(C_WINDOWS_1256)},
+	{N_("/_View/_Code set/WinBaltic (Windows-1257)"),
+	 CODESET_ACTION(C_WINDOWS_1257)},
+	{N_("/_View/_Code set/WinVietnamnese (Windows-1258)"),
+	 CODESET_ACTION(C_WINDOWS_1258)},
+#endif
 #endif
 
 #undef CODESET_SEPARATOR
@@ -822,6 +841,10 @@ MainWindow *main_window_create(SeparateType type)
 
 	progressbar = gtk_progress_bar_new();
 	gtk_widget_set_size_request(progressbar, 120, 1);
+//XXX
+#ifdef WIN32
+	gtk_progress_set_text_alignment(GTK_PROGRESS(progressbar), 0.5, 0.0);
+#endif
 	gtk_box_pack_start(GTK_BOX(hbox_stat), progressbar, FALSE, FALSE, 0);
 
 	online_pixmap = stock_pixmap_widget(hbox_stat, STOCK_PIXMAP_WORK_ONLINE);

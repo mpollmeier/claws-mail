@@ -48,8 +48,10 @@
 #include <gtk/gtklabel.h>
 #include <gtk/gtkscrolledwindow.h>
 #include <gtk/gtktreeview.h>
+#ifndef _MSC_VER
 #warning FIXME_GTK2
 /* #include <gtk/gtkthemes.h> */
+#endif
 #include <gtk/gtkdnd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -57,11 +59,19 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
+#ifdef WIN32
+# include <w32lib.h>
+# include <fcntl.h>
+# include <process.h>
+#else
+# include <unistd.h>
+#endif
 #include <time.h>
 /* #include <sys/utsname.h> */
 #include <stdlib.h>
+#ifndef WIN32
 #include <sys/wait.h>
+#endif
 #include <signal.h>
 #include <errno.h>
 
@@ -271,7 +281,11 @@ static gboolean attach_property_key_pressed	(GtkWidget	*widget,
 						 gboolean	*cancelled);
 
 static void compose_exec_ext_editor		(Compose	   *compose);
+#ifdef WIN32
+static gint compose_exec_ext_editor_real	(const gchar	   *file, Compose *compose);
+#else
 static gint compose_exec_ext_editor_real	(const gchar	   *file);
+#endif
 static gboolean compose_ext_editor_kill		(Compose	   *compose);
 static void compose_input_cb			(gpointer	    data,
 						 gint		    source,
@@ -461,9 +475,9 @@ static void compose_generic_reply(MsgInfo *msginfo, gboolean quote,
 				  gboolean followup_and_reply_to,
 				  const gchar *body);
 
-gboolean compose_headerentry_changed_cb	   (GtkWidget	       *entry,
+void compose_headerentry_changed_cb	   (GtkWidget	       *entry,
 					    ComposeHeaderEntry *headerentry);
-gboolean compose_headerentry_key_press_event_cb(GtkWidget	       *entry,
+void compose_headerentry_key_press_event_cb(GtkWidget	       *entry,
 					    GdkEventKey        *event,
 					    ComposeHeaderEntry *headerentry);
 
@@ -478,6 +492,10 @@ static void compose_check_forwards_go	   (Compose *compose);
 
 static gboolean compose_send_control_enter	(Compose	*compose);
 static gint compose_defer_auto_save_draft	(Compose	*compose);
+
+#ifdef WIN32
+static gint ext_editor_timeout_cb(Compose *compose);
+#endif
 
 static GtkItemFactoryEntry compose_popup_entries[] =
 {
@@ -997,6 +1015,8 @@ static void compose_generic_reply(MsgInfo *msginfo, gboolean quote,
 
 	if (prefs_common.auto_exteditor)
 		compose_exec_ext_editor(compose);
+
+
 }
 
 #define INSERT_FW_HEADER(var, hdr) \
@@ -1424,7 +1444,6 @@ void compose_entry_append(Compose *compose, const gchar *address,
 		break;
 	}
 	header = prefs_common.trans_hdr ? gettext(header) : header;
-
 	compose_add_header_entry(compose, header, (gchar *)address);
 }
 
@@ -2038,7 +2057,9 @@ static void compose_insert_file(Compose *compose, const gchar *file)
 	gtk_text_buffer_get_iter_at_mark(buffer, &iter, mark);
 
 	while (fgets(buf, sizeof(buf), fp) != NULL) {
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 1 /* FIXME_GTK2 */
 		const gchar *cur_encoding = conv_get_current_charset_str();
 		gchar *str = conv_codeset_strdup(buf, cur_encoding, CS_UTF_8);
@@ -2252,7 +2273,9 @@ static void compose_attach_parts(Compose *compose, MsgInfo *msginfo)
 #define INDENT_CHARS	">|#"
 #define SPACE_CHARS	" \t"
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 static void compose_wrap_line(Compose *compose)
 {
 	GtkTextView *text = GTK_TEXT_VIEW(compose->text);
@@ -2626,7 +2649,9 @@ static void compose_wrap_line_all_full(Compose *compose, gboolean autowrap)
 
 		/* fix line length for tabs */
 		if (ch_len == 1 && *cbuf == '\t') {
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 			/* guint tab_width = text->default_tab_width; */
 			guint tab_width = 8;
 			guint tab_offset = line_len % tab_width;
@@ -3489,6 +3514,7 @@ static gint compose_write_to_file(Compose *compose, const gchar *file,
 	gtk_text_buffer_get_start_iter(buffer, &start);
 	gtk_text_buffer_get_end_iter(buffer, &end);
 	chars = gtk_text_buffer_get_text(buffer, &start, &end, FALSE);
+
 	len = strlen(chars);
 	if (is_ascii_str(chars)) {
 		buf = chars;
@@ -3501,6 +3527,12 @@ static gint compose_write_to_file(Compose *compose, const gchar *file,
 		out_codeset = conv_get_outgoing_charset_str();
 		if (!strcasecmp(out_codeset, CS_US_ASCII))
 			out_codeset = CS_ISO_8859_1;
+//XXX
+#ifdef WIN32
+		if (!strncasecmp(out_codeset, "ISO-8859-",9)
+			&& strrchr(chars, 0x80)) /* euro */
+			out_codeset = CS_ISO_8859_15;
+#endif
 
 		if (prefs_common.encoding_method == CTE_BASE64)
 			encoding = ENC_BASE64;
@@ -3518,7 +3550,9 @@ static gint compose_write_to_file(Compose *compose, const gchar *file,
 			encoding = ENC_BASE64;
 #endif
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0 /* FIXME_GTK2 */
 		src_codeset = conv_get_current_charset_str();
 		/* if current encoding is US-ASCII, set it the same as
@@ -3707,13 +3741,14 @@ static gint compose_write_body_to_file(Compose *compose, const gchar *file)
 		FILE_OP_ERROR(file, "chmod");
 		g_warning("can't change file mode\n");
 	}
-
 	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(compose->text));
 	gtk_text_buffer_get_start_iter(buffer, &start);
 	gtk_text_buffer_get_end_iter(buffer, &end);
 	tmp = gtk_text_buffer_get_text(buffer, &start, &end, FALSE);
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 1 /* FIXME_GTK2 */
 	src_codeset = CS_UTF_8;
 	dest_codeset = conv_get_current_charset_str();
@@ -4136,6 +4171,7 @@ static gint compose_write_headers_from_headerlist(Compose *compose,
 		if (!g_strcasecmp(trans_hdr, headerentryname)) {
 			const gchar *entstr = gtk_entry_get_text(GTK_ENTRY(headerentry->entry));
 			Xstrdup_a(str, entstr, return -1);
+
 			g_strstrip(str);
 			if (str[0] != '\0') {
 				compose_convert_header
@@ -5034,17 +5070,23 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(text), TRUE);
 	clipboard = gtk_clipboard_get(GDK_SELECTION_PRIMARY);
 	gtk_text_buffer_add_selection_clipboard(buffer, clipboard);
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 	/* GTK_STEXT(text)->default_tab_width = 8; */
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 	if (prefs_common.block_cursor) {
 		GTK_STEXT(text)->cursor_type = GTK_STEXT_CURSOR_BLOCK;
 	}
 #endif
 	
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0
 	if (prefs_common.smart_wrapping) {	
 		gtk_stext_set_word_wrap(GTK_STEXT(text), TRUE);
@@ -5058,7 +5100,9 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 
 	gtk_container_add(GTK_CONTAINER(scrolledwin), text);
 
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0 /* FIXME_GTK2 */
 	g_signal_connect(G_OBJECT(text), "activate",
 			 G_CALLBACK(text_activated), compose);
@@ -5093,7 +5137,9 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 	style = gtk_widget_get_style(text);
 
 	/* workaround for the slow down of GtkSText when using Pixmap theme */
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 #if 0 /* FIXME_GTK2 */
 	if (style->engine) {
 		GtkThemeEngine *engine;
@@ -5245,7 +5291,11 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 	    	    strcmp(prefs_common.dictionary, _("None"))) {
 			gtkaspell = gtkaspell_new(prefs_common.aspell_path,
 						  prefs_common.dictionary,
+#ifdef WIN32
+						  conv_X_get_current_iso_charset_str(),
+#else
 						  conv_get_current_charset_str(),
+#endif
 						  prefs_common.misspelled_col,
 						  prefs_common.check_while_typing,
 						  prefs_common.use_alternate,
@@ -5949,6 +5999,7 @@ static void compose_exec_ext_editor(Compose *compose)
 	tmp = g_strdup_printf("%s%ctmpmsg.%08x", get_tmp_dir(),
 			      G_DIR_SEPARATOR, (gint)compose);
 
+#ifndef WIN32 /* instead of forking, create a gtk_timeout object for each external application */
 	if (pipe(pipe_fds) < 0) {
 		perror("pipe");
 		g_free(tmp);
@@ -5964,6 +6015,7 @@ static void compose_exec_ext_editor(Compose *compose)
 	if (pid != 0) {
 		/* close the write side of the pipe */
 		close(pipe_fds[1]);
+#endif
 
 		compose->exteditor_file    = g_strdup(tmp);
 		compose->exteditor_pid     = pid;
@@ -5971,18 +6023,33 @@ static void compose_exec_ext_editor(Compose *compose)
 
 		compose_set_ext_editor_sensitive(compose, FALSE);
 
+#ifndef WIN32
 		compose->exteditor_tag =
 			gdk_input_add(pipe_fds[0], GDK_INPUT_READ,
 				      compose_input_cb, compose);
 	} else {	/* process-monitoring process */
+#else /* WIN32 */
+	{
+#endif
+
 		pid_t pid_ed;
 
+#ifdef WIN32
+		if (compose_write_body_to_file(compose, tmp) < 0) {
+			gchar *p_tmp = g_strdup_printf(_("Cannot write\n%s"),&tmp);
+			g_warning(_("Write error"),p_tmp);
+			alertpanel_message(_("Write error"),p_tmp);
+			g_free(p_tmp);
+			_exit(1);
+		}
+
+		pid_ed = compose_exec_ext_editor_real(tmp,compose);
+#else
 		if (setpgid(0, 0))
 			perror("setpgid");
 
 		/* close the read side of the pipe */
 		close(pipe_fds[0]);
-
 		if (compose_write_body_to_file(compose, tmp) < 0) {
 			fd_write_all(pipe_fds[1], "2\n", 2);
 			_exit(1);
@@ -6000,13 +6067,45 @@ static void compose_exec_ext_editor(Compose *compose)
 		fd_write_all(pipe_fds[1], "0\n", 2);
 
 		close(pipe_fds[1]);
+#endif
+
+#ifndef WIN32
 		_exit(0);
+#endif
 	}
 
 	g_free(tmp);
 }
 
+#ifdef WIN32
+static gint ext_editor_timeout_cb(Compose *compose) {
+  gint result = TRUE;
+  int ExitCode;
+
+  /* Process killed ? */
+  if (compose->exteditor_pid < 0) return FALSE;
+
+  if (GetExitCodeProcess(compose->exteditor_pid,&ExitCode)) {
+  	  if (ExitCode != STILL_ACTIVE) {
+			/* Process terminated */
+			gint source;
+			GdkInputCondition condition;
+			compose_input_cb( compose , source , condition );
+			return(FALSE);	/* stop timer */
+	  }
+	  else {	/* Process still active */
+	  }
+  } else {		/* Error GetExitCodeProcess */
+  }
+  return( result );
+}
+#endif
+
+#ifdef WIN32
+static gint compose_exec_ext_editor_real(const gchar *file, Compose *compose)
+#else
 static gint compose_exec_ext_editor_real(const gchar *file)
+#endif
 {
 	static gchar *def_cmd = "emacs %s";
 	gchar buf[1024];
@@ -6016,6 +6115,7 @@ static gint compose_exec_ext_editor_real(const gchar *file)
 
 	g_return_val_if_fail(file != NULL, -1);
 
+#ifndef WIN32
 	if ((pid = fork()) < 0) {
 		perror("fork");
 		return -1;
@@ -6027,7 +6127,7 @@ static gint compose_exec_ext_editor_real(const gchar *file)
 
 	if (setpgid(0, getppid()))
 		perror("setpgid");
-
+#endif
 	if (prefs_common.ext_editor_cmd &&
 	    (p = strchr(prefs_common.ext_editor_cmd, '%')) &&
 	    *(p + 1) == 's' && !strchr(p + 2, '%')) {
@@ -6039,13 +6139,55 @@ static gint compose_exec_ext_editor_real(const gchar *file)
 		g_snprintf(buf, sizeof(buf), def_cmd, file);
 	}
 
+#ifdef WIN32
+	{
+		gint hEditor=0;
+		gint n,len=0;
+		gchar *fullname;
+		gchar **parsed_cmdline;
+
+		cmdline = strsplit_with_quote(buf, " ", 1024);
+
+		fullname = w32_parse_path(cmdline[0]);
+		len = strlen(fullname);
+		for (n=1; cmdline[n]; len+=strlen(cmdline[n++]));
+		parsed_cmdline=g_new0(gchar*, len);
+
+		parsed_cmdline[0]=g_strdup_printf("\"%s\"",fullname);
+
+		for (n=1; cmdline[n]; n++)
+			parsed_cmdline[n]=g_strdup(cmdline[n]);
+
+		if ((hEditor=spawnvp(P_NOWAIT, fullname, cmdline)) < 0) {
+			gint source;
+			GdkInputCondition condition;
+			gchar *p_buf = g_strdup_printf(_("Cannot execute\n%s"),&buf);
+			/* disable timeout */
+			compose_input_cb( compose , source , condition );
+			g_warning(_("Exec error"),p_buf);
+			alertpanel_message(_("Exec error"),p_buf);
+			g_free(p_buf);
+			return -1;
+		}
+		compose->exteditor_pid = hEditor;
+		gtk_timeout_add( 50, ext_editor_timeout_cb, compose );
+
+		for (n=0; parsed_cmdline[n]; g_free(parsed_cmdline[n++]));
+		g_free(parsed_cmdline);
+		g_free(fullname);
+	}
+#else
 	cmdline = strsplit_with_quote(buf, " ", 1024);
 	execvp(cmdline[0], cmdline);
-
+#endif
 	perror("execvp");
 	g_strfreev(cmdline);
 
+#ifdef WIN32
+	return(1);
+#else
 	_exit(1);
+#endif
 }
 
 static gboolean compose_ext_editor_kill(Compose *compose)
@@ -6053,6 +6195,13 @@ static gboolean compose_ext_editor_kill(Compose *compose)
 	pid_t pgid = compose->exteditor_pid * -1;
 	gint ret;
 
+#ifdef WIN32
+	compose->exteditor_pid = -1 ;	/* reset state for ext_editor_timeout_cb */
+	if (TerminateProcess(pgid * -1,0))
+		return TRUE;
+	else
+		return FALSE;
+#else
 	ret = kill(pgid, 0);
 
 	if (ret == 0 || (ret == -1 && EPERM == errno)) {
@@ -6089,6 +6238,7 @@ static gboolean compose_ext_editor_kill(Compose *compose)
 	}
 
 	return TRUE;
+#endif
 }
 
 static void compose_input_cb(gpointer data, gint source,
@@ -6102,6 +6252,11 @@ static void compose_input_cb(gpointer data, gint source,
 
 	gdk_input_remove(compose->exteditor_tag);
 
+#ifdef WIN32
+	buf[0]='0';
+	buf[1]='0';
+	buf[2]=0;
+#else
 	for (;;) {
 		if (read(source, &buf[i], 1) < 1) {
 			buf[0] = '3';
@@ -6117,6 +6272,7 @@ static void compose_input_cb(gpointer data, gint source,
 	}
 
 	waitpid(compose->exteditor_pid, NULL, 0);
+#endif 
 
 	if (buf[0] == '0') {		/* success */
 		GtkTextView *text = GTK_TEXT_VIEW(compose->text);
@@ -6246,7 +6402,9 @@ static void compose_undo_state_changed(UndoMain *undostruct, gint undo_state,
 
 static gint calc_cursor_xpos(GtkTextView *text, gint extra, gint char_width)
 {
+#ifndef _MSC_VER
 #warning FIXME_GTK2
+#endif
 	return 0;
 }
 
@@ -6288,7 +6446,7 @@ static void account_activated(GtkMenuItem *menuitem, gpointer data)
 	PrefsAccount *ac;
 
 	ac = account_find_from_id(
-		GPOINTER_TO_INT(g_object_get_data(G_OBJECT(menuitem), MENU_VAL_ID)));
+		GPOINTER_TO_INT(gtk_object_get_user_data(GTK_OBJECT(menuitem))));
 	g_return_if_fail(ac != NULL);
 
 	if (ac != compose->account)
@@ -6566,6 +6724,9 @@ static void compose_close_cb(gpointer data, guint action, GtkWidget *widget)
 		}
 	}
 
+#ifdef WIN32
+	if (compose->window)
+#endif
 	gtk_widget_destroy(compose->window);
 }
 
@@ -6782,7 +6943,9 @@ static void textview_move_next_line (GtkTextView *text)
 	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text));
 	mark = gtk_text_buffer_get_insert(buffer);
 	gtk_text_buffer_get_iter_at_mark(buffer, &ins, mark);
+#ifndef _MSC_VER
 #warning FIXME_GTK2 /* should regist current line offset */
+#endif
 	offset = gtk_text_iter_get_line_offset(&ins);
 	if (gtk_text_iter_forward_line(&ins)) {
 		gtk_text_iter_set_line_offset(&ins, offset);
@@ -6802,7 +6965,9 @@ static void textview_move_previous_line (GtkTextView *text)
 	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text));
 	mark = gtk_text_buffer_get_insert(buffer);
 	gtk_text_buffer_get_iter_at_mark(buffer, &ins, mark);
+#ifndef _MSC_VER
 #warning FIXME_GTK2 /* should regist current line offset */
+#endif
 	offset = gtk_text_iter_get_line_offset(&ins);
 	if (gtk_text_iter_backward_line(&ins)) {
 		gtk_text_iter_set_line_offset(&ins, offset);
@@ -7183,9 +7348,29 @@ static void compose_attach_drag_received_cb (GtkWidget		*widget,
 
 	list = uri_list_extract_filenames((const gchar *)data->data);
 	for (tmp = list; tmp != NULL; tmp = tmp->next)
+#ifdef WIN32
+	{	/* Process dragged files: decode, utf8, strip leading /// */ 
+		int offset ;
+		gchar *filename = g_strdup(tmp->data);
+
+		if (strlen(filename)>4
+			&& strncmp("////",filename,4) == 0)
+				offset = 2 ;	/* UNC file : ////hostname/file */
+		else if (strlen(filename)>3
+			&& strncmp("///",filename,3) == 0)
+				offset = 3 ;	/* local file : ///c:/foo.txt */
+		decode_uri(filename, (const gchar *)tmp->data + offset);
+		subst_char(filename,'/','\\');
+		compose_attach_append
+			(compose, filename,
+			 filename, NULL);
+		g_free(filename);
+	}
+#else
 		compose_attach_append
 			(compose, (const gchar *)tmp->data,
 			 (const gchar *)tmp->data, NULL);
+#endif
 	if (list) compose_changed_cb(NULL, compose);
 	list_free_strings(list);
 	g_list_free(list);
@@ -7205,7 +7390,23 @@ static void compose_insert_drag_received_cb (GtkWidget		*widget,
 
 	list = uri_list_extract_filenames((const gchar *)data->data);
 	for (tmp = list; tmp != NULL; tmp = tmp->next)
+#ifdef WIN32 /* file:////HOST/dir/file | file:////HOST/dir/file */
+	{
+		gint offset = 0;
+		gchar *filename = g_strdup((const gchar *)tmp->data);
+		if (strlen(filename)>4
+			&& strncmp("////",filename,4) == 0)
+				offset = 2 ;	/* UNC file : ////hostname/file */
+		else if (strlen(filename)>3
+			&& strncmp("///",filename,3) == 0)
+				offset = 3 ;	/* local file : ///c:/foo.txt */
+		decode_uri(filename, (const gchar *)tmp->data + offset);
+		compose_insert_file(compose, filename);
+		g_free(filename);
+	}
+#else
 		compose_insert_file(compose, (const gchar *)tmp->data);
+#endif
 	list_free_strings(list);
 	g_list_free(list);
 }
@@ -7296,7 +7497,7 @@ static void compose_toggle_remove_refs_cb(gpointer data, guint action,
 		compose->remove_references = FALSE;
 }
 
-gboolean compose_headerentry_key_press_event_cb(GtkWidget *entry,
+void compose_headerentry_key_press_event_cb(GtkWidget *entry,
 					    GdkEventKey *event,
 					    ComposeHeaderEntry *headerentry)
 {
@@ -7324,26 +7525,25 @@ gboolean compose_headerentry_key_press_event_cb(GtkWidget *entry,
 			gtk_widget_grab_focus(headerentry->compose->subject_entry);
 		}
 	}
-	return FALSE;
+
 }
 
-gboolean compose_headerentry_changed_cb(GtkWidget *entry,
+void compose_headerentry_changed_cb(GtkWidget *entry,
 				    ComposeHeaderEntry *headerentry)
 {
 	if (strlen(gtk_entry_get_text(GTK_ENTRY(entry))) != 0) {
 		headerentry->compose->header_list =
 			g_slist_append(headerentry->compose->header_list,
 				       headerentry);
-		
 		compose_create_header_entry(headerentry->compose);
-		gtk_signal_disconnect_by_data
-			(GTK_OBJECT(entry), headerentry);
-		
+		gtk_signal_disconnect_by_func
+			(GTK_OBJECT(entry),
+			 GTK_SIGNAL_FUNC(compose_headerentry_changed_cb),
+			 headerentry);
 		/* Automatically scroll down */
 		compose_show_first_last_header(headerentry->compose, FALSE);
 		
 	}
-	return FALSE;
 }
 
 static void compose_show_first_last_header(Compose *compose, gboolean show_first)

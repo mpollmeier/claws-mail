@@ -1,5 +1,5 @@
 dnl Autoconf macros for libaspell
-dnl $Id: aspell.m4,v 1.9 2002-12-01 12:40:19 reboot Exp $
+dnl $Id: aspell.m4,v 1.9.4.1 2003-12-06 13:53:25 netztorte Exp $
 
 # Configure paths for ASPELL
 # Shamelessly stolen from the one of GPGME by Werner Koch 

@@ -27,8 +27,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#ifdef WIN32
+#include <w32lib.h>
+#else
 #include <dirent.h>
 #include <unistd.h>
+#endif
 #include <time.h>
 
 #include "intl.h"
@@ -743,7 +747,11 @@ gchar *news_item_get_path(Folder *folder, FolderItem *item)
 	folder_path = news_folder_get_path(folder);
 
         g_return_val_if_fail(folder_path != NULL, NULL);
+#ifdef WIN32
+	if (folder_path[0] == G_DIR_SEPARATOR || folder_path[1] == ':') {
+#else
         if (folder_path[0] == G_DIR_SEPARATOR) {
+#endif
                 if (item->path)
                         path = g_strconcat(folder_path, G_DIR_SEPARATOR_S,
                                            item->path, NULL);

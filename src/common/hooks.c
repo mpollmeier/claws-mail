@@ -39,6 +39,7 @@ GHookList *hooks_get_hooklist(const gchar *hooklist_name)
 	if (hooklist != NULL)
 		return hooklist;
 	
+printf("new hooklist '%s'\n",hooklist_name);
 	hooklist = g_new0(GHookList, 1);
 	g_hook_list_init(hooklist, sizeof(GHook));
 	g_hash_table_insert(hooklist_table, g_strdup(hooklist_name), hooklist);
@@ -66,6 +67,7 @@ guint hooks_register_hook(const gchar *hooklist_name,
 	hook->data = userdata;
 
 	g_hook_append(hooklist, hook);
+printf("new hook '%s' %d\n", hooklist_name, hook->hook_id );
 
 	debug_print("registed new hook for '%s' as id %d\n", hooklist_name, hook->hook_id);
 

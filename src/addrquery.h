@@ -26,7 +26,9 @@
 
 #include <glib.h>
 #include <stdio.h>
+#ifndef WIN32
 #include <sys/time.h>
+#endif
 
 /* Query types */
 typedef enum {
