@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2001 Hiroyuki Yamamoto & The Sylpheed Claws Team
+ * Copyright (C) 2003 Match Grun
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,30 +17,28 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef MBOX_FOLDER_H
+/*
+ * Functions to perform searches for LDAP entries.
+ */
 
-#define MBOX_FOLDER_H
+#ifndef __LDAPLOCATE_H__
+#define __LDAPLOCATE_H__
+
+#ifdef USE_LDAP
 
 #include <glib.h>
-#include "folder.h"
+#include "ldapserver.h"
 
-/*
-mailfile mailfile_init(char * filename);
-char * mailfile_readmsg(mailfile f, int index);
-char * mailfile_readheader(mailfile f, int index);
-void mailfile_done(mailfile f);
-int mailfile_count(mailfile f);
-*/
-typedef struct _MBOXFolder	MBOXFolder;
+/* Function prototypes */
+gint ldaplocate_search_setup	( LdapServer *server,
+				  const gchar *searchTerm,
+				  void *callBackEntry,
+				  void *callBackEnd );
+gboolean ldaplocate_search_start( const gint queryID );
+void ldaplocate_search_stop	( const gint queryID );
 
-#define MBOX_FOLDER(obj)	((MBOXFolder *)obj)
+#endif	/* USE_LDAP */
 
-struct _MBOXFolder
-{
-	LocalFolder lfolder;
-};
+#endif /* __LDAPLOCATE_H__ */
 
-FolderClass *mbox_get_class	(void);
-gchar * mbox_get_virtual_path(FolderItem * item);
 
-#endif
