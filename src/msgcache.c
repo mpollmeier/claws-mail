@@ -156,6 +156,7 @@ static gint msgcache_read_cache_data_str(FILE *fp, gchar **str)
 { \
 	if (msgcache_read_cache_data_str(fp, &data) < 0) { \
 		procmsg_msginfo_free(msginfo); \
+		error = TRUE; \
 		break; \
 	} \
 }
@@ -165,6 +166,7 @@ static gint msgcache_read_cache_data_str(FILE *fp, gchar **str)
 	if (fread(&n, sizeof(n), 1, fp) != 1) { \
 		g_warning(_("Cache data is corrupted\n")); \
 		procmsg_msginfo_free(msginfo); \
+		error = TRUE; \
 		break; \
 	} \
 }
@@ -178,6 +180,7 @@ MsgCache *msgcache_read_cache(FolderItem *item, const gchar *cache_file)
 	gchar file_buf[BUFFSIZE];
 	gint ver;
 	guint num;
+	gboolean error = FALSE;
 
 	g_return_val_if_fail(cache_file != NULL, NULL);
 	g_return_val_if_fail(item != NULL, NULL);
@@ -221,6 +224,7 @@ MsgCache *msgcache_read_cache(FolderItem *item, const gchar *cache_file)
 		READ_CACHE_DATA(msginfo->msgid, fp);
 		READ_CACHE_DATA(msginfo->inreplyto, fp);
 		READ_CACHE_DATA(msginfo->references, fp);
+		READ_CACHE_DATA(msginfo->xref, fp);
 
 /*
 		MSG_SET_PERM_FLAGS(msginfo->flags, default_flags.perm_flags);
@@ -232,6 +236,12 @@ MsgCache *msgcache_read_cache(FolderItem *item, const gchar *cache_file)
 		cache->memusage += procmsg_msginfo_memusage(msginfo);
 	}
 	fclose(fp);
+
+	if(error) {
+		g_hash_table_thaw(cache->msgnum_table);
+		msgcache_destroy(cache);
+		return NULL;
+	}
 
 	cache->last_access = time(NULL);
 	g_hash_table_thaw(cache->msgnum_table);
@@ -309,6 +319,7 @@ void msgcache_write_cache(MsgInfo *msginfo, FILE *fp)
 	WRITE_CACHE_DATA(msginfo->msgid, fp);
 	WRITE_CACHE_DATA(msginfo->inreplyto, fp);
 	WRITE_CACHE_DATA(msginfo->references, fp);
+	WRITE_CACHE_DATA(msginfo->xref, fp);
 }
 
 static void msgcache_write_flags(MsgInfo *msginfo, FILE *fp)
