@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2002 Hiroyuki Yamamoto and the Sylpheed-Claws Team
+ * Copyright (C) 1999-2003 Hiroyuki Yamamoto and the Sylpheed-Claws Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,29 +17,28 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef PLUGIN_H
-#define PLUGIN_H 1
+/*
+ * The structure of this file has been borrowed from the structure of
+ * the image_viewer plugin file. I also used it as an example of how to
+ * build the preferences for the dillo plugin.
+ */
+
+#ifndef DILLORPREFS_H
+#define DILLOPREFS_H
 
 #include <glib.h>
 
-typedef struct _Plugin Plugin;
+typedef struct _DilloBrowserPrefs	DilloBrowserPrefs;
 
-/* Functions to implement by the plugin */
-gint plugin_init		(gchar		**error);
-void plugin_done		(void);
-const gchar *plugin_name	(void);
-const gchar *plugin_desc	(void);
+struct _DilloBrowserPrefs
+{
+	gboolean local;   /**< local browsing */
+	gboolean full;    /**< use full window */
+};
 
-/* Functions by the sylpheed plugin system */
-gint plugin_load		(const gchar	 *filename,
-				 gchar		**error);
-void plugin_unload		(Plugin		 *plugin);
-void plugin_load_all		(gchar		*type);
-void plugin_unload_all		(gchar		*type);
-void plugin_save_list		(void);
+extern DilloBrowserPrefs dillo_prefs;
 
-GSList *plugin_get_list		(void);
-const gchar *plugin_get_name	(Plugin		 *plugin);
-const gchar *plugin_get_desc	(Plugin		 *plugin);
+void dillo_prefs_init(void);
+void dillo_prefs_done(void);
 
 #endif
