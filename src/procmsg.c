@@ -181,13 +181,14 @@ GSList *procmsg_read_cache(FolderItem *item, gboolean scan_file)
 
 	default_flags.perm_flags = MSG_NEW|MSG_UNREAD;
 	default_flags.tmp_flags = MSG_CACHED;
-	if (type == F_MH) {
+	if (type == F_MH || type == F_IMAP) {
 		if (item->stype == F_QUEUE) {
 			MSG_SET_TMP_FLAGS(default_flags, MSG_QUEUED);
 		} else if (item->stype == F_DRAFT) {
 			MSG_SET_TMP_FLAGS(default_flags, MSG_DRAFT);
 		}
-	} else if (type == F_IMAP) {
+	}
+	if (type == F_IMAP) {
 		MSG_SET_TMP_FLAGS(default_flags, MSG_IMAP);
 	} else if (type == F_NEWS) {
 		MSG_SET_TMP_FLAGS(default_flags, MSG_NEWS);
@@ -832,7 +833,7 @@ void procmsg_empty_trash(void)
 	}
 }
 
-gint procmsg_send_queue(void)
+gint procmsg_send_queue(gboolean save_msgs)
 {
 	FolderItem *queue;
 	gint ret = 0;
@@ -854,8 +855,13 @@ gint procmsg_send_queue(void)
 			if (procmsg_send_message_queue(file) < 0) {
 				g_warning(_("Sending queued message %d failed.\n"), msginfo->msgnum);
 				ret = -1;
-			} else
+			} else {
+				if (save_msgs)
+					procmsg_save_to_outbox
+						(queue->folder->outbox,
+						 file, TRUE);
 				folder_item_remove_msg(queue, msginfo->msgnum);
+			}
 			g_free(file);
 		}
 		procmsg_msginfo_free(msginfo);
@@ -864,6 +870,68 @@ gint procmsg_send_queue(void)
 	folderview_update_item(queue, FALSE);
 
 	return ret;
+}
+
+gint procmsg_save_to_outbox(FolderItem *outbox, const gchar *file,
+			    gboolean is_queued)
+{
+	gint num;
+	FILE *fp;
+	gchar *path;
+
+	debug_print(_("saving sent message...\n"));
+
+	if (!outbox)
+		outbox = folder_get_default_outbox();
+	g_return_val_if_fail(outbox != NULL, -1);
+
+	/* remove queueing headers */
+	if (is_queued) {
+		gchar tmp[MAXPATHLEN + 1];
+		gchar buf[BUFFSIZE];
+		FILE *outfp;
+
+		g_snprintf(tmp, sizeof(tmp), "%s%ctmpmsg.out.%08x",
+			   get_rc_dir(), G_DIR_SEPARATOR, (guint)random());
+		if ((fp = fopen(file, "rb")) == NULL) {
+			FILE_OP_ERROR(file, "fopen");
+			return -1;
+		}
+		if ((outfp = fopen(tmp, "wb")) == NULL) {
+			FILE_OP_ERROR(tmp, "fopen");
+			fclose(fp);
+			return -1;
+		}
+		while (fgets(buf, sizeof(buf), fp) != NULL)
+			if (buf[0] == '\r' || buf[0] == '\n') break;
+		while (fgets(buf, sizeof(buf), fp) != NULL)
+			fputs(buf, outfp);
+		fclose(outfp);
+		fclose(fp);
+		Xstrdup_a(file, tmp, return -1);
+	}
+
+	folder_item_scan(outbox);
+	if ((num = folder_item_add_msg(outbox, file, FALSE)) < 0) {
+		g_warning(_("can't save message\n"));
+		return -1;
+	}
+
+	path = folder_item_get_path(outbox);
+	if ((fp = procmsg_open_mark_file(path, TRUE)) == NULL)
+		g_warning(_("can't open mark file\n"));
+	else {
+		MsgInfo newmsginfo;
+
+		newmsginfo.msgnum = num;
+		newmsginfo.flags.perm_flags = 0;
+		newmsginfo.flags.tmp_flags = 0;
+		procmsg_write_flags(&newmsginfo, fp);
+		fclose(fp);
+	}
+	g_free(path);
+
+	return 0;
 }
 
 void procmsg_print_message(MsgInfo *msginfo, const gchar *cmdline)

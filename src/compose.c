@@ -203,8 +203,6 @@ static gint compose_write_to_file		(Compose	*compose,
 						 gboolean	 is_draft);
 static gint compose_write_body_to_file		(Compose	*compose,
 						 const gchar	*file);
-static gint compose_save_to_outbox		(Compose	*compose,
-						 const gchar	*file);
 static gint compose_remove_reedit_target	(Compose	*compose);
 static gint compose_queue			(Compose	*compose,
 						 gint		*msgnum,
@@ -623,11 +621,11 @@ static GtkItemFactoryEntry compose_entries[] =
 #endif /* USE_GPGME */
 	{N_("/_Message/---"),		NULL,		NULL,	0, "<Separator>"},
 	{N_("/_Message/_Request Return Receipt"),	NULL, compose_toggle_return_receipt_cb, 0, "<ToggleItem>"},
-	{N_("/_Tool"),			NULL, NULL, 0, "<Branch>"},
-	{N_("/_Tool/Show _ruler"),	NULL, compose_toggle_ruler_cb, 0, "<ToggleItem>"},
-	{N_("/_Tool/_Address book"),	"<shift><control>A", compose_address_cb , 0, NULL},
-	{N_("/_Tool/_Template"),	NULL, NULL, 0, "<Branch>"},
-	{N_("/_Tool/Actio_ns"),		NULL, NULL, 0, "<Branch>"},
+	{N_("/_Tools"),			NULL, NULL, 0, "<Branch>"},
+	{N_("/_Tools/Show _ruler"),	NULL, compose_toggle_ruler_cb, 0, "<ToggleItem>"},
+	{N_("/_Tools/_Address book"),	"<shift><control>A", compose_address_cb , 0, NULL},
+	{N_("/_Tools/_Template"),	NULL, NULL, 0, "<Branch>"},
+	{N_("/_Tools/Actio_ns"),	NULL, NULL, 0, "<Branch>"},
 	{N_("/_Help"),			NULL, NULL, 0, "<Branch>"},
 	{N_("/_Help/_About"),		NULL, about_show, 0, NULL}
 };
@@ -683,7 +681,7 @@ Compose *compose_bounce(PrefsAccount *account, MsgInfo *msginfo)
 	menu_set_sensitive(ifactory, "/Message/Encrypt", FALSE);
 #endif
 	menu_set_sensitive(ifactory, "/Message/Request Return Receipt", FALSE);
-	menu_set_sensitive(ifactory, "/Tool/Template", FALSE);
+	menu_set_sensitive(ifactory, "/Tools/Template", FALSE);
 	
 	gtk_widget_set_sensitive(c->insert_btn, FALSE);
 	gtk_widget_set_sensitive(c->attach_btn, FALSE);
@@ -2036,7 +2034,7 @@ static void compose_wrap_line(Compose *compose)
 			}
 			line_end = 1;
 		} else {
-			if (ch_len == 1 && strchr(">:#", *cbuf))
+			if (ch_len == 1 && strchr(">|:#", *cbuf))
 				quoted = 1;
 			else if (ch_len != 1 || !isspace(*cbuf))
 				quoted = 0;
@@ -2058,7 +2056,7 @@ static void compose_wrap_line(Compose *compose)
 			}
 			line_end = 1;
 		} else {
-			if (line_end && ch_len == 1 && strchr(">:#", *cbuf))
+			if (line_end && ch_len == 1 && strchr(">|:#", *cbuf))
 				goto compose_end; /* quoted part */
 
 			line_end = 0;
@@ -2166,9 +2164,8 @@ static guint get_indent_length(GtkSText *text, guint start_pos, guint text_len)
 		GET_CHAR(i, cbuf, ch_len);
 		if (ch_len > 1)
 			break;
-		/* allow space, tab, > or | */
-		if (cbuf[0] != ' ' && cbuf[0] != '\t' &&
-		    cbuf[0] != '>' && cbuf[0] != '|')
+		/* allow space, tab, >, |, : or # */
+		if (!strchr(" \t>|:#", *cbuf))
 			break;
 		indent_len++;
 	}
@@ -2699,13 +2696,17 @@ gint compose_send(Compose *compose)
 				folderview_update_item
 					(compose->targetinfo->folder, TRUE);
 		}
-	}
+		/* save message to outbox */
+		if (prefs_common.savemsg) {
+			Folder *folder = FOLDER(compose->account->folder);
+			FolderItem *outbox = NULL;
 
-	/* save message to outbox */
-	if (ok == 0 && prefs_common.savemsg) {
-		if (compose_save_to_outbox(compose, tmp) < 0)
-			alertpanel_error
-				(_("Can't save the message to outbox."));
+			if (folder)
+				outbox = folder->outbox;
+			if (procmsg_save_to_outbox(outbox, tmp, FALSE) < 0)
+				alertpanel_error
+					(_("Can't save the message to outbox."));
+		}
 	}
 
 	unlink(tmp);
@@ -3098,42 +3099,6 @@ static gint compose_write_body_to_file(Compose *compose, const gchar *file)
 	return 0;
 }
 
-static gint compose_save_to_outbox(Compose *compose, const gchar *file)
-{
-	FolderItem *outbox;
-	gchar *path;
-	gint num;
-	FILE *fp;
-
-	debug_print(_("saving sent message...\n"));
-
-	outbox = folder_get_default_outbox();
-	path = folder_item_get_path(outbox);
-	if (!is_dir_exist(path))
-		make_dir_hier(path);
-
-	if ((num = folder_item_add_msg(outbox, file, FALSE)) < 0) {
-		g_free(path);
-		g_warning(_("can't save message\n"));
-		return -1;
-	}
-
-	if ((fp = procmsg_open_mark_file(path, TRUE)) == NULL)
-		g_warning(_("can't open mark file\n"));
-	else {
-		MsgInfo newmsginfo;
-
-		newmsginfo.msgnum = num;
-		newmsginfo.flags.perm_flags = 0;
-		newmsginfo.flags.tmp_flags = 0;
-		procmsg_write_flags(&newmsginfo, fp);
-		fclose(fp);
-	}
-	g_free(path);
-
-	return 0;
-}
-
 static gint compose_remove_reedit_target(Compose *compose)
 {
 	FolderItem *item;
@@ -3332,9 +3297,12 @@ static gint compose_queue(Compose *compose, gint *msgnum, FolderItem **item)
 		g_free(tmp2);
 		return -1;
 	}
-						
-	/* queue message */
-	queue = folder_get_default_queue();
+
+	if (compose->account->folder &&
+	    FOLDER(compose->account->folder)->queue)
+		queue = FOLDER(compose->account->folder)->queue;
+	else
+		queue = folder_get_default_queue();
 
 	if ((num = folder_item_add_msg(queue, tmp, TRUE)) < 0) {
 		g_warning(_("can't queue the message\n"));
@@ -4422,7 +4390,7 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 	menu_set_sensitive(ifactory, "/Edit/Undo", FALSE);
 	menu_set_sensitive(ifactory, "/Edit/Redo", FALSE);
 
-	tmpl_menu = gtk_item_factory_get_item(ifactory, "/Tool/Template");
+	tmpl_menu = gtk_item_factory_get_item(ifactory, "/Tools/Template");
 #if 0 /* NEW COMPOSE GUI */
 	gtk_widget_hide(bcc_hbox);
 	gtk_widget_hide(bcc_entry);
@@ -4450,7 +4418,7 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 	}
 #endif
 
-	update_compose_actions_menu(ifactory, "/Tool/Actions", compose);
+	update_compose_actions_menu(ifactory, "/Tools/Actions", compose);
 
 
 	undostruct = undo_init(text);
@@ -5868,7 +5836,11 @@ static void compose_draft_cb(gpointer data, guint action, GtkWidget *widget)
 
 	if (lock) return;
 
-	draft = folder_get_default_draft();
+	if (compose->account && compose->account->folder &&
+	    FOLDER(compose->account->folder)->draft)
+		draft = FOLDER(compose->account->folder)->draft;
+	else
+		draft = folder_get_default_draft();
 	g_return_if_fail(draft != NULL);
 
 	lock = TRUE;
@@ -5882,7 +5854,7 @@ static void compose_draft_cb(gpointer data, guint action, GtkWidget *widget)
 		return;
 	}
 
-	if ((msgnum = folder_item_add_msg(draft, tmp, TRUE)) <= 0) {
+	if ((msgnum = folder_item_add_msg(draft, tmp, TRUE)) < 0) {
 		unlink(tmp);
 		g_free(tmp);
 		lock = FALSE;
