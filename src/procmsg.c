@@ -1123,9 +1123,7 @@ gint procmsg_send_message_queue(const gchar *file)
 	/* save message to outbox */
 	if (mailval == 0 && newsval == 0 && savecopyfolder) {
 		FolderItem *folder;
-		gchar *path;
 		gint num;
-		FILE *fp;
 
 		debug_print(_("saving sent message...\n"));
 
@@ -1145,7 +1143,6 @@ gint procmsg_send_message_queue(const gchar *file)
 			msginfo->flags.tmp_flags = 0;
 			procmsg_msginfo_free(msginfo);
 		}
-		g_free(path);
 	}
 
 	slist_free_strings(to_list);
