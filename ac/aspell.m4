@@ -1,5 +1,5 @@
 dnl Autoconf macros for libaspell
-dnl $Id: aspell.m4,v 1.4 2002-09-27 10:59:56 mhadasht Exp $
+dnl $Id: aspell.m4,v 1.5 2002-09-27 14:27:45 mhadasht Exp $
 
 # Configure paths for ASPELL
 # Shamelessly stolen from the one of GPGME by Werner Koch 
@@ -106,6 +106,8 @@ main()
  return 0;
 }
            ],, aspell_failure=yes,)
+	   CFLAGS="$ac_save_CFLAGS"
+           LIBS="$ac_save_LIBS"
            if test "x$aspell_failure" = x ; then     
               AC_MSG_RESULT(yes)
               ifelse([$2], , :, [$2])
@@ -123,8 +125,6 @@ main()
 	      ASPELL_PATH=""
 	      ifelse([$3], , :, [$3])
 	   fi
-	   CFLAGS="$ac_save_CFLAGS"
-           LIBS="$ac_save_CFLAGS"
 	else
            ASPELL_CFLAGS=""
            ASPELL_LIBS=""
