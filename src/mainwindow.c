@@ -457,6 +457,10 @@ static void key_pressed (GtkWidget *widget,
 
 static void set_toolbar_style(MainWindow *mainwin);
 
+static void addr_gather_cb	 ( MainWindow  *mainwin,
+				   guint       action,
+				   GtkWidget   *widget );
+
 #define  SEPARATE_ACTION  667
 
 static GtkItemFactoryEntry mainwin_entries[] =
@@ -473,6 +477,7 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_File/_Import mbox file..."),	NULL, import_mbox_cb, 0, NULL},
 	{N_("/_File/_Export to mbox file..."),	NULL, export_mbox_cb, 0, NULL},
 	{N_("/_File/Empty _trash"),		"<shift>D", empty_trash_cb, 0, NULL},
+	{N_("/_File/_Gather addresses..."),	NULL, addr_gather_cb, 0, NULL},
 	{N_("/_File/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_File/_Save as..."),		"<control>S", save_as_cb, 0, NULL},
 	{N_("/_File/_Print..."),		NULL, print_cb, 0, NULL},
@@ -487,9 +492,6 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_Edit/_Find in current message..."),
 						"<control>F", search_cb, 0, NULL},
 	{N_("/_Edit/_Search folder..."),	"<shift><control>F", search_cb, 1, NULL},
-	{N_("/_Edit/---"),			NULL, NULL, 0, "<Separator>"},
-	{N_("/_Edit/Actio_ns"),			NULL, NULL, 0, "<Branch>"},
-
 	{N_("/_View"),				NULL, NULL, 0, "<Branch>"},
 	{N_("/_View/Separate _Folder Tree"),	NULL, NULL, SEPARATE_ACTION + SEPARATE_FOLDER,  "<ToggleItem>"},
 	{N_("/_View/Separate _Message View"),	NULL, NULL, SEPARATE_ACTION + SEPARATE_MESSAGE, "<ToggleItem>"},
@@ -625,7 +627,7 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_View/_Go to/Other _folder..."),	"G", goto_folder_cb, 0, NULL},
 	{N_("/_View/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_View/Open in new _window"),	"<control><alt>N", open_msg_cb, 0, NULL},
-	{N_("/_View/_View source"),		"<control>U", view_source_cb, 0, NULL},
+	{N_("/_View/Mess_age source"),		"<control>U", view_source_cb, 0, NULL},
 	{N_("/_View/Show all _header"),		"<control>H", show_all_header_cb, 0, "<ToggleItem>"},
 	{N_("/_View/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_View/_Update"),			"<control><alt>U", update_summary_cb,  0, NULL},
@@ -680,6 +682,8 @@ static GtkItemFactoryEntry mainwin_entries[] =
 						NULL, create_filter_cb, FILTER_BY_TO, NULL},
 	{N_("/_Tool/_Create filter rule/by _Subject"),
 						NULL, create_filter_cb, FILTER_BY_SUBJECT, NULL},
+	{N_("/_Tool/---"),			NULL, NULL, 0, "<Separator>"},
+	{N_("/_Tool/Actio_ns"),			NULL, NULL, 0, "<Branch>"},
 	{N_("/_Tool/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_Tool/E_xecute"),			"X", execute_summary_cb, 0, NULL},
 	{N_("/_Tool/---"),			NULL, NULL, 0, "<Separator>"},
@@ -1547,12 +1551,12 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 		{"/File/Import mbox file..."   , M_UNLOCKED},
 		{"/File/Export to mbox file...", M_UNLOCKED},
 		{"/File/Empty trash"           , M_UNLOCKED},
+		{"/File/Gather addresses...", M_SINGLE_TARGET_EXIST|M_UNLOCKED},
 		{"/File/Save as...", M_SINGLE_TARGET_EXIST|M_UNLOCKED},
 		{"/File/Print..."  , M_TARGET_EXIST|M_UNLOCKED},
 		/* {"/File/Close", M_UNLOCKED}, */
 		{"/File/Exit" , M_UNLOCKED},
 
-		{"/Edit/Actions"		   , M_MSG_EXIST},
 		{"/Edit/Select thread"		   , M_SINGLE_TARGET_EXIST},
 		{"/View/Sort"                      , M_MSG_EXIST},
 		{"/View/Thread view"               , M_EXEC},
@@ -1567,7 +1571,7 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 		{"/View/Go to/Next labeled message", M_MSG_EXIST},
 		{"/View/Open in new window"        , M_SINGLE_TARGET_EXIST},
 		{"/View/Show all header"           , M_SINGLE_TARGET_EXIST},
-		{"/View/View source"               , M_SINGLE_TARGET_EXIST},
+		{"/View/Message source"            , M_SINGLE_TARGET_EXIST},
 
 		{"/Message/Get new mail"          , M_HAVE_ACCOUNT|M_UNLOCKED},
 		{"/Message/Get from all accounts" , M_HAVE_ACCOUNT|M_UNLOCKED},
@@ -1590,7 +1594,7 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 		{"/Tool/Filter messages"           , M_MSG_EXIST|M_EXEC|M_UNLOCKED},
 		{"/Tool/Create filter rule"        , M_SINGLE_TARGET_EXIST|M_UNLOCKED},
 		{"/Tool/Execute"                   , M_MSG_EXIST|M_EXEC|M_UNLOCKED},
-
+		{"/Tool/Actions"		   , M_MSG_EXIST},
 		{"/Configuration", M_UNLOCKED},
 
 		{NULL, 0}
@@ -3087,4 +3091,15 @@ static void set_toolbar_style(MainWindow *mainwin)
 			gtk_widget_show(mainwin->exec_btn);
 	}
 }
+
+static void addr_gather_cb( MainWindow *mainwin,
+			    guint action,
+			    GtkWidget *widget )
+{
+	addressbook_gather( mainwin->summaryview->folder_item );
+}
+
+/*
+* End of Source.
+*/
 

@@ -297,8 +297,8 @@ static GtkItemFactoryEntry folderview_imap_popup_entries[] =
 	{N_("/Mark all _read"),		NULL, mark_all_read_cb, 0, NULL},
 	{N_("/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/Create _new folder..."),	NULL, folderview_new_imap_folder_cb, 0, NULL},
-	{N_("/_Rename folder..."),	NULL, NULL, 0, NULL},
-	{N_("/_Delete folder"),		NULL, folderview_rm_imap_folder_cb, 0, NULL},
+	{N_("/_Rename folder..."),	NULL, folderview_rename_folder_cb,   0, NULL},
+	{N_("/_Delete folder"),		NULL, folderview_rm_imap_folder_cb,  0, NULL},
 	{N_("/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_Check for new messages"),
 					NULL, folderview_update_tree_cb, 0, NULL},
@@ -1002,7 +1002,7 @@ static void folderview_update_node(FolderView *folderview, GtkCTreeNode *node)
 			openxpm = outboxopenxpm;
 			openmask = outboxopenxpmmask;
 		}
-		name = g_strdup(_("Outbox"));
+		name = g_strdup(_("Sent"));
 		break;
 	case F_QUEUE:
 		if (item->hide_read_msgs) {
@@ -1322,9 +1322,9 @@ void folderview_rename_folder(FolderView *folderview)
 		folderview_rename_mbox_folder_cb(folderview, 0, NULL);
 	case F_MH:
 	case F_MAILDIR:
+	case F_IMAP:
 		folderview_rename_folder_cb(folderview, 0, NULL);
 		break;
-	case F_IMAP:
 	case F_NEWS:
 	default:
 		break;
@@ -1884,6 +1884,10 @@ static void folderview_rename_folder_cb(FolderView *folderview, guint action,
 	g_free(new_folder);
 
 	prefs_filter_rename_path(old_path, new_path);
+
+	if (FOLDER_TYPE(item->folder) == F_MH)
+		prefs_filtering_rename_path(old_path, new_path);
+
 	g_free(new_path);
 
 	gtk_clist_freeze(GTK_CLIST(ctree));
@@ -1892,10 +1896,13 @@ static void folderview_rename_folder_cb(FolderView *folderview, guint action,
 	folderview_sort_folders(folderview,
 				GTK_CTREE_ROW(folderview->selected)->parent,
 				item->folder);
-	if (folderview->opened == folderview->selected) {
-		if (!GTK_CTREE_ROW(folderview->opened)->children)
-			gtk_ctree_expand(ctree, folderview->opened);
-		summary_show(folderview->summaryview, item, FALSE);
+	if (folderview->opened == folderview->selected ||
+	    gtk_ctree_is_ancestor(ctree,
+				  folderview->selected,
+				  folderview->opened)) {
+		GtkCTreeNode *node = folderview->opened;
+		folderview_unselect(folderview);
+		folderview_select_node(folderview, node);
 	}
 
 	gtk_clist_thaw(GTK_CLIST(ctree));
@@ -1992,6 +1999,9 @@ static void folderview_delete_folder_cb(FolderView *folderview, guint action,
 	}
 
 	prefs_filter_delete_path(old_path);
+
+	if (FOLDER_TYPE(item->folder) == F_MH)
+		prefs_filtering_delete_path(old_path);
 
 	if (folderview->opened == folderview->selected ||
 	    gtk_ctree_is_ancestor(ctree,

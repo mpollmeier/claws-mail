@@ -568,8 +568,6 @@ static GtkItemFactoryEntry compose_entries[] =
 					"<control><alt>L", compose_wrap_line_all, 0, NULL},
 	{N_("/_Edit/Edit with e_xternal editor"),
 					"<shift><control>X", compose_ext_editor_cb, 0, NULL},
-	{N_("/_Edit/---"),		NULL, NULL, 0, "<Separator>"},
-	{N_("/_Edit/Actio_ns"),		NULL, NULL, 0, "<Branch>"},
 #if USE_PSPELL
 	{N_("/_Spelling"),		NULL, NULL, 0, "<Branch>"},
 	{N_("/_Spelling/_Check all or check selection"),
@@ -629,6 +627,7 @@ static GtkItemFactoryEntry compose_entries[] =
 	{N_("/_Tool/Show _ruler"),	NULL, compose_toggle_ruler_cb, 0, "<ToggleItem>"},
 	{N_("/_Tool/_Address book"),	"<shift><control>A", compose_address_cb , 0, NULL},
 	{N_("/_Tool/_Template"),	NULL, NULL, 0, "<Branch>"},
+	{N_("/_Tool/Actio_ns"),		NULL, NULL, 0, "<Branch>"},
 	{N_("/_Help"),			NULL, NULL, 0, "<Branch>"},
 	{N_("/_Help/_About"),		NULL, about_show, 0, NULL}
 };
@@ -1765,7 +1764,7 @@ static void compose_exec_sig(Compose *compose, gchar *sigfile)
 	if (strlen(sigfile) < 2)
 	  return;
  
-	sigprg = popen(sigfile+1, "rb");
+	sigprg = popen(sigfile+1, "r");
 	if (sigprg) {
 
 		buf = g_malloc(buf_len);
@@ -4451,7 +4450,7 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 	}
 #endif
 
-	update_compose_actions_menu(ifactory, "/Edit/Actions", compose);
+	update_compose_actions_menu(ifactory, "/Tool/Actions", compose);
 
 
 	undostruct = undo_init(text);
@@ -5201,7 +5200,7 @@ static void compose_attach_property_create(gboolean *cancelled)
 			 GTK_EXPAND|GTK_SHRINK|GTK_FILL, 0, 0, 0);
 
 	optmenu = gtk_option_menu_new();
-	gtk_box_pack_start(GTK_BOX(hbox), optmenu, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(hbox), optmenu, TRUE, TRUE, 0);
 
 	optmenu_menu = gtk_menu_new();
 	MENUITEM_ADD(optmenu_menu, menuitem, "7bit", ENC_7BIT);
@@ -5674,6 +5673,10 @@ static void toolbar_address_cb(GtkWidget *widget, gpointer data)
 
 static void select_account(Compose * compose, PrefsAccount * ac)
 {
+#if USE_GPGME
+	GtkItemFactory *ifactory;
+	GtkWidget *menuitem;
+#endif /* USE_GPGME */
 	compose->account = ac;
 	compose_set_title(compose);
 
@@ -5748,6 +5751,30 @@ static void select_account(Compose * compose, PrefsAccount * ac)
 		}
 		gtk_widget_queue_resize(compose->table_vbox);
 #endif
+#if USE_GPGME
+		ifactory = gtk_item_factory_from_widget(compose->menubar);
+			menu_set_sensitive(ifactory,
+					   "/Message/Sign", TRUE);
+			menu_set_sensitive(ifactory,
+					   "/Message/Encrypt", TRUE);
+
+			menuitem = gtk_item_factory_get_item(ifactory, "/Message/Sign");
+		if (ac->default_sign)
+			gtk_check_menu_item_set_active
+				(GTK_CHECK_MENU_ITEM(menuitem), TRUE);
+		else
+			gtk_check_menu_item_set_active
+				(GTK_CHECK_MENU_ITEM(menuitem), FALSE);
+
+			menuitem = gtk_item_factory_get_item(ifactory, "/Message/Encrypt");
+		if (ac->default_encrypt)
+			gtk_check_menu_item_set_active
+				(GTK_CHECK_MENU_ITEM(menuitem), TRUE);
+		else
+			gtk_check_menu_item_set_active
+				(GTK_CHECK_MENU_ITEM(menuitem), FALSE);
+#endif /* USE_GPGME */
+
 }
 
 static void account_activated(GtkMenuItem *menuitem, gpointer data)

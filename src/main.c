@@ -294,6 +294,7 @@ int main(int argc, char *argv[])
 	}
 
 	account_set_missing_folder();
+	folder_set_missing_folders();
 	folderview_set(folderview);
 
 	/* prefs_scoring_read_config(); */
@@ -321,6 +322,8 @@ int main(int argc, char *argv[])
 		send_queue();
 
 	gtk_main();
+
+	addressbook_destroy();
 
 #if USE_PSPELL       
 	gtkpspell_checkers_delete();

@@ -102,6 +102,7 @@ struct _PrefsAccount
 
 	/* Receive */
 	gboolean rmmail;
+	gchar *leave_time;	
 	gboolean getall;
 	gboolean recv_at_getall;
 	gboolean enable_size_limit;
@@ -159,6 +160,8 @@ struct _PrefsAccount
 	gushort   nntpport;
 	gboolean  set_domain;
 	gchar    *domain;
+	gboolean  mark_crosspost_read;
+	gint	  crosspost_col;
 
 	/* Use this command to open a socket, rather than doing so
 	 * directly.  Good if you want to perhaps use a special socks

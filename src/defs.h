@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2001 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2002 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@
 #endif
 
 #define INBOX_DIR		"inbox"
-#define OUTBOX_DIR		"outbox"
+#define OUTBOX_DIR		"sent"
 #define QUEUE_DIR		"queue"
 #define DRAFT_DIR		"draft"
 #define TRASH_DIR		"trash"
@@ -65,7 +65,7 @@
 #define FOLDER_LIST		"folderlist.xml"
 #define CACHE_FILE		".sylpheed_cache"
 #define MARK_FILE		".sylpheed_mark"
-#define CACHE_VERSION		19
+#define CACHE_VERSION		20
 #define MARK_VERSION		2
 
 #define DEFAULT_SIGNATURE	".signature"

@@ -46,6 +46,7 @@
 #include "gtkutils.h"
 #include "utils.h"
 #include "alertpanel.h"
+#include "colorlabel.h"
 
 static gboolean cancelled;
 
@@ -85,6 +86,7 @@ static struct Basic {
 static struct Receive {
 	GtkWidget *pop3_frame;
 	GtkWidget *rmmail_chkbtn;
+	GtkWidget *leave_time_entry;
 	GtkWidget *getall_chkbtn;
 	GtkWidget *size_limit_chkbtn;
 	GtkWidget *size_limit_entry;
@@ -163,6 +165,9 @@ static struct Advanced {
 	GtkWidget *domain_entry;
 	GtkWidget *tunnelcmd_chkbtn;
 	GtkWidget *tunnelcmd_entry;
+	GtkWidget *crosspost_chkbtn;
+ 	GtkWidget *crosspost_colormenu;
+
 } advanced;
 
 static void prefs_account_fix_size			(void);
@@ -176,6 +181,8 @@ static void prefs_account_enum_set_radiobtn		(PrefParam *pparam);
 static void prefs_account_ascii_armored_warning(GtkWidget* widget, 
 				               gpointer unused);
 #endif /* USE_GPGME || USE_SSL */
+static void prefs_account_crosspost_set_data_from_colormenu(PrefParam *pparam);
+static void prefs_account_crosspost_set_colormenu(PrefParam *pparam);
 
 static void prefs_account_nntpauth_toggled(GtkToggleButton *button,
 					   gpointer user_data);
@@ -242,6 +249,10 @@ static PrefParam param[] = {
 	{"remove_mail", "TRUE", &tmp_ac_prefs.rmmail, P_BOOL,
 	 &receive.rmmail_chkbtn,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
+	
+	{"leave_mail_time", "0", &tmp_ac_prefs.leave_time, P_STRING,
+	 &receive.leave_time_entry,
+	 prefs_set_data_from_entry, prefs_set_entry},
 
 	{"get_all_mail", "FALSE", &tmp_ac_prefs.getall, P_BOOL,
 	 &receive.getall_chkbtn,
@@ -401,6 +412,16 @@ static PrefParam param[] = {
 	{"tunnelcmd", NULL, &tmp_ac_prefs.tunnelcmd, P_STRING,
 	 &advanced.tunnelcmd_entry,
 	 prefs_set_data_from_entry, prefs_set_entry},
+
+	{"mark_crosspost_read", "FALSE", &tmp_ac_prefs.mark_crosspost_read, P_BOOL,
+	 &advanced.crosspost_chkbtn,
+	 prefs_set_data_from_toggle, prefs_set_toggle},
+
+	{"crosspost_color", NULL, &tmp_ac_prefs.crosspost_col, P_ENUM,
+	 &advanced.crosspost_colormenu,
+	 prefs_account_crosspost_set_data_from_colormenu,
+	 prefs_account_crosspost_set_colormenu},
+
 
 	{NULL, NULL, NULL, P_OTHER, NULL, NULL, NULL}
 };
@@ -972,8 +993,12 @@ static void prefs_account_receive_create(void)
 	GtkWidget *label;
 	GtkWidget *filter_on_recv_chkbtn;
 	GtkWidget *vbox3;
+	GtkWidget *hbox2;
 	GtkWidget *inbox_label;
 	GtkWidget *inbox_entry;
+	GtkWidget *leave_time_entry;
+	GtkWidget *leave_time_label;
+	GtkWidget *leave_time_hint;	
 	GtkWidget *inbox_btn;
 	GtkWidget *frame2;
 	GtkWidget *imapdir_label;
@@ -992,8 +1017,26 @@ static void prefs_account_receive_create(void)
 	gtk_container_add (GTK_CONTAINER (frame1), vbox2);
 	gtk_container_set_border_width (GTK_CONTAINER (vbox2), 8);
 
-	PACK_CHECK_BUTTON (vbox2, rmmail_chkbtn,
-			   _("Remove messages on server when received"));
+	hbox2 = gtk_hbox_new (FALSE, 0);
+	gtk_widget_show (hbox2);
+	gtk_container_add (GTK_CONTAINER (vbox2), hbox2);
+	gtk_container_set_border_width (GTK_CONTAINER (hbox2), 0);
+
+	PACK_CHECK_BUTTON (hbox2, rmmail_chkbtn,
+			   _("Remove messages on server when received for "));
+	leave_time_entry = gtk_entry_new ();
+	gtk_widget_show (leave_time_entry);
+	gtk_widget_set_usize (leave_time_entry, DEFAULT_ENTRY_WIDTH, -1);
+	gtk_box_pack_start (GTK_BOX (hbox2), leave_time_entry, TRUE, TRUE, 0);
+   	
+	leave_time_label = gtk_label_new (_(" days"));
+	gtk_widget_show (leave_time_label);
+	gtk_box_pack_start (GTK_BOX (hbox2), leave_time_label, FALSE, FALSE, 0);
+	
+	leave_time_hint=gtk_label_new (_("(Setting to 0 days will delete messages immediately)"));
+	gtk_widget_show(leave_time_hint);
+	gtk_box_pack_start (GTK_BOX (vbox2), leave_time_hint, FALSE, FALSE, 0);
+		
 	PACK_CHECK_BUTTON (vbox2, getall_chkbtn,
 			   _("Download all messages on server"));
 
@@ -1076,6 +1119,7 @@ static void prefs_account_receive_create(void)
 
 	receive.pop3_frame            = frame1;
 	receive.rmmail_chkbtn         = rmmail_chkbtn;
+	receive.leave_time_entry      = leave_time_entry;
 	receive.getall_chkbtn         = getall_chkbtn;
 	receive.size_limit_chkbtn     = size_limit_chkbtn;
 	receive.size_limit_entry      = size_limit_entry;
@@ -1343,7 +1387,7 @@ static void prefs_account_privacy_create(void)
 			   _("Encrypt message by default"));
 
 	PACK_CHECK_BUTTON (vbox2, checkbtn_ascii_armored,
-			   _("Plain ASCII armored"));
+			   _("Plain ASCII-armored"));
 	gtk_signal_connect(GTK_OBJECT(checkbtn_ascii_armored), "toggled",
 				prefs_account_ascii_armored_warning, (gpointer)0);
 
@@ -1417,9 +1461,9 @@ static void prefs_account_ascii_armored_warning(GtkWidget* widget,
 {
 	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget))
 		&& gtk_notebook_get_current_page(GTK_NOTEBOOK(dialog.notebook))) {
-		alertpanel_message(_("Warning - Privacy/Plain ASCII armored"),
-			_("Its not recommend to use the old style plain ASCII\n"
-			"armored mode for encypted messages. It doesn't comply\n"
+		alertpanel_message(_("Warning - Privacy/Plain ASCII-armored"),
+			_("Its not recommend to use the old style plain ASCII-\n"
+			"armored mode for encrypted messages. It doesn't comply\n"
 			"with the RFC 3156 - MIME security with OpenPGP."));
 	}
 }
@@ -1502,6 +1546,40 @@ static void prefs_account_ssl_create(void)
 }
 #endif /* USE_SSL */
 
+static void crosspost_color_toggled(void)
+{
+	gboolean is_active;
+
+	is_active = gtk_toggle_button_get_active
+		(GTK_TOGGLE_BUTTON(advanced.crosspost_chkbtn));
+	gtk_widget_set_sensitive(advanced.crosspost_colormenu, is_active);
+}
+
+static void prefs_account_crosspost_set_data_from_colormenu(PrefParam *pparam)
+{
+	GtkWidget *menu;
+	GtkWidget *menuitem;
+
+	menu = gtk_option_menu_get_menu(GTK_OPTION_MENU(advanced.crosspost_colormenu));
+	menuitem = gtk_menu_get_active(GTK_MENU(menu));
+	*((gint *)pparam->data) = GPOINTER_TO_INT
+		(gtk_object_get_data(GTK_OBJECT(menuitem), "color"));
+}
+
+static void prefs_account_crosspost_set_colormenu(PrefParam *pparam)
+{
+	gint colorlabel = *((gint *)pparam->data);
+	GtkOptionMenu *colormenu = GTK_OPTION_MENU(*pparam->widget);
+	GtkWidget *menu;
+	GtkWidget *menuitem;
+
+	gtk_option_menu_set_history(colormenu, colorlabel);
+	menu = gtk_option_menu_get_menu(colormenu);
+	menuitem = gtk_menu_get_active(GTK_MENU(menu));
+	gtk_menu_item_activate(GTK_MENU_ITEM(menuitem));
+}
+
+
 static void prefs_account_advanced_create(void)
 {
 	GtkWidget *vbox1;
@@ -1522,6 +1600,12 @@ static void prefs_account_advanced_create(void)
 	GtkWidget *entry_domain;
 	GtkWidget *checkbtn_tunnelcmd;
 	GtkWidget *entry_tunnelcmd;
+ 	GtkWidget *checkbtn_crosspost;
+ 	GtkWidget *colormenu_crosspost;
+ 	GtkWidget *menu;
+ 	GtkWidget *menuitem;
+ 	GtkWidget *item;
+ 	gint i;
 
 #define PACK_HBOX(hbox) \
 	{ \
@@ -1587,6 +1671,21 @@ static void prefs_account_advanced_create(void)
 	gtk_box_pack_start (GTK_BOX (hbox1), entry_tunnelcmd, TRUE, TRUE, 0);
 	SET_TOGGLE_SENSITIVITY (checkbtn_tunnelcmd, entry_tunnelcmd);
 
+	PACK_HBOX (hbox1);
+	PACK_CHECK_BUTTON (hbox1, checkbtn_crosspost, 
+			   _("Mark cross-posted messages as read and color:"));
+	gtk_signal_connect (GTK_OBJECT (checkbtn_crosspost), "toggled",
+					GTK_SIGNAL_FUNC (crosspost_color_toggled),
+					NULL);
+
+	colormenu_crosspost = gtk_option_menu_new();
+	gtk_widget_show (colormenu_crosspost);
+	gtk_box_pack_start (GTK_BOX (hbox1), colormenu_crosspost, FALSE, FALSE, 0);
+
+	menu = colorlabel_create_color_menu();
+	gtk_option_menu_set_menu (GTK_OPTION_MENU(colormenu_crosspost), menu);
+	SET_TOGGLE_SENSITIVITY(checkbtn_crosspost, colormenu_crosspost);
+
 #undef PACK_HBOX
 #undef PACK_PORT_ENTRY
 
@@ -1605,6 +1704,8 @@ static void prefs_account_advanced_create(void)
 	advanced.domain_entry		= entry_domain;
 	advanced.tunnelcmd_chkbtn	= checkbtn_tunnelcmd;
 	advanced.tunnelcmd_entry	= entry_tunnelcmd;
+ 	advanced.crosspost_chkbtn	= checkbtn_crosspost;
+ 	advanced.crosspost_colormenu	= colormenu_crosspost;
 }
 
 static gint prefs_account_deleted(GtkWidget *widget, GdkEventAny *event,
@@ -1870,6 +1971,8 @@ static void prefs_account_protocol_activated(GtkMenuItem *menuitem)
 		gtk_widget_hide(advanced.popport_hbox);
 		gtk_widget_hide(advanced.imapport_hbox);
 		gtk_widget_show(advanced.nntpport_hbox);
+		gtk_widget_show(advanced.crosspost_chkbtn);
+		gtk_widget_show(advanced.crosspost_colormenu);
 		break;
 	case A_LOCAL:
 		gtk_widget_hide(basic.nntpserv_label);
@@ -1925,6 +2028,8 @@ static void prefs_account_protocol_activated(GtkMenuItem *menuitem)
 		gtk_widget_hide(advanced.popport_hbox);
 		gtk_widget_hide(advanced.imapport_hbox);
 		gtk_widget_hide(advanced.nntpport_hbox);
+		gtk_widget_hide(advanced.crosspost_chkbtn);
+		gtk_widget_hide(advanced.crosspost_colormenu);
 		break;
 	case A_IMAP4:
 		gtk_widget_hide(basic.nntpserv_label);
@@ -1982,6 +2087,8 @@ static void prefs_account_protocol_activated(GtkMenuItem *menuitem)
 		gtk_widget_hide(advanced.popport_hbox);
 		gtk_widget_show(advanced.imapport_hbox);
 		gtk_widget_hide(advanced.nntpport_hbox);
+		gtk_widget_hide(advanced.crosspost_chkbtn);
+		gtk_widget_hide(advanced.crosspost_colormenu);
 		break;
 	case A_POP3:
 	default:
@@ -2040,6 +2147,8 @@ static void prefs_account_protocol_activated(GtkMenuItem *menuitem)
 		gtk_widget_show(advanced.popport_hbox);
 		gtk_widget_hide(advanced.imapport_hbox);
 		gtk_widget_hide(advanced.nntpport_hbox);
+		gtk_widget_hide(advanced.crosspost_chkbtn);
+		gtk_widget_hide(advanced.crosspost_colormenu);
 		break;
 	}
 

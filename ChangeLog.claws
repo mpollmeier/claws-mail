@@ -1,3 +1,202 @@
+2002-03-20 [alfons]	0.7.4claws25
+
+	* src/pop.c
+		refactor should_delete() a little bit 
+
+2002-03-19 [paul]	0.7.4claws24
+
+	* src/inc.[ch]
+	  src/pop.c
+	  src/prefs_account.[ch]
+		allow the user to leave downloaded mail on the 
+		server for n days. Patch submitted by Colin Leroy 
+		<colin@colino.net>
+
+2002-02-19 [paul]	0.7.4claws23
+
+	* sync with sylpheed 0.7.4cvs8
+		see ChangeLog entries 2002-03-19
+
+2002-03-18 [paul]	0.7.4claws22
+
+	* sync with sylpheed 0.7.4cvs6
+		see ChangeLog entry 2002-03-18
+
+2002-03-18 [paul]	0.7.4claws21
+
+	* po/en_GB.po
+		add en_GB message catalogue
+
+	* src/mbox_folder.c
+	  src/prefs_account.c
+	  src/prefs_actions.c
+		correct a few spelling mistakes
+
+2002-03-17 [alfons]	0.7.4claws20
+
+	* src/matcher.c
+		more stringent checks for NULL params when writing
+		filtering actions to a file
+		
+2002-03-17 [hoa]	0.7.3claws20
+
+	* src/news.c
+		fixed the count of new messages
+
+	* src/compose.c
+		fixed the "attachment properties" window
+
+2002-03-17 [paul]	0.7.4claws19
+
+	* src/defs.h
+	  src/folder.h
+	  src/news.c
+  	  src/prefs_account.[ch]
+	  src/procmsg.[ch]
+	  src/summaryview.c
+		automatically mark cross-posted messages as read 
+		and (optionally) give them a colour label
+		Patch submitted by Stefaan Eeckels <Stefaan.Eeckels@eec.lu>
+		
+
+2002-03-17 [paul]	0.7.4claws18
+
+	* sync with sylpheed 0.7.4cvs5
+		see ChangeLog entry 2002-03-17
+
+2002-03-17 [melvin]	0.7.4claws17
+	
+	* src/textview.c
+		Worked around a gtktext 'bug': when searching for 
+		a text in a long message it was scrolling slowly
+		line by line until it hit the searched text.
+	* po/fr.po
+		Updated French translation
+
+2002-03-17 [melvin]	0.7.4claws16
+
+	* src/mainwindow.c
+	* src/compose.c
+	* src/prefs_actions.c
+		Moved "Edit/Actions" to "Tool/Actions"
+		Made mainwindow/compose window sensitive as soon as
+		no child process is running anymore even if the io dialog
+		is open.
+		Fixed a struct being initialized with a non constant char*
+
+2002-03-16 [christoph]	0.7.4claws15
+
+	* configure.in
+		add --with-compiler-flags option
+		(only for developer hacking)
+	* src/mh.c
+	* src/procmsg.[ch]
+	* src/summaryview.c
+		try to make folder-stats and flag handling more
+		independent from the summaryview. msgcounts
+		are only set when the folder is opened and
+		procmsg_msginfo_(un)set_flags will handle it
+		later and summaryview will get the values
+		from the folder.
+
+2002-03-16 [paul]	0.7.4claws14
+
+	* src/messageview.c
+		fix Return-receipt. Patch submitted by Bob
+		Woodside <rwoodside1@comcast.net>
+
+2002-03-16 [paul]	0.7.4claws13
+
+	* src/compose.c
+		fix 'dynamic' signatures, make it work again
+		broken during sync on 2002-03-14 (0.7.4claws2)
+
+2002-03-15 [match]	0.7.4claws12
+
+	* src/addrharvest.[ch]
+	* src/addrgather.[ch]
+	* src/addressbook.[ch]
+	* src/mainwindow.c
+		included address harvester feature. still some
+		issues with address parsing that I will fix.
+
+2002-03-15 [match]	0.7.4claws11
+
+	* src/addrbook.[ch]
+	* src/addrcache.[ch]
+	* src/addressbook.[ch]
+	* src/addrindex.c
+	* src/editbook.c
+	* src/importldif.c
+	* src/importmutt.c
+	* src/jpilot.[ch]
+	* src/main.c
+	* src/syldap.[ch]
+	* src/vcard.[ch]
+		tidy up. fix memory leaks. moved attribs and methods
+		from individual interfaces to addrcache object. prep
+		for new stuff to come in.
+
+2002-03-15 [alfons]	0.7.4claws10
+
+	* src/matcher.[ch]
+	* src/matcher_parser_parse.y
+	* src/matcher_parser_lex.l
+	* src/prefs_matcher.c
+		add filtering conditions message greater than, smaller 
+		than, and exactly matching a size in bytes
+		(does not work with delete from POP3 server yet)
+
+		this should also give others an idea what you should
+		do to add new criterions to claws filtering system
+		
+
+2002-03-15 [paul]	0.7.4claws9
+
+	* tools/filter_conv.pl
+		exit if there are no filter rules to convert
+		rename filterrc to filterrc.old after completion
+
+2002-03-15 [paul]	0.7.4claws8
+
+	* sync with sylpheed 0.7.4cvs3
+		see ChangeLog entry 2002-03-14
+
+2002-03-14 [paul]	0.7.4claws7
+
+	* src/compose.c
+		clean up the last commit (ahem)
+
+2002-03-14 [paul]	0.7.4claws6
+
+	* src/compose.c
+		fix bug #515655. honour account preferences
+		regarding gpg default signing/encryption when 
+		changing account from the compose window.
+
+2002-03-14 [paul]	0.7.4claws5
+
+	* src/folderview.c
+		remove unnecessary curly brackets
+
+2002-03-14 [paul]	0.7.4claws4
+
+	* src/folderview.c
+	  src/prefs_filtering.[ch]
+		add filter rename on folder rename and filter
+		delete on folder delete. Patch submitted by
+		Neill Miller <neillm@thecodefactory.org> 
+
+2002-03-14 [christoph]	0.7.4claws3
+
+	* src/procmsg.c
+	* src/send.c
+		fix local delivery
+		(patch submitted by "Simon 'corecode' Schubert")
+	* src/prefs_common.c
+	* src/procmsg.c
+		fix gcc 3.0 warning
+
 2002-03-14 [paul]	0.7.4claws2
 
 	* sync with sylpheed 0.7.4cvs2
