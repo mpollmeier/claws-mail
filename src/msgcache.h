@@ -26,14 +26,15 @@
 
 #include <glib.h>
 
-typedef GHashTable MsgCache;
+typedef struct _MsgCache MsgCache;
 
 #include "procmsg.h"
 #include "folder.h"
 
 MsgCache   *msgcache_new			();
 void	    msgcache_destroy			(MsgCache *cache);
-MsgCache   *msgcache_read			(const gchar *cache_file, const gchar *mark_file, FolderItem *item);
+MsgCache   *msgcache_read_cache			(FolderItem *item, const gchar *cache_file);
+void	    msgcache_read_mark			(MsgCache *cache, const gchar *mark_file);
 gint	    msgcache_write			(const gchar *cache_file, const gchar *mark_file, MsgCache *cache);
 void 	    msgcache_add_msg			(MsgCache *cache, MsgInfo *msginfo);
 void 	    msgcache_remove_msg			(MsgCache *cache, guint num);

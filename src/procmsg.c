@@ -1006,6 +1006,43 @@ void procmsg_msginfo_free(MsgInfo *msginfo)
 	g_free(msginfo);
 }
 
+guint procmsg_msginfo_memusage(MsgInfo *msginfo)
+{
+	guint memusage = 0;
+	
+	memusage += sizeof(MsgInfo);
+	if(msginfo->fromname)
+		memusage += strlen(msginfo->fromname);
+	if(msginfo->date)
+		memusage += strlen(msginfo->date);
+	if(msginfo->from)
+		memusage += strlen(msginfo->from);
+	if(msginfo->to)
+		memusage += strlen(msginfo->to);
+	if(msginfo->cc)
+		memusage += strlen(msginfo->cc);
+	if(msginfo->newsgroups)
+		memusage += strlen(msginfo->newsgroups);
+	if(msginfo->subject)
+		memusage += strlen(msginfo->subject);
+	if(msginfo->msgid)
+		memusage += strlen(msginfo->msgid);
+	if(msginfo->inreplyto)
+		memusage += strlen(msginfo->inreplyto);
+	if(msginfo->xface)
+		memusage += strlen(msginfo->xface);
+	if(msginfo->dispositionnotificationto)
+		memusage += strlen(msginfo->dispositionnotificationto);
+	if(msginfo->returnreceiptto)
+		memusage += strlen(msginfo->returnreceiptto);
+	if(msginfo->references)
+		memusage += strlen(msginfo->references);
+	if(msginfo->fromspace)
+		memusage += strlen(msginfo->fromspace);
+
+	return memusage;
+}
+
 static gint procmsg_cmp_msgnum(gconstpointer a, gconstpointer b)
 {
 	const MsgInfo *msginfo = a;

@@ -18,17 +18,31 @@
  */
 
 #include "defs.h"
-		     
+
 #include <glib.h>
+
+#include <time.h>
 
 #include "intl.h"
 #include "msgcache.h"
 #include "utils.h"
 #include "procmsg.h"
 
+struct _MsgCache {
+	GHashTable	*msgnum_table;
+	guint		 memusage;
+	time_t		 last_access;
+};
+
 MsgCache *msgcache_new()
 {
-	return g_hash_table_new(NULL, NULL);
+	MsgCache *cache;
+	
+	cache = g_new0(MsgCache, 1),
+	cache->msgnum_table = g_hash_table_new(NULL, NULL);
+	cache->last_access = time(NULL);
+
+	return cache;
 }
 
 static gboolean msgcache_msginfo_free_func(gpointer num, gpointer msginfo, gpointer user_data)
@@ -39,49 +53,59 @@ static gboolean msgcache_msginfo_free_func(gpointer num, gpointer msginfo, gpoin
 
 void msgcache_destroy(MsgCache *cache)
 {
-	g_hash_table_foreach_remove(cache, msgcache_msginfo_free_func, NULL);
-	g_hash_table_destroy(cache);
+	g_hash_table_foreach_remove(cache->msgnum_table, msgcache_msginfo_free_func, NULL);
+	g_hash_table_destroy(cache->msgnum_table);
+	g_free(cache);
 }
 
 void msgcache_add_msg(MsgCache *cache, MsgInfo *msginfo) 
 {
 	MsgInfo *newmsginfo;
-	
-	newmsginfo = procmsg_msginfo_new_ref(msginfo);
-	g_hash_table_insert(cache, GINT_TO_POINTER(msginfo->msgnum), newmsginfo);
 
-	debug_print(_("Cache size: %d\n"), g_hash_table_size(cache));
+	newmsginfo = procmsg_msginfo_new_ref(msginfo);
+	g_hash_table_insert(cache->msgnum_table, GINT_TO_POINTER(msginfo->msgnum), newmsginfo);
+	cache->memusage += procmsg_msginfo_memusage(msginfo);
+	cache->last_access = time(NULL);
+
+	debug_print(_("Cache size: %d messages, %d byte\n"), g_hash_table_size(cache->msgnum_table), cache->memusage);
 }
 
 void msgcache_remove_msg(MsgCache *cache, guint num)
 {
 	MsgInfo *msginfo;
 
-	msginfo = (MsgInfo *)g_hash_table_lookup(cache, GINT_TO_POINTER(num));
+	msginfo = (MsgInfo *) g_hash_table_lookup(cache->msgnum_table, GINT_TO_POINTER(num));
 	if(!msginfo)
 		return;
 
+	cache->memusage -= procmsg_msginfo_memusage(msginfo);
 	procmsg_msginfo_free(msginfo);
-	g_hash_table_remove(cache, GINT_TO_POINTER(num));
+	g_hash_table_remove(cache->msgnum_table, GINT_TO_POINTER(num));
+	cache->last_access = time(NULL);
 
-	debug_print(_("Cache size: %d\n"), g_hash_table_size(cache));
+	debug_print(_("Cache size: %d messages, %d byte\n"), g_hash_table_size(cache->msgnum_table), cache->memusage);
 }
 
 void msgcache_update_msg(MsgCache *cache, MsgInfo *msginfo)
 {
 	MsgInfo *oldmsginfo, *newmsginfo;
 	
-	g_return_val_if_fail(cache != NULL, NULL);
+	g_return_if_fail(cache != NULL);
 
-	oldmsginfo = g_hash_table_lookup(cache, GINT_TO_POINTER(msginfo->msgnum));
+	oldmsginfo = g_hash_table_lookup(cache->msgnum_table, GINT_TO_POINTER(msginfo->msgnum));
 	if(msginfo) {
-		g_hash_table_remove(cache, GINT_TO_POINTER(oldmsginfo->msgnum));
+		g_hash_table_remove(cache->msgnum_table, GINT_TO_POINTER(oldmsginfo->msgnum));
 		procmsg_msginfo_free(oldmsginfo);
 	}
+	cache->memusage -= procmsg_msginfo_memusage(oldmsginfo);
 
 	newmsginfo = procmsg_msginfo_new_ref(msginfo);
-	g_hash_table_insert(cache, GINT_TO_POINTER(msginfo->msgnum), newmsginfo);
+	g_hash_table_insert(cache->msgnum_table, GINT_TO_POINTER(msginfo->msgnum), newmsginfo);
+	cache->memusage += procmsg_msginfo_memusage(newmsginfo);
+	cache->last_access = time(NULL);
 	
+	debug_print(_("Cache size: %d messages, %d byte\n"), g_hash_table_size(cache->msgnum_table), cache->memusage);
+
 	return;
 }
 
@@ -145,13 +169,12 @@ static gint msgcache_read_cache_data_str(FILE *fp, gchar **str)
 	} \
 }
 
-MsgCache *msgcache_read(const gchar *cache_file, const gchar *mark_file, FolderItem *item)
+MsgCache *msgcache_read_cache(FolderItem *item, const gchar *cache_file)
 {
 	MsgCache *cache;
 	FILE *fp;
 	MsgInfo *msginfo;
-	MsgFlags default_flags;
-	MsgPermFlags perm_flags;
+/*	MsgFlags default_flags; */
 	gchar file_buf[BUFFSIZE];
 	gint ver;
 	guint num;
@@ -159,25 +182,25 @@ MsgCache *msgcache_read(const gchar *cache_file, const gchar *mark_file, FolderI
 	g_return_val_if_fail(cache_file != NULL, NULL);
 	g_return_val_if_fail(item != NULL, NULL);
 
-	cache = msgcache_new();
-
 	if ((fp = fopen(cache_file, "r")) == NULL) {
 		debug_print(_("\tNo cache file\n"));
-		return cache;
+		return NULL;
 	}
 	setvbuf(fp, file_buf, _IOFBF, sizeof(file_buf));
 
-	debug_print(_("\tReading message cache from %s and %s...\n"), cache_file, mark_file);
+	debug_print(_("\tReading message cache from %s...\n"), cache_file);
 
 	/* compare cache version */
 	if (fread(&ver, sizeof(ver), 1, fp) != 1 ||
 	    CACHE_VERSION != ver) {
 		debug_print(_("Cache version is different. Discarding it.\n"));
 		fclose(fp);
-		return cache;
+		return NULL;
 	}
 
-	g_hash_table_freeze(cache);
+	cache = msgcache_new();
+
+	g_hash_table_freeze(cache->msgnum_table);
 
 	while (fread(&num, sizeof(num), 1, fp) == 1) {
 		msginfo = procmsg_msginfo_new();
@@ -205,34 +228,47 @@ MsgCache *msgcache_read(const gchar *cache_file, const gchar *mark_file, FolderI
 */
 		msginfo->folder = item;
 
-		g_hash_table_insert(cache, GINT_TO_POINTER(msginfo->msgnum), msginfo);
+		g_hash_table_insert(cache->msgnum_table, GINT_TO_POINTER(msginfo->msgnum), msginfo);
+		cache->memusage += procmsg_msginfo_memusage(msginfo);
 	}
 	fclose(fp);
 
-	if ((fp = fopen(mark_file, "r")) == NULL)
+	cache->last_access = time(NULL);
+	g_hash_table_thaw(cache->msgnum_table);
+
+	debug_print(_("done. (%d items read)\n"), g_hash_table_size(cache->msgnum_table));
+	debug_print(_("Cache size: %d messages, %d byte\n"), g_hash_table_size(cache->msgnum_table), cache->memusage);
+
+	return cache;
+}
+
+void msgcache_read_mark(MsgCache *cache, const gchar *mark_file)
+{
+	FILE *fp;
+	MsgInfo *msginfo;
+	MsgPermFlags perm_flags;
+	gint ver;
+	guint num;
+
+	if ((fp = fopen(mark_file, "r")) == NULL) {
 		debug_print(_("Mark file not found.\n"));
-	else if (fread(&ver, sizeof(ver), 1, fp) != 1 || MARK_VERSION != ver) {
+		return;
+	} else if (fread(&ver, sizeof(ver), 1, fp) != 1 || MARK_VERSION != ver) {
 		debug_print(_("Mark version is different (%d != %d). "
 			      "Discarding it.\n"), ver, MARK_VERSION);
-		fclose(fp);
-		fp = NULL;
 	} else {
+		debug_print(_("\tReading message marks from %s...\n"), mark_file);
+
 		while (fread(&num, sizeof(num), 1, fp) == 1) {
 			if (fread(&perm_flags, sizeof(perm_flags), 1, fp) != 1) break;
 
-			msginfo = g_hash_table_lookup(cache, GUINT_TO_POINTER(num));
+			msginfo = g_hash_table_lookup(cache->msgnum_table, GUINT_TO_POINTER(num));
 			if(msginfo) {
 				msginfo->flags.perm_flags = perm_flags;
 			}
 		}
 	}
 	fclose(fp);
-
-	g_hash_table_thaw(cache);
-
-	debug_print(_("done. (%d items read)\n"), g_hash_table_size(cache));
-
-	return cache;
 }
 
 #define WRITE_CACHE_DATA_INT(n, fp) \
@@ -332,10 +368,12 @@ gint msgcache_write(const gchar *cache_file, const gchar *mark_file, MsgCache *c
 	WRITE_CACHE_DATA_INT(ver, fp);
 	write_fps.mark_fp = fp;
 
-	g_hash_table_foreach((GHashTable *)cache, msgcache_write_func, (gpointer)&write_fps);
+	g_hash_table_foreach(cache->msgnum_table, msgcache_write_func, (gpointer)&write_fps);
 
 	fclose(write_fps.cache_fp);
 	fclose(write_fps.mark_fp);
+
+	cache->last_access = time(NULL);
 
 	debug_print(_("done.\n"));
 }
@@ -346,9 +384,10 @@ MsgInfo *msgcache_get_msg(MsgCache *cache, guint num)
 
 	g_return_val_if_fail(cache != NULL, NULL);
 
-	msginfo = g_hash_table_lookup(cache, GINT_TO_POINTER(num));
+	msginfo = g_hash_table_lookup(cache->msgnum_table, GINT_TO_POINTER(num));
 	if(!msginfo)
 		return NULL;
+	cache->last_access = time(NULL);
 	
 	return procmsg_msginfo_new_ref(msginfo);
 }
@@ -365,7 +404,8 @@ GSList *msgcache_get_msg_list(MsgCache *cache)
 {
 	GSList *msg_list = NULL;
 
-	g_hash_table_foreach((GHashTable *)cache, msgcache_get_msg_list_func, (gpointer)&msg_list);	
+	g_hash_table_foreach((GHashTable *)cache->msgnum_table, msgcache_get_msg_list_func, (gpointer)&msg_list);	
+	cache->last_access = time(NULL);
 
 	return msg_list;
 }

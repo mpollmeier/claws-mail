@@ -251,6 +251,7 @@ MsgInfo *procmsg_msginfo_new		();
 MsgInfo *procmsg_msginfo_new_ref	(MsgInfo 	*msginfo);
 MsgInfo *procmsg_msginfo_copy		(MsgInfo	*msginfo);
 void	 procmsg_msginfo_free		(MsgInfo	*msginfo);
+guint	 procmsg_msginfo_memusage	(MsgInfo	*msginfo);
 
 gint procmsg_cmp_msgnum_for_sort	(gconstpointer	 a,
 					 gconstpointer	 b);

@@ -68,7 +68,6 @@
 #include "gtkutils.h"
 #include "stock_pixmap.h"
 #include "filesel.h"
-#include "manage_window.h"
 #include "alertpanel.h"
 #include "inputdialog.h"
 #include "statusbar.h"
@@ -1964,7 +1963,7 @@ gboolean summary_insert_gnode_func(GtkCTree *ctree, guint depth, GNode *gnode,
 	GTKUT_CTREE_NODE_SET_ROW_DATA(cnode, msginfo);
 	summary_set_marks_func(ctree, cnode, summaryview);
 
-	if (msgid)
+	if (msgid && msgid[0] != 0)
 		g_hash_table_insert(msgid_table, (gchar *)msgid, cnode);
 
 	return TRUE;
@@ -2043,7 +2042,7 @@ static void summary_set_ctree_from_list(SummaryView *summaryview,
 			GTKUT_CTREE_NODE_SET_ROW_DATA(node, msginfo);
 			summary_set_marks_func(ctree, node, summaryview);
 
-			if (msginfo->msgid)
+			if (msginfo->msgid && msginfo->msgid[0] != 0)
 				g_hash_table_insert(msgid_table,
 						    msginfo->msgid, node);
 
@@ -3765,8 +3764,8 @@ void summary_processing(SummaryView *summaryview, GSList * mlist)
 		MsgInfo * msginfo;
 
 		msginfo = (MsgInfo *) cur->data;
-		filter_msginfo_move_or_delete(processing_list, msginfo,
-					      summaryview->folder_table);
+		filter_message_by_msginfo(processing_list, msginfo,
+					  summaryview->folder_table);
 	}
 	
 	/* folder_item_scan_foreach(summaryview->folder_table); */
@@ -3845,13 +3844,7 @@ void summary_filter(SummaryView *summaryview)
 	 * we want the lock to be context aware...  
 	 */
 	if (global_processing) {
-		/*
-		 * CLAWS: to prevent summary_show to write the cache,
-		 * we force an update of the summaryview in a special way,
-		 * like inc.c::inc_finished().
-		 */
-		folderview_unselect(summaryview->folderview);
-		folderview_select(summaryview->folderview, summaryview->folder_item);
+		summary_show(summaryview, summaryview->folder_item, TRUE);		
 	}		
 }
 
@@ -3872,10 +3865,8 @@ static void summary_filter_func(GtkCTree *ctree, GtkCTreeNode *node,
 		if (dest && strcmp2(dest->path, FILTER_NOT_RECEIVE) != 0 &&
 		    summaryview->folder_item != dest)
 			summary_move_row_to(summaryview, node, dest);
-	}
-	else 
-		filter_msginfo_move_or_delete(global_processing, msginfo,
-					      summaryview->folder_table);
+	} else 
+		filter_message_by_msginfo(global_processing, msginfo, summaryview->folder_table);
 }
 
 void summary_filter_open(SummaryView *summaryview, PrefsFilterType type)
@@ -4967,8 +4958,7 @@ static gboolean processing_apply_func(GNode *node, gpointer data)
 			MsgInfo * msginfo;
 			
 			msginfo = (MsgInfo *) cur->data;
-			filter_msginfo_move_or_delete(processing, msginfo,
-						      NULL);
+			filter_message_by_msginfo(processing, msginfo, NULL);
 			procmsg_msginfo_free(msginfo);
 		}
 
