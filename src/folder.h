@@ -80,6 +80,8 @@ typedef void (*FolderUIFunc)		(Folder		*folder,
 typedef void (*FolderDestroyNotify)	(Folder		*folder,
 					 FolderItem	*item,
 					 gpointer	 data);
+typedef void (*FolderItemFunc)		(FolderItem	*item,
+					 gpointer	 data);
 
 struct _Folder
 {
@@ -253,6 +255,8 @@ GList *folder_get_list		(void);
 gint   folder_read_list		(void);
 void   folder_write_list	(void);
 void   folder_update_op_count		(void);
+void   folder_func_to_all_folders	(FolderItemFunc function,
+					 gpointer data);
 void   folder_count_total_msgs	(guint		*new,
 				 guint		*unread,
 				 guint		*total);

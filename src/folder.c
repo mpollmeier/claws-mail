@@ -386,45 +386,68 @@ struct TotalMsgCount
 	guint total;
 };
 
-static gboolean folder_count_total_msgs_func(GNode *node, gpointer data)
+struct FuncToAllFoldersData
+{
+	FolderItemFunc	function;
+	gpointer	data;
+};
+
+static gboolean folder_func_to_all_folders_func(GNode *node, gpointer data)
 {
 	FolderItem *item;
-	struct TotalMsgCount *count = (struct TotalMsgCount *)data;
+	struct FuncToAllFoldersData *function_data = (struct FuncToAllFoldersData *) data;
 
 	g_return_val_if_fail(node->data != NULL, FALSE);
 
 	item = FOLDER_ITEM(node->data);
-	count->new += item->new;
-	count->unread += item->unread;
-	count->total += item->total;
+	g_return_val_if_fail(item != NULL, FALSE);
+
+	function_data->function(item, function_data->data);
 
 	return FALSE;
 }
 
-void folder_count_total_msgs(guint *new, guint *unread, guint *total)
+void folder_func_to_all_folders(FolderItemFunc function, gpointer data)
 {
 	GList *list;
 	Folder *folder;
-	struct TotalMsgCount count;
-
-	count.new = count.unread = count.total = 0;
-
-	debug_print(_("Counting total number of messages...\n"));
+	struct FuncToAllFoldersData function_data;
+	
+	function_data.function = function;
+	function_data.data = data;
 
 	for (list = folder_list; list != NULL; list = list->next) {
 		folder = FOLDER(list->data);
 		if (folder->node)
 			g_node_traverse(folder->node, G_PRE_ORDER,
 					G_TRAVERSE_ALL, -1,
-					folder_count_total_msgs_func,
-					&count);
+					folder_func_to_all_folders_func,
+					&function_data);
 	}
+}
+
+static void folder_count_total_msgs_func(FolderItem *item, gpointer data)
+{
+	struct TotalMsgCount *count = (struct TotalMsgCount *)data;
+
+	count->new += item->new;
+	count->unread += item->unread;
+	count->total += item->total;
+}
+
+void folder_count_total_msgs(guint *new, guint *unread, guint *total)
+{
+	struct TotalMsgCount count;
+
+	count.new = count.unread = count.total = 0;
+
+	debug_print(_("Counting total number of messages...\n"));
+
+	folder_func_to_all_folders(folder_count_total_msgs_func, &count);
 
 	*new = count.new;
 	*unread = count.unread;
 	*total = count.total;
-
-	return;
 }
 
 Folder *folder_find_from_path(const gchar *path)
@@ -610,16 +633,18 @@ void folder_item_scan_foreach(GHashTable *table)
 
 void folder_item_read_cache(FolderItem *item)
 {
-	gchar *cache_file;
+	gchar *cache_file, *mark_file;
 	
 	cache_file = folder_item_get_cache_file(item);
-	item->cache = msgcache_read(cache_file, item);
+	mark_file = folder_item_get_mark_file(item);
+	item->cache = msgcache_read(cache_file, mark_file, item);
 	g_free(cache_file);
+	g_free(mark_file);
 }
 
 void folder_item_write_cache(FolderItem *item)
 {
-	gchar *cache_file, *cache_file_tmp;
+	gchar *cache_file, *mark_file;
 	PrefsFolderItem *prefs;
 	gint filemode = 0;
 	
@@ -627,7 +652,8 @@ void folder_item_write_cache(FolderItem *item)
 		return;
 
 	cache_file = folder_item_get_cache_file(item);
-	if(msgcache_write(cache_file, item->cache) < 0) {
+	mark_file = folder_item_get_mark_file(item);
+	if(msgcache_write(cache_file, mark_file, item->cache) < 0) {
 		prefs = item->prefs;
     		if (prefs && prefs->enable_folder_chmod && prefs->folder_chmod) {
 			/* for cache file */
@@ -639,6 +665,7 @@ void folder_item_write_cache(FolderItem *item)
         }
 
 	g_free(cache_file);
+	g_free(mark_file);
 }
 
 gchar *folder_item_fetch_msg(FolderItem *item, gint num)

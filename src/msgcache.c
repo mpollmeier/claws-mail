@@ -126,12 +126,13 @@ static gint msgcache_read_cache_data_str(FILE *fp, gchar **str)
 	} \
 }
 
-MsgCache *msgcache_read(const gchar *cache_file, FolderItem *item)
+MsgCache *msgcache_read(const gchar *cache_file, const gchar *mark_file, FolderItem *item)
 {
 	MsgCache *cache;
 	FILE *fp;
 	MsgInfo *msginfo;
 	MsgFlags default_flags;
+	MsgPermFlags perm_flags;
 	gchar file_buf[BUFFSIZE];
 	gint ver;
 	guint num;
@@ -165,7 +166,6 @@ MsgCache *msgcache_read(const gchar *cache_file, FolderItem *item)
 		READ_CACHE_DATA_INT(msginfo->size, fp);
 		READ_CACHE_DATA_INT(msginfo->mtime, fp);
 		READ_CACHE_DATA_INT(msginfo->date_t, fp);
-		READ_CACHE_DATA_INT(msginfo->flags.perm_flags, fp);
 		READ_CACHE_DATA_INT(msginfo->flags.tmp_flags, fp);
 
 		READ_CACHE_DATA(msginfo->fromname, fp);
@@ -187,6 +187,24 @@ MsgCache *msgcache_read(const gchar *cache_file, FolderItem *item)
 		msginfo->folder = item;
 
 		g_hash_table_insert(cache, GINT_TO_POINTER(msginfo->msgnum), msginfo);
+	}
+
+	if ((fp = fopen(mark_file, "r")) == NULL)
+		debug_print(_("Mark file not found.\n"));
+	else if (fread(&ver, sizeof(ver), 1, fp) != 1 || MARK_VERSION != ver) {
+		debug_print(_("Mark version is different (%d != %d). "
+			      "Discarding it.\n"), ver, MARK_VERSION);
+		fclose(fp);
+		fp = NULL;
+	} else {
+		while (fread(&num, sizeof(num), 1, fp) == 1) {
+			if (fread(&perm_flags, sizeof(perm_flags), 1, fp) != 1) break;
+
+			msginfo = g_hash_table_lookup(cache, GUINT_TO_POINTER(num));
+			if(msginfo) {
+				msginfo->flags.perm_flags = perm_flags;
+			}
+		}
 	}
 
 	g_hash_table_thaw(cache);
@@ -220,7 +238,6 @@ void msgcache_write_cache(MsgInfo *msginfo, FILE *fp)
 	WRITE_CACHE_DATA_INT(msginfo->size, fp);
 	WRITE_CACHE_DATA_INT(msginfo->mtime, fp);
 	WRITE_CACHE_DATA_INT(msginfo->date_t, fp);
-	WRITE_CACHE_DATA_INT(msginfo->flags.perm_flags, fp);
 	WRITE_CACHE_DATA_INT(msginfo->flags.tmp_flags, fp);
 
 	WRITE_CACHE_DATA(msginfo->fromname, fp);
@@ -236,21 +253,37 @@ void msgcache_write_cache(MsgInfo *msginfo, FILE *fp)
 	WRITE_CACHE_DATA(msginfo->references, fp);
 }
 
+static void msgcache_write_flags(MsgInfo *msginfo, FILE *fp)
+{
+	MsgPermFlags flags = msginfo->flags.perm_flags;
+
+	WRITE_CACHE_DATA_INT(msginfo->msgnum, fp);
+	WRITE_CACHE_DATA_INT(flags, fp);
+}
+
+struct write_fps
+{
+	FILE *cache_fp;
+	FILE *mark_fp;
+};
+
 static void msgcache_write_func(gpointer key, gpointer value, gpointer user_data)
 {
 	MsgInfo *msginfo;
-	FILE *fp;
+	struct write_fps *write_fps;
 	
 	msginfo = (MsgInfo *)value;
-	fp = user_data;
+	write_fps = user_data;
 
-	msgcache_write_cache(msginfo, fp);
+	msgcache_write_cache(msginfo, write_fps->cache_fp);
+	msgcache_write_flags(msginfo, write_fps->mark_fp);
 }
 
-gint msgcache_write(const gchar *cache_file, MsgCache *cache)
+gint msgcache_write(const gchar *cache_file, const gchar *mark_file, MsgCache *cache)
 {
 	FILE *fp;
-	gint ver = CACHE_VERSION;
+	struct write_fps write_fps;
+	gint ver;
 
 	g_return_val_if_fail(cache_file != NULL, -1);
 
@@ -263,8 +296,21 @@ gint msgcache_write(const gchar *cache_file, MsgCache *cache)
 	if (change_file_mode_rw(fp, cache_file) < 0)
 		FILE_OP_ERROR(cache_file, "chmod");
 
+	ver = CACHE_VERSION;
 	WRITE_CACHE_DATA_INT(ver, fp);	
-	g_hash_table_foreach((GHashTable *)cache, msgcache_write_func, (gpointer)fp);
+	write_fps.cache_fp = fp;
+
+	if ((fp = fopen(mark_file, "w")) == NULL) {
+		FILE_OP_ERROR(mark_file, "fopen");
+		fclose(write_fps.cache_fp);
+		return -1;
+	}
+
+	ver = MARK_VERSION;
+	WRITE_CACHE_DATA_INT(ver, fp);
+	write_fps.mark_fp = fp;
+
+	g_hash_table_foreach((GHashTable *)cache, msgcache_write_func, (gpointer)&write_fps);
 
 	fclose(fp);
 

@@ -33,8 +33,8 @@ typedef GHashTable MsgCache;
 
 MsgCache   *msgcache_new			();
 void	    msgcache_destroy			(MsgCache *cache);
-MsgCache   *msgcache_read			(const gchar *cache_file, FolderItem *item);
-gint	    msgcache_write			(const gchar *cache_file, MsgCache *cache);
+MsgCache   *msgcache_read			(const gchar *cache_file, const gchar *mark_file, FolderItem *item);
+gint	    msgcache_write			(const gchar *cache_file, const gchar *mark_file, MsgCache *cache);
 void 	    msgcache_add_msg			(MsgCache *cache, MsgInfo *msginfo);
 void 	    msgcache_remove_msg			(MsgCache *cache, guint num);
 GSList	   *msgcache_get_msg_list		(MsgCache *cache);
