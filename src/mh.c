@@ -189,7 +189,12 @@ gboolean mh_scan_required(Folder *folder, FolderItem *item)
 		return FALSE;
 	}
 
+#ifdef WIN32 /* NT DLS fix (see mh_is_msg_changed()) */
+	if ((s.st_mtime > item->mtime) &&
+		(s.st_mtime - 3600 != item->mtime)) {
+#else
 	if (s.st_mtime > item->mtime) {
+#endif
 		debug_print("MH scan required, folder updated: %s (%ld > %ld)\n",
 			    path,
 			    s.st_mtime,
@@ -522,6 +527,9 @@ static gint mh_remove_all_msg(Folder *folder, FolderItem *item)
 	return val;
 }
 
+/* NT based systems change the filestamps on the fly, so after a DLS switch
+ * the mtime stored in cache and folderlist.xml dont match mtime reported by
+ * stat(), thus the file looks changed (off by 1 hr = 3600 secs). */
 static gboolean mh_is_msg_changed(Folder *folder, FolderItem *item,
 				  MsgInfo *msginfo)
 {
@@ -529,7 +537,13 @@ static gboolean mh_is_msg_changed(Folder *folder, FolderItem *item,
 
 	if (stat(itos(msginfo->msgnum), &s) < 0 ||
 	    msginfo->size  != s.st_size ||
+#ifdef WIN32
+		(msginfo->mtime - s.st_mtime != 0) &&
+		(msginfo->mtime - s.st_mtime != 3600) &&
+		(msginfo->mtime - s.st_mtime != -3600))
+#else
 	    msginfo->mtime != s.st_mtime)
+#endif
 		return TRUE;
 
 	return FALSE;

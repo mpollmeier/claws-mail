@@ -1,3 +1,8 @@
+2005-03-27 [thorsten]	1.0.4cvs0.2
+
+	* src/mh.c
+		fix: marks lost after summer-/wintertime switch
+
 2005-03-24 [thorsten]	1.0.4cvs0.1
 
 	* AUTHORS
