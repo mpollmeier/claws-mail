@@ -1,5 +1,5 @@
 dnl Autoconf macros for libaspell
-dnl $Id: aspell.m4,v 1.1.2.1 2002-08-20 07:58:40 mhadasht Exp $
+dnl $Id: aspell.m4,v 1.1.2.2 2002-08-23 13:38:38 mhadasht Exp $
 
 # Configure paths for ASPELL
 # Shamelessly stolen from the one of GPGME by Werner Koch 
@@ -21,17 +21,28 @@ dnl
           , enable_aspelltest=yes)
   AC_ARG_WITH(aspell-libs,
    [  --with-aspell-libs=LIBS            Where GNU/aspell library reside (/usr/local/lib)],
-          aspell_libs="$withval", aspell_libs="/usr/local/lib")
+          aspell_libs="$withval", aspell_libs="")
   AC_ARG_WITH(aspell-includes,
    [  --with-aspell-includes=INCLUDES    Where GNU/aspell headers reside (/usr/local/include)],
-          aspell_includes="$withval", aspell_includes="/usr/local/include")
+          aspell_includes="$withval", aspell_includes="")
 
   if test x$aspell_prefix != x ; then
      if test x${ASPELL+set} != xset ; then
         ASPELL=$aspell_prefix/bin/aspell
      fi
+     if test x$aspell_includes == x ; then
+        aspell_includes=$aspell_prefix/include
+     fi
+     if test x$aspell_libs == x ; then
+        aspell_libs=$aspell_prefix/libs
+     fi
   fi
-
+  if test x$aspell_includes == x ; then
+     aspell_includes=/usr/local/include
+  fi
+  if test x$aspell_libs == x ; then
+     aspell_libs=/usr/local/lib
+  fi
   AC_PATH_PROG(ASPELL, aspell, no)
   min_aspell_version=ifelse([$1], ,.50,$1)
   AC_MSG_CHECKING(for GNU/aspell - version >= $min_aspell_version)
