@@ -57,8 +57,10 @@
 #include "prefs_common.h"
 #include "prefs_account.h"
 #include "prefs_actions.h"
+#include "prefs_ext_prog.h"
 #include "prefs_fonts.h"
 #include "prefs_spelling.h"
+#include "prefs_themes.h"
 #include "prefs_display_header.h"
 #include "account.h"
 #include "procmsg.h"
@@ -101,6 +103,7 @@ static gint lock_socket = -1;
 static gint lock_socket_tag = 0;
 #ifdef WIN32
 static guint log_hid,gtklog_hid, gdklog_hid;
+static gint mswin_helper_timeout_tag;
 #endif
 
 typedef enum 
@@ -302,6 +305,10 @@ int main(int argc, char *argv[])
 	gtk_accel_map_load (userrc);
 	g_free(userrc);
 
+	gtk_settings_set_long_property(gtk_settings_get_default(), 
+				       "gtk-can-change-accels",
+				       (glong)TRUE, "XProperty");
+
 	CHDIR_RETURN_VAL_IF_FAIL(get_home_dir(), 1);
 
 	MAKE_DIR_IF_NOT_EXIST(RC_DIR);
@@ -315,7 +322,7 @@ int main(int argc, char *argv[])
 
 #ifdef WIN32
 	prefs_common_init_config();
-	start_mswin_helper();
+	mswin_helper_timeout_tag=start_mswin_helper();
 	w32_mailcap_create();
 #endif
 	folder_system_init();
@@ -326,8 +333,9 @@ int main(int argc, char *argv[])
 	sgpgme_init();
 	pgpmime_init();
 #endif
-
+	prefs_themes_init();
 	prefs_fonts_init();
+	prefs_ext_prog_init();
 #ifdef USE_ASPELL
 #ifdef WIN32
 	w32_aspell_init();
@@ -454,7 +462,7 @@ static void save_all_caches(FolderItem *item, gpointer data)
 static void exit_sylpheed(MainWindow *mainwin)
 {
 	gchar *filename;
-	GList *list;
+	GList *list, *cur;
 
 	debug_print("shutting down\n");
 
@@ -475,11 +483,6 @@ static void exit_sylpheed(MainWindow *mainwin)
 	/* save all state before exiting */
 	folder_write_list();
 	folder_func_to_all_folders(save_all_caches, NULL);
-	for (list = folder_get_list(); list != NULL; list = g_list_next(list)) {
-		Folder *folder = FOLDER(list->data);
-
-		folder_tree_destroy(folder);
-	}
 
 	main_window_get_size(mainwin);
 	main_window_get_position(mainwin);
@@ -525,8 +528,9 @@ static void exit_sylpheed(MainWindow *mainwin)
 	pgpmime_done();
 	sgpgme_done();
 #endif
-
+	prefs_themes_done();
 	prefs_fonts_done();
+	prefs_ext_prog_done();
 #ifdef USE_ASPELL       
 	prefs_spelling_done();
 	gtkaspell_checkers_quit();
@@ -534,7 +538,7 @@ static void exit_sylpheed(MainWindow *mainwin)
 	sylpheed_done();
 
 #ifdef WIN32
-	stop_mswin_helper();
+	stop_mswin_helper(mswin_helper_timeout_tag);
 	g_log_remove_handler("Gtk", gtklog_hid);
 	g_log_remove_handler("Gdk", gdklog_hid);
 	g_log_remove_handler(NULL, log_hid);

@@ -150,7 +150,7 @@ MATCHER_PARSER_TARGETS=$(MATCHER_PARSER)_lex.c $(MATCHER_PARSER)_parse.c $(MATCH
 
 ### translation
 
-MOFILES=bg.mo cs.mo de.mo el.mo en_GB.mo es.mo fr.mo hr.mo hu.mo it.mo ja.mo ko.mo nl.mo pl.mo pt_BR.mo ru.mo sr.mo sv.mo zh_CN.mo zh_TW.Big5.mo
+MOFILES=bg.mo cs.mo de.mo el.mo en_GB.mo es.mo fr.mo hr.mo hu.mo it.mo ja.mo ko.mo nl.mo pl.mo pt_BR.mo ru.mo sk.mo sr.mo sv.mo zh_CN.mo zh_TW.Big5.mo
 MONAME=sylpheed.mo
 # avoid check for backslash, different shells need different escaping. yucc!
 CHARSET_RE=\(.*Content-Type: text\/plain; charset=\)\([-a-zA-Z0-9]*\)\(.*\)
@@ -251,6 +251,7 @@ OBJECTS= \
 	folder.o \
 	folder_item_prefs.o \
 	foldersel.o \
+	folderutils.o \
 	folderview.o \
 	grouplistdialog.o \
 	gtkaspell.o \
@@ -311,6 +312,7 @@ OBJECTS= \
 	prefs_common.o \
 	prefs_customheader.o \
 	prefs_display_header.o \
+	prefs_ext_prog.o \
 	prefs_filtering.o \
 	prefs_filtering_action.o \
 	prefs_folder_item.o \
@@ -320,6 +322,7 @@ OBJECTS= \
 	prefs_spelling.o \
 	prefs_summary_column.o \
 	prefs_template.o \
+	prefs_themes.o \
 	prefs_toolbar.o \
 	prefswindow.o \
 	procheader.o \
@@ -371,13 +374,13 @@ OBJECTS= \
 
 ### targets
 
-all: version_rc version bisonfiles compile translation msvcdefs
+all: version_rc version bisonfiles compile translation
 
 compile: $(APPNAME).dll $(APPNAME).exe $(PLUGINS)
 version: $(VERSION_H)
 bisonfiles: $(QUOTE_FMT_TARGETS) $(MATCHER_PARSER_TARGETS)
 translation: $(MOFILES)
-version_rc: version.rc demo_version.rc spamassassin_version.rc
+version_rc: version.rc demo_version.rc spamassassin_version.rc image_viewer_version.rc
 
 ### version resource files
 
@@ -389,6 +392,8 @@ demo_version.rc: version.rc.in
 	$(SED) -e "s/@FILEDESCRIPTION@/Demo-Plugin/;s/@FILE_MAJOR_VERSION@/$(MAJOR_VERSION)/;s/@FILE_MINOR_VERSION@/$(MINOR_VERSION)/;s/@FILE_MICRO_VERSION@/$(MICRO_VERSION)/;s/@FILE_EXTRA_VERSION@/$(EXTRA_VERSION)/"  $< > $@
 spamassassin_version.rc: version.rc.in
 	$(SED) -e "s/@FILEDESCRIPTION@/SpamAssassin-Plugin/;s/@FILE_MAJOR_VERSION@/$(MAJOR_VERSION)/;s/@FILE_MINOR_VERSION@/$(MINOR_VERSION)/;s/@FILE_MICRO_VERSION@/$(MICRO_VERSION)/;s/@FILE_EXTRA_VERSION@/$(EXTRA_VERSION)/"  $< > $@
+image_viewer_version.rc: version.rc.in
+	$(SED) -e "s/@FILEDESCRIPTION@/Image-Viewer-Plugin/;s/@FILE_MAJOR_VERSION@/$(MAJOR_VERSION)/;s/@FILE_MINOR_VERSION@/$(MINOR_VERSION)/;s/@FILE_MICRO_VERSION@/$(MICRO_VERSION)/;s/@FILE_EXTRA_VERSION@/$(EXTRA_VERSION)/"  $< > $@
 
 version.res: version.rc
 ### plugins
@@ -531,13 +536,6 @@ $(PASSCRYPT_H): $(PASSCRYPT_H_IN)
 %_lex.l %_parse.y:
 	@echo dummy:$@
 
-### msvc .def : strip ordinals
-msvcdefs:
-	$(SED) -e "s/ @ .* ;//; s/;.*//; /gai_strerror.@/ s/^/;/;" sylpheed.dll.def > sylpheed.def
-	$(SED) -e "s/ @ .* ;//; s/;.*//" demo.dll.def > demo.def
-	$(SED) -e "s/ @ .* ;//; s/;.*//" spamassassin.dll.def > spamassassin.def
-	$(SED) -e "s/ @ .* ;//; s/;.*//" spamassassin_gtk.dll.def > spamassassin_gtk.def
-
 ### cleanup
 
 clean: demo_clean spamassassin_clean spamassassin_gtk_clean
@@ -591,6 +589,7 @@ filtering.o: 	filtering.c filtering.h
 folder.o: 	folder.c folder.h
 folder_item_prefs.o: 	folder_item_prefs.c folder_item_prefs.h
 foldersel.o: 	foldersel.c foldersel.h
+folderutils.o: 	folderutils.c folderutils.h
 folderview.o: 	folderview.c folderview.h
 grouplistdialog.o: 	grouplistdialog.c grouplistdialog.h
 gtkaspell.o: 	gtkaspell.c gtkaspell.h
@@ -650,6 +649,7 @@ prefs_actions.o: 	prefs_actions.c prefs_actions.h
 prefs_common.o: 	prefs_common.c prefs_common.h
 prefs_customheader.o: 	prefs_customheader.c prefs_customheader.h
 prefs_display_header.o: 	prefs_display_header.c prefs_display_header.h
+prefs_ext_prog.o: 	prefs_ext_prog.c prefs_ext_prog.h
 prefs_filtering.o: 	prefs_filtering.c prefs_filtering.h
 prefs_filtering_action.o:	prefs_filtering_action.c prefs_filtering_action.h
 prefs_folder_item.o: 	prefs_folder_item.c prefs_folder_item.h
@@ -659,6 +659,7 @@ prefs_matcher.o: 	prefs_matcher.c prefs_matcher.h
 prefs_spelling.o:	prefs_spelling.c prefs_spelling.h
 prefs_summary_column.o: 	prefs_summary_column.c prefs_summary_column.h
 prefs_template.o: 	prefs_template.c prefs_template.h
+prefs_themes.o: 	prefs_themes.c prefs_themes.h
 prefs_toolbar.o: 	prefs_toolbar.c prefs_toolbar.h
 prefswindow.o: 	prefswindow.c prefswindow.h
 procheader.o: 	procheader.c procheader.h

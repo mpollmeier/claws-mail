@@ -54,6 +54,12 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib /nologo /dll /machine:I386 /out:"sylpheed.dll"
+# Begin Special Build Tool
+OutDir=.\sylpheed_dll_d___Win32_Release
+SOURCE="$(InputPath)"
+PreLink_Desc=creating module definition
+PreLink_Cmds=call build_def.bat sylpheed.def $(OutDir)
+# End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "sylpheed_dll - Win32 Debug"
 
@@ -80,6 +86,12 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib /nologo /dll /debug /machine:I386 /out:"sylpheed_d.dll" /pdbtype:sept
+# Begin Special Build Tool
+OutDir=.\sylpheed_dll_d___Win32_Debug
+SOURCE="$(InputPath)"
+PreLink_Desc=creating module definition
+PreLink_Cmds=call build_def.bat sylpheed_d.def $(OutDir)
+# End Special Build Tool
 
 !ENDIF 
 
@@ -261,6 +273,10 @@ SOURCE=..\src\folder_item_prefs.c
 # Begin Source File
 
 SOURCE=..\src\foldersel.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\folderutils.c
 # End Source File
 # Begin Source File
 
@@ -500,6 +516,10 @@ SOURCE=..\src\prefs_display_header.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\prefs_ext_prog.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\prefs_filtering.c
 # End Source File
 # Begin Source File
@@ -533,6 +553,10 @@ SOURCE=..\src\prefs_summary_column.c
 # Begin Source File
 
 SOURCE=..\src\prefs_template.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\prefs_themes.c
 # End Source File
 # Begin Source File
 
@@ -656,7 +680,7 @@ SOURCE=..\src\stock_pixmap.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\string_match.c
+SOURCE=..\src\common\string_match.c
 # End Source File
 # Begin Source File
 
@@ -904,6 +928,10 @@ SOURCE=..\src\foldersel.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\folderutils.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\folderview.h
 # End Source File
 # Begin Source File
@@ -1116,6 +1144,10 @@ SOURCE=..\src\prefs_display_header.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\prefs_ext_prog.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\prefs_filtering_action.h
 # End Source File
 # Begin Source File
@@ -1141,6 +1173,10 @@ SOURCE=..\src\prefs_summary_column.h
 # Begin Source File
 
 SOURCE=..\src\prefs_template.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\prefs_themes.h
 # End Source File
 # Begin Source File
 
@@ -1260,7 +1296,7 @@ SOURCE=..\src\stock_pixmap.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\string_match.h
+SOURCE=..\src\common\string_match.h
 # End Source File
 # Begin Source File
 

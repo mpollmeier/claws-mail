@@ -177,6 +177,8 @@
 	perror(func); \
 }
 
+typedef gpointer (*GNodeMapFunc)	(gpointer nodedata, gpointer data);
+
 /* debug functions */
 void debug_set_mode		(gboolean mode);
 gboolean debug_get_mode		(void);
@@ -263,7 +265,7 @@ wchar_t *wcscasestr		(const wchar_t *haystack,
 gint get_mbs_len		(const gchar	*s);
 
 gboolean is_next_nonascii	(const guchar *s);
-gint get_next_word_len		(const gchar *s);
+gint get_next_word_len		(const guchar *s);
 
 /* functions for string parsing */
 gint subject_compare			(const gchar	*s1,
@@ -348,6 +350,8 @@ gchar *trim_string			(const gchar	*str,
 					 gint		 len);
 
 GList *uri_list_extract_filenames	(const gchar	*uri_list);
+gboolean is_uri_string			(const gchar	*str);
+gchar *get_uri_path			(const gchar	*uri);
 void decode_uri				(gchar		*decoded_uri,
 					 const gchar	*encoded_uri);
 gint scan_mailto_url			(const gchar	*mailto,
@@ -480,6 +484,7 @@ gchar *generate_mime_boundary	(const gchar *prefix);
 
 gint quote_cmd_argument(gchar * result, guint size,
 			const gchar * path);
+GNode *g_node_map(GNode *node, GNodeMapFunc func, gpointer data);
 
 #ifdef WIN32
 #undef isspace
@@ -499,9 +504,8 @@ void locale_from_utf8(gchar **buf);
 void unlink_tempfiles(void);
 
 /* timer needed for socket(gdk_input) */
-gint mswin_helper_timeout_tag;
-void start_mswin_helper(void);
-void stop_mswin_helper(void);
+int start_mswin_helper(void);
+void stop_mswin_helper(int tag);
 static gint mswin_helper_timeout_cb(gpointer *data);
 
 gchar *w32_get_exec_dir();

@@ -1,3 +1,12 @@
+2004-02-22 Thorsten Maerz <torte@netztorte.de>
+
+	* win32\Makefile
+	  win32\mk_ALL.bat
+	  win32\image_viewer.dsp		*** NEW FILE ***
+	  win32\image_viewer_d.dsp		*** NEW FILE ***
+	  win32\utils\mk_versionrc.bat
+		add: Makefiles for imageviewer
+
 2003-12-03 Thorsten Maerz <torte@netztorte.de>
 
 	* initial win32 checkin
