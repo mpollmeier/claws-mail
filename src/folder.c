@@ -993,6 +993,75 @@ void folder_item_scan_foreach(GHashTable *table)
 	g_hash_table_foreach(table, folder_item_scan_foreach_func, NULL);
 }
 
+void folder_count_total_cache_memusage(FolderItem *item, gpointer data)
+{
+	gint *memusage = (gint *)data;
+
+	if(item->cache == NULL)
+		return;
+	
+	*memusage += msgcache_get_memory_usage(item->cache);
+}
+
+gint folder_cache_time_compare_func(gconstpointer a, gconstpointer b)
+{
+	FolderItem *fa = (FolderItem *)a;
+	FolderItem *fb = (FolderItem *)b;
+	
+	return (gint) (msgcache_get_last_access_time(fa->cache) - msgcache_get_last_access_time(fb->cache));
+}
+
+void folder_find_expired_caches(FolderItem *item, gpointer data)
+{
+	GSList **folder_item_list = (GSList **)data;
+	gint difftime, expiretime;
+	
+	if(item->cache == NULL)
+		return;
+
+	difftime = (gint) (time(NULL) - msgcache_get_last_access_time(item->cache));
+	expiretime = prefs_common.cache_min_keep_time * 60;
+	debug_print(_("Cache unused time: %d (Expire time: %d)\n"), difftime, expiretime);
+	if(difftime > expiretime) {
+		*folder_item_list = g_slist_insert_sorted(*folder_item_list, item, folder_cache_time_compare_func);
+	}
+}
+
+void folder_item_free_cache(FolderItem *item)
+{
+	g_return_if_fail(item != NULL);
+	g_return_if_fail(item->cache != NULL);
+	
+	msgcache_destroy(item->cache);
+	item->cache = NULL;
+}
+
+void folder_clean_cache_memory()
+{
+	gint memusage = 0;
+
+	folder_func_to_all_folders(folder_count_total_cache_memusage, &memusage);	
+	debug_print(_("Total cache memory usage: %d\n"), memusage);
+	
+	if(memusage > (prefs_common.cache_max_mem_usage * 1024)) {
+		GSList *folder_item_list = NULL, *listitem;
+		
+		debug_print(_("Trying to free cache memory\n"));
+
+		folder_func_to_all_folders(folder_find_expired_caches, &folder_item_list);	
+		listitem = folder_item_list;
+		while((listitem != NULL) && (memusage > (prefs_common.cache_max_mem_usage * 1024))) {
+			FolderItem *item = (FolderItem *)(listitem->data);
+
+			debug_print(_("Freeing cache memory for %s\n"), item->path);
+			memusage -= msgcache_get_memory_usage(item->cache);
+			folder_item_free_cache(item);
+			listitem = listitem->next;
+		}
+		g_slist_free(folder_item_list);
+	}
+}
+
 void folder_item_read_cache(FolderItem *item)
 {
 	gchar *cache_file, *mark_file;
@@ -1009,6 +1078,8 @@ void folder_item_read_cache(FolderItem *item)
 	msgcache_read_mark(item->cache, mark_file);
 	g_free(cache_file);
 	g_free(mark_file);
+
+	folder_clean_cache_memory();
 }
 
 void folder_item_write_cache(FolderItem *item)

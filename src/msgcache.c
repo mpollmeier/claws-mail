@@ -420,3 +420,17 @@ GSList *msgcache_get_msg_list(MsgCache *cache)
 
 	return msg_list;
 }
+
+time_t msgcache_get_last_access_time(MsgCache *cache)
+{
+	g_return_val_if_fail(cache != NULL, 0);
+	
+	return cache->last_access;
+}
+
+gint msgcache_get_memory_usage(MsgCache *cache)
+{
+	g_return_val_if_fail(cache != NULL, 0);
+
+	return cache->memusage;
+}

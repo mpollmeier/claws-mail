@@ -41,5 +41,7 @@ void 	    msgcache_remove_msg			(MsgCache *cache, guint num);
 void 	    msgcache_update_msg			(MsgCache *cache, MsgInfo *msginfo);
 MsgInfo	   *msgcache_get_msg			(MsgCache *cache, guint num);
 GSList	   *msgcache_get_msg_list		(MsgCache *cache);
+time_t	    msgcache_get_last_access_time	(MsgCache *cache);
+gint	    msgcache_get_memory_usage		(MsgCache *cache);
 
 #endif

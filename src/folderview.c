@@ -1636,6 +1636,8 @@ static void folderview_selected(GtkCTree *ctree, GtkCTreeNode *row,
 
 	opened = summary_show(folderview->summaryview, item, FALSE);
 
+	folder_clean_cache_memory();
+	
 	if (!opened) {
 		gtkut_ctree_set_focus_row(ctree, folderview->opened);
 		gtk_ctree_select(ctree, folderview->opened);

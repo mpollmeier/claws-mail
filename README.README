@@ -6,12 +6,34 @@ New Cache Branch
 This is the new cache release of sylpheed-claws. New cache is a development
 branch to create a new data cache structure for sylpheed, that will solve
 many of the problems sylpheed currently has with updates to flags. This
-package is released to get more feedback from the users. It's not yet
-finished and does not clean up memory yet, so you'll notice a large memory
-usage if you have large folders after a while. But you will also notice a
-large speed gain when you open these folders.  As this branch is not well
-tested it might cause cache or flag file corruption that will cause a lose
-of all flags for mails.
+package is released to get more feedback from the users.  But you will also
+notice a large speed gain when you open these folders.  As this branch is
+not well tested it might cause cache or flag file corruption that will cause
+a lose of all flags for mails.
+
+New cache uses two new configuration parameters that can be adjusted in
+~/.sylpheed/sylpheedrc (no gui for them available yet).
+
+    cache_max_mem_usage		(default: 4096)
+	the maximum kB of memory sylpheed should use.
+	It will try to keep the memory usage below this
+	value, but it will always use the assigned
+	amount of memory for speed gain.
+
+    cache_min_keep_time		(default: 15)
+	the minimum time in minutes sylpheed will keep
+	the folder cache in memory. If a cache is more
+	recent than this time it will not be freed even
+	if the memory usage is above the maximum. You
+	should probably set this value higher than your
+	mail check interval. Otherwise the cache will
+	always be freed between checks even if the folder
+	is accessed on every check, which will cause much
+	disk IO.
+
+The check if memory can be freed is currently done after the active
+folder has been changed or whenever a new cache is read, i.e. triggered
+by mail incorporation.
 
 Folder updates are not done automatically yet for NEWS and IMAP, so you
 will have to use the View / Update menu to update the folder content. New

@@ -330,5 +330,6 @@ const PersistPrefs *folder_get_persist_prefs
 					(GHashTable *pptable, const char *name);
 
 void folder_item_restore_persist_prefs	(FolderItem *item, GHashTable *pptable);
+void folder_clean_cache_memory		();
 
 #endif /* __FOLDER_H__ */

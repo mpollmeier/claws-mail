@@ -773,6 +773,11 @@ static PrefParam param[] = {
 	{"important_score", "1", &prefs_common.important_score, P_INT,
 	 NULL, NULL, NULL},
 
+	{"cache_max_mem_usage", "4096", &prefs_common.cache_max_mem_usage, P_INT,
+	 NULL, NULL, NULL},
+	{"cache_min_keep_time", "15", &prefs_common.cache_min_keep_time, P_INT,
+	 NULL, NULL, NULL},
+
 	{NULL, NULL, NULL, P_OTHER, NULL, NULL, NULL}
 };
 
