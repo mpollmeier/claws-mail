@@ -88,7 +88,9 @@ struct _Pop3State
 
 	Pop3MsgInfo *msg;
 
-	GHashTable *id_table;
+	GHashTable *uidl_table;
+
+	gboolean uidl_is_valid;
 
 	gint error_val;
 	IncState inc_state;
@@ -108,6 +110,10 @@ void inc_progress_update	(Pop3State	*state,
 				 Pop3Phase	 phase);
 gint inc_drop_message		(const gchar	*file,
 				 Pop3State	*state);
+
+gboolean inc_is_active		(void);
+
+void inc_cancel_all		(void);
 
 void inc_lock			(void);
 void inc_unlock			(void);

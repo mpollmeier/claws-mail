@@ -229,7 +229,6 @@ void mimeview_init(MimeView *mimeview)
 static gboolean mimeview_is_signed(MimeView *mimeview)
 {
 	MimeInfo *partinfo = NULL;
-	MsgInfo *msginfo = NULL;
 
         debug_print("mimeview_is signed of %p\n", mimeview);
 
@@ -249,8 +248,6 @@ static gboolean mimeview_is_signed(MimeView *mimeview)
 	/* walk the tree and see whether there is a signature somewhere */
 	do {
 		if (rfc2015_has_signature(partinfo))
-			return TRUE;
-		if (pgptext_has_signature(msginfo, partinfo))
 			return TRUE;
         } while ((partinfo = partinfo->parent) != NULL);
 
@@ -718,6 +715,7 @@ static gint mimeview_key_pressed(GtkWidget *widget, GdkEventKey *event,
 		mimeview_launch(mimeview);
 		return TRUE;
 	default:
+		break;
 	}
 
 	if (!mimeview->messageview->mainwin) return FALSE;

@@ -1,4 +1,4 @@
-SUBDIRS = ac po intl libkcc src manual tools
+SUBDIRS = ac po intl libkcc src manual faq tools
 
 EXTRA_DIST = \
 	ChangeLog.jp \

@@ -1,3 +1,110 @@
+2002-03-09 [paul]	0.7.3claws3
+
+	* sync with sylpheed 0.7.4
+		see ChangeLog entry 2002-03-09
+
+2002-03-08 [paul]	0.7.3claws2
+
+	* faq/en/sylpheed-faq*
+	  faq/es/sylpheed-faq*
+	  faq/fr/sylpheed-faq*
+		update the FAQs
+
+	* manual/fr/.cvsignore
+	  manual/fr/Makefilea.am
+	  manual/fr/sylpheed*
+	  src/mainwindow.c
+	  src/manual.[ch]
+		add the French manual
+
+2002-03-07 [paul]	0.7.3claws1
+
+	* sync with sylpheed 0.7.3cvs4
+		see ChangeLog entries  2002-03-06 and 2002-03-07
+	
+	* po/nl.po
+		updated by Wilbert Berendsen
+
+2002-03-07 [melvin]	0.7.2claws34
+
+	* src/selective_download.c
+		Changed the pixmap of the receive button to MAIL_RECEIVE.
+
+2002-03-06 [paul]	0.7.2claws33
+
+	* sync with sylpheed 0.7.3cvs1
+		bug fix, see ChangeLog entry 2002-03-05
+
+2002-03-05 [paul]	0.7.2claws32
+
+	* src/mimeview.c
+	  src/pgptext.[ch]
+	  src/procmsg.c
+		reverse the pgp ascii-armored code implemented in 
+		0.7.2claws16. removal of this code until it matures.
+		this means that verifying ascii-armored pgp sigs and
+		automatic decryption of ascii-armored encrypted
+		messages no longer works.
+
+2002-03-05 [paul]	0.7.2claws31
+
+	* configure.in
+	  Makefile.am
+	* faq/Makefile.am
+	* faq/en/Makefile.am
+	  faq/en/sylpheed-faq.html
+	  faq/en/sylpheed-faq-1.html
+          faq/en/sylpheed-faq-2.html
+	  faq/en/sylpheed-faq-3.html
+	* faq/es/Makefile.am
+	  faq/es/sylpheed-faq.html
+	  faq/es/sylpheed-faq-1.html
+          faq/es/sylpheed-faq-2.html
+	  faq/es/sylpheed-faq-3.html
+	  faq/es/sylpheed-faq-4.html
+	* faq/fr/Makefile.am
+	  faq/fr/sylpheed-faq.html
+	  faq/fr/sylpheed-faq-1.html
+          faq/fr/sylpheed-faq-2.html
+	  faq/fr/sylpheed-faq-3.html
+	* src/Makefile.am
+	  src/defs.h
+	  src/mainwindow.c
+	  src/manual.[ch]
+		add FAQs in English, Spanish and French
+
+
+2002-03-05 [paul]	0.7.2claws30
+
+	* manual/en/sylpheed.html
+	  manual/en/sylpheed-XX.html
+		updated the English manual
+
+2002-03-05 [hoa]	
+
+	* src/summaryview.c
+		dialog box pops up if the article can't be deleted.
+
+2002-03-04 [paul]	
+	
+	* po/pt_BR.po
+		updated by Fabio Junior Benedito
+
+2002-03-04 [hoa]
+
+	* removed ac/gpgme.m4
+		to avoid autogen common problem
+		developers have to install gpgme development package now
+
+	* src/compose.c
+		encoding to 7bit or 8bit is enabled.
+
+2002-03-03 [alfons]	0.7.2claws29
+
+	* src/pop.c
+		merge fix by Oliver Haertel for selective
+		download buglet
+
 2002-03-03 [paul]	0.7.2claws28
 	
 	* sync with sylpheed 0.7.3

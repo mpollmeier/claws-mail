@@ -1,3 +1,68 @@
+2002-03-09
+
+	* version 0.7.4
+
+2002-03-09
+
+	* src/ssl.[ch]: コーディングスタイルを合わせた。
+	* src/compose.c: compose_send_later_cb(): ファイルの保存に失敗する
+	  バグを修正。
+	* faq/Makefile.am
+	  faq/en/Makefile.am
+	  faq/en/sylpheed-faq*.html
+	  faq/es/Makefile.am
+	  faq/es/sylpheed-faq*.html
+	  faq/fr/Makefile.am
+	  faq/fr/sylpheed-faq*.html
+	  configure.in
+	  Makefile.am
+	  src/Makefile.am
+	  src/defs.h
+	  src/mainwindow.c
+	  src/manual.[ch]: 英語、スペイン語、フランス語の FAQ を追加。
+
+2002-03-07
+
+	* manual/en/sylpheed*.html: 最新版に更新。
+	* libkcc/jis.c
+	  src/addrcache.c
+	  src/addritem.c
+	  src/ldif.c
+	  src/mgutils.c: string.h を include して strlen() 等の warning
+	  を取り除いた。
+	* src/folder.c
+	  src/folderview.c
+	  src/inc.c
+	  src/logwindow.c
+	  src/mainwindow.c
+	  src/mimeview.c
+	  src/prefs.c
+	  src/prefs_common.c
+	  src/procheader.c
+	  src/send.c
+	  src/session.c
+	  src/sigstatus.c
+	  src/summaryview.c: gcc-3.0 で 'deprecated use of label at end of
+	  compound statement' の warning を避けるために switch の最後の
+	  ラベルに break を追加。
+	* src/rfc2015.c: passphrase_cb(): r_hd の型を修正。
+
+2002-03-06
+
+	* src/inc.[ch]: IncProgressDialog へのポインタを静的なリストに
+	  保存するようにした。
+	  inc_cancel_all(): 新規。全ての現在の受信をキャンセルする。
+	* src/mainwindow.c: 「受信を中止」メニューを追加。
+	* src/textview.c: シングルパート MIME メッセージのためのマイナー
+	  な修正と、 textview_write_body() を少し整理。
+
+2002-03-05
+
+	* src/inc.c: inc_write_uidl_list(): UIDL コマンドを発行する前に
+	  何かエラーが起こると UIDL 情報が失われてしまうバグを修正。
+	  src/inc.h: uidl_is_valid を Pop3State に追加。
+	  src/pop.c: UIDL が有効になれば uidl_is_valid を TRUE にする。
+
 2002-03-03
 
 	* version 0.7.3

@@ -262,6 +262,9 @@ static void inc_mail_cb			(MainWindow	*mainwin,
 static void inc_all_account_mail_cb	(MainWindow	*mainwin,
 					 guint		 action,
 					 GtkWidget	*widget);
+static void inc_cancel_cb		(MainWindow	*mainwin,
+					 guint		 action,
+					 GtkWidget	*widget);
 
 static void send_queue_cb		(MainWindow	*mainwin,
 					 guint		 action,
@@ -430,6 +433,9 @@ static void account_menu_cb	 (GtkMenuItem	*menuitem,
 				  gpointer	 data);
 
 static void manual_open_cb	 (MainWindow	*mainwin,
+				  guint		 action,
+				  GtkWidget	*widget);
+static void faq_open_cb		 (MainWindow	*mainwin,
 				  guint		 action,
 				  GtkWidget	*widget);
 
@@ -628,9 +634,9 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_Message/Get new ma_il"),		"<control>I",	inc_mail_cb, 0, NULL},
 	{N_("/_Message/Get from _all accounts"),
 						"<shift><control>I", inc_all_account_mail_cb, 0, NULL},
+	{N_("/_Message/Cancel receivin_g"),	NULL, inc_cancel_cb, 0, NULL},
 	{N_("/_Message/---"),			NULL, NULL, 0, "<Separator>"},
-	{N_("/_Message/Send queued messa_ges"),
-						NULL, send_queue_cb, 0, NULL},
+	{N_("/_Message/_Send queued messages"), NULL, send_queue_cb, 0, NULL},
 	{N_("/_Message/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_Message/Compose a_n email message"),	"<control>M", compose_mail_cb, 0, NULL},
 	{N_("/_Message/Compose a news message"),	NULL,	compose_news_cb, 0, NULL},
@@ -704,7 +710,12 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_Help"),				NULL, NULL, 0, "<Branch>"},
 	{N_("/_Help/_Manual"),			NULL, NULL, 0, "<Branch>"},
 	{N_("/_Help/_Manual/_English"),		NULL, manual_open_cb, MANUAL_LANG_EN, NULL},
+	{N_("/_Help/_Manual/_French"),		NULL, manual_open_cb, MANUAL_LANG_FR, NULL},
 	{N_("/_Help/_Manual/_Japanese"),	NULL, manual_open_cb, MANUAL_LANG_JA, NULL},
+	{N_("/_Help/_FAQ"),			NULL, NULL, 0, "<Branch>"},
+	{N_("/_Help/_FAQ/_English"),		NULL, faq_open_cb, MANUAL_LANG_EN, NULL},
+	{N_("/_Help/_FAQ/_Spanish"),		NULL, faq_open_cb, MANUAL_LANG_ES, NULL},
+	{N_("/_Help/_FAQ/_French"),		NULL, faq_open_cb, MANUAL_LANG_FR, NULL},
 	{N_("/_Help/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_Help/_About"),			NULL, about_show, 0, NULL}
 };
@@ -1405,9 +1416,10 @@ typedef enum
 	M_THREADED	      = 1 << 7,
 	M_UNTHREADED	      = 1 << 8,
 	M_ALLOW_DELETE	      = 1 << 9,
-	M_NEWS                = 1 << 10,
-	M_HAVE_NEWS_ACCOUNT   = 1 << 11,
-	M_HIDE_READ_MSG	      = 1 << 12
+	M_INC_ACTIVE	      = 1 << 10,
+	M_NEWS                = 1 << 11,
+	M_HAVE_NEWS_ACCOUNT   = 1 << 12,
+	M_HIDE_READ_MSG	      = 1 << 13
 } SensitiveCond;
 
 static SensitiveCond main_window_get_current_state(MainWindow *mainwin)
@@ -1458,6 +1470,9 @@ static SensitiveCond main_window_get_current_state(MainWindow *mainwin)
 			break;
 		}
 	}
+
+	if (inc_is_active())
+		state |= M_INC_ACTIVE;
 
 	return state;
 }
@@ -1555,6 +1570,7 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 
 		{"/Message/Get new mail"          , M_HAVE_ACCOUNT|M_UNLOCKED},
 		{"/Message/Get from all accounts" , M_HAVE_ACCOUNT|M_UNLOCKED},
+		{"/Message/Cancel receiving"      , M_INC_ACTIVE},
 		{"/Message/Compose a news message", M_HAVE_NEWS_ACCOUNT},
 		{"/Message/Reply"                 , M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
 		{"/Message/Reply to sender"       , M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
@@ -2540,6 +2556,11 @@ static void inc_all_account_mail_cb(MainWindow *mainwin, guint action,
 	inc_all_account_mail(mainwin, prefs_common.newmail_notify_manu);
 }
 
+static void inc_cancel_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
+{
+	inc_cancel_all();
+}
+
 static void send_queue_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
 {
 	GList *list;
@@ -2954,6 +2975,11 @@ static void manual_open_cb(MainWindow *mainwin, guint action,
 			   GtkWidget *widget)
 {
 	manual_open((ManualLang)action);
+}
+
+static void faq_open_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
+{
+	faq_open((ManualLang)action);
 }
 
 static void scan_tree_func(Folder *folder, FolderItem *item, gpointer data)
