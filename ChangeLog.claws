@@ -1,3 +1,61 @@
+2002-04-28 [paul]	0.7.5claws
+
+	* po/es.po
+	  po/nl.po
+	  po/pt_BR.po
+		updated by Ricardo Mones Lastra, Wilbert Berendsen, and
+		Fabio Junior Beneditto
+
+2002-04-27 [jens]	0.7.4claws103
+
+	* po/de.po
+		updated German translation.
+
+2002-04-27 [hiro]	0.7.4claws102
+
+	* src/summaryview.c
+		summary_write_cache(): fixed the mark loss of hidden messages.
+
+2002-04-26 [melvin]	0.7.4claws101
+
+	* src/procmsg.c
+		fixed a second typo (same one)
+	* po/fr.po
+	  po/it.po
+	  po/pt_BR.po
+	  	fixed the type again...
+
+2002-04-26 [melvin]	0.7.4claws100
+
+	* src/procmsg.c
+		fixed a typo in an alert message ("temorary").
+	* po/it.po
+	* po/pt_BR.po
+		corrected the typo  described above.
+	* po/fr.po
+		updated French translation.
+
+2002-04-26 [darko]	0.7.4claws99
+
+	* src/summaryview.c
+		fix target folder colorization
+
+2002-04-25 [paul]	0.7.4claws98
+
+	* po/it.po
+		updated by Alessandro Maestri
+
+2002-04-24 [colin]	0.7.4claws97
+	
+	* src/compose.c
+		Fixed double "subject is empty" question.
+
+2002-04-23 [colin]	0.7.4claws96
+	
+	* src/mimeview.c
+		Corrected issue when "automatically display images" was
+		not set : first image remained after selecting second.
+
 2002-04-23 [melvin]	0.7.4claws95
 
 	* src/prefs_actions.c

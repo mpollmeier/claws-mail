@@ -941,10 +941,16 @@ gint folder_item_scan(FolderItem *item)
 			msginfo = folder->fetch_msginfo(folder, item, num);
 			if(msginfo != NULL) {
 				msgcache_add_msg(item->cache, msginfo);
+				if(MSG_IS_NEW(msginfo->flags))
+				    item->new++;
+				if(MSG_IS_UNREAD(msginfo->flags))
+				    item->unread++;
+				item->total++;
 				procmsg_msginfo_free(msginfo);
 				debug_print(_("Added newly found message %d to cache.\n"), num);
 			}
 		}
+		folderview_update_item(item, FALSE);
 	} else {
 		GSList *newmsg_list;
 		MsgInfo *msginfo;
@@ -953,9 +959,15 @@ gint folder_item_scan(FolderItem *item)
 		for(elem = newmsg_list; elem != NULL; elem = g_slist_next(elem)) {
 			msginfo = (MsgInfo *) elem->data;
 			msgcache_add_msg(item->cache, msginfo);
+			if(MSG_IS_NEW(msginfo->flags))
+				item->new++;
+			if(MSG_IS_UNREAD(msginfo->flags))
+				item->unread++;
+			item->total++;
 			procmsg_msginfo_free(msginfo);
 		}
 		g_slist_free(newmsg_list);
+		folderview_update_item(item, FALSE);
 	}
 
 	g_slist_free(folder_list);

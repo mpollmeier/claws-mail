@@ -1346,7 +1346,7 @@ gint procmsg_send_message_queue(const gchar *file)
     		if ((tmpfp = fopen(tmp, "wb")) == NULL) {
             		FILE_OP_ERROR(tmp, "fopen");
             		newsval = -1;
-			alertpanel_error(_("Could not create temorary file for news sending."));
+			alertpanel_error(_("Could not create temporary file for news sending."));
     		} else {
     			if (change_file_mode_rw(tmpfp, tmp) < 0) {
             			FILE_OP_ERROR(tmp, "chmod");
@@ -1357,7 +1357,7 @@ gint procmsg_send_message_queue(const gchar *file)
 				if (fputs(buf, tmpfp) == EOF) {
 					FILE_OP_ERROR(tmp, "fputs");
 					newsval = -1;
-					alertpanel_error(_("Error when writing temorary file for news sending."));
+					alertpanel_error(_("Error when writing temporary file for news sending."));
 				}
 			}
 			fclose(tmpfp);
