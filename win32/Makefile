@@ -1,4 +1,4 @@
-# /sylpheed-claws/win32/Makefile $Revision: 1.1.2.2 $ $Date: 2002-05-25 13:06:52 $
+# /sylpheed-claws/win32/Makefile $Revision: 1.1.2.3 $ $Date: 2002-05-27 23:26:34 $
 # Toplevel Makefile for exported MSVC Makefiles:
 ## Microsoft Developer Studio Generated NMAKE File, Based on sylpheed.dsp
 ## Microsoft Developer Studio Generated NMAKE File, Based on sylpheed_debug.dsp
@@ -16,6 +16,7 @@
 # EXAMPLE :
 #   nmake DEBUG=1 sylpheed
 
+PATH=\dev\proj\sylpheed-claws\win32\utils\apps;$(PATH)
 
 !IF "$(DEBUG)" == ""
 CFG=sylpheed - Win32 Release
