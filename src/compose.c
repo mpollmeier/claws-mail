@@ -2046,7 +2046,8 @@ static void compose_wrap_line(Compose *compose)
 			}
 			line_end = 1;
 		} else {
-			if (ch_len == 1 && strchr(INDENT_CHARS, *cbuf))
+			if (ch_len == 1 
+			    && strchr(prefs_common.quote_chars, *cbuf))
 				quoted = 1;
 			else if (ch_len != 1 || !isspace(*cbuf))
 				quoted = 0;
@@ -2069,7 +2070,7 @@ static void compose_wrap_line(Compose *compose)
 			line_end = 1;
 		} else {
 			if (line_end && ch_len == 1 &&
-			    strchr(INDENT_CHARS, *cbuf))
+			    strchr(prefs_common.quote_chars, *cbuf))
 				goto compose_end; /* quoted part */
 
 			line_end = 0;
@@ -2214,7 +2215,7 @@ static guint get_indent_length(GtkSText *text, guint start_pos, guint text_len)
 		if (cbuf[0] == '\n')
 			break;
 
-		is_indent = strchr(INDENT_CHARS, cbuf[0]) ? TRUE : FALSE;
+		is_indent = strchr(prefs_common.quote_chars, cbuf[0]) ? TRUE : FALSE;
 		is_space = strchr(SPACE_CHARS, cbuf[0]) ? TRUE : FALSE;
 
 		switch (state) {
@@ -2242,7 +2243,8 @@ static guint get_indent_length(GtkSText *text, guint start_pos, guint text_len)
 			if (is_indent == FALSE && !isupper(cbuf[0]))
 				goto out;
 			if (is_indent == TRUE) {
-				if (alnum_cnt > 0 && cbuf[0] != '>')
+				if (alnum_cnt > 0 
+				    && !strchr(prefs_common.quote_chars, cbuf[0]))
 					goto out;
 				alnum_cnt = 0;
 				state = WAIT_FOR_SPACE;
@@ -2793,7 +2795,7 @@ gint compose_send(Compose *compose)
 				(compose->account, F_OUTBOX);
 			if (procmsg_save_to_outbox(outbox, tmp, FALSE) < 0)
 				alertpanel_error
-					(_("Can't save the message to outbox."));
+					(_("Can't save the message to Sent."));
 			else
 				folderview_update_item(outbox, TRUE);
 		}
@@ -3396,6 +3398,12 @@ static gint compose_queue_sub(Compose *compose, gint *msgnum, FolderItem **item,
 	}
 
 	queue = account_get_special_folder(compose->account, F_QUEUE);
+	if (!queue) {
+		g_warning(_("can't find queue folder\n"));
+		unlink(tmp);
+		g_free(tmp);
+		return -1;
+	}
 	folder_item_scan(queue);
 	if ((num = folder_item_add_msg(queue, tmp, TRUE)) < 0) {
 		g_warning(_("can't queue the message\n"));
@@ -3498,6 +3506,36 @@ static void compose_write_attach(Compose *compose, FILE *fp)
 	fprintf(fp, "\n--%s--\n", compose->boundary);
 }
 
+#define QUOTE_IF_REQUIRED(out, str)			\
+{							\
+	if (*str != '"' && strchr(str, ',')) {		\
+		gchar *__tmp;				\
+		gint len;				\
+							\
+		len = strlen(str) + 3;			\
+		Xalloca(__tmp, len, return -1);		\
+		g_snprintf(__tmp, len, "\"%s\"", str);	\
+		out = __tmp;				\
+	} else {					\
+		Xstrdup_a(out, str, return -1);		\
+	}						\
+}
+
+#define PUT_RECIPIENT_HEADER(header, str)				     \
+{									     \
+	if (*str != '\0') {						     \
+		Xstrdup_a(str, str, return -1);				     \
+		g_strstrip(str);					     \
+		if (*str != '\0') {					     \
+			compose->to_list = address_list_append		     \
+				(compose->to_list, str);		     \
+			compose_convert_header				     \
+				(buf, sizeof(buf), str, strlen(header) + 2); \
+			fprintf(fp, "%s: %s\n", header, buf);		     \
+		}							     \
+	}								     \
+}
+
 #define IS_IN_CUSTOM_HEADER(header) \
 	(compose->account->add_customhdr && \
 	 custom_header_find(compose->account->customhdr_list, header) != NULL)
@@ -3560,6 +3598,7 @@ static gint compose_write_headers(Compose *compose, FILE *fp,
 {
 	gchar buf[BUFFSIZE];
 	gchar *str;
+	gchar *name;
 	/* struct utsname utsbuf; */
 
 	g_return_val_if_fail(fp != NULL, -1);
@@ -3579,8 +3618,9 @@ static gint compose_write_headers(Compose *compose, FILE *fp,
 			compose_convert_header
 				(buf, sizeof(buf), compose->account->name,
 				 strlen("From: "));
+			QUOTE_IF_REQUIRED(name, buf);
 			fprintf(fp, "From: %s <%s>\n",
-				buf, compose->account->address);
+				name, compose->account->address);
 		} else
 			fprintf(fp, "From: %s\n", compose->account->address);
 	}
@@ -3590,20 +3630,7 @@ static gint compose_write_headers(Compose *compose, FILE *fp,
 #if 0 /* NEW COMPOSE GUI */
 	if (compose->use_to) {
 		str = gtk_entry_get_text(GTK_ENTRY(compose->to_entry));
-		if (*str != '\0') {
-			Xstrdup_a(str, str, return -1);
-			g_strstrip(str);
-			if (*str != '\0') {
-				compose->to_list = address_list_append
-					(compose->to_list, str);
-				if (!IS_IN_CUSTOM_HEADER("To")) {
-					compose_convert_header
-						(buf, sizeof(buf), str,
-						 strlen("To: "));
-					fprintf(fp, "To: %s\n", buf);
-				}
-			}
-		}
+		PUT_RECIPIENT_HEADER("To", str);
 	}
 #endif
 
@@ -3619,11 +3646,9 @@ static gint compose_write_headers(Compose *compose, FILE *fp,
 			compose->newsgroup_list =
 				newsgroup_list_append(compose->newsgroup_list,
 						      str);
-			if (!IS_IN_CUSTOM_HEADER("Newsgroups")) {
-				compose_convert_header(buf, sizeof(buf), str,
-						       strlen("Newsgroups: "));
-				fprintf(fp, "Newsgroups: %s\n", buf);
-			}
+			compose_convert_header(buf, sizeof(buf), str,
+					       strlen("Newsgroups: "));
+			fprintf(fp, "Newsgroups: %s\n", buf);
 		}
 	}
 #endif
@@ -3632,20 +3657,7 @@ static gint compose_write_headers(Compose *compose, FILE *fp,
 #if 0 /* NEW COMPOSE GUI */
 	if (compose->use_cc) {
 		str = gtk_entry_get_text(GTK_ENTRY(compose->cc_entry));
-		if (*str != '\0') {
-			Xstrdup_a(str, str, return -1);
-			g_strstrip(str);
-			if (*str != '\0') {
-				compose->to_list = address_list_append
-					(compose->to_list, str);
-				if (!IS_IN_CUSTOM_HEADER("Cc")) {
-					compose_convert_header
-						(buf, sizeof(buf), str,
-						 strlen("Cc: "));
-					fprintf(fp, "Cc: %s\n", buf);
-				}
-			}
-		}
+		PUT_RECIPIENT_HEADER("Cc", str);
 	}
 #endif
 	/* Bcc */
@@ -3653,17 +3665,7 @@ static gint compose_write_headers(Compose *compose, FILE *fp,
 #if 0 /* NEW COMPOSE GUI */
 	if (compose->use_bcc) {
 		str = gtk_entry_get_text(GTK_ENTRY(compose->bcc_entry));
-		if (*str != '\0') {
-			Xstrdup_a(str, str, return -1);
-			g_strstrip(str);
-			if (*str != '\0') {
-				compose->to_list = address_list_append
-					(compose->to_list, str);
-				compose_convert_header(buf, sizeof(buf), str,
-						       strlen("Bcc: "));
-				fprintf(fp, "Bcc: %s\n", buf);
-			}
-		}
+		PUT_RECIPIENT_HEADER("Bcc", str);
 	}
 #endif
 

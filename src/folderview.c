@@ -1606,7 +1606,7 @@ static void folderview_selected(GtkCTree *ctree, GtkCTreeNode *row,
 			(folderview->mainwin,
 			 item->folder->type == F_NEWS ? 
 			 COMPOSEBUTTON_NEWS : COMPOSEBUTTON_MAIL);
-	 
+
 	if (item->path)
 		debug_print(_("Folder %s is selected\n"), item->path);
 
@@ -1621,6 +1621,10 @@ static void folderview_selected(GtkCTree *ctree, GtkCTreeNode *row,
 		gtk_grab_remove(GTK_WIDGET(ctree));
 		if (gdk_pointer_is_grabbed())
 			gdk_pointer_ungrab(GDK_CURRENT_TIME);
+	}
+
+	if((item->folder->type == F_IMAP) || (item->folder->type == F_NEWS)) {
+		folder_item_scan(item);
 	}
 
 	opened = summary_show(folderview->summaryview, item, FALSE);
@@ -1743,6 +1747,7 @@ static void folderview_new_folder_cb(FolderView *folderview, guint action,
 	FolderItem *item;
 	FolderItem *new_item;
 	gchar *new_folder;
+	gchar *name, *name_;
 	GtkCTreeNode *node;
 
 	if (!folderview->selected) return;
@@ -1765,18 +1770,20 @@ static void folderview_new_folder_cb(FolderView *folderview, guint action,
 		}
 	}
 
+	name_ = trim_string(new_folder, 32);
+	Xstrdup_a(name, name_, {g_free(new_folder); return;});
+	g_free(name_);
+
 	/* find whether the directory already exists */
 	if (folderview_find_by_name(ctree, folderview->selected, new_folder)) {
-		alertpanel_error(_("The folder `%s' already exists."),
-				 new_folder);
+		alertpanel_error(_("The folder `%s' already exists."), name);
 		g_free(new_folder);
 		return;
 	}
 
 	new_item = item->folder->create_folder(item->folder, item, new_folder);
 	if (!new_item) {
-		alertpanel_error(_("The folder `%s' could not be created."), 
-				 new_folder);
+		alertpanel_error(_("Can't create the folder `%s'."), name);
 		g_free(new_folder);
 		return;
 	} 
@@ -1855,6 +1862,7 @@ static void folderview_rename_folder_cb(FolderView *folderview, guint action,
 	GtkCTree *ctree = GTK_CTREE(folderview->ctree);
 	FolderItem *item;
 	gchar *new_folder;
+	gchar *name, *name_;
 	gchar *message;
 	gchar *old_path;
 	gchar *old_id;
@@ -1867,8 +1875,10 @@ static void folderview_rename_folder_cb(FolderView *folderview, guint action,
 	g_return_if_fail(item->path != NULL);
 	g_return_if_fail(item->folder != NULL);
 
-	message = g_strdup_printf(_("Input new name for `%s':"),
-				  g_basename(item->path));
+	name_ = trim_string(item->name, 32);
+	Xstrdup_a(name, name_, return);
+	g_free(name_);
+	message = g_strdup_printf(_("Input new name for `%s':"), name);
 	new_folder = input_dialog(_("Rename folder"), message,
 				  g_basename(item->path));
 	g_free(message);
@@ -1884,8 +1894,9 @@ static void folderview_rename_folder_cb(FolderView *folderview, guint action,
 	if (folderview_find_by_name
 		(ctree, GTK_CTREE_ROW(folderview->selected)->parent,
 		 new_folder)) {
-		alertpanel_error(_("The folder `%s' already exists."),
-				 new_folder);
+		name = trim_string(new_folder, 32);
+		alertpanel_error(_("The folder `%s' already exists."), name);
+		g_free(name);
 		g_free(new_folder);
 		return;
 	}
@@ -1994,7 +2005,7 @@ static void folderview_delete_folder_cb(FolderView *folderview, guint action,
 {
 	GtkCTree *ctree = GTK_CTREE(folderview->ctree);
 	FolderItem *item;
-	gchar *message;
+	gchar *message, *name, *name_;
 	AlertValue avalue;
 	gchar *old_path;
 	gchar *old_id;
@@ -2006,10 +2017,12 @@ static void folderview_delete_folder_cb(FolderView *folderview, guint action,
 	g_return_if_fail(item->path != NULL);
 	g_return_if_fail(item->folder != NULL);
 
+	name_ = trim_string(item->name, 32);
+	Xstrdup_a(name, name_, return);
+	g_free(name_);
 	message = g_strdup_printf
 		(_("All folder(s) and message(s) under `%s' will be deleted.\n"
-		   "Do you really want to delete?"),
-		 g_basename(item->path));
+		   "Do you really want to delete?"), name);
 	avalue = alertpanel(_("Delete folder"), message,
 			    _("Yes"), _("+No"), NULL);
 	g_free(message);
@@ -2019,8 +2032,7 @@ static void folderview_delete_folder_cb(FolderView *folderview, guint action,
 	old_id = folder_item_get_identifier(item);
 
 	if (item->folder->remove_folder(item->folder, item) < 0) {
-		alertpanel_error(_("Can't remove the folder `%s'."),
-				 item->path);
+		alertpanel_error(_("Can't remove the folder `%s'."), name);
 		if (folderview->opened == folderview->selected)
 			summary_show(folderview->summaryview,
 				     folderview->summaryview->folder_item,
@@ -2058,6 +2070,7 @@ static void folderview_remove_mailbox_cb(FolderView *folderview, guint action,
 	GtkCTree *ctree = GTK_CTREE(folderview->ctree);
 	GtkCTreeNode *node;
 	FolderItem *item;
+	gchar *name, *name_;
 	gchar *message;
 	AlertValue avalue;
 
@@ -2068,10 +2081,12 @@ static void folderview_remove_mailbox_cb(FolderView *folderview, guint action,
 	g_return_if_fail(item->folder != NULL);
 	if (item->parent) return;
 
+	name_ = trim_string(item->folder->name, 32);
+	Xstrdup_a(name, name_, return);
+	g_free(name_);
 	message = g_strdup_printf
 		(_("Really remove the mailbox `%s' ?\n"
-		   "(The messages are NOT deleted from disk)"),
-		 item->folder->name);
+		   "(The messages are NOT deleted from the disk)"), name);
 	avalue = alertpanel(_("Remove folder"), message,
 			    _("Yes"), _("+No"), NULL);
 	g_free(message);
@@ -2093,6 +2108,7 @@ static void folderview_new_imap_folder_cb(FolderView *folderview, guint action,
 	FolderItem *item;
 	FolderItem *new_item;
 	gchar *new_folder;
+	gchar *name, *name_;
 	gchar *p;
 
 	if (!folderview->selected) return;
@@ -2119,18 +2135,20 @@ static void folderview_new_imap_folder_cb(FolderView *folderview, guint action,
 		return;
 	}
 
+	name_ = trim_string(new_folder, 32);
+	Xstrdup_a(name, name_, return);
+	g_free(name_);
+
 	/* find whether the directory already exists */
 	if (folderview_find_by_name(ctree, folderview->selected, new_folder)) {
-		alertpanel_error(_("The folder `%s' already exists."),
-				 new_folder);
+		alertpanel_error(_("The folder `%s' already exists."), name);
 		g_free(new_folder);
 		return;
 	}
 
 	new_item = item->folder->create_folder(item->folder, item, new_folder);
 	if (!new_item) {
-		alertpanel_error(_("Can't create the folder `%s'."),
-				 new_folder);
+		alertpanel_error(_("Can't create the folder `%s'."), name);
 		g_free(new_folder);
 		return;
 	}
@@ -2158,6 +2176,7 @@ static void folderview_rm_imap_server_cb(FolderView *folderview, guint action,
 {
 	GtkCTree *ctree = GTK_CTREE(folderview->ctree);
 	FolderItem *item;
+	gchar *name, *name_;
 	gchar *message;
 	AlertValue avalue;
 
@@ -2169,8 +2188,10 @@ static void folderview_rm_imap_server_cb(FolderView *folderview, guint action,
 	g_return_if_fail(item->folder->type == F_IMAP);
 	g_return_if_fail(item->folder->account != NULL);
 
-	message = g_strdup_printf(_("Really delete IMAP4 account `%s'?"),
-				  item->folder->name);
+	name_ = trim_string(item->folder->name, 32);
+	Xstrdup_a(name, name_, return);
+	g_free(name_);
+	message = g_strdup_printf(_("Really delete IMAP4 account `%s'?"), name);
 	avalue = alertpanel(_("Delete IMAP4 account"), message,
 			    _("Yes"), _("+No"), NULL);
 	g_free(message);
@@ -2289,6 +2310,7 @@ static void folderview_rm_news_group_cb(FolderView *folderview, guint action,
 {
 	GtkCTree *ctree = GTK_CTREE(folderview->ctree);
 	FolderItem *item;
+	gchar *name, *name_;
 	gchar *message;
 	AlertValue avalue;
 
@@ -2300,8 +2322,10 @@ static void folderview_rm_news_group_cb(FolderView *folderview, guint action,
 	g_return_if_fail(item->folder->type == F_NEWS);
 	g_return_if_fail(item->folder->account != NULL);
 
-	message = g_strdup_printf(_("Really delete newsgroup `%s'?"),
-				  g_basename(item->path));
+	name_ = trim_string(item->path, 32);
+	Xstrdup_a(name, name_, return);
+	g_free(name_);
+	message = g_strdup_printf(_("Really delete newsgroup `%s'?"), name);
 	avalue = alertpanel(_("Delete newsgroup"), message,
 			    _("Yes"), _("+No"), NULL);
 	g_free(message);
@@ -2322,6 +2346,7 @@ static void folderview_rm_news_server_cb(FolderView *folderview, guint action,
 {
 	GtkCTree *ctree = GTK_CTREE(folderview->ctree);
 	FolderItem *item;
+	gchar *name, *name_;
 	gchar *message;
 	AlertValue avalue;
 
@@ -2333,8 +2358,10 @@ static void folderview_rm_news_server_cb(FolderView *folderview, guint action,
 	g_return_if_fail(item->folder->type == F_NEWS);
 	g_return_if_fail(item->folder->account != NULL);
 
-	message = g_strdup_printf(_("Really delete news account `%s'?"),
-				  item->folder->name);
+	name_ = trim_string(item->folder->name, 32);
+	Xstrdup_a(name, name_, return);
+	g_free(name_);
+	message = g_strdup_printf(_("Really delete news account `%s'?"), name);
 	avalue = alertpanel(_("Delete news account"), message,
 			    _("Yes"), _("+No"), NULL);
 	g_free(message);

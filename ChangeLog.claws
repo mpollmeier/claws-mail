@@ -1,3 +1,77 @@
+2002-05-06 [paul]	0.7.5claws10
+
+	* src/messageview.c
+	  src/textview.c
+		display url in statusbar on single-click
+		patch submitted by Thorsten Maerz <torte@netztorte.de>
+
+2002-05-06 [match]	0.7.5claws9
+
+	* src/addritem.[ch]
+		new functions.
+	* src/addrcache.c
+		tidy up.
+	* src/xmlprops.[ch]
+		XML implementation of properties file.
+	* src/exporthtml.[ch]
+	* src/expthtmldlg.[ch]
+	* src/addressbook.c
+		export to HTML.
+
+2002-05-02 [sergey]	0.7.5claws8
+
+	* src/mainwindow.c (mainwin_entries),
+	  src/prefs_common.c (prefs_send_create()),
+	  src/codeconv.c (locale_table):
+	  	use charset name "Windows-1251" instead of "CP1251".
+
+2002-05-02 [colin]	0.7.5claws7
+	
+	* src/compose.c
+	  src/prefs_common.c
+	  src/prefs_folder_item.c
+	  	Fixed cosmetics bugs due to Outbox renamed to Sent.
+
+2002-05-02 [hiro]	0.7.5claws6
+
+	* src/imap.c
+		sync the change for QUOTE_IF_REQUIRED() macro with 0.7.5cvs7.
+
+2002-05-02 [paul]	0.7.5claws5
+
+	* src/compose.c
+		more sync with 0.7.5cvs7, see ChangeLog entry
+		2002-05-02
+
+2002-05-02 [hiro]	0.7.5claws4
+
+	* src/compose.c
+		compose_queue_sub():
+		check if queue folder exists (closes #550397).
+		removed directory creation since it should be handled
+		transparently.
+	* src/imap.c
+		imap_add_msg(): return UID for appended message
+		(closes #548842).
+
+2002-04-30 [paul]	0.7.5claws3
+
+	* src/summaryview.c
+		fix account_find_from_address() bug
+
+2002-04-28 [colin]	0.7.5claws2
+
+	* src/compose.c
+	  src/textview.c
+	  src/prefs_common.[ch]
+	  src/utils.[ch]
+		Added user-definable quotation characters recognition.
+
+2002-04-28 [paul]	0.7.5claws1
+
+	* sync with 0.7.5cvs4
+		see ChangeLog entry  2002-04-25
+
 2002-04-28 [paul]	0.7.5claws
 
 	* po/es.po
