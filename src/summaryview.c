@@ -1137,19 +1137,10 @@ void summary_select_prev_unread(SummaryView *summaryview)
 
 void summary_select_next_unread(SummaryView *summaryview)
 {
-	GtkCTreeNode *node;
+	GtkCTreeNode *node = summaryview->selected;
 	GtkCTree *ctree = GTK_CTREE(summaryview->ctree);
 
-	node = summary_find_next_unread_msg(summaryview, summaryview->selected);
-
-	if (node) {
-		gtkut_ctree_expand_parent_all(ctree, node);
-		gtk_sctree_unselect_all(GTK_SCTREE(ctree));
-		gtk_sctree_select(GTK_SCTREE(ctree), node);
-		if (summaryview->displayed == node)
-			summaryview->displayed = NULL;
-		summary_display_msg(summaryview, node, FALSE);
-	} else {
+	while ((node = summary_find_next_unread_msg(summaryview, node)) == NULL) {
 		AlertValue val;
 
  		switch (prefs_common.next_unread_msg_dialog) {
@@ -1157,7 +1148,7 @@ void summary_select_next_unread(SummaryView *summaryview)
 				val = alertpanel(_("No more unread messages"),
 						 _("No unread message found. "
 						   "Go to next folder?"),
-						 _("Yes"), _("No"), NULL);
+						 _("Yes"), _("Search again"), _("No"));
  				break;
  			case NEXTUNREADMSGDIALOG_ASSUME_YES:
  				val = G_ALERTDEFAULT;
@@ -1177,7 +1168,20 @@ void summary_select_next_unread(SummaryView *summaryview)
 						(GTK_OBJECT(ctree),
 						 "key_press_event");
 			folderview_select_next_unread(summaryview->folderview);
-		}
+			return;
+		} else if (val == G_ALERTALTERNATE)
+			node = NULL;
+		else
+			return;
+	}
+
+	if (node) {
+		gtkut_ctree_expand_parent_all(ctree, node);
+		gtk_sctree_unselect_all(GTK_SCTREE(ctree));
+		gtk_sctree_select(GTK_SCTREE(ctree), node);
+		if (summaryview->displayed == node)
+			summaryview->displayed = NULL;
+		summary_display_msg(summaryview, node, FALSE);
 	}
 }
 

@@ -681,10 +681,7 @@ gchar *folder_item_fetch_msg(FolderItem *item, gint num)
 
 	folder = item->folder;
 
-	g_return_val_if_fail(folder->scan != NULL, NULL);
 	g_return_val_if_fail(folder->fetch_msg != NULL, NULL);
-
-	if (item->last_num < 0) folder->scan(folder, item);
 
 	return folder->fetch_msg(folder, item, num);
 }
@@ -702,11 +699,10 @@ gint folder_item_add_msg(FolderItem *dest, const gchar *file,
 
 	folder = dest->folder;
 
-	g_return_val_if_fail(folder->scan != NULL, -1);
 	g_return_val_if_fail(folder->add_msg != NULL, -1);
 
-	if (dest->last_num < 0) folder->scan(folder, dest);
-	if (!dest->cache) folder_item_read_cache(dest);
+	if (!dest->cache)
+		folder_item_read_cache(dest);
 
 	default_flags.perm_flags = MSG_NEW|MSG_UNREAD;
 	default_flags.tmp_flags = MSG_CACHED;
@@ -771,11 +767,9 @@ gint folder_item_move_msg(FolderItem *dest, MsgInfo *msginfo)
 
 	folder = dest->folder;
 
-	g_return_val_if_fail(folder->scan != NULL, -1);
 	g_return_val_if_fail(folder->remove_msg != NULL, -1);
 	g_return_val_if_fail(folder->copy_msg != NULL, -1);
 
-	if (dest->last_num < 0) folder->scan(folder, dest);
 	if (!dest->cache) folder_item_read_cache(dest);
 
 	src_folder = msginfo->folder->folder;
@@ -786,6 +780,12 @@ gint folder_item_move_msg(FolderItem *dest, MsgInfo *msginfo)
 		MsgInfo *newmsginfo;
 
 		newmsginfo = procmsg_msginfo_copy(msginfo);
+		if (dest->stype == F_OUTBOX ||
+		    dest->stype == F_QUEUE  ||
+		    dest->stype == F_DRAFT  ||
+		    dest->stype == F_TRASH)
+			MSG_UNSET_PERM_FLAGS(newmsginfo->flags,
+					     MSG_NEW|MSG_UNREAD|MSG_DELETED);
 		newmsginfo->msgnum = num;
 		newmsginfo->folder = dest;
     		msgcache_add_msg(dest->cache, newmsginfo);
@@ -812,10 +812,6 @@ gint folder_item_move_msg(FolderItem *dest, MsgInfo *msginfo)
 		folder->finished_copy(folder, dest);
 
 	src_folder = msginfo->folder->folder;
-
-	if (msginfo->folder && src_folder->scan)
-		src_folder->scan(src_folder, msginfo->folder);
-	folder->scan(folder, dest);
 
 	return num;
 }
@@ -853,11 +849,9 @@ gint folder_item_move_msgs_with_dest(FolderItem *dest, GSList *msglist)
 
 	folder = dest->folder;
 
-	g_return_val_if_fail(folder->scan != NULL, -1);
 	g_return_val_if_fail(folder->copy_msg != NULL, -1);
 	g_return_val_if_fail(folder->remove_msg != NULL, -1);
 
-	if (dest->last_num < 0) folder->scan(folder, dest);
 	if (!dest->cache) folder_item_read_cache(dest);
 
 	item = NULL;
@@ -898,10 +892,6 @@ gint folder_item_move_msgs_with_dest(FolderItem *dest, GSList *msglist)
 	if (folder->finished_copy)
 		folder->finished_copy(folder, dest);
 
-	if (item && item->folder->scan)
-		item->folder->scan(item->folder, item);
-	folder->scan(folder, dest);
-
 	return dest->last_num;
 }
 
@@ -936,10 +926,8 @@ gint folder_item_copy_msg(FolderItem *dest, MsgInfo *msginfo)
 
 	folder = dest->folder;
 
-	g_return_val_if_fail(folder->scan != NULL, -1);
 	g_return_val_if_fail(folder->copy_msg != NULL, -1);
 
-	if (dest->last_num < 0) folder->scan(folder, dest);
 	if (!dest->cache) folder_item_read_cache(dest);
 	
 	num = folder->copy_msg(folder, dest, msginfo);
@@ -963,8 +951,6 @@ gint folder_item_copy_msg(FolderItem *dest, MsgInfo *msginfo)
 
 	if (folder->finished_copy)
 		folder->finished_copy(folder, dest);
-
-	folder->scan(folder, dest);
 
 	return num;
 }
@@ -1001,10 +987,8 @@ gint folder_item_copy_msgs_with_dest(FolderItem *dest, GSList *msglist)
 
 	folder = dest->folder;
  
-	g_return_val_if_fail(folder->scan != NULL, -1);
 	g_return_val_if_fail(folder->copy_msg != NULL, -1);
 
-	if (dest->last_num < 0) folder->scan(folder, dest);
 	if (!dest->cache) folder_item_read_cache(dest);
 
 	for(l = msglist ; l != NULL ; l = g_slist_next(l)) {
@@ -1033,8 +1017,6 @@ gint folder_item_copy_msgs_with_dest(FolderItem *dest, GSList *msglist)
 	if (folder->finished_copy)
 		folder->finished_copy(folder, dest);
 
-	folder->scan(folder, dest);
-
 	return dest->last_num;
 }
 
@@ -1046,13 +1028,10 @@ gint folder_item_remove_msg(FolderItem *item, gint num)
 	g_return_val_if_fail(item != NULL, -1);
 
 	folder = item->folder;
-	if (item->last_num < 0) folder->scan(folder, item);
 	if (!item->cache) folder_item_read_cache(item);
 
 	ret = folder->remove_msg(folder, item, num);
 	msgcache_remove_msg(item->cache, num);
-	if (ret == 0 && num == item->last_num)
-		folder->scan(folder, item);
 
 	return ret;
 }
@@ -1086,10 +1065,7 @@ gint folder_item_remove_all_msg(FolderItem *item)
 
 	folder = item->folder;
 
-	g_return_val_if_fail(folder->scan != NULL, -1);
 	g_return_val_if_fail(folder->remove_all_msg != NULL, -1);
-
-	if (item->last_num < 0) folder->scan(folder, item);
 
 	result = folder->remove_all_msg(folder, item);
 

@@ -37,6 +37,7 @@ MsgCache   *msgcache_read			(const gchar *cache_file, const gchar *mark_file, Fo
 gint	    msgcache_write			(const gchar *cache_file, const gchar *mark_file, MsgCache *cache);
 void 	    msgcache_add_msg			(MsgCache *cache, MsgInfo *msginfo);
 void 	    msgcache_remove_msg			(MsgCache *cache, guint num);
+MsgInfo	   *msgcache_get_msg			(MsgCache *cache, guint num);
 GSList	   *msgcache_get_msg_list		(MsgCache *cache);
 
 #endif

@@ -1132,27 +1132,18 @@ gint procmsg_send_message_queue(const gchar *file)
 		folder = folder_find_item_from_identifier(savecopyfolder);
 		if(!folder)
 			folder = folder_get_default_outbox();
-		path = folder_item_get_path(folder);
-		if (!is_dir_exist(path))
-			make_dir_hier(path);
 
-		folder_item_scan(folder);
-		if ((num = folder_item_add_msg(folder, tmp, FALSE)) < 0) {
+		if ((num = folder_item_add_msg(folder, tmp, FALSE)) < 0)
 			g_warning(_("can't save message\n"));
-		}
 
 		if(num) {
-			if ((fp = procmsg_open_mark_file(path, TRUE)) == NULL)
-				g_warning(_("can't open mark file\n"));
-			else {
-				MsgInfo newmsginfo;
-
-				newmsginfo.msgnum = num;
-				newmsginfo.flags.perm_flags = 0;
-				newmsginfo.flags.tmp_flags = 0;
-				procmsg_write_flags(&newmsginfo, fp);
-				fclose(fp);
-			}
+			MsgInfo *msginfo;
+			
+			msginfo = msgcache_get_msg(folder->cache, num);
+			msginfo->msgnum = num;
+			msginfo->flags.perm_flags = 0;
+			msginfo->flags.tmp_flags = 0;
+			procmsg_msginfo_free(msginfo);
 		}
 		g_free(path);
 	}

@@ -1,3 +1,52 @@
+2002-01-24 [paul]	0.7.0claws24
+
+	* more sync with sylpheed 0.7.0cvs15
+		get_file_size_as_clrf(), see ChangeLog entry 2002-01-23
+
+2002-01-23 [sergey]	0.7.0claws23
+
+	* src/importldif.c
+		Fixed segfault when closing LDIF import wizard with
+		the window manager.
+	* src/imageview.c
+	* src/imageview.h
+	* src/messageview.c
+	* src/mimeview.c
+		Fixed wrong scrolling position after switching between
+		text and image parts.
+
+2002-01-23 [paul]	0.7.0claws22
+
+	* sync with sylpheed 0.7.0cvs15
+		see ChangeLog entries 2002-01-22 and 2002-01-23
+
+2002-01-21 [melvin]	0.7.0claws21
+
+	* src/prefs_scoring.c
+	* src/prefs_filtering.c
+		Fixed bug where scoring and filtering windows stopped
+		autochecking.
+
+2002-01-21 [paul]	0.7.0claws20
+
+	* sync with sylpheed 0.7.0cvs12
+		see ChangeLog entries 2002-01-20 and 2002-01-21
+
+2002-01-21 [carsten]	0.7.0claws19
+	* src/mainwindow.c
+	* src/menu.[ch]
+	* src/messageview.[ch]
+	* src/summaryview.[ch]
+		changes to shortcuts handling again:
+			+ "Q" now controled by mainwin
+			+ v/V are now customizable and have slightly
+			  different meanings
+		the "button" to minimize the messageview (and maximize
+		the summary view) is a real button now
+	* src/compose.c
+		"Delete Line+" added to Edit/Advanced (this will also
+		delete the '\n')
+
 2002-01-20 [melvin] 0.7.0claws18
 
 	* src/addressbook.c

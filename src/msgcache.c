@@ -319,6 +319,19 @@ gint msgcache_write(const gchar *cache_file, const gchar *mark_file, MsgCache *c
 	debug_print(_("done.\n"));
 }
 
+MsgInfo *msgcache_get_msg(MsgCache *cache, guint num)
+{
+	MsgInfo *msginfo;
+
+	g_return_val_if_fail(cache != NULL, NULL);
+
+	msginfo = g_hash_table_lookup(cache, GINT_TO_POINTER(num));
+	if(!msginfo)
+		return NULL;
+	
+	return procmsg_msginfo_new_ref(msginfo);
+}
+
 static void msgcache_get_msg_list_func(gpointer key, gpointer value, gpointer user_data)
 {
 	GSList **listptr = user_data;
