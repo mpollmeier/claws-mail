@@ -1515,7 +1515,7 @@ gint mbox_remove_msg(Folder *folder, FolderItem *item, gint num)
 	msg = mbox_cache_get_msg(mbox_path, num);
 
 	g_free(mbox_path);
-	
+
 	if (msg != NULL)
 		MSG_SET_PERM_FLAGS(msg->flags, MSG_REALLY_DELETED);
 
@@ -2055,7 +2055,7 @@ static gboolean mbox_purge_deleted(gchar * mbox)
 
 	for(l = msg_list ; l != NULL ; l = g_list_next(l)) {
 		struct _message * msg = (struct _message *) l->data;
-		if (MSG_IS_INVALID(msg->flags) && MSG_IS_REALLY_DELETED(msg->flags)) {
+		if (!MSG_IS_INVALID(msg->flags) && MSG_IS_REALLY_DELETED(msg->flags)) {
 			modification = TRUE;
 			break;
 		}
