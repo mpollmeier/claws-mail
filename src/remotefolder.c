@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2001 Hiroyuki Yamamoto
+ * Copyright (C) 2002 by the Sylpheed Claws Team and Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,19 +17,21 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef __PREFS_SCORING_H__
-#define __PREFS_SCORING_H__
+#include <glib.h>
 
-#include "scoring.h"
+#include "remotefolder.h"
 
-/*
-void prefs_scoring_read_config	(void);
-void prefs_scoring_write_config	(void);
-*/
-void prefs_scoring_open(FolderItem * item);
-     /*
-void prefs_scoring_open		(void);
-     */
-void prefs_scoring_open_with_scoring(ScoringProp * prop);
+void folder_remote_folder_init(Folder *folder, const gchar *name,
+			       const gchar *path)
+{
+	folder_init(folder, name);
+	REMOTE_FOLDER(folder)->session = NULL;
+}
 
-#endif /* __PREFS_SCORING_H__ */
+void folder_remote_folder_destroy(RemoteFolder *rfolder)
+{
+	g_return_if_fail(rfolder != NULL);
+
+	if (rfolder->session)
+		session_destroy(rfolder->session);
+}
