@@ -1,5 +1,6 @@
-/* sigstatus.h - GTK+ based signature status display
- *      Copyright (C) 2001 Werner Koch (dd9jn)
+/*
+ * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
+ * Copyright (C) 1999-2003 Hiroyuki Yamamoto & the Sylpheed-Claws team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,18 +17,26 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef GPGMEGTK_SIGSTATUS_H
-#define GPGMEGTK_SIGSTATUS_H
+#ifndef SGPGME_H
+#define SGPGME_H 1
 
 #include <gpgme.h>
 
-struct gpgmegtk_sig_status_s;
-typedef struct gpgmegtk_sig_status_s *GpgmegtkSigStatus;
+#include "privacy.h"
 
-GpgmegtkSigStatus gpgmegtk_sig_status_create(void);
-void gpgmegtk_sig_status_destroy(GpgmegtkSigStatus hd);
-void gpgmegtk_sig_status_update(GpgmegtkSigStatus hd, GpgmeCtx ctx);
+void sgpgme_init(void);
+void sgpgme_done(void);
 
-const char *gpgmegtk_sig_status_to_string(GpgmeSigStat status);
+GpgmeSigStat sgpgme_verify_signature	(GpgmeCtx ctx,
+				    	 GpgmeData sig,
+				    	 GpgmeData plain);
+SignatureStatus sgpgme_sigstat_gpgme_to_privacy
+					(GpgmeSigStat status);
+gchar *sgpgme_sigstat_info_short	(GpgmeCtx ctx,
+					 GpgmeSigStat status);
+gchar *sgpgme_sigstat_info_full		(GpgmeCtx ctx,
+					 GpgmeSigStat status);
+GpgmeData sgpgme_data_from_mimeinfo	(MimeInfo *mimeinfo);
+GpgmeData sgpgme_decrypt		(GpgmeData cipher);
 
-#endif /* GPGMEGTK_SIGSTATUS_H */
+#endif /* SGPGME_H */

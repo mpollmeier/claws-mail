@@ -37,18 +37,17 @@
 #include "imap.h"
 #include "news.h"
 #include "mh.h"
-#include "mbox_folder.h"
 #include "utils.h"
 #include "xml.h"
 #include "codeconv.h"
 #include "prefs_gtk.h"
 #include "account.h"
 #include "filtering.h"
-#include "scoring.h"
 #include "procheader.h"
 #include "hooks.h"
 #include "log.h"
 #include "folder_item_prefs.h"
+#include "remotefolder.h"
 
 /* Dependecies to be removed ?! */
 #include "prefs_common.h"
@@ -56,7 +55,7 @@
 
 static GList *folder_list = NULL;
 
-static void folder_init		(Folder		*folder,
+void folder_init		(Folder		*folder,
 				 const gchar	*name);
 
 static gboolean folder_read_folder_func	(GNode		*node,
@@ -81,7 +80,6 @@ void folder_system_init(void)
 	folder_register_class(mh_get_class());
 	folder_register_class(imap_get_class());
 	folder_register_class(news_get_class());
-	folder_register_class(mbox_get_class());
 }
 
 GSList *folder_get_class_list(void)
@@ -114,7 +112,7 @@ Folder *folder_new(FolderClass *klass, const gchar *name, const gchar *path)
 	return folder;
 }
 
-static void folder_init(Folder *folder, const gchar *name)
+void folder_init(Folder *folder, const gchar *name)
 {
 	g_return_if_fail(folder != NULL);
 
@@ -127,20 +125,6 @@ static void folder_init(Folder *folder, const gchar *name)
 	folder->draft = NULL;
 	folder->queue = NULL;
 	folder->trash = NULL;
-}
-
-void folder_local_folder_init(Folder *folder, const gchar *name,
-			      const gchar *path)
-{
-	folder_init(folder, name);
-	LOCAL_FOLDER(folder)->rootpath = g_strdup(path);
-}
-
-void folder_remote_folder_init(Folder *folder, const gchar *name,
-			       const gchar *path)
-{
-	folder_init(folder, name);
-	REMOTE_FOLDER(folder)->session = NULL;
 }
 
 void folder_destroy(Folder *folder)
@@ -158,19 +142,45 @@ void folder_destroy(Folder *folder)
 	g_free(folder);
 }
 
-void folder_local_folder_destroy(LocalFolder *lfolder)
+void folder_set_xml(Folder *folder, XMLTag *tag)
 {
-	g_return_if_fail(lfolder != NULL);
+	GList *cur;
 
-	g_free(lfolder->rootpath);
+	for (cur = tag->attr; cur != NULL; cur = g_list_next(cur)) {
+		XMLAttr *attr = (XMLAttr *) cur->data;
+
+		if (!attr || !attr->name || !attr->value) continue;
+		if (!strcmp(attr->name, "name")) {
+			if (folder->name != NULL)
+				g_free(folder->name);
+			folder->name = g_strdup(attr->value);
+		} else if (!strcmp(attr->name, "account_id")) {
+			PrefsAccount *account;
+
+			account = account_find_from_id(atoi(attr->value));
+			if (!account)
+				g_warning("account_id: %s not found\n", attr->value);
+			else {
+				folder->account = account;
+				account->folder = folder;
+			}
+		}
+	}
 }
 
-void folder_remote_folder_destroy(RemoteFolder *rfolder)
+XMLTag *folder_get_xml(Folder *folder)
 {
-	g_return_if_fail(rfolder != NULL);
+	XMLTag *tag;
 
-	if (rfolder->session)
-		session_destroy(rfolder->session);
+	tag = g_new0(XMLTag, 1);
+	tag->tag = g_strdup("folder");
+
+	if (folder->name)
+		xml_tag_add_attr(tag, "name", g_strdup(folder->name));
+	if (folder->account)
+		xml_tag_add_attr(tag, "account_id", g_strdup_printf("%d", folder->account->account_id));
+
+	return tag;
 }
 
 FolderItem *folder_item_new(Folder *folder, const gchar *name, const gchar *path)
@@ -317,6 +327,152 @@ void folder_item_destroy(FolderItem *item)
 	}
 }
 
+void folder_item_set_xml(Folder *folder, FolderItem *item, XMLTag *tag)
+{
+	GList *cur;
+
+	for (cur = tag->attr; cur != NULL; cur = g_list_next(cur)) {
+		XMLAttr *attr = (XMLAttr *) cur->data;
+
+		if (!attr || !attr->name || !attr->value) continue;
+		if (!strcmp(attr->name, "type")) {
+			if (!strcasecmp(attr->value, "normal"))
+				item->stype = F_NORMAL;
+			else if (!strcasecmp(attr->value, "inbox"))
+				item->stype = F_INBOX;
+			else if (!strcasecmp(attr->value, "outbox"))
+				item->stype = F_OUTBOX;
+			else if (!strcasecmp(attr->value, "draft"))
+				item->stype = F_DRAFT;
+			else if (!strcasecmp(attr->value, "queue"))
+				item->stype = F_QUEUE;
+			else if (!strcasecmp(attr->value, "trash"))
+				item->stype = F_TRASH;
+		} else if (!strcmp(attr->name, "name")) {
+			if (item->name != NULL)
+				g_free(item->name);
+			item->name = g_strdup(attr->value);
+		} else if (!strcmp(attr->name, "path")) {
+			if (item->path != NULL)
+				g_free(item->path);
+			item->path = g_strdup(attr->value);
+		} else if (!strcmp(attr->name, "mtime"))
+			item->mtime = strtoul(attr->value, NULL, 10);
+		else if (!strcmp(attr->name, "new"))
+			item->new_msgs = atoi(attr->value);
+		else if (!strcmp(attr->name, "unread"))
+			item->unread_msgs = atoi(attr->value);
+		else if (!strcmp(attr->name, "unreadmarked"))
+			item->unreadmarked_msgs = atoi(attr->value);
+		else if (!strcmp(attr->name, "total"))
+			item->total_msgs = atoi(attr->value);
+		else if (!strcmp(attr->name, "no_sub"))
+			item->no_sub = *attr->value == '1' ? TRUE : FALSE;
+		else if (!strcmp(attr->name, "no_select"))
+			item->no_select = *attr->value == '1' ? TRUE : FALSE;
+		else if (!strcmp(attr->name, "collapsed"))
+			item->collapsed = *attr->value == '1' ? TRUE : FALSE;
+		else if (!strcmp(attr->name, "thread_collapsed"))
+			item->thread_collapsed =  *attr->value == '1' ? TRUE : FALSE;
+		else if (!strcmp(attr->name, "threaded"))
+			item->threaded =  *attr->value == '1' ? TRUE : FALSE;
+		else if (!strcmp(attr->name, "hidereadmsgs"))
+			item->hide_read_msgs =  *attr->value == '1' ? TRUE : FALSE;
+		else if (!strcmp(attr->name, "reqretrcpt"))
+			item->ret_rcpt =  *attr->value == '1' ? TRUE : FALSE;
+		else if (!strcmp(attr->name, "sort_key")) {
+			if (!strcmp(attr->value, "none"))
+				item->sort_key = SORT_BY_NONE;
+			else if (!strcmp(attr->value, "number"))
+				item->sort_key = SORT_BY_NUMBER;
+			else if (!strcmp(attr->value, "size"))
+				item->sort_key = SORT_BY_SIZE;
+			else if (!strcmp(attr->value, "date"))
+				item->sort_key = SORT_BY_DATE;
+			else if (!strcmp(attr->value, "from"))
+				item->sort_key = SORT_BY_FROM;
+			else if (!strcmp(attr->value, "subject"))
+				item->sort_key = SORT_BY_SUBJECT;
+			else if (!strcmp(attr->value, "score"))
+				item->sort_key = SORT_BY_SCORE;
+			else if (!strcmp(attr->value, "label"))
+				item->sort_key = SORT_BY_LABEL;
+			else if (!strcmp(attr->value, "mark"))
+				item->sort_key = SORT_BY_MARK;
+			else if (!strcmp(attr->value, "unread"))
+				item->sort_key = SORT_BY_STATUS;
+			else if (!strcmp(attr->value, "mime"))
+				item->sort_key = SORT_BY_MIME;
+			else if (!strcmp(attr->value, "to"))
+				item->sort_key = SORT_BY_TO;
+			else if (!strcmp(attr->value, "locked"))
+				item->sort_key = SORT_BY_LOCKED;
+		} else if (!strcmp(attr->name, "sort_type")) {
+			if (!strcmp(attr->value, "ascending"))
+				item->sort_type = SORT_ASCENDING;
+			else
+				item->sort_type = SORT_DESCENDING;
+		} else if (!strcmp(attr->name, "account_id")) {
+			PrefsAccount *account;
+
+			account = account_find_from_id(atoi(attr->value));
+			if (!account)
+				g_warning("account_id: %s not found\n", attr->value);
+			else
+				item->account = account;
+		} else if (!strcmp(attr->name, "apply_sub"))
+			item->apply_sub = *attr->value == '1' ? TRUE : FALSE;
+	}
+}
+
+XMLTag *folder_item_get_xml(Folder *folder, FolderItem *item)
+{
+	static gchar *folder_item_stype_str[] = {"normal", "inbox", "outbox",
+						 "draft", "queue", "trash"};
+	static gchar *sort_key_str[] = {"none", "number", "size", "date",
+					"from", "subject", "score", "label",
+					"mark", "unread", "mime", "to", 
+					"locked"};
+	XMLTag *tag;
+
+	tag = g_new0(XMLTag, 1);
+	tag->tag = g_strdup("folderitem");
+
+	xml_tag_add_attr(tag, "type", g_strdup(folder_item_stype_str[item->stype]));
+	if (item->name)
+		xml_tag_add_attr(tag, "name", g_strdup(item->name));
+	if (item->path)
+		xml_tag_add_attr(tag, "path", g_strdup(item->path));
+	if (item->no_sub)
+		xml_tag_add_attr(tag, "no_sub", g_strdup("1"));
+	if (item->no_select)
+		xml_tag_add_attr(tag, "no_select", g_strdup("1"));
+	xml_tag_add_attr(tag, "collapsed", g_strdup(item->collapsed && item->node->children ? "1" : "0"));
+	xml_tag_add_attr(tag, "thread_collapsed", g_strdup(item->thread_collapsed ? "1" : "0"));
+	xml_tag_add_attr(tag, "threaded", g_strdup(item->threaded ? "1" : "0"));
+	xml_tag_add_attr(tag, "hidereadmsgs", g_strdup(item->hide_read_msgs ? "1" : "0"));
+	if (item->ret_rcpt)
+		xml_tag_add_attr(tag, "reqretrcpt", g_strdup("1"));
+
+	if (item->sort_key != SORT_BY_NONE) {
+		xml_tag_add_attr(tag, "sort_key", g_strdup(sort_key_str[item->sort_key]));
+		xml_tag_add_attr(tag, "sort_type", g_strdup(item->sort_type == SORT_ASCENDING ? "ascending" : "descending"));
+	}
+
+	xml_tag_add_attr(tag, "mtime", g_strdup_printf("%ld", (unsigned long int) item->mtime));
+	xml_tag_add_attr(tag, "new", g_strdup_printf("%d", item->new_msgs));
+	xml_tag_add_attr(tag, "unread", g_strdup_printf("%d", item->unread_msgs));
+	xml_tag_add_attr(tag, "unreadmarked", g_strdup_printf("%d", item->unreadmarked_msgs));
+	xml_tag_add_attr(tag, "total", g_strdup_printf("%d", item->total_msgs));
+
+	if (item->account)
+		xml_tag_add_attr(tag, "account_id", g_strdup_printf("%d", item->account->account_id));
+	if (item->apply_sub)
+		xml_tag_add_attr(tag, "apply_sub", g_strdup("1"));
+
+	return tag;
+}
+
 void folder_set_ui_func(Folder *folder, FolderUIFunc func, gpointer data)
 {
 	g_return_if_fail(folder != NULL);
@@ -354,7 +510,6 @@ void folder_tree_destroy(Folder *folder)
 
 	node = folder->node;
 	
-	prefs_scoring_clear_folder(folder);
 	prefs_filtering_clear_folder(folder);
 
 	if (node != NULL) {
@@ -700,7 +855,8 @@ Folder *folder_find_from_path(const gchar *path)
 
 	for (list = folder_list; list != NULL; list = list->next) {
 		folder = list->data;
-		if ((FOLDER_TYPE(folder) == F_MH || FOLDER_TYPE(folder) == F_MBOX) &&
+		if ((FOLDER_TYPE(folder) == F_MH || 
+		     FOLDER_TYPE(folder) == F_MBOX) &&
 		    !path_cmp(LOCAL_FOLDER(folder)->rootpath, path))
 			return folder;
 	}
@@ -715,7 +871,8 @@ Folder *folder_find_from_name(const gchar *name, FolderClass *klass)
 
 	for (list = folder_list; list != NULL; list = list->next) {
 		folder = list->data;
-		if (folder->klass == klass && strcmp2(name, folder->name) == 0)
+		if (folder->klass == klass && 
+		    strcmp2(name, folder->name) == 0)
 			return folder;
 	}
 
@@ -1682,8 +1839,6 @@ static void copy_msginfo_flags(MsgInfo *source, MsgInfo *dest)
 	procmsg_msginfo_set_flags(dest,
 				  ~dest->flags.perm_flags & perm_flags,
 				  ~dest->flags.tmp_flags  & tmp_flags);
-
-	folder_item_update(dest->folder, F_ITEM_UPDATE_MSGCNT | F_ITEM_UPDATE_CONTENT);
 }
 
 static void add_msginfo_to_cache(FolderItem *item, MsgInfo *newmsginfo, MsgInfo *flagsource)
@@ -1697,9 +1852,11 @@ static void add_msginfo_to_cache(FolderItem *item, MsgInfo *newmsginfo, MsgInfo 
 		item->unreadmarked_msgs++;
 	item->total_msgs++;
 
-	copy_msginfo_flags(flagsource, newmsginfo);
-
+	folder_item_update_freeze();
 	msgcache_add_msg(item->cache, newmsginfo);
+	copy_msginfo_flags(flagsource, newmsginfo);
+	folder_item_update(item,  F_ITEM_UPDATE_MSGCNT | F_ITEM_UPDATE_CONTENT);
+	folder_item_update_thaw();
 }
 
 static void remove_msginfo_from_cache(FolderItem *item, MsgInfo *msginfo)
@@ -2293,19 +2450,6 @@ static gboolean folder_build_tree(GNode *node, gpointer data)
 	Folder *folder = FOLDER(data);
 	FolderItem *item;
 	XMLNode *xmlnode;
-	GList *list;
-	SpecialFolderItemType stype = F_NORMAL;
-	const gchar *name = NULL;
-	const gchar *path = NULL;
-	PrefsAccount *account = NULL;
-	gboolean no_sub = FALSE, no_select = FALSE, collapsed = FALSE, 
-		 threaded = TRUE, apply_sub = FALSE;
-	gboolean ret_rcpt = FALSE, hidereadmsgs = FALSE,
-		 thread_collapsed = FALSE; /* CLAWS */
-	FolderSortKey sort_key = SORT_BY_NONE;
-	FolderSortType sort_type = SORT_ASCENDING;
-	gint new = 0, unread = 0, total = 0, unreadmarked = 0;
-	time_t mtime = 0;
 
 	g_return_val_if_fail(node->data != NULL, FALSE);
 	if (!node->parent) return FALSE;
@@ -2316,112 +2460,15 @@ static gboolean folder_build_tree(GNode *node, gpointer data)
 		return FALSE;
 	}
 
-	list = xmlnode->tag->attr;
-	for (; list != NULL; list = list->next) {
-		XMLAttr *attr = list->data;
-
-		if (!attr || !attr->name || !attr->value) continue;
-		if (!strcmp(attr->name, "type")) {
-			if (!strcasecmp(attr->value, "normal"))
-				stype = F_NORMAL;
-			else if (!strcasecmp(attr->value, "inbox"))
-				stype = F_INBOX;
-			else if (!strcasecmp(attr->value, "outbox"))
-				stype = F_OUTBOX;
-			else if (!strcasecmp(attr->value, "draft"))
-				stype = F_DRAFT;
-			else if (!strcasecmp(attr->value, "queue"))
-				stype = F_QUEUE;
-			else if (!strcasecmp(attr->value, "trash"))
-				stype = F_TRASH;
-		} else if (!strcmp(attr->name, "name"))
-			name = attr->value;
-		else if (!strcmp(attr->name, "path"))
-			path = attr->value;
-		else if (!strcmp(attr->name, "mtime"))
-			mtime = strtoul(attr->value, NULL, 10);
-		else if (!strcmp(attr->name, "new"))
-			new = atoi(attr->value);
-		else if (!strcmp(attr->name, "unread"))
-			unread = atoi(attr->value);
-		else if (!strcmp(attr->name, "unreadmarked"))
-			unreadmarked = atoi(attr->value);
-		else if (!strcmp(attr->name, "total"))
-			total = atoi(attr->value);
-		else if (!strcmp(attr->name, "no_sub"))
-			no_sub = *attr->value == '1' ? TRUE : FALSE;
-		else if (!strcmp(attr->name, "no_select"))
-			no_select = *attr->value == '1' ? TRUE : FALSE;
-		else if (!strcmp(attr->name, "collapsed"))
-			collapsed = *attr->value == '1' ? TRUE : FALSE;
-		else if (!strcmp(attr->name, "thread_collapsed"))
-			thread_collapsed =  *attr->value == '1' ? TRUE : FALSE;
-		else if (!strcmp(attr->name, "threaded"))
-			threaded =  *attr->value == '1' ? TRUE : FALSE;
-		else if (!strcmp(attr->name, "hidereadmsgs"))
-			hidereadmsgs =  *attr->value == '1' ? TRUE : FALSE;
-		else if (!strcmp(attr->name, "reqretrcpt"))
-			ret_rcpt =  *attr->value == '1' ? TRUE : FALSE;
-		else if (!strcmp(attr->name, "sort_key")) {
-			if (!strcmp(attr->value, "none"))
-				sort_key = SORT_BY_NONE;
-			else if (!strcmp(attr->value, "number"))
-				sort_key = SORT_BY_NUMBER;
-			else if (!strcmp(attr->value, "size"))
-				sort_key = SORT_BY_SIZE;
-			else if (!strcmp(attr->value, "date"))
-				sort_key = SORT_BY_DATE;
-			else if (!strcmp(attr->value, "from"))
-				sort_key = SORT_BY_FROM;
-			else if (!strcmp(attr->value, "subject"))
-				sort_key = SORT_BY_SUBJECT;
-			else if (!strcmp(attr->value, "score"))
-				sort_key = SORT_BY_SCORE;
-			else if (!strcmp(attr->value, "label"))
-				sort_key = SORT_BY_LABEL;
-			else if (!strcmp(attr->value, "mark"))
-				sort_key = SORT_BY_MARK;
-			else if (!strcmp(attr->value, "unread"))
-				sort_key = SORT_BY_STATUS;
-			else if (!strcmp(attr->value, "mime"))
-				sort_key = SORT_BY_MIME;
-			else if (!strcmp(attr->value, "to"))
-				sort_key = SORT_BY_TO;
-			else if (!strcmp(attr->value, "locked"))
-				sort_key = SORT_BY_LOCKED;
-		} else if (!strcmp(attr->name, "sort_type")) {
-			if (!strcmp(attr->value, "ascending"))
-				sort_type = SORT_ASCENDING;
-			else
-				sort_type = SORT_DESCENDING;
-		} else if (!strcmp(attr->name, "account_id")) {
-			account = account_find_from_id(atoi(attr->value));
-			if (!account) g_warning("account_id: %s not found\n",
-						attr->value);
-		} else if (!strcmp(attr->name, "apply_sub"))
-			apply_sub = *attr->value == '1' ? TRUE : FALSE;
-	}
-
-	item = folder_item_new(folder, name, path);
-	item->stype = stype;
-	item->mtime = mtime;
-	item->new_msgs = new;
-	item->unread_msgs = unread;
-	item->unreadmarked_msgs = unreadmarked;
-	item->total_msgs = total;
-	item->no_sub = no_sub;
-	item->no_select = no_select;
-	item->collapsed = collapsed;
-	item->thread_collapsed = thread_collapsed;
-	item->threaded  = threaded;
-	item->hide_read_msgs  = hidereadmsgs;
-	item->ret_rcpt  = ret_rcpt;
-	item->sort_key  = sort_key;
-	item->sort_type = sort_type;
+	item = folder_item_new(folder, "", "");
+	if (folder->klass->item_set_xml != NULL)
+		folder->klass->item_set_xml(folder, item, xmlnode->tag);
+	else
+		folder_item_set_xml(folder, item, xmlnode->tag);
 	item->node = node;
 	item->parent = FOLDER_ITEM(node->parent->data);
 	item->folder = folder;
-	switch (stype) {
+	switch (item->stype) {
 	case F_INBOX:  folder->inbox  = item; break;
 	case F_OUTBOX: folder->outbox = item; break;
 	case F_DRAFT:  folder->draft  = item; break;
@@ -2429,8 +2476,6 @@ static gboolean folder_build_tree(GNode *node, gpointer data)
 	case F_TRASH:  folder->trash  = item; break;
 	default:       break;
 	}
-	item->account = account;
-	item->apply_sub = apply_sub;
 	folder_item_prefs_read_config(item);
 
 	node->data = item;
@@ -2445,12 +2490,7 @@ static gboolean folder_read_folder_func(GNode *node, gpointer data)
 	FolderItem *item;
 	XMLNode *xmlnode;
 	GList *list;
-	FolderClass *class = NULL;
-	const gchar *name = NULL;
-	const gchar *path = NULL;
-	PrefsAccount *account = NULL;
-	gboolean collapsed = FALSE, threaded = TRUE, apply_sub = FALSE;
-	gboolean ret_rcpt = FALSE, thread_collapsed = FALSE; /* CLAWS */
+	FolderClass *klass = NULL;
 
 	if (g_node_depth(node) != 2) return FALSE;
 	g_return_val_if_fail(node->data != NULL, FALSE);
@@ -2467,45 +2507,29 @@ static gboolean folder_read_folder_func(GNode *node, gpointer data)
 
 		if (!attr || !attr->name || !attr->value) continue;
 		if (!strcmp(attr->name, "type"))
-			class = folder_get_class_from_string(attr->value);
-		else if (!strcmp(attr->name, "name"))
-			name = attr->value;
-		else if (!strcmp(attr->name, "path"))
-			path = attr->value;
-		else if (!strcmp(attr->name, "collapsed"))
-			collapsed = *attr->value == '1' ? TRUE : FALSE;
-		else if (!strcmp(attr->name, "thread_collapsed"))
-			thread_collapsed = *attr->value == '1' ? TRUE : FALSE;
-		else if (!strcmp(attr->name, "threaded"))
-			threaded = *attr->value == '1' ? TRUE : FALSE;
-		else if (!strcmp(attr->name, "account_id")) {
-			account = account_find_from_id(atoi(attr->value));
-			if (!account) g_warning("account_id: %s not found\n",
-						attr->value);
-		} else if (!strcmp(attr->name, "apply_sub"))
-			apply_sub = *attr->value == '1' ? TRUE : FALSE;
-		else if (!strcmp(attr->name, "reqretrcpt"))
-			ret_rcpt = *attr->value == '1' ? TRUE : FALSE;
+			klass = folder_get_class_from_string(attr->value);
 	}
 
-	folder = folder_new(class, name, path);
+	folder = folder_new(klass, "", "");
 	g_return_val_if_fail(folder != NULL, FALSE);
-	folder->account = account;
-	if (account != NULL)
-		account->folder = REMOTE_FOLDER(folder);
+
 	item = FOLDER_ITEM(folder->node->data);
+	
 	node->data = item;
 	item->node = node;
 	g_node_destroy(folder->node);
 	folder->node = node;
-	folder_add(folder);
-	item->collapsed = collapsed;
-	item->thread_collapsed = thread_collapsed;
-	item->threaded  = threaded;
-	item->account   = account;
-	item->apply_sub = apply_sub;
-	item->ret_rcpt  = ret_rcpt;
+	if (klass->set_xml)
+		klass->set_xml(folder, xmlnode->tag);
+	else
+		folder_set_xml(folder, xmlnode->tag);
 
+	if (folder->klass->item_set_xml != NULL)
+		folder->klass->item_set_xml(folder, item, xmlnode->tag);
+	else
+		folder_item_set_xml(folder, item, xmlnode->tag);
+
+	folder_add(folder);
 	g_node_traverse(node, G_PRE_ORDER, G_TRAVERSE_ALL, -1,
 			folder_build_tree, folder);
 
@@ -2530,17 +2554,22 @@ static gchar *folder_get_list_path(void)
 	fputs("\"", fp);				\
 }
 
+gint xml_attr_cmp_name(gconstpointer _a, gconstpointer _b)
+{
+	XMLAttr *a = (XMLAttr *) _a;
+	XMLAttr *b = (XMLAttr *) _b;
+
+	return g_str_equal(a->name, b->name) ? 0 : 1;
+}
+
 static void folder_write_list_recursive(GNode *node, gpointer data)
 {
 	FILE *fp = (FILE *)data;
 	FolderItem *item;
 	gint i, depth;
-	static gchar *folder_item_stype_str[] = {"normal", "inbox", "outbox",
-						 "draft", "queue", "trash"};
-	static gchar *sort_key_str[] = {"none", "number", "size", "date",
-					"from", "subject", "score", "label",
-					"mark", "unread", "mime", "to", 
-					"locked"};
+	XMLTag *tag;
+	GList *cur;
+
 	g_return_if_fail(node != NULL);
 	g_return_if_fail(fp != NULL);
 
@@ -2551,72 +2580,44 @@ static void folder_write_list_recursive(GNode *node, gpointer data)
 	for (i = 0; i < depth; i++)
 		fputs("    ", fp);
 	if (depth == 1) {
-		Folder *folder = item->folder;
+		XMLTag *folderitem_tag;
+		GList *cur;
 
-		fprintf(fp, "<folder type=\"%s\"", folder->klass->idstr);
-		if (folder->name)
-			PUT_ESCAPE_STR(fp, "name", folder->name);
-		if (FOLDER_TYPE(folder) == F_MH || FOLDER_TYPE(folder) == F_MBOX || FOLDER_TYPE(folder) == F_MAILDIR)
-			PUT_ESCAPE_STR(fp, "path",
-				       LOCAL_FOLDER(folder)->rootpath);
-		if (item->collapsed && node->children)
-			fputs(" collapsed=\"1\"", fp);
-		if (folder->account)
-			fprintf(fp, " account_id=\"%d\"",
-				folder->account->account_id);
-		if (item->apply_sub)
-			fputs(" apply_sub=\"1\"", fp);
-		if (item->ret_rcpt) 
-			fputs(" reqretrcpt=\"1\"", fp);
-	} else {
-		fprintf(fp, "<folderitem type=\"%s\"",
-			folder_item_stype_str[item->stype]);
-		if (item->name)
-			PUT_ESCAPE_STR(fp, "name", item->name);
-		if (item->path)
-			PUT_ESCAPE_STR(fp, "path", item->path);
+		if (item->folder->klass->get_xml != NULL)
+			tag = item->folder->klass->get_xml(item->folder);
+		else
+			tag = folder_get_xml(item->folder);
 
-		if (item->no_sub)
-			fputs(" no_sub=\"1\"", fp);
-		if (item->no_select)
-			fputs(" no_select=\"1\"", fp);
-		if (item->collapsed && node->children)
-			fputs(" collapsed=\"1\"", fp);
+		if (item->folder->klass->item_get_xml != NULL)
+			folderitem_tag = item->folder->klass->item_get_xml(item->folder, item);
 		else
-			fputs(" collapsed=\"0\"", fp);
-		if (item->thread_collapsed)
-			fputs(" thread_collapsed=\"1\"", fp);
-		else
-			fputs(" thread_collapsed=\"0\"", fp);
-		if (item->threaded)
-			fputs(" threaded=\"1\"", fp);
-		else
-			fputs(" threaded=\"0\"", fp);
-		if (item->hide_read_msgs)
-			fputs(" hidereadmsgs=\"1\"", fp);
-		else
-			fputs(" hidereadmsgs=\"0\"", fp);
-		if (item->ret_rcpt)
-			fputs(" reqretrcpt=\"1\"", fp);
+			folderitem_tag = folder_item_get_xml(item->folder, item);
+		xml_tag_add_attr(tag, "type", g_strdup(item->folder->klass->idstr));
 
-		if (item->sort_key != SORT_BY_NONE) {
-			fprintf(fp, " sort_key=\"%s\"",
-				sort_key_str[item->sort_key]);
-			if (item->sort_type == SORT_ASCENDING)
-				fprintf(fp, " sort_type=\"ascending\"");
-			else
-				fprintf(fp, " sort_type=\"descending\"");
+		for (cur = folderitem_tag->attr; cur != NULL; cur = g_list_next(cur)) {
+			XMLAttr *attr = (XMLAttr *) cur->data;
+
+			if (g_list_find_custom(tag->attr, attr, xml_attr_cmp_name) == NULL)
+				tag->attr = g_list_append(tag->attr, xml_copy_attr(attr));
 		}
+		xml_free_tag(folderitem_tag);
 
-		fprintf(fp,
-			" mtime=\"%lu\" new=\"%d\" unread=\"%d\" unreadmarked=\"%d\" total=\"%d\"",
-			item->mtime, item->new_msgs, item->unread_msgs, item->unreadmarked_msgs, item->total_msgs);
+	} else {
 
-		if (item->account)
-			fprintf(fp, " account_id=\"%d\"",
-				item->account->account_id);
-		if (item->apply_sub)
-			fputs(" apply_sub=\"1\"", fp);
+		if (item->folder->klass->item_get_xml != NULL)
+			tag = item->folder->klass->item_get_xml(item->folder, item);
+		else
+			tag = folder_item_get_xml(item->folder, item);
+
+	}
+
+	fprintf(fp, "<%s", tag->tag);
+	for (cur = tag->attr; cur != NULL; cur = g_list_next(cur)) {
+		XMLAttr *attr = (XMLAttr *) cur->data;
+
+		fprintf(fp, " %s=\"", attr->name);
+		xml_file_put_escape_str(fp, attr->value);
+		fputs("\"", fp);
 	}
 
 	if (node->children) {
@@ -2634,9 +2635,10 @@ static void folder_write_list_recursive(GNode *node, gpointer data)
 
 		for (i = 0; i < depth; i++)
 			fputs("    ", fp);
-		fprintf(fp, "</%s>\n", depth == 1 ? "folder" : "folderitem");
+		fprintf(fp, "</%s>\n", tag->tag);
 	} else
 		fputs(" />\n", fp);
+	xml_free_tag(tag);
 }
 
 static void folder_update_op_count_rec(GNode *node)
@@ -2874,7 +2876,20 @@ void folder_item_apply_processing(FolderItem *item)
 		MsgInfo * msginfo;
 
 		msginfo = (MsgInfo *) cur->data;
+                
+                /* reset parameters that can be modified by processing */
+                msginfo->hidden = 0;
+                msginfo->score = 0;
+                
+                /* apply pre global rules */
+		filter_message_by_msginfo(pre_global_processing, msginfo);
+                
+                /* apply rules of the folder */
 		filter_message_by_msginfo(processing_list, msginfo);
+
+                /* apply post global rules */
+		filter_message_by_msginfo(post_global_processing, msginfo);
+                
 		procmsg_msginfo_free(msginfo);
 	}
 	g_slist_free(mlist);

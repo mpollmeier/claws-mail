@@ -16,7 +16,7 @@ claws-branch (http://sylpheed-claws.sourceforge.net)
 	Colin Leroy		<colin@colino.net>
 	Paul Mangan		<claws@thewildbeast.co.uk>
 	Leandro A. F. Pereira 	<leandro@linuxmag.com.br>
-	Luke Plant 		<lukeplant@softhome.net>
+	Luke Plant 		<L.Plant.98@cantab.net>
 	Martin Schaaf		<mascha@ma-scha.de>
 	Carsten Schurig		<Carsten.Schurig@web.de>
 	Sergey Vlasov		<vsu@users.sourceforge.net>
@@ -39,6 +39,7 @@ sylpheed-claws translation team
 	[fr]	Melvin Hadasht		<melvin.hadasht@free.fr>
 	[hr]	Dragan 			<drleskov@inet.hr>
 	[it]	Alessandro Maestri 	<maestri@cs.tin.it>
+	[ja]	Rui Hirokawa 		<rui_hirokawa@ybb.ne.jp>
 	[pl]	Emil			<eminowbl@posejdon.wpk.p.lodz.pl>
 	[ru]	Ruslan N. Balkin 	<baron@voices.ru>
 	[sk]	Andrej Kacian 		<andrej@kacian.sk>
@@ -197,3 +198,5 @@ contributors (beside the above; based on Changelog)
 	Bogdan Sumanariu
 	David Relson
 	Matthias Förste
+	David Chalmers
+	Chad Robinson
