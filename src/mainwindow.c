@@ -1185,6 +1185,11 @@ void main_window_reflect_prefs_all_real(gboolean pixmap_theme_changed)
 			summary_reflect_prefs_pixmap_theme(mainwin->summaryview);
 		}
 		
+		if (prefs_common.immediate_exec)
+			gtk_widget_hide(mainwin->exec_btn);
+		else
+			gtk_widget_show(mainwin->exec_btn);
+
 		summary_redisplay_msg(mainwin->summaryview);
 		headerview_set_visibility(mainwin->messageview->headerview,
 					  prefs_common.display_header_pane);
@@ -1558,7 +1563,7 @@ static SensitiveCond main_window_get_current_state(MainWindow *mainwin)
 		state |= M_UNLOCKED;
 	if (selection != SUMMARY_NONE)
 		state |= M_MSG_EXIST;
-	if (item) {
+	if (item && item->path && item->parent && !item->no_select) {
 		state |= M_EXEC;
 		if (item->threaded)
 			state |= M_THREADED;
@@ -1680,7 +1685,7 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 		{"/File/Exit" , M_UNLOCKED},
 
 		{"/Edit/Select thread"		   , M_SINGLE_TARGET_EXIST},
-		{"/View/Sort"                      , M_MSG_EXIST},
+		{"/View/Sort"                      , M_EXEC},
 		{"/View/Thread view"               , M_EXEC},
 		{"/View/Expand all threads"        , M_MSG_EXIST},
 		{"/View/Collapse all threads"      , M_MSG_EXIST},
@@ -3366,11 +3371,6 @@ static void set_toolbar_style(MainWindow *mainwin)
 	if (prefs_common.toolbar_style != TOOLBAR_NONE) {
 		gtk_widget_show(mainwin->handlebox);
 		gtk_widget_queue_resize(mainwin->handlebox);
-
-		if (prefs_common.immediate_exec)
-			gtk_widget_hide(mainwin->exec_btn);
-		else
-			gtk_widget_show(mainwin->exec_btn);
 	}
 }
 

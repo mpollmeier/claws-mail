@@ -334,7 +334,7 @@ MsgInfo *mh_fetch_msginfo(Folder *folder, FolderItem *item, gint num)
 	}
 
 	folder_item_set_default_flags(item, &flags);
-	msginfo = procheader_parse(file, flags, TRUE, FALSE);
+	msginfo = procheader_parse_file(file, flags, TRUE, FALSE);
 	msginfo->msgnum = num;
 	msginfo->folder = item;
 
@@ -1152,7 +1152,7 @@ static MsgInfo *mh_parse_msg(const gchar *file, FolderItem *item)
 		MSG_SET_TMP_FLAGS(flags, MSG_DRAFT);
 	}
 
-	msginfo = procheader_parse(file, flags, FALSE, FALSE);
+	msginfo = procheader_parse_file(file, flags, FALSE, FALSE);
 	if (!msginfo) return NULL;
 
 	msginfo->msgnum = atoi(file);

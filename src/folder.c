@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #include "intl.h"
 #include "folder.h"
@@ -65,6 +66,7 @@ static void folder_get_persist_prefs_recursive
 					(GNode *node, GHashTable *pptable);
 static gboolean persist_prefs_free	(gpointer key, gpointer val, gpointer data);
 void folder_item_read_cache		(FolderItem *item);
+void folder_item_write_cache		(FolderItem *item);
 
 
 Folder *folder_new(FolderType type, const gchar *name, const gchar *path)
@@ -825,6 +827,7 @@ gint folder_item_scan(FolderItem *item)
 	FolderScanInfo *folderscaninfo;
 
 	g_return_val_if_fail(item != NULL, -1);
+	if(item->path == NULL) return -1;
 
 	folder = item->folder;
 
@@ -1624,7 +1627,8 @@ static gboolean folder_build_tree(GNode *node, gpointer data)
 		 threaded = TRUE, ret_rcpt = FALSE, hidereadmsgs = FALSE;
 	FolderSortKey sort_key = SORT_BY_NONE;
 	FolderSortType sort_type = SORT_ASCENDING;
-	gint mtime = 0, new = 0, unread = 0, total = 0;
+	gint new = 0, unread = 0, total = 0;
+	time_t mtime = 0;
 
 	g_return_val_if_fail(node->data != NULL, FALSE);
 	if (!node->parent) return FALSE;
@@ -1662,7 +1666,7 @@ static gboolean folder_build_tree(GNode *node, gpointer data)
 			if (!account) g_warning("account_id: %s not found\n",
 						attr->value);
 		} else if (!strcmp(attr->name, "mtime"))
-			mtime = atoi(attr->value);
+			mtime = strtoul(attr->value, NULL, 10);
 		else if (!strcmp(attr->name, "new"))
 			new = atoi(attr->value);
 		else if (!strcmp(attr->name, "unread"))
@@ -1704,6 +1708,8 @@ static gboolean folder_build_tree(GNode *node, gpointer data)
 				sort_key = SORT_BY_UNREAD;
 			else if (!strcmp(attr->value, "mime"))
 				sort_key = SORT_BY_MIME;
+			else if (!strcmp(attr->value, "locked"))
+				sort_key = SORT_BY_LOCKED;
 		} else if (!strcmp(attr->name, "sort_type")) {
 			if (!strcmp(attr->value, "ascending"))
 				sort_type = SORT_ASCENDING;
@@ -1839,7 +1845,7 @@ static void folder_write_list_recursive(GNode *node, gpointer data)
 						 "draft", "queue", "trash"};
 	static gchar *sort_key_str[] = {"none", "number", "size", "date",
 					"from", "subject", "score", "label",
-					"mark", "unread", "mime"};
+					"mark", "unread", "mime", "locked" };
 
 	g_return_if_fail(item != NULL);
 
@@ -2091,6 +2097,8 @@ void folder_item_restore_persist_prefs(FolderItem *item, GHashTable *pptable)
 	item->threaded  = pp->threaded;
 	item->ret_rcpt  = pp->ret_rcpt;
 	item->hide_read_msgs = pp->hide_read_msgs;
+	item->sort_key  = pp->sort_key;
+	item->sort_type = pp->sort_type;
 }
 
 static void folder_get_persist_prefs_recursive(GNode *node, GHashTable *pptable)
@@ -2112,6 +2120,8 @@ static void folder_get_persist_prefs_recursive(GNode *node, GHashTable *pptable)
 		pp->threaded  = item->threaded;
 		pp->ret_rcpt  = item->ret_rcpt;	
 		pp->hide_read_msgs = item->hide_read_msgs;
+		pp->sort_key  = item->sort_key;
+		pp->sort_type = item->sort_type;
 		g_hash_table_insert(pptable, item->path, pp);
 	}		
 

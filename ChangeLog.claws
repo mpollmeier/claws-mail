@@ -1,3 +1,55 @@
+2002-06-19 [paul]	0.7.8claws9
+
+	* sync with 0.7.8claws9
+		see ChangeLog 2002-06-18 and 2002-06-19
+
+2002-06-19 [paul]	0.7.8claws8
+
+	* sync with 0.7.8cvs1
+		see ChangeLog 2002-06-18
+
+2002-06-18 [alfons]	0.7.8claws7
+
+	* src/mainwindow.h
+		add omitted prototype
+
+2002-06-17 [paul]	0.7.8claws6
+
+	* src/mainwindow.c
+		fix hiding of exec_btn
+
+2002-06-17 [paul]	0.7.8claws5
+
+	* src/pop.c
+		remove unneeded code: should_delete() 
+		and Pop3State::uidl_todelete_list
+
+2002-06-17 [paul]	0.7.8claws4
+
+	* sync with 0.7.8
+		see ChangeLog 2002-06-11 and 2002-06-13
+
+2002-06-16 [alfons]	0.7.8claws3
+	
+	* src/folder.c
+		make sure lock sort mode (claws specific) is
+		also persists after a tree rescan
+
+2002-06-16 [alfons]	0.7.8claws2
+
+	* src/prefs_folder_item.c
+	* src/folder.[ch]
+		fix persistence of folder sort mode (broken
+		by adapting Hiro's new folder persistence code)
+
+2002-06-16 [alfons]	0.7.8claws1
+
+	* AUTHORS
+	* src/logwindow.c
+	* src/prefscommon.[ch]
+		control size of log text in log window; 
+		closes patch #569155 submitted by Mitko Haralanov.
+
 2002-06-15 [paul]	0.7.8claws
 
 	* release of 0.7.8claws
