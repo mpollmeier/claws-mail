@@ -1,5 +1,5 @@
 /* XPM */
-static char * stock_mail_compose_xpm[] = {
+static char * mail_compose_xpm[] = {
 "24 24 117 2",
 "  	c None",
 ". 	c #000000",

@@ -1,5 +1,5 @@
 /* XPM */
-static char * stock_mail_reply_to_author_xpm[] = {
+static char * mail_reply_to_author_xpm[] = {
 "24 24 100 2",
 "  	c None",
 ". 	c #000000",

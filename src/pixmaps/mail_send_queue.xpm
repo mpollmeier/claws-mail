@@ -1,5 +1,5 @@
 /* XPM */
-static char * stock_mail_send_queue_xpm[] = {
+static char * mail_send_queue_xpm[] = {
 "24 24 217 2",
 "  	c None",
 ". 	c #000000",

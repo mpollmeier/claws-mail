@@ -1,5 +1,5 @@
 /* XPM */
-static char * stock_down_arrow_xpm[] = {
+static char * down_arrow_xpm[] = {
 "24 24 73 1",
 " 	c None",
 ".	c #000000",

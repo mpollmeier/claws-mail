@@ -1,5 +1,5 @@
 /* XPM */
-static char * tb_address_book_xpm[] = {
+static char * address_book_xpm[] = {
 "24 24 29 1",
 " 	c None",
 ".	c #000000",

@@ -28,7 +28,6 @@ typedef struct _MainWindow	MainWindow;
 #include "summaryview.h"
 #include "headerview.h"
 #include "messageview.h"
-#include "headerwindow.h"
 #include "logwindow.h"
 
 typedef enum
@@ -131,12 +130,12 @@ struct _MainWindow
 	ToolbarStyle toolbar_style;
 
 	guint lock_count;
+	guint menu_lock_count;
 	guint cursor_count;
 
 	FolderView	*folderview;
 	SummaryView	*summaryview;
 	MessageView	*messageview;
-	HeaderWindow	*headerwin;
 	LogWindow	*logwin;
 };
 
@@ -148,7 +147,7 @@ void main_window_cursor_normal		(MainWindow	*mainwin);
 void main_window_lock			(MainWindow	*mainwin);
 void main_window_unlock			(MainWindow	*mainwin);
 
-void main_window_reflect_prefs_all	(void);
+void main_window_reflect_prefs_all			(void);
 void main_window_set_summary_column	(void);
 void main_window_set_account_menu	(GList		*account_list);
 void main_window_separation_change	(MainWindow	*mainwin,

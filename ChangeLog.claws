@@ -1,3 +1,175 @@
+2002-02-15 [paul]	0.7.1claws5
+
+	* sync with sylpheed 0.7.1cvs9
+		see ChangeLog entry 2002-02-15
+
+	* po/POTFILES.in
+		remove unneeded headerwindow.c entry
+
+2002-02-14 [carsten]	0.7.1claws4
+	* src/summaryview.c
+		fixed a bug for "Go to next unread message": there was
+		an endless loop if NEXTUNREADMSGDIALOG_ASSUME_NO was set
+		in the prefs, because of doing "Search again" instead
+		"No"
+
+2002-02-14 [carsten]	0.7.1claws3
+	* src/stock_pixmap.c
+		removed 2 more mem leaks; following memprof,
+		this code is "leak free" now :)
+
+2002-02-14 [carsten]	0.7.1claws2
+	* src/stock_pixmap.c
+		used opendir/readdir/closedir instead of scandir
+		-> code should work now on Solaris
+
+2002-02-14 [paul]	0.7.1claws1
+
+	* sync with sylpheed 0.7.1cvs8
+		see ChangeLog entries 2002-02-13 and 2002-02-14
+
+	* README.claws
+		add some description of Actions and Pixmap Themes
+
+2002-02-13 [paul]	
+
+	* version 0.7.1claws release
+
+2002-02-13 [paul]	0.7.1claws
+
+	* po/es.po
+	  po/it.po
+	  po/pt_BR.po
+		updated translations, submitted by Ricardo Mones Lastra,
+		Alessandro Maestri and Fabio Junior Beneditto
+
+2002-02-13 [melvin]	0.7.0claws75
+
+	* src/prefs_actions.c
+		Added missing "signal.h" include
+
+2002-02-13 [melvin]	0.7.0claws74
+
+	* src/prefs_folder_item.c
+		Added missing "config.h" include
+	* po/fr.po
+		Updated French translation for folder propriety.
+
+2002-02-13 [jens]	0.7.0claws73
+
+	* po/POTFILES.in
+		Added missing src/prefs_folder_item.c [log added by melvin]
+	* po/de.po
+		Updated German translation.
+
+2002-02-13 [melvin]	0.7.0claws72
+
+	* po/fr.po
+		Updated French translation.
+
+2002-02-13 [melvin]	0.7.0claws71
+
+	* src/gtkutils.c
+		Made gtkut_editable_get_selection return NULL if selection
+		is of length zero.
+		This fixes a bug where selecting part of message A then
+		switching to message B and replying to it will not
+		quote the message's body.
+
+2002-02-12 [paul]	0.7.0claws70
+
+	* src/mainwindow.c
+		cosmetic, relating to pixmap themes: on toolbar make 
+		updating of 'Exec' and 'Compose news/Compose email'
+		icons faster.
+
+2002-02-12 [carsten]	0.7.0claws69
+	* src/folderview.c
+	  src/mainwindow.[ch]
+	  src/stock_pixmap.c
+	  src/summaryview.c
+	  src/prefs_common.c
+	  	- refreshing after changing pixmap theme better
+		  now (thanks Paul)
+		- wanted to remove some mem leaks, but alfons was
+		  faster (and had the better solution ;)
+
+2002-02-12 [alfons]     0.7.0claws68
+
+        * src/prefs_common.c
+        * src/stock_pixmap.[ch]
+                plug mem leaks, refactor code a little bit
+
+
+2002-02-12 [sergey]	0.7.0claws67
+
+	* src/imap.c
+		Fixed problem with copying messages to IMAP folders when the
+		server uses something other than '/' as a namespace separator
+		(cyrus-imapd uses '.').
+
+2002-02-12 [jens]	0.7.0claws66
+
+	* po/de.po
+		Updated German Translation
+
+2002-02-12 [paul]	0.7.0claws65
+
+	* sync with sylpheed 0.7.1cvs1
+		see ChangeLog entry 2002-02-12
+
+2002-02-12 [melvin]	0.7.0claws64
+
+	* src/prefs_actions.c
+		Fixed "feature" where children's output was duplicated 
+		instead of refreshed while monitoring.
+		Removed some debug code.
+
+2002-02-12 [christoph]	0.7.0claws63
+
+	* src/compose.c
+		always delete message from queue after sending/send error
+		(closes bug #509601)
+
+2002-02-12 [melvin]	0.7.0claws62
+
+	* src/prefs_actions.c
+		Children wait loop is now triggered with a timeout of 1s
+		Added %F which is replaced with the list of filenames 
+		of all selected messages (as suggested by Ricardo Mones Lestra)
+		Pipe syntax changed. Prefix with | to send selection, postfix
+		with | to retrieve output. Prefix with > or * to send
+		user definable input to the command (*: input is hidden)
+		Old pipe action should now be postfixed with |, too.
+
+2002-02-12 [carsten]	0.7.0claws61 (more 59.75)
+	* src/stock_pixmap.c
+		fixed a bug: if there's no theme directory don't
+		throw an error, just do "nothing" (thanks Alfons)
+
+2002-02-12 [carsten]	0.7.0claws60
+	* src/folderview.c
+	  src/summaryview.c
+		had to write the cache twice (nasty!); some marks would 
+		get lost if not
+
+2002-02-11 [carsten]	0.7.0claws59
+	* acconfig.h
+	  configure.in
+	  doc-src/maintainer_guide.txt
+	  src/compose.[ch]
+	  src/defs.h
+	  src/folderview.[ch]
+	  src/gtkutils.[ch]
+	  src/mainwindow.[ch]
+	  src/prefs_common.[ch]
+	  src/stock_pixmap.[ch]
+	  src/summaryview.[ch]
+	  	pixmap theming and related work on pixmap
+		handling on some other places
+		(e.g. hrm features for all folder)
+	  src/pixmap/stock_*.xpm -> the stock_ was removed
+	
 2002-02-11 [paul]	0.7.0claws58
 
 	* sync with sylpheed 0.7.1 release

@@ -1,5 +1,5 @@
 /* XPM */
-static char * stock_news_compose_xpm[] = {
+static char * news_compose_xpm[] = {
 "24 24 37 1",
 " 	c None",
 ".	c #000000",

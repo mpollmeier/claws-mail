@@ -1,5 +1,5 @@
 /* XPM */
-static char * stock_mail_reply_to_all_xpm[] = {
+static char * mail_reply_to_all_xpm[] = {
 "24 24 99 2",
 "  	c None",
 ". 	c #000000",

@@ -944,6 +944,7 @@ static void compose_generic_reply(MsgInfo *msginfo, gboolean quote,
 		compose_exec_ext_editor(compose);
 }
 
+static void set_toolbar_style(Compose *compose);
 
 static gchar *procmime_get_file_name(MimeInfo *mimeinfo)
 {
@@ -4593,23 +4594,6 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 
 	update_compose_actions_menu(ifactory, "/Edit/Actions", compose);
 
-	switch (prefs_common.toolbar_style) {
-	case TOOLBAR_NONE:
-		gtk_widget_hide(handlebox);
-		break;
-	case TOOLBAR_ICON:
-		gtk_toolbar_set_style(GTK_TOOLBAR(compose->toolbar),
-				      GTK_TOOLBAR_ICONS);
-		break;
-	case TOOLBAR_TEXT:
-		gtk_toolbar_set_style(GTK_TOOLBAR(compose->toolbar),
-				      GTK_TOOLBAR_TEXT);
-		break;
-	case TOOLBAR_BOTH:
-		gtk_toolbar_set_style(GTK_TOOLBAR(compose->toolbar),
-				      GTK_TOOLBAR_BOTH);
-		break;
-	}
 
 	undostruct = undo_init(text);
 	undo_set_change_state_func(undostruct, &compose_undo_state_changed,
@@ -4816,6 +4800,7 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 		gtk_widget_hide(ruler_hbox);
 
 	select_account(compose, account);
+	set_toolbar_style(compose);
 
 	return compose;
 }
@@ -4867,7 +4852,7 @@ static void compose_toolbar_create(Compose *compose, GtkWidget *container)
 
 	gtk_toolbar_append_space(GTK_TOOLBAR(toolbar));
 
-	icon_wid = stock_pixmap_widget(container, STOCK_PIXMAP_PASTE);
+	icon_wid = stock_pixmap_widget(container, STOCK_PIXMAP_INSERT_FILE);
 	insert_btn = gtk_toolbar_append_item(GTK_TOOLBAR(toolbar),
 					     _("Insert"),
 					     _("Insert file"),
@@ -4885,7 +4870,7 @@ static void compose_toolbar_create(Compose *compose, GtkWidget *container)
 
 	gtk_toolbar_append_space(GTK_TOOLBAR(toolbar));
 
-	icon_wid = stock_pixmap_widget(container, STOCK_PIXMAP_MAIL);
+	icon_wid = stock_pixmap_widget(container, STOCK_PIXMAP_MAIL_SIGN);
 	sig_btn = gtk_toolbar_append_item(GTK_TOOLBAR(toolbar),
 					  _("Signature"),
 					  _("Insert signature"),
@@ -4894,7 +4879,7 @@ static void compose_toolbar_create(Compose *compose, GtkWidget *container)
 
 	gtk_toolbar_append_space(GTK_TOOLBAR(toolbar));
 
-	icon_wid = stock_pixmap_widget(container, STOCK_PIXMAP_MAIL_COMPOSE);
+	icon_wid = stock_pixmap_widget(container, STOCK_PIXMAP_EDIT_EXTERN);
 	exteditor_btn = gtk_toolbar_append_item(GTK_TOOLBAR(toolbar),
 						_("Editor"),
 						_("Edit with external editor"),
@@ -5010,6 +4995,21 @@ void compose_reflect_prefs_all(void)
 		compose_set_template_menu(compose);
 	}
 }
+
+void compose_reflect_prefs_pixmap_theme(void)
+{
+	GList *cur;
+	Compose *compose;
+
+	for (cur = compose_list; cur != NULL; cur = cur->next) {
+		compose = (Compose *)cur->data;
+		gtk_container_remove(GTK_CONTAINER(compose->handlebox), GTK_WIDGET(compose->toolbar));
+		compose->toolbar = NULL;
+		compose_toolbar_create(compose, compose->handlebox);
+		set_toolbar_style(compose);
+	}
+}
+
 
 static void compose_template_apply(Compose *compose, Template *tmpl)
 {
@@ -6708,3 +6708,29 @@ static void compose_check_forwards_go(Compose *compose)
 	}
 }
 #endif
+
+static void set_toolbar_style(Compose *compose)
+{
+	switch (prefs_common.toolbar_style) {
+	case TOOLBAR_NONE:
+		gtk_widget_hide(compose->handlebox);
+		break;
+	case TOOLBAR_ICON:
+		gtk_toolbar_set_style(GTK_TOOLBAR(compose->toolbar),
+				      GTK_TOOLBAR_ICONS);
+		break;
+	case TOOLBAR_TEXT:
+		gtk_toolbar_set_style(GTK_TOOLBAR(compose->toolbar),
+				      GTK_TOOLBAR_TEXT);
+		break;
+	case TOOLBAR_BOTH:
+		gtk_toolbar_set_style(GTK_TOOLBAR(compose->toolbar),
+				      GTK_TOOLBAR_BOTH);
+		break;
+	}
+	
+	if (prefs_common.toolbar_style != TOOLBAR_NONE) {
+		gtk_widget_show(compose->handlebox);
+		gtk_widget_queue_resize(compose->handlebox);
+	}
+}

@@ -32,6 +32,7 @@
 #include <gtk/gtkthemes.h>
 #include <gtk/gtkbindings.h>
 #include <stdarg.h>
+#include <sys/stat.h>
 
 #if (HAVE_WCTYPE_H && HAVE_WCHAR_H)
 #  include <wchar.h>
@@ -43,6 +44,7 @@
 #include "utils.h"
 #include "gtksctree.h"
 #include "codeconv.h"
+#include "stock_pixmap.h"
 
 gint gtkut_get_font_width(GdkFont *font)
 {
@@ -252,9 +254,12 @@ gchar *gtkut_editable_get_selection(GtkEditable *editable)
 {
 	guint start_pos, end_pos;
 
-	g_return_if_fail(editable != NULL);
+	g_return_val_if_fail(editable != NULL, NULL);
 
 	if (!editable->has_selection) return NULL;
+
+	if (editable->selection_start_pos == editable->selection_end_pos)
+		return NULL;
 
 	if (editable->selection_start_pos < editable->selection_end_pos) {
 		start_pos = editable->selection_start_pos;
@@ -493,14 +498,13 @@ void gtkut_widget_set_app_icon(GtkWidget *widget)
 
 void gtkut_widget_set_composer_icon(GtkWidget *widget)
 {
-#include "pixmaps/stock_mail_compose.xpm"
 	static GdkPixmap *xpm;
 	static GdkBitmap *bmp;
 
 	g_return_if_fail(widget != NULL);
 	g_return_if_fail(widget->window != NULL);
 	if (!xpm) {
-		PIXMAP_CREATE(widget, xpm, bmp, stock_mail_compose_xpm);
+		stock_pixmap_gdk(widget, STOCK_PIXMAP_MAIL_COMPOSE, &xpm, &bmp);
 	}
 	gdk_window_set_icon(widget->window, NULL, xpm, bmp);	
 }

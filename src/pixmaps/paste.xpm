@@ -1,5 +1,5 @@
 /* XPM */
-static char * stock_paste_xpm[] = {
+static char * paste_xpm[] = {
 "24 24 105 2",
 "  	c None",
 ". 	c #000000",

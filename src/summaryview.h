@@ -34,7 +34,6 @@ typedef struct _SummaryColumnState	SummaryColumnState;
 #include "folderview.h"
 #include "headerview.h"
 #include "messageview.h"
-#include "headerwindow.h"
 #include "compose.h"
 #include "prefs_filter.h"
 #include "folder.h"
@@ -100,6 +99,7 @@ struct _SummaryView
 	GtkWidget *scrolledwin;
 	GtkWidget *ctree;
 	GtkWidget *hbox;
+	GtkWidget *folder_pixmap;
 	GtkWidget *statlabel_folder;
 	GtkWidget *statlabel_select;
 	GtkWidget *statlabel_msgs;
@@ -131,7 +131,6 @@ struct _SummaryView
 	FolderView   *folderview;
 	HeaderView   *headerview;
 	MessageView  *messageview;
-	HeaderWindow *headerwin;
 
 	FolderItem *folder_item;
 
@@ -191,7 +190,8 @@ void summary_select_by_msgnum	  (SummaryView		*summaryview,
 guint summary_get_current_msgnum  (SummaryView		*summaryview);
 void summary_select_node	  (SummaryView		*summaryview,
 				   GtkCTreeNode		*node,
-				   gboolean		 display_msg);
+				   gboolean		 display_msg,
+				   gboolean		 do_refresh);
 
 void summary_thread_build	  (SummaryView		*summaryview);
 void summary_unthread		  (SummaryView		*summaryview);
@@ -260,4 +260,5 @@ void summary_toggle_show_read_messages (SummaryView *summaryview);
 
 void summary_toggle_view_real	(SummaryView	*summaryview);
 
+void summary_reflect_prefs_pixmap_theme(SummaryView *summaryview);
 #endif /* __SUMMARY_H__ */

@@ -1,5 +1,5 @@
 /* XPM */
-static char * stock_mail_attach_xpm[] = {
+static char * mail_attach_xpm[] = {
 "24 24 107 2",
 "  	c None",
 ". 	c #000000",
