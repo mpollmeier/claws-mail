@@ -329,3 +329,4 @@ guint colorlabel_get_color_menu_active_item(GtkWidget *menu)
 		(gtk_object_get_data(GTK_OBJECT(menuitem), "color"));
 	return color;
 }
+
