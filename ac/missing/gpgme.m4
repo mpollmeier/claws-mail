@@ -1,5 +1,5 @@
 dnl Autoconf macros for libgpgme
-dnl $Id: gpgme.m4,v 1.2.12.1 2003-12-06 13:53:25 netztorte Exp $
+dnl $Id: gpgme.m4,v 1.2.12.2 2004-01-18 18:22:09 netztorte Exp $
 
 # Configure paths for GPGME
 # Shamelessly stolen from the one of XDELTA by Owen Taylor
@@ -9,7 +9,7 @@ dnl AM_PATH_GPGME([MINIMUM-VERSION,
 dnl               [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND ]]])
 dnl Test for gpgme, and define GPGME_CFLAGS and GPGME_LIBS
 dnl
-AC_DEFUN(AM_PATH_GPGME,
+AC_DEFUN([AM_PATH_GPGME],
 [dnl
 dnl Get the cflags and libraries from the gpgme-config script
 dnl

@@ -74,6 +74,9 @@
 #endif
 #include <signal.h>
 #include <errno.h>
+#ifndef WIN32
+#include <libgen.h>
+#endif
 
 #if (HAVE_WCTYPE_H && HAVE_WCHAR_H)
 #  include <wchar.h>
@@ -118,6 +121,9 @@
 #include "undo.h"
 #include "foldersel.h"
 #include "toolbar.h"
+#ifdef WIN32
+#include "utils.h"
+#endif
 
 #if USE_GPGME
 #  include "rfc2015.h"
@@ -159,6 +165,14 @@ typedef enum
 	PRIORITY_LOW,
 	PRIORITY_LOWEST
 } PriorityLevel;
+
+typedef enum
+{
+	COMPOSE_INSERT_SUCCESS,
+	COMPOSE_INSERT_READ_ERROR,
+	COMPOSE_INSERT_INVALID_CHARACTER,
+	COMPOSE_INSERT_NO_FILE
+} ComposeInsertResult;
 
 #define B64_LINE_SIZE		57
 #define B64_BUFFSIZE		77
@@ -210,7 +224,7 @@ static void compose_reedit_set_entry		(Compose	*compose,
 static void compose_insert_sig			(Compose	*compose,
 						 gboolean	 replace);
 static gchar *compose_get_signature_str		(Compose	*compose);
-static void compose_insert_file			(Compose	*compose,
+static ComposeInsertResult compose_insert_file	(Compose	*compose,
 						 const gchar	*file);
 static void compose_attach_append		(Compose	*compose,
 						 const gchar	*file,
@@ -260,8 +274,7 @@ static void compose_convert_header		(gchar		*dest,
 						 gchar		*src,
 						 gint		 header_len,
 						 gboolean	 addr_field);
-static void compose_generate_msgid		(Compose	*compose,
-						 gchar		*buf,
+static void compose_generate_msgid		(gchar		*buf,
 						 gint		 len);
 
 static void compose_attach_info_free		(AttachInfo	*ainfo);
@@ -886,7 +899,7 @@ void compose_reply_mode(ComposeMode mode, GSList *msginfo_list, gchar *body)
 	case COMPOSE_FORWARD_INLINE:
 		/* check if we reply to more than one Message */
 		if (list_len == 1) {
-			compose_forward(NULL, msginfo, FALSE, body);
+			compose_forward(NULL, msginfo, FALSE, body, FALSE);
 			break;
 		} 
 		/* more messages FALL THROUGH */
@@ -1027,7 +1040,8 @@ if (msginfo->var && *msginfo->var) { \
 }
 
 Compose *compose_forward(PrefsAccount *account, MsgInfo *msginfo,
-			 gboolean as_attach, const gchar *body)
+			 gboolean as_attach, const gchar *body,
+			 gboolean no_extedit)
 {
 	Compose *compose;
 	GtkTextView *textview;
@@ -1050,7 +1064,7 @@ Compose *compose_forward(PrefsAccount *account, MsgInfo *msginfo,
 
 	if (!account && prefs_common.forward_account_autosel) {
 		gchar cc[BUFFSIZE];
-		if (!get_header_from_msginfo(msginfo,cc,sizeof(cc),"CC:")){ /* Found a CC header */
+		if (!procheader_get_header_from_msginfo(msginfo,cc,sizeof(cc),"CC:")){ /* Found a CC header */
 		        extract_address(cc);
 		        account = account_find_from_address(cc);
                 }
@@ -1138,7 +1152,7 @@ Compose *compose_forward(PrefsAccount *account, MsgInfo *msginfo,
 #endif
 	gtk_widget_grab_focus(compose->header_last->entry);
 
-	if (prefs_common.auto_exteditor)
+	if (!no_extedit && prefs_common.auto_exteditor)
 		compose_exec_ext_editor(compose);
 	
 	/*save folder*/
@@ -1241,22 +1255,22 @@ void compose_reedit(MsgInfo *msginfo)
 		gint id;
 
 		/* Select Account from queue headers */
-		if (!get_header_from_msginfo(msginfo, queueheader_buf, 
+		if (!procheader_get_header_from_msginfo(msginfo, queueheader_buf, 
 					     sizeof(queueheader_buf), "X-Sylpheed-Account-Id:")) {
 			id = atoi(&queueheader_buf[22]);
 			account = account_find_from_id(id);
 		}
-		if (!account && !get_header_from_msginfo(msginfo, queueheader_buf, 
+		if (!account && !procheader_get_header_from_msginfo(msginfo, queueheader_buf, 
 					     sizeof(queueheader_buf), "NAID:")) {
 			id = atoi(&queueheader_buf[5]);
 			account = account_find_from_id(id);
 		}
-		if (!account && !get_header_from_msginfo(msginfo, queueheader_buf, 
+		if (!account && !procheader_get_header_from_msginfo(msginfo, queueheader_buf, 
 		                                    sizeof(queueheader_buf), "MAID:")) {
 			id = atoi(&queueheader_buf[5]);
 			account = account_find_from_id(id);
 		}
-		if (!account && !get_header_from_msginfo(msginfo, queueheader_buf, 
+		if (!account && !procheader_get_header_from_msginfo(msginfo, queueheader_buf, 
 		                                                sizeof(queueheader_buf), "S:")) {
 			account = account_find_from_address(queueheader_buf);
 		}
@@ -1265,7 +1279,7 @@ void compose_reedit(MsgInfo *msginfo)
 
 	if (!account && prefs_common.reedit_account_autosel) {
                	gchar from[BUFFSIZE];
-		if (!get_header_from_msginfo(msginfo, from, sizeof(from), "FROM:")){
+		if (!procheader_get_header_from_msginfo(msginfo, from, sizeof(from), "FROM:")){
 		        extract_address(from);
 		        account = account_find_from_address(from);
                 }
@@ -1281,7 +1295,7 @@ void compose_reedit(MsgInfo *msginfo)
 		gchar queueheader_buf[BUFFSIZE];
 
 		/* Set message save folder */
-		if (!get_header_from_msginfo(msginfo, queueheader_buf, sizeof(queueheader_buf), "SCF:")) {
+		if (!procheader_get_header_from_msginfo(msginfo, queueheader_buf, sizeof(queueheader_buf), "SCF:")) {
 			gint startpos = 0;
 
 			gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(compose->savemsg_checkbtn), TRUE);
@@ -1320,6 +1334,7 @@ Compose *compose_redirect(PrefsAccount *account, MsgInfo *msginfo)
 	Compose *compose;
 	gchar *filename;
 	GtkItemFactory *ifactory;
+	FolderItem *item;
 
 	g_return_val_if_fail(msginfo != NULL, NULL);
 
@@ -1344,6 +1359,17 @@ Compose *compose_redirect(PrefsAccount *account, MsgInfo *msginfo)
 
 	compose->redirect_filename = filename;
 	
+	/* Set save folder */
+	item = msginfo->folder;
+	if (item && item->prefs && item->prefs->save_copy_to_folder) {
+		gchar *folderidentifier;
+
+    		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(compose->savemsg_checkbtn), prefs_common.savemsg);
+		folderidentifier = folder_item_get_identifier(item);
+		gtk_entry_set_text(GTK_ENTRY(compose->savemsg_entry), folderidentifier);
+		g_free(folderidentifier);
+	}
+
 	compose_attach_parts(compose, msginfo);
 
 	if (msginfo->subject)
@@ -1496,6 +1522,11 @@ void compose_toolbar_cb(gint action, gpointer data)
 	case A_ADDRBOOK:
 		compose_address_cb(compose, 0, NULL);
 		break;
+#ifdef USE_ASPELL
+	case A_CHECK_SPELLING:
+		compose_check_all(compose);
+		break;
+#endif
 	default:
 		break;
 	}
@@ -1869,6 +1900,10 @@ static void compose_reply_set_entry(Compose *compose, MsgInfo *msginfo,
 
 	if (replyto && from)
 		cc_list = address_list_append_with_comments(cc_list, from);
+	if (to_all && msginfo->folder && 
+	    msginfo->folder->prefs->enable_default_reply_to)
+	    	cc_list = address_list_append_with_comments(cc_list,
+				msginfo->folder->prefs->default_reply_to);
 	cc_list = address_list_append_with_comments(cc_list, msginfo->to);
 	cc_list = address_list_append_with_comments(cc_list, compose->cc);
 
@@ -2034,7 +2069,7 @@ static gchar *compose_get_signature_str(Compose *compose)
 	return sig_str;
 }
 
-static void compose_insert_file(Compose *compose, const gchar *file)
+static ComposeInsertResult compose_insert_file(Compose *compose, const gchar *file)
 {
 	GtkTextView *text;
 	GtkTextBuffer *buffer;
@@ -2043,12 +2078,13 @@ static void compose_insert_file(Compose *compose, const gchar *file)
 	gchar buf[BUFFSIZE];
 	gint len;
 	FILE *fp;
+	gboolean badtxt = FALSE;
 
-	g_return_if_fail(file != NULL);
+	g_return_val_if_fail(file != NULL, COMPOSE_INSERT_NO_FILE);
 
 	if ((fp = fopen(file, "rb")) == NULL) {
 		FILE_OP_ERROR(file, "fopen");
-		return;
+		return COMPOSE_INSERT_READ_ERROR;
 	}
 
 	text = GTK_TEXT_VIEW(compose->text);
@@ -2081,6 +2117,11 @@ static void compose_insert_file(Compose *compose, const gchar *file)
 	}
 
 	fclose(fp);
+
+	if (badtxt)
+		return COMPOSE_INSERT_INVALID_CHARACTER;
+	else 
+		return COMPOSE_INSERT_SUCCESS;
 }
 
 static void compose_attach_append(Compose *compose, const gchar *file,
@@ -2178,69 +2219,124 @@ static void compose_attach_append(Compose *compose, const gchar *file,
 	gtk_clist_set_row_data(GTK_CLIST(compose->attach_clist), row, ainfo);
 }
 
-#define IS_FIRST_PART_TEXT(info) \
-	((info->mime_type == MIME_TEXT || info->mime_type == MIME_TEXT_HTML || \
-	  info->mime_type == MIME_TEXT_ENRICHED) || \
-	 (info->mime_type == MIME_MULTIPART && info->content_type && \
-	  !strcasecmp(info->content_type, "multipart/alternative") && \
-	  (info->children && \
-	   (info->children->mime_type == MIME_TEXT || \
-	    info->children->mime_type == MIME_TEXT_HTML || \
-	    info->children->mime_type == MIME_TEXT_ENRICHED))))
+#ifdef USE_GPGME
+static void compose_use_signing(Compose *compose, gboolean use_signing)
+{
+	GtkItemFactory *ifactory;
+	GtkWidget *menuitem = NULL;
+
+	compose->use_signing = use_signing;
+	ifactory = gtk_item_factory_from_widget(compose->menubar);
+	menuitem = gtk_item_factory_get_item
+		(ifactory, "/Message/Sign");
+	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), 
+				       use_signing);
+	compose_update_gnupg_mode_menu_item(compose);
+}
+#endif /* USE_GPGME */
+
+#define NEXT_PART_NOT_CHILD(info)  \
+{  \
+	node = info->node;  \
+	while (node->children)  \
+		node = g_node_last_child(node);  \
+	info = procmime_mimeinfo_next((MimeInfo *)node->data);  \
+}
 
 static void compose_attach_parts(Compose *compose, MsgInfo *msginfo)
 {
 	MimeInfo *mimeinfo;
 	MimeInfo *child;
-	gchar *infile;
+	MimeInfo *firsttext = NULL;
+	MimeInfo *encrypted = NULL;
+	GNode    *node;
 	gchar *outfile;
+	const gchar *partname = NULL;
 
 	mimeinfo = procmime_scan_message(msginfo);
 	if (!mimeinfo) return;
 
-	/* skip first text (presumably message body) */
-	child = mimeinfo->children;
-	if (!child || IS_FIRST_PART_TEXT(mimeinfo)) {
+	if (mimeinfo->node->children == NULL) {
 		procmime_mimeinfo_free_all(mimeinfo);
 		return;
 	}
 
-	if (IS_FIRST_PART_TEXT(child))
-		child = child->next;
+	/* find first content part */
+	child = (MimeInfo *) mimeinfo->node->children->data;
+	while (child && child->node->children && (child->type == MIMETYPE_MULTIPART))
+		child = (MimeInfo *)child->node->children->data;
 
-	infile = procmsg_get_message_file_path(msginfo);
-
+	if (child->type == MIMETYPE_TEXT) {
+		firsttext = child;
+		debug_print("First text part found\n");
+	} else if (compose->mode == COMPOSE_REEDIT &&
+		 child->type == MIMETYPE_APPLICATION &&
+		 !strcasecmp(child->subtype, "pgp-encrypted")) {
+		AlertValue val;
+		val = alertpanel(_("Encrypted message"),
+				 _("Cannot re-edit an encrypted message. \n"
+				   "Discard encrypted part?"),
+				 _("Yes"), _("No"), NULL);
+		if (val == G_ALERTDEFAULT) 
+			encrypted = (MimeInfo *)child->node->parent->data;
+	}
+     
+	child = (MimeInfo *) mimeinfo->node->children->data;
 	while (child != NULL) {
-		if (child->children || child->mime_type == MIME_MULTIPART) {
+		if (child == encrypted) {
+			/* skip this part of tree */
+			NEXT_PART_NOT_CHILD(child);
+			continue;
+		}
+
+		if (child->type == MIMETYPE_MULTIPART) {
+			/* get the actual content */
 			child = procmime_mimeinfo_next(child);
 			continue;
 		}
-		if (child->parent && child->parent->parent
-		&& !strcasecmp(child->parent->parent->content_type, "multipart/signed")
-		&& child->mime_type == MIME_TEXT) {
-			/* this is the main text part of a signed message */
+		    
+		if (child == firsttext) {
+			child = procmime_mimeinfo_next(child);
+			continue;
+		}
+
+		if ((compose->mode == COMPOSE_REEDIT || 
+		     compose->mode == COMPOSE_FORWARD_INLINE ||
+		     compose->mode == COMPOSE_FORWARD )  &&
+		    (child->type == MIMETYPE_APPLICATION) && 
+		    !strcmp(child->subtype, "pgp-signature")) {
+#ifdef USE_GPGME
+			if (compose->mode == COMPOSE_REEDIT) {
+				compose->gnupg_mode  = GNUPG_MODE_DETACH;
+				compose_use_signing(compose, TRUE);
+			}
+#endif
 			child = procmime_mimeinfo_next(child);
 			continue;
 		}
 		outfile = procmime_get_tmp_file_name(child);
-		if (procmime_get_part(outfile, infile, child) < 0)
+		if (procmime_get_part(outfile, child) < 0)
 			g_warning("Can't get the part of multipart message.");
-		else if (compose->mode != COMPOSE_REEDIT || strcmp(child->content_type, "application/pgp-signature"))
-			compose_attach_append
-				(compose, outfile,
-				 child->filename ? child->filename : child->name,
-				 child->content_type);
+		else {
+			gchar *content_type;
 
-		child = child->next;
+			content_type = g_strdup_printf("%s/%s", procmime_get_type_str(child->type), child->subtype);
+			partname = procmime_mimeinfo_get_parameter(child, "name");
+			if (partname == NULL)
+				partname = "";
+			compose_attach_append(compose, outfile, 
+					      partname, content_type);
+			g_free(content_type);
+		}
+		g_free(outfile);
+		NEXT_PART_NOT_CHILD(child);
 	}
-
-	g_free(infile);
 	procmime_mimeinfo_free_all(mimeinfo);
 }
 
-#undef IS_FIRST_PART_TEXT
   
 #define CHAR_BUF_SIZE 8
+#undef NEXT_PART_NOT_CHILD
 
 #define GET_CHAR(iter_p, buf, len)					     \
 {									     \
@@ -3234,7 +3330,8 @@ static gint compose_redirect_write_headers_from_headerlist(Compose *compose,
 {
 	gchar buf[BUFFSIZE];
 	gchar *str;
-	gboolean first_address;
+	gboolean first_to_address;
+	gboolean first_cc_address;
 	GSList *list;
 	ComposeHeaderEntry *headerentry;
 	const gchar *headerentryname;
@@ -3246,7 +3343,8 @@ static gint compose_redirect_write_headers_from_headerlist(Compose *compose,
 	cc_hdr = prefs_common.trans_hdr ? _("Cc:") : "Cc:";
  	to_hdr = prefs_common.trans_hdr ? _("To:") : "To:";
 
-	first_address = TRUE;
+	first_to_address = TRUE;
+	first_cc_address = TRUE;
 	for (list = compose->header_list; list; list = list->next) {
 		headerentry = ((ComposeHeaderEntry *)list->data);
 		headerentryname = gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(headerentry->combo)->entry));
@@ -3260,12 +3358,24 @@ static gint compose_redirect_write_headers_from_headerlist(Compose *compose,
 				compose_convert_header
 					(buf, sizeof(buf), str,
 					strlen("Resent-To") + 2, TRUE);
-				if (first_address) {
-					fprintf(fp, "Resent-To: ");
-					first_address = FALSE;
-				} else {
-					fprintf(fp, ",");
+				if (g_strcasecmp(headerentryname, to_hdr) == 0) {
+					if (first_to_address) {
+						fprintf(fp, "Resent-To: ");
+						first_to_address = FALSE;
+					} else {
+						fprintf(fp, ",");
+					}
 				}
+				if (g_strcasecmp(headerentryname, cc_hdr) == 0) {
+					if (first_cc_address) {
+						fprintf(fp, "\n");
+						fprintf(fp, "Resent-Cc: ");
+						first_cc_address = FALSE;
+					} else {
+						fprintf(fp, ",");
+					}
+				}
+				
 				fprintf(fp, "%s", buf);
 			}
 		}
@@ -3316,7 +3426,7 @@ static gint compose_redirect_write_headers(Compose *compose, FILE *fp)
 
 	/* Resent-Message-ID */
 	if (compose->account->gen_msgid) {
-		compose_generate_msgid(compose, buf, sizeof(buf));
+		compose_generate_msgid(buf, sizeof(buf));
 		fprintf(fp, "Resent-Message-Id: <%s>\n", buf);
 		compose->msgid = g_strdup(buf);
 	}
@@ -3353,7 +3463,7 @@ static gint compose_redirect_write_to_file(Compose *compose, const gchar *file)
 		g_warning("can't change file mode\n");
 	}
 
-	while (procheader_get_unfolded_line(buf, sizeof(buf), fp)) {
+	while (procheader_get_one_field(buf, sizeof(buf), fp, NULL) != -1) {
 		/* should filter returnpath, delivered-to */
 		if (g_strncasecmp(buf, "Return-Path:",
 				   strlen("Return-Path:")) == 0 ||
@@ -3824,7 +3934,6 @@ static gint compose_queue_sub(Compose *compose, gint *msgnum, FolderItem **item,
 	GSList *cur;
 	gchar buf[BUFFSIZE];
 	gint num;
-	MsgFlags flag = {0, 0};
         static gboolean lock = FALSE;
 	PrefsAccount *mailac = NULL, *newsac = NULL;
 	
@@ -4145,14 +4254,15 @@ static void compose_write_attach(Compose *compose, FILE *fp)
 
 static gint compose_write_headers_from_headerlist(Compose *compose, 
 						  FILE *fp, 
-						  gchar *header)
+						  const gchar *header,
+						  const gchar *seperator)
 {
-	gchar buf[BUFFSIZE];
 	gchar *str, *header_w_colon, *trans_hdr;
-	gboolean first_address;
+	gboolean write_header = FALSE;
 	GSList *list;
 	ComposeHeaderEntry *headerentry;
 	const gchar * headerentryname;
+	GString *headerstr;
 
 	if (IS_IN_CUSTOM_HEADER(header)) {
 		return 0;
@@ -4160,10 +4270,11 @@ static gint compose_write_headers_from_headerlist(Compose *compose,
 
 	debug_print("Writing %s-header\n", header);
 
+	headerstr = g_string_sized_new(64);
+
 	header_w_colon = g_strconcat(header, ":", NULL);
 	trans_hdr = (prefs_common.trans_hdr ? gettext(header_w_colon) : header_w_colon);
 
-	first_address = TRUE;
 	for (list = compose->header_list; list; list = list->next) {
     		headerentry = ((ComposeHeaderEntry *)list->data);
 		headerentryname = gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(headerentry->combo)->entry));
@@ -4174,24 +4285,26 @@ static gint compose_write_headers_from_headerlist(Compose *compose,
 
 			g_strstrip(str);
 			if (str[0] != '\0') {
-				compose_convert_header
-					(buf, sizeof(buf), str,
-					strlen(header) + 2, TRUE);
-				if (first_address) {
-					fprintf(fp, "%s: ", header);
-					first_address = FALSE;
-				} else {
-					fprintf(fp, ",");
-				}
-				fprintf(fp, "%s", buf);
+				if (write_header)
+					g_string_append(headerstr, seperator);
+				g_string_append(headerstr, str);
+				write_header = TRUE;
 			}
 		}
 	}
-	if (!first_address) {
-		fprintf(fp, "\n");
+	if (write_header) {
+		gchar *buf;
+
+		buf = g_new0(gchar, headerstr->len * 4 + 256);
+		compose_convert_header
+			(buf, headerstr->len * 4  + 256, headerstr->str,
+			strlen(header) + 2, TRUE);
+		fprintf(fp, "%s: %s\n", header, buf);
+		g_free(buf);
 	}
 
 	g_free(header_w_colon);
+	g_string_free(headerstr, TRUE);
 
 	return(0);
 }
@@ -4248,7 +4361,7 @@ static gint compose_write_headers(Compose *compose, FILE *fp,
 	}
 	
 	/* To */
-	compose_write_headers_from_headerlist(compose, fp, "To");
+	compose_write_headers_from_headerlist(compose, fp, "To", ", ");
 #if 0 /* NEW COMPOSE GUI */
 	if (compose->use_to) {
 		entry_str = gtk_entry_get_text(GTK_ENTRY(compose->to_entry));
@@ -4257,7 +4370,7 @@ static gint compose_write_headers(Compose *compose, FILE *fp,
 #endif
 
 	/* Newsgroups */
-	compose_write_headers_from_headerlist(compose, fp, "Newsgroups");
+	compose_write_headers_from_headerlist(compose, fp, "Newsgroups", ",");
 #if 0 /* NEW COMPOSE GUI */
 	if (compose->use_newsgroups) {
 		entry_str = gtk_entry_get_text(GTK_ENTRY(compose->newsgroups_entry));
@@ -4278,7 +4391,7 @@ static gint compose_write_headers(Compose *compose, FILE *fp,
 	}
 #endif
 	/* Cc */
-	compose_write_headers_from_headerlist(compose, fp, "Cc");
+	compose_write_headers_from_headerlist(compose, fp, "Cc", ", ");
 #if 0 /* NEW COMPOSE GUI */
 	if (compose->use_cc) {
 		str = gtk_entry_get_text(GTK_ENTRY(compose->cc_entry));
@@ -4286,7 +4399,7 @@ static gint compose_write_headers(Compose *compose, FILE *fp,
 	}
 #endif
 	/* Bcc */
-	compose_write_headers_from_headerlist(compose, fp, "Bcc");
+	compose_write_headers_from_headerlist(compose, fp, "Bcc", ", ");
 #if 0 /* NEW COMPOSE GUI */
 	if (compose->use_bcc) {
 		str = gtk_entry_get_text(GTK_ENTRY(compose->bcc_entry));
@@ -4308,7 +4421,7 @@ static gint compose_write_headers(Compose *compose, FILE *fp,
 
 	/* Message-ID */
 	if (compose->account->gen_msgid) {
-		compose_generate_msgid(compose, buf, sizeof(buf));
+		compose_generate_msgid(buf, sizeof(buf));
 		fprintf(fp, "Message-Id: <%s>\n", buf);
 		compose->msgid = g_strdup(buf);
 	}
@@ -4324,7 +4437,7 @@ static gint compose_write_headers(Compose *compose, FILE *fp,
 	}
 
 	/* Followup-To */
-	compose_write_headers_from_headerlist(compose, fp, "Followup-To");
+	compose_write_headers_from_headerlist(compose, fp, "Followup-To", ",");
 #if 0 /* NEW COMPOSE GUI */
 	if (compose->use_followupto && !IS_IN_CUSTOM_HEADER("Followup-To")) {
 		entry_str = gtk_entry_get_text(GTK_ENTRY(compose->followup_entry));
@@ -4342,7 +4455,7 @@ static gint compose_write_headers(Compose *compose, FILE *fp,
 	}
 #endif
 	/* Reply-To */
-	compose_write_headers_from_headerlist(compose, fp, "Reply-To");
+	compose_write_headers_from_headerlist(compose, fp, "Reply-To", ", ");
 #if 0 /* NEW COMPOSE GUI */
 	if (compose->use_replyto && !IS_IN_CUSTOM_HEADER("Reply-To")) {
 		entry_str = gtk_entry_get_text(GTK_ENTRY(compose->reply_entry));
@@ -4416,7 +4529,7 @@ static gint compose_write_headers(Compose *compose, FILE *fp,
 	/* MIME */
 	fprintf(fp, "Mime-Version: 1.0\n");
 	if (compose_use_attach(compose)) {
-		compose->boundary = generate_mime_boundary();
+		compose->boundary = generate_mime_boundary(NULL);
 		fprintf(fp,
 			"Content-Type: multipart/mixed;\n"
 			" boundary=\"%s\"\n", compose->boundary);
@@ -4533,7 +4646,7 @@ static void compose_convert_header(gchar *dest, gint len, gchar *src,
 	conv_encode_header(dest, len, src, header_len, addr_field);
 }
 
-static void compose_generate_msgid(Compose *compose, gchar *buf, gint len)
+static void compose_generate_msgid(gchar *buf, gint len)
 {
 	struct tm *lt;
 	time_t t;
@@ -4542,18 +4655,9 @@ static void compose_generate_msgid(Compose *compose, gchar *buf, gint len)
 	t = time(NULL);
 	lt = localtime(&t);
 
-	if (compose->account && compose->account->address &&
-	    *compose->account->address) {
-		if (strchr(compose->account->address, '@'))
-			addr = g_strdup(compose->account->address);
-		else
-			addr = g_strconcat(compose->account->address, "@",
-					   get_domain_name(), NULL);
-	} else
-		addr = g_strconcat(g_get_user_name(), "@", get_domain_name(),
-				   NULL);
+	addr = g_strconcat("@", get_domain_name(), NULL);
 
-	g_snprintf(buf, len, "%04d%02d%02d%02d%02d%02d.%08x.%s",
+	g_snprintf(buf, len, "%04d%02d%02d%02d%02d%02d.%08x%s",
 		   lt->tm_year + 1900, lt->tm_mon + 1,
 		   lt->tm_mday, lt->tm_hour,
 		   lt->tm_min, lt->tm_sec,
@@ -6144,21 +6248,26 @@ static gint compose_exec_ext_editor_real(const gchar *file)
 		gint hEditor=0;
 		gint n,len=0;
 		gchar *fullname;
-		gchar **parsed_cmdline;
+		gchar *parsed_cmdline[1024]={0};
+		gchar *loc_buf;
 
-		cmdline = strsplit_with_quote(buf, " ", 1024);
+		loc_buf = g_locale_from_utf8(buf, -1, NULL, NULL, NULL);
+		cmdline = strsplit_with_quote(loc_buf, " ", 1024);
+		g_free(loc_buf);
 
 		fullname = w32_parse_path(cmdline[0]);
-		len = strlen(fullname);
-		for (n=1; cmdline[n]; len+=strlen(cmdline[n++]));
-		parsed_cmdline=g_new0(gchar*, len);
-
-		parsed_cmdline[0]=g_strdup_printf("\"%s\"",fullname);
+		if (GetShortPathName(fullname, buf, sizeof(buf)))
+			parsed_cmdline[0] = g_strdup(buf);
+		else
+			parsed_cmdline[0] = g_strdup(fullname);
 
 		for (n=1; cmdline[n]; n++)
-			parsed_cmdline[n]=g_strdup(cmdline[n]);
+			if (GetShortPathName(cmdline[n], buf, sizeof(buf)))
+				parsed_cmdline[n] = g_strdup(buf);
+			else
+				parsed_cmdline[n] = g_strdup(cmdline[n]);
 
-		if ((hEditor=spawnvp(P_NOWAIT, fullname, cmdline)) < 0) {
+		if ((hEditor=spawnvp(P_NOWAIT, fullname, parsed_cmdline)) < 0) {
 			gint source;
 			GdkInputCondition condition;
 			gchar *p_buf = g_strdup_printf(_("Cannot execute\n%s"),&buf);
@@ -6173,7 +6282,6 @@ static gint compose_exec_ext_editor_real(const gchar *file)
 		gtk_timeout_add( 50, ext_editor_timeout_cb, compose );
 
 		for (n=0; parsed_cmdline[n]; g_free(parsed_cmdline[n++]));
-		g_free(parsed_cmdline);
 		g_free(fullname);
 	}
 #else
@@ -6671,7 +6779,19 @@ static void compose_insert_file_cb(gpointer data, guint action,
 
 		for ( tmp = file_list; tmp; tmp = tmp->next) {
 			gchar *file = (gchar *) tmp->data;
-			compose_insert_file(compose, file);
+			gchar *filedup = g_strdup(file);
+			gchar *shortfile;
+			ComposeInsertResult res;
+
+			res = compose_insert_file(compose, file);
+			shortfile = g_basename(filedup);
+			if (res == COMPOSE_INSERT_READ_ERROR) {
+				alertpanel_error(_("File '%s' could not be read."), shortfile);
+			} else if (res == COMPOSE_INSERT_INVALID_CHARACTER) {
+				alertpanel_error(_("File '%s' contained invalid characters\n"
+						   "for the current encoding, insertion may be incorrect."), shortfile);
+			}
+			g_free(filedup);
 			g_free(file);
 		}
 		g_list_free(file_list);
@@ -7523,6 +7643,7 @@ gboolean compose_headerentry_key_press_event_cb(GtkWidget *entry,
 			 */
 			gtk_signal_emit_stop_by_name(GTK_OBJECT(entry), "key-press-event"); 
 			gtk_widget_grab_focus(headerentry->compose->subject_entry);
+			return TRUE;
 		}
 	}
 	return FALSE;

@@ -78,12 +78,12 @@ EXPORTS
 	addrbookctl_build_ifselect 
 	addrbookctl_build_map 
 	addrbookctl_find_interface 
-	addrbookctl_free_selection 
 	addrbookctl_lookup 
 	addrbookctl_lookup_iface 
 	addrcache_add_contact 
 	addrcache_add_folder 
 	addrcache_add_group 
+	addrcache_add_new_folder 
 	addrcache_add_person 
 	addrcache_check_file 
 	addrcache_clear 
@@ -201,7 +201,6 @@ EXPORTS
 	addressbook_imp_ldif 
 	addressbook_imp_mutt 
 	addressbook_imp_pine 
-	addressbook_load_completion 
 	addressbook_open 
 	addressbook_read_file 
 	addressbook_refresh 
@@ -243,22 +242,22 @@ EXPORTS
 	addrindex_get_interface 
 	addrindex_get_interface_list 
 	addrindex_get_loaded 
+	addrindex_get_object 
 	addrindex_index_add_datasource 
 	addrindex_index_remove_datasource 
 	addrindex_initialize 
 	addrindex_load_completion 
 	addrindex_print_index 
-	addrindex_read_all 
 	addrindex_read_data 
+	addrindex_remove_results 
 	addrindex_save_all_books 
 	addrindex_save_data 
 	addrindex_set_dirty 
 	addrindex_set_file_name 
 	addrindex_set_file_path 
+	addrindex_setup_explicit_search 
 	addrindex_setup_search 
-	addrindex_setup_static_search 
 	addrindex_start_search 
-	addrindex_start_static_search 
 	addrindex_stop_search 
 	addrindex_teardown 
 	addrindex_write_to 
@@ -331,15 +330,6 @@ EXPORTS
 	addritem_print_item_folder 
 	addritem_print_item_group 
 	addritem_print_item_person 
-	addrqry_clear 
-	addrqry_create 
-	addrqry_free 
-	addrqry_print 
-	addrqry_set_idle_id 
-	addrqry_set_query 
-	addrqry_set_query_type 
-	addrqry_set_search_term 
-	addrqry_set_server 
 	addrselect_create_item 
 	addrselect_create_node 
 	addrselect_get_list 
@@ -371,7 +361,6 @@ EXPORTS
 	base64_decoder_free 
 	base64_decoder_new 
 	base64_encode 
-	boldfont 
 	calc_child 
 	canonicalize_file 
 	canonicalize_file_replace 
@@ -455,7 +444,6 @@ EXPORTS
 	conv_ustodisp 
 	copy_file 
 	copy_file_part 
-	copy_flags_data 
 	copy_mbox 
 	crypt_cfb_blocksize 
 	crypt_cfb_buf 
@@ -470,6 +458,8 @@ EXPORTS
 	debug_set_mode 
 	decode_uri 
 	description_window_create 
+	dirent_is_directory 
+	dirent_is_regular_file 
 	display_header_prop_free 
 	display_header_prop_get_str 
 	display_header_prop_read_str 
@@ -550,6 +540,8 @@ EXPORTS
 	filesel_select_file 
 	filesel_select_multiple_files 
 	filter_message_by_msginfo 
+	filtering_rules 
+	filteringaction_apply_action_list 
 	filteringaction_free 
 	filteringaction_list_to_string 
 	filteringaction_new 
@@ -585,6 +577,8 @@ EXPORTS
 	folder_get_list 
 	folder_get_persist_prefs 
 	folder_get_status 
+	folder_get_xml 
+	folder_init 
 	folder_item_add_msg 
 	folder_item_add_msgs 
 	folder_item_append 
@@ -606,6 +600,7 @@ EXPORTS
 	folder_item_get_msginfo_by_msgid 
 	folder_item_get_name 
 	folder_item_get_path 
+	folder_item_get_xml 
 	folder_item_is_msg_changed 
 	folder_item_move_msg 
 	folder_item_move_msgs 
@@ -632,26 +627,24 @@ EXPORTS
 	folder_item_scan_foreach 
 	folder_item_scan_full 
 	folder_item_set_default_flags 
+	folder_item_set_xml 
 	folder_item_update 
 	folder_item_update_freeze 
 	folder_item_update_recursive 
 	folder_item_update_thaw 
 	folder_item_write_cache 
-	folder_local_folder_destroy 
-	folder_local_folder_init 
 	folder_new 
 	folder_persist_prefs_free 
 	folder_persist_prefs_new 
 	folder_read_list 
 	folder_register_class 
-	folder_remote_folder_destroy 
-	folder_remote_folder_init 
 	folder_scan_all_items 
 	folder_scan_tree 
 	folder_scan_tree_func 
 	folder_set_missing_folders 
 	folder_set_name 
 	folder_set_ui_func 
+	folder_set_xml 
 	folder_system_init 
 	folder_tree_destroy 
 	folder_tree_destroy_func 
@@ -696,7 +689,6 @@ EXPORTS
 	get_file_size 
 	get_file_size_as_crlf 
 	get_header_cache_dir 
-	get_header_from_msginfo 
 	get_home_dir 
 	get_imap_cache_dir 
 	get_installed_dir 
@@ -717,17 +709,10 @@ EXPORTS
 	get_tmp_dir 
 	get_tmp_file 
 	get_tmpfile_in_dir 
-	global_processing 
-	global_scoring 
-	gpg_started 
 	gpgmegtk_free_passphrase 
 	gpgmegtk_passphrase_cb 
 	gpgmegtk_recipient_selection 
 	gpgmegtk_set_passphrase_grab 
-	gpgmegtk_sig_status_create 
-	gpgmegtk_sig_status_destroy 
-	gpgmegtk_sig_status_to_string 
-	gpgmegtk_sig_status_update 
 	grouplist_dialog 
 	gtk_sctree_get_type 
 	gtk_sctree_new_with_titles 
@@ -786,7 +771,6 @@ EXPORTS
 	html_parse 
 	html_parser_destroy 
 	html_parser_new 
-	imap_class 
 	imap_get_class 
 	imp_mutt_status_show 
 	imp_pine_status_show 
@@ -839,16 +823,16 @@ EXPORTS
 	log_message 
 	log_print 
 	log_warning 
-	log_window_clear 
 	log_window_create 
 	log_window_init 
+	log_window_set_clipping 
 	log_window_show 
 	main_real 
 	main_window_add_mailbox 
-	main_window_add_mbox 
 	main_window_create 
 	main_window_cursor_normal 
 	main_window_cursor_wait 
+	main_window_destroy 
 	main_window_destroy_all 
 	main_window_empty_trash 
 	main_window_get_current_state 
@@ -884,7 +868,6 @@ EXPORTS
 	manage_window_unmap 
 	manual_available 
 	manual_open 
-	matcher_escape_str 
 	matcher_parser_create_buffer 
 	matcher_parser_delete_buffer 
 	matcher_parser_flush_buffer 
@@ -892,7 +875,6 @@ EXPORTS
 	matcher_parser_get_cond 
 	matcher_parser_get_filtering 
 	matcher_parser_get_prop 
-	matcher_parser_get_scoring 
 	matcher_parser_init 
 	matcher_parser_init_buffer 
 	matcher_parser_load_buffer_state 
@@ -914,7 +896,7 @@ EXPORTS
 	matcher_parserrestart 
 	matcher_parsertext 
 	matcher_parserwrap 
-	matcher_unescape_str 
+	matcher_quote_str 
 	matcherlist_free 
 	matcherlist_match 
 	matcherlist_match_file 
@@ -925,14 +907,7 @@ EXPORTS
 	matcherprop_match 
 	matcherprop_new 
 	matcherprop_to_string 
-	matcherprop_unquote_new 
 	matching_build_command 
-	mbox_cache_get_msg 
-	mbox_cache_msg_fetched 
-	mbox_cache_msg_set_fetched 
-	mbox_class 
-	mbox_get_class 
-	mbox_get_virtual_path 
 	mc_entry 
 	md5_final 
 	md5_hex_digest 
@@ -991,10 +966,9 @@ EXPORTS
 	mgu_slist_test_unq_nc 
 	mgu_str_ltc2space 
 	mgu_str_unescape 
-	mh_class 
 	mh_get_class 
 	mh_get_last_num 
-	mimeview_check_signature 
+	mimeview_clear 
 	mimeview_create 
 	mimeview_destroy 
 	mimeview_get_selected_part 
@@ -1034,7 +1008,6 @@ EXPORTS
 	my_gethostbyname 
 	my_tmpfile 
 	news_cancel_article 
-	news_class 
 	news_get_class 
 	news_get_group_list 
 	news_get_msginfo 
@@ -1046,7 +1019,6 @@ EXPORTS
 	news_post_stream 
 	news_remove_group_list_cache 
 	news_scan_required 
-	news_session_get 
 	newsgroup_list_append 
 	nntp_article 
 	nntp_body 
@@ -1071,6 +1043,7 @@ EXPORTS
 	noticeview_is_visible 
 	noticeview_set_button_press_callback 
 	noticeview_set_button_text 
+	noticeview_set_icon 
 	noticeview_set_text 
 	noticeview_show 
 	open_uri 
@@ -1100,6 +1073,8 @@ EXPORTS
 	pop3_session_new 
 	pop3_write_uidl_list 
 	popupmenu_create 
+	post_global_processing 
+	pre_global_processing 
 	prefs_account_free 
 	prefs_account_new 
 	prefs_account_open 
@@ -1151,19 +1126,14 @@ EXPORTS
 	prefs_gtk_unregister_page 
 	prefs_init_config 
 	prefs_is_readonly 
-	prefs_matcher_exec_info 
 	prefs_matcher_open 
 	prefs_matcher_read_config 
+	prefs_matcher_test_info 
 	prefs_matcher_write_config 
 	prefs_rc_is_readonly 
 	prefs_read_config 
 	prefs_read_open 
 	prefs_save_config 
-	prefs_scoring_clear 
-	prefs_scoring_clear_folder 
-	prefs_scoring_free 
-	prefs_scoring_open 
-	prefs_scoring_open_with_scoring 
 	prefs_set_block_label 
 	prefs_set_data_from_dialog 
 	prefs_set_data_from_entry 
@@ -1195,17 +1165,13 @@ EXPORTS
 	procheader_date_parse 
 	procheader_date_parse_to_tm 
 	procheader_get_fromname 
-	procheader_get_header_array 
 	procheader_get_header_array_asis 
 	procheader_get_header_fields 
-	procheader_get_header_list 
-	procheader_get_header_list_from_file 
+	procheader_get_header_from_msginfo 
 	procheader_get_headernames 
 	procheader_get_one_field 
-	procheader_get_unfolded_line 
 	procheader_header_array_destroy 
 	procheader_header_free 
-	procheader_header_list_destroy 
 	procheader_headername_equal 
 	procheader_parse_file 
 	procheader_parse_header 
@@ -1223,20 +1189,18 @@ EXPORTS
 	procmime_get_part 
 	procmime_get_text_content 
 	procmime_get_tmp_file_name 
+	procmime_get_type_str 
 	procmime_mimeinfo_free_all 
-	procmime_mimeinfo_insert 
+	procmime_mimeinfo_get_parameter 
 	procmime_mimeinfo_new 
 	procmime_mimeinfo_next 
-	procmime_mimeinfo_replace 
-	procmime_scan_content_description 
-	procmime_scan_content_disposition 
-	procmime_scan_content_type 
-	procmime_scan_encoding 
+	procmime_mimeinfo_parent 
+	procmime_parse_message_rfc822 
+	procmime_parse_mimepart 
+	procmime_parse_multipart 
+	procmime_scan_file 
 	procmime_scan_message 
-	procmime_scan_mime_header 
-	procmime_scan_mime_type 
-	procmime_scan_multipart_message 
-	procmime_scan_subject 
+	procmime_scan_queue_file 
 	procmsg_cmp_msgnum_for_sort 
 	procmsg_copy_messages 
 	procmsg_empty_trash 
@@ -1268,7 +1232,6 @@ EXPORTS
 	procmsg_msginfo_set_to_folder 
 	procmsg_msginfo_unset_flags 
 	procmsg_open_message 
-	procmsg_open_message_decrypted 
 	procmsg_print_message 
 	procmsg_remove_special_headers 
 	procmsg_save_to_outbox 
@@ -1291,12 +1254,19 @@ EXPORTS
 	qp_encode_line 
 	qp_get_q_encoding_len 
 	qp_q_encode 
-	qrymgr_add_query 
-	qrymgr_delete_query 
-	qrymgr_find_query 
+	qrymgr_add_request 
+	qrymgr_delete_request 
+	qrymgr_find_request 
 	qrymgr_initialize 
 	qrymgr_print 
 	qrymgr_teardown 
+	qryreq_add_query 
+	qryreq_clear 
+	qryreq_free 
+	qryreq_print 
+	qryreq_set_search_term 
+	qryreq_set_search_type 
+	quote_cmd_argument 
 	quote_fmt_create_buffer 
 	quote_fmt_delete_buffer 
 	quote_fmt_flush_buffer 
@@ -1339,25 +1309,13 @@ EXPORTS
 	remove_space 
 	renderer_read_config 
 	renderer_write_config 
-	rfc2015_check_signature 
+	reqreq_create 
 	rfc2015_clearsign 
 	rfc2015_create_signers_list 
-	rfc2015_decrypt_message 
-	rfc2015_disable_all 
 	rfc2015_encrypt 
-	rfc2015_find_signature 
-	rfc2015_has_signature 
-	rfc2015_is_encrypted 
-	rfc2015_msg_is_encrypted 
 	rfc2015_secure_remove 
 	rfc2015_sign 
 	scan_mailto_url 
-	score_message 
-	scoringprop_copy 
-	scoringprop_free 
-	scoringprop_new 
-	scoringprop_score_message 
-	scoringprop_to_string 
 	send_message 
 	send_message_local 
 	send_message_smtp 
@@ -1485,6 +1443,7 @@ EXPORTS
 	subst_char 
 	subst_chars 
 	subst_for_filename 
+	subst_for_shellsafe_filename 
 	summary_add_address 
 	summary_attract_by_subject 
 	summary_cancel 
@@ -1502,8 +1461,6 @@ EXPORTS
 	summary_expand_threads 
 	summary_filter 
 	summary_filter_open 
-	summary_find_next_important_score 
-	summary_find_prev_important_score 
 	summary_get_msg_list 
 	summary_get_selected_msg_list 
 	summary_get_selection 
@@ -1519,6 +1476,7 @@ EXPORTS
 	summary_mark_as_unread 
 	summary_move_selected_to 
 	summary_move_to 
+	summary_msginfo_filter_open 
 	summary_msgs_lock 
 	summary_msgs_unlock 
 	summary_open_msg 
@@ -1581,10 +1539,11 @@ EXPORTS
 	textview_set_all_headers 
 	textview_set_font 
 	textview_set_position 
+	textview_set_text 
+	textview_show_error 
 	textview_show_message 
 	textview_show_mime_part 
 	textview_show_part 
-	textview_show_signature_part 
 	textview_update_message_colors 
 	tmp_prefs 
 	to_human_readable 
@@ -1672,12 +1631,14 @@ EXPORTS
 	wcscasestr 
 	wcsncasecmp 
 	wcsndup 
+	xml_attr_cmp_name 
 	xml_close_file 
 	xml_compare_tag 
 	xml_copy_attr 
 	xml_copy_tag 
 	xml_file_put_escape_str 
 	xml_free_node 
+	xml_free_tag 
 	xml_free_tree 
 	xml_get_current_tag 
 	xml_get_current_tag_attr 
@@ -1689,6 +1650,7 @@ EXPORTS
 	xml_pop_tag 
 	xml_push_tag 
 	xml_read_line 
+	xml_tag_add_attr 
 	xml_truncate_buf 
 	xml_unescape_str 
 	xmlprops_clear 

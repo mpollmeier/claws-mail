@@ -1,6 +1,6 @@
 dnl check for libspamc required includes
 
-AC_DEFUN(AC_SPAMASSASSIN,
+AC_DEFUN([AC_SPAMASSASSIN],
 [dnl
 
 AC_CHECK_HEADERS(sys/time.h syslog.h unistd.h errno.h sys/errno.h)
@@ -20,13 +20,6 @@ if test $shutrd = yes ; then
 fi
 
 dnl ----------------------------------------------------------------------
-
-AC_CHECK_LIB(socket, socket)
-AC_CHECK_LIB(crypto, CRYPTO_lock)
-AC_CHECK_LIB(ssl, SSL_CTX_free,,,-lcrypto)
-AC_CHECK_LIB(inet, connect)
-AC_CHECK_LIB(nsl, t_accept)
-AC_CHECK_LIB(dl, dlopen)
 
 AC_CHECK_FUNCS(socket strdup strtod strtol snprintf shutdown)
 

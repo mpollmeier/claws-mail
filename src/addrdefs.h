@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2001 Hiroyuki Yamamoto
+ * Copyright (C) 2003 Match Grun
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,19 +17,28 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef __PREFS_SCORING_H__
-#define __PREFS_SCORING_H__
+/*
+ * General address definitions.
+ */
 
-#include "scoring.h"
+#ifndef __ADDRDEFS_H__
+#define __ADDRDEFS_H__
+
+/* Query types */
+typedef enum {
+	ADDRQUERY_NONE,
+	ADDRQUERY_LDAP
+} AddrQueryType;
+
+/* Search type */
+typedef enum {
+	ADDRSEARCH_NONE,
+	ADDRSEARCH_SEARCH,
+	ADDRSEARCH_LOCATE
+} AddrSearchType;
+
+#endif /* __ADDRDEFS_H__ */
 
 /*
-void prefs_scoring_read_config	(void);
-void prefs_scoring_write_config	(void);
+* End of Source.
 */
-void prefs_scoring_open(FolderItem * item);
-     /*
-void prefs_scoring_open		(void);
-     */
-void prefs_scoring_open_with_scoring(ScoringProp * prop);
-
-#endif /* __PREFS_SCORING_H__ */

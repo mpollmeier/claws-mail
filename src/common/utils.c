@@ -72,19 +72,30 @@ static char *GetIniHomeDir(void);
 #endif
 
 #ifdef WIN32
-gint mkstemp(const gchar const *template)
+gint mkstemp_name(const gchar *template, gchar **name_used)
 {
 	static gulong count=0; /* W32-_mktemp only supports up to 27 tempfiles... */
-	gchar *name_used = g_strdup_printf("%s.%d",_mktemp(template),count++);
-	int tmpfd = _open(name_used, _O_CREAT | _O_RDWR | _O_BINARY );
+	int tmpfd;
 
-	tempfiles=g_slist_append(tempfiles, name_used);
+	*name_used = g_strdup_printf("%s.%d",_mktemp(template),count++);
+	tmpfd = _open(*name_used, _O_CREAT | _O_RDWR | _O_BINARY
+	    			| _S_IREAD | _S_IWRITE);
+
+	tempfiles=g_slist_append(tempfiles, g_strdup(*name_used));
 	if (tmpfd<0) {
-		perror(g_strdup_printf("cant create %s",name_used));
+		perror(g_strdup_printf("cant create %s",*name_used));
 		return -1;
 	}
 	else
-		return (fdopen(tmpfd,"w+b"));
+		return tmpfd;
+}
+
+gint mkstemp(const gchar *template)
+{
+	gchar *dummyname;
+	gint res = mkstemp_name(template, &dummyname);
+	g_free(dummyname);
+	return res;
 }
 #endif
 
@@ -241,16 +252,32 @@ gchar *strstr2(const gchar *s1, const gchar *s2)
 gint path_cmp(const gchar *s1, const gchar *s2)
 {
 	gint len1, len2;
+#ifdef WIN32
+	gint result;
+#endif
 
 	if (s1 == NULL || s2 == NULL) return -1;
 	if (*s1 == '\0' || *s2 == '\0') return -1;
+#ifdef WIN32
+	s1 = g_strdup(s1);
+	s2 = g_strdup(s2);
+	subst_char(s1, '/', G_DIR_SEPARATOR);
+	subst_char(s2, '/', G_DIR_SEPARATOR);
+#endif
 
 	len1 = strlen(s1);
 	len2 = strlen(s2);
 
 	if (s1[len1 - 1] == G_DIR_SEPARATOR) len1--;
 	if (s2[len2 - 1] == G_DIR_SEPARATOR) len2--;
+#ifdef WIN32
+	result = strncmp(s1, s2, MAX(len1, len2));
+	g_free(s1);
+	g_free(s2);
+	return result;
+#else
 	return strncmp(s1, s2, MAX(len1, len2));
+#endif
 }
 
 /* remove trailing return code */
@@ -1079,6 +1106,12 @@ void subst_for_filename(gchar *str)
 #endif
 }
 
+void subst_for_shellsafe_filename(gchar *str)
+{
+	subst_for_filename(str);
+	subst_chars(str, "|&;()<>'!{}[]",'_');
+}
+
 gboolean is_header_line(const gchar *str)
 {
 	if (str[0] == ':') return FALSE;
@@ -1821,11 +1854,25 @@ gboolean file_exist(const gchar *file, gboolean allow_fifo)
 gboolean is_dir_exist(const gchar *dir)
 {
 	struct stat s;
+#ifdef WIN32
+	gchar dir_noslash[8192];
+#endif
 
 	if (dir == NULL)
 		return FALSE;
 
+#ifdef WIN32
+	g_snprintf(dir_noslash,
+		(dir[strlen(dir)-1]=='/'
+		|| dir[strlen(dir)-1]=='\\')
+		? strlen(dir)
+		: strlen(dir)+1,
+		"%s", dir);
+	
+	if (stat(dir_noslash, &s) < 0) {
+#else
 	if (stat(dir, &s) < 0) {
+#endif
 		if (ENOENT != errno) FILE_OP_ERROR(dir, "stat");
 		return FALSE;
 	}
@@ -1849,6 +1896,34 @@ gboolean is_file_entry_exist(const gchar *file)
 	}
 
 	return TRUE;
+}
+
+gboolean dirent_is_regular_file(struct dirent *d)
+{
+	struct stat s;
+
+#ifdef HAVE_DIRENT_D_TYPE
+	if (d->d_type == DT_REG)
+		return TRUE;
+	else if (d->d_type != DT_UNKNOWN)
+		return FALSE;
+#endif
+
+	return (stat(d->d_name, &s) == 0 && S_ISREG(s.st_mode));
+}
+
+gboolean dirent_is_directory(struct dirent *d)
+{
+	struct stat s;
+
+#ifdef HAVE_DIRENT_D_TYPE
+	if (d->d_type == DT_DIR)
+		return TRUE;
+	else if (d->d_type != DT_UNKNOWN)
+		return FALSE;
+#endif
+
+	return (stat(d->d_name, &s) == 0 && S_ISDIR(s.st_mode));
 }
 
 gint change_dir(const gchar *dir)
@@ -2165,14 +2240,9 @@ gint remove_dir_recursive(const gchar *dir)
 		    !strcmp(d->d_name, ".."))
 			continue;
 
-		if (stat(d->d_name, &s) < 0) {
-			FILE_OP_ERROR(d->d_name, "stat");
-			continue;
-		}
-
 		/* g_print("removing %s\n", d->d_name); */
 
-		if (S_ISDIR(s.st_mode)) {
+		if (dirent_is_directory(d)) {
 			if (remove_dir_recursive(d->d_name) < 0) {
 				g_warning("can't remove directory\n");
 				return -1;
@@ -2776,6 +2846,55 @@ gchar *get_outgoing_rfc2822_str(FILE *fp)
 	return ret;
 }
 
+/*
+ * Create a new boundary in a way that it is very unlikely that this
+ * will occur in the following text.  It would be easy to ensure
+ * uniqueness if everything is either quoted-printable or base64
+ * encoded (note that conversion is allowed), but because MIME bodies
+ * may be nested, it may happen that the same boundary has already
+ * been used. We avoid scanning the message for conflicts and hope the
+ * best.
+ *
+ *   boundary := 0*69<bchars> bcharsnospace
+ *   bchars := bcharsnospace / " "
+ *   bcharsnospace := DIGIT / ALPHA / "'" / "(" / ")" /
+ *                    "+" / "_" / "," / "-" / "." /
+ *                    "/" / ":" / "=" / "?"
+ *
+ * some special characters removed because of buggy MTAs
+ */
+
+gchar *generate_mime_boundary(const gchar *prefix)
+{
+	static gchar tbl[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+			     "abcdefghijklmnopqrstuvwxyz"
+			     "1234567890+_./=";
+	gchar buf_uniq[17];
+	gchar buf_date[64];
+	gint i;
+	gint pid;
+
+	pid = getpid();
+
+	/* We make the boundary depend on the pid, so that all running
+	 * processes generate different values even when they have been
+	 * started within the same second and srandom(time(NULL)) has been
+	 * used.  I can't see whether this is really an advantage but it
+	 * doesn't do any harm.
+	 */
+	for (i = 0; i < sizeof(buf_uniq) - 1; i++)
+		buf_uniq[i] = tbl[(random() ^ pid) % (sizeof(tbl) - 1)];
+	buf_uniq[i] = '\0';
+
+	get_rfc822_date(buf_date, sizeof(buf_date));
+	subst_char(buf_date, ' ', '_');
+	subst_char(buf_date, ',', '_');
+	subst_char(buf_date, ':', '_');
+
+	return g_strdup_printf("%s=_%s_%s", prefix ? prefix : "Multipart",
+			       buf_date, buf_uniq);
+}
+
 gint change_file_mode_rw(FILE *fp, const gchar *file)
 {
 #if HAVE_FCHMOD
@@ -2828,20 +2947,33 @@ FILE *my_tmpfile(void)
 	if (fd < 0)
 		return tmpfile();
 
-#ifdef WIN32
-	return fd;
-#else
+#ifndef WIN32
 	unlink(fname);
+#endif
 
 	fp = fdopen(fd, "w+b");
 	if (!fp)
 		close(fd);
 	else
 		return fp;
-#endif
 #endif /* HAVE_MKSTEMP */
 
 	return tmpfile();
+}
+
+FILE *get_tmpfile_in_dir(const gchar *dir, gchar **filename)
+{
+	int fd;
+	
+#ifdef WIN32 /* XXX:tm */
+	gchar *template=g_strdup_printf("%s%csylpheed.XXXXXX", dir, G_DIR_SEPARATOR);
+	fd = mkstemp_name(template, filename);
+#else
+	*filename = g_strdup_printf("%s%csylpheed.XXXXXX", dir, G_DIR_SEPARATOR);
+	fd = mkstemp(*filename);
+#endif
+
+	return fdopen(fd, "w+");
 }
 
 FILE *str_open_as_stream(const gchar *str)
@@ -3586,16 +3718,6 @@ int subject_get_prefix_length(const gchar *subject)
 		return 0;
 }
 
-FILE *get_tmpfile_in_dir(const gchar *dir, gchar **filename)
-{
-	int fd;
-	
-	*filename = g_strdup_printf("%s%csylpheed.XXXXXX", dir, G_DIR_SEPARATOR);
-	fd = mkstemp(*filename);
-
-	return fdopen(fd, "w+");
-}
-
 /* allow Mutt-like patterns in quick search */
 gchar *expand_search_string(const gchar *search_string)
 {
@@ -3647,6 +3769,7 @@ gchar *expand_search_string(const gchar *search_string)
 		{ "T",	"marked",			0,	FALSE,	FALSE },
 		{ "U",	"unread",			0,	FALSE,	FALSE },
 		{ "x",	"header \"References\"",	1,	TRUE,	TRUE  },
+		{ "X",  "test",				1,	FALSE,  FALSE }, 
 		{ "y",	"header \"X-Label\"",		1,	TRUE,	TRUE  },
 		{ "&",	"&",				0,	FALSE,	FALSE },
 		{ "|",	"|",				0,	FALSE,	FALSE },
@@ -3837,70 +3960,61 @@ gchar *generate_msgid(const gchar *address, gchar *buf, gint len)
 	return buf;
 }
 
-/**
- * Create a new boundary in a way that it is very unlikely that this
- * will occur in the following text.  It would be easy to ensure
- * uniqueness if everything is either quoted-printable or base64
- * encoded (note that conversion is allowed), but because MIME bodies
- * may be nested, it may happen that the same boundary has already
- * been used. We avoid scanning the message for conflicts and hope the
- * best.
- *
- *   boundary := 0*69<bchars> bcharsnospace
- *   bchars := bcharsnospace / " "
- *   bcharsnospace := DIGIT / ALPHA / "'" / "(" / ")" /
- *                    "+" / "_" / "," / "-" / "." /
- *                    "/" / ":" / "=" / "?"  
- *
- * ":" and "," removed because of buggy MTAs
- */
 
-gchar *generate_mime_boundary(void)
+/*
+   quote_cmd_argument()
+   
+   return a quoted string safely usable in argument of a command.
+   
+   code is extracted and adapted from etPan! project -- DINH V. Hoà.
+*/
+
+gint quote_cmd_argument(gchar * result, guint size,
+			const gchar * path)
 {
-	static gchar tbl[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	                     "abcdefghijklmnopqrstuvwxyz" 
-			     "1234567890'()+_./=?";
-	gchar bufuniq[17];
-	gchar bufdate[BUFFSIZE];
-	int i, equal;
-	int pid;
+	const gchar * p;
+	gchar * result_p;
+	guint remaining;
 
-	pid = getpid();
+	result_p = result;
+	remaining = size;
 
-	/* We make the boundary depend on the pid, so that all running
-	 * processed generate different values even when they have been
-	 * started within the same second and srand48(time(NULL)) has been
-	 * used.  I can't see whether this is really an advantage but it
-	 * doesn't do any harm.
-	 */
-	equal = -1;
-	for (i = 0; i < sizeof(bufuniq) - 1; i++) {
-#ifdef WIN32
-		bufuniq[i] = tbl[(rand() ^ pid) % (sizeof(tbl) - 1)];	/* fill with random */
-#else
-		bufuniq[i] = tbl[(lrand48() ^ pid) % (sizeof(tbl) - 1)];	/* fill with random */
-#endif
-		if (bufuniq[i] == '=' && equal == -1)
-			equal = i;
+	for(p = path ; * p != '\0' ; p ++) {
+
+		if (isalnum(* p) || (* p == '/')) {
+			if (remaining > 0) {
+				* result_p = * p;
+				result_p ++; 
+				remaining --;
+			}
+			else {
+				result[size - 1] = '\0';
+				return -1;
+			}
+		}
+		else { 
+			if (remaining >= 2) {
+				* result_p = '\\';
+				result_p ++; 
+				* result_p = * p;
+				result_p ++; 
+				remaining -= 2;
+			}
+			else {
+				result[size - 1] = '\0';
+				return -1;
+			}
+		}
 	}
-	bufuniq[i] = 0;
-
-	/* now make sure that we do have the sequence "=." in it which cannot
-	 * be matched by quoted-printable or base64 encoding */
-	if (equal != -1 && (equal + 1) < i)
-		bufuniq[equal + 1] = '.';
+	if (remaining > 0) {
+		* result_p = '\0';
+	}
 	else {
-		bufuniq[0] = '=';
-		bufuniq[1] = '.';
+		result[size - 1] = '\0';
+		return -1;
 	}
-
-	get_rfc822_date(bufdate, sizeof(bufdate));
-	subst_char(bufdate, ' ', '_');
-	subst_char(bufdate, ',', '_');
-	subst_char(bufdate, ':', '_');
-
-	return g_strdup_printf("Multipart_%s_%s",
-			       bufdate, bufuniq);
+  
+	return 0;
 }
 
 #ifdef WIN32
@@ -4127,8 +4241,6 @@ void w32_log_handler(const gchar *log_domain,
 		static gchar *logfile = NULL;
 
 		p_msg = g_strdup(message);
-//XXX:tm-gtk
-//		locale_from_utf8(&p_msg);
 
 		/* g_log_default_handler(log_domain, log_level, p_msg, user_data); */
 
@@ -4140,34 +4252,6 @@ void w32_log_handler(const gchar *log_domain,
 		g_free(p_msg);
 	}
 }
-
-#if 0
-//XXX:tm-gtk2
-void locale_to_utf8(gchar **buf){
-	if (*buf && 0 < strlen(*buf)){
-		gchar *_tmp_p;
-		int _tmp_len = strlen(*buf) * 6;
-		_tmp_p = g_malloc(_tmp_len);
-		strncpy(_tmp_p, *buf, _tmp_len);
-		conv_X_locale_to_utf8(_tmp_p, _tmp_len);
-		g_free(*buf);
-		*buf = g_strdup(_tmp_p);
-		g_free(_tmp_p);
-	}
-}
-void locale_from_utf8(gchar **buf){
-	if (*buf && 0 < strlen(*buf)){
-		gchar *_tmp_p;
-		int _tmp_len = strlen(*buf) * 6;
-		_tmp_p = g_malloc(_tmp_len);
-		strncpy(_tmp_p, *buf, _tmp_len);
-		conv_X_locale_from_utf8(_tmp_p, _tmp_len);
-		g_free(*buf);
-		*buf = g_strdup(_tmp_p);
-		g_free(_tmp_p);
-	}
-}
-#endif
 
 /* glib otherwise gets stuck on pop3 */
 void start_mswin_helper(void) {

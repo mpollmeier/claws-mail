@@ -393,3 +393,6 @@
 #define LOCALEDIR			"locale"
 #define FAQDIR				"doc\\faq"
 #define CFG_RC_DIR			".sylpheed"
+
+#define HAVE_BIND_TEXTDOMAIN_CODESET 1
+

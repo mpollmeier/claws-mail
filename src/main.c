@@ -57,8 +57,8 @@
 #include "prefs_common.h"
 #include "prefs_account.h"
 #include "prefs_actions.h"
+#include "prefs_fonts.h"
 #include "prefs_spelling.h"
-#include "scoring.h"
 #include "prefs_display_header.h"
 #include "account.h"
 #include "procmsg.h"
@@ -79,7 +79,8 @@
 #include "plugin.h"
 
 #if USE_GPGME
-#  include "rfc2015.h"
+#  include "sgpgme.h"
+#  include "pgpmime.h"
 #endif
 #if USE_OPENSSL
 #  include "ssl.h"
@@ -98,6 +99,9 @@ gchar *argv0;
 
 static gint lock_socket = -1;
 static gint lock_socket_tag = 0;
+#ifdef WIN32
+static guint log_hid,gtklog_hid, gdklog_hid;
+#endif
 
 typedef enum 
 {
@@ -126,10 +130,6 @@ static struct RemoteCmd {
 
 static void parse_cmd_opt(int argc, char *argv[]);
 
-#if USE_GPGME
-static void idle_function_for_gpgme(void);
-#endif /* USE_GPGME */
-
 static gint prohibit_duplicate_launch	(void);
 static gchar * get_crashfile_name	(void);
 static gint lock_socket_remove		(void);
@@ -149,6 +149,7 @@ static void send_queue			(void);
 static void initial_processing		(FolderItem *item, gpointer data);
 static void quit_signal_handler         (int sig);
 static void install_basic_sighandlers   (void);
+static void exit_sylpheed		(MainWindow *mainwin);
 
 #if 0
 /* for gettext */
@@ -183,7 +184,6 @@ int main(int argc, char *argv[])
 	MainWindow *mainwin;
 	FolderView *folderview;
 #ifdef WIN32
-	guint log_hid,gtklog_hid, gdklog_hid;
 	HWND hWndConsole;
 
 #ifdef _DEBUG
@@ -323,29 +323,11 @@ int main(int argc, char *argv[])
 	prefs_common_read_config();
 
 #if USE_GPGME
-	gpg_started = FALSE;
-	if (gpgme_engine_check_version(GPGME_PROTOCOL_OpenPGP) != 
-			GPGME_No_Error) {  /* Also does some gpgme init */
-		rfc2015_disable_all();
-		debug_print("gpgme_engine_version:\n%s\n",
-			    gpgme_get_engine_info());
-
-		if (prefs_common.gpg_warning) {
-			AlertValue val;
-
-			val = alertpanel_message_with_disable
-				(_("Warning"),
-				 _("GnuPG is not installed properly, or needs to be upgraded.\n"
-				   "OpenPGP support disabled."));
-			if (val & G_ALERTDISABLE)
-				prefs_common.gpg_warning = FALSE;
-		}
-	} else
-		gpg_started = TRUE;
-
-	gpgme_register_idle(idle_function_for_gpgme);
+	sgpgme_init();
+	pgpmime_init();
 #endif
 
+	prefs_fonts_init();
 #ifdef USE_ASPELL
 #ifdef WIN32
 	w32_aspell_init();
@@ -389,7 +371,6 @@ int main(int argc, char *argv[])
 	folder_set_missing_folders();
 	folderview_set(folderview);
 
-	/* prefs_scoring_read_config(); */
 	prefs_matcher_read_config();
 
 	/* make one all-folder processing before using sylpheed */
@@ -416,6 +397,11 @@ int main(int argc, char *argv[])
 
 	/* ignore SIGPIPE signal for preventing sudden death of program */
 	signal(SIGPIPE, SIG_IGN);
+
+	if (cmd.online_mode == ONLINE_MODE_OFFLINE)
+		main_window_toggle_work_offline(mainwin, TRUE);
+	if (cmd.online_mode == ONLINE_MODE_ONLINE)
+		main_window_toggle_work_offline(mainwin, FALSE);
 
 	if (cmd.receive_all)
 		inc_all_account_mail(mainwin, FALSE, 
@@ -446,11 +432,6 @@ int main(int argc, char *argv[])
 		cmd.status_full_folders = NULL;
 	}
 
-	if (cmd.online_mode == ONLINE_MODE_OFFLINE)
-		main_window_toggle_work_offline(mainwin, TRUE);
-	if (cmd.online_mode == ONLINE_MODE_ONLINE)
-		main_window_toggle_work_offline(mainwin, FALSE);
-
 	prefs_toolbar_init();
 
 	plugin_load_all("GTK");
@@ -458,12 +439,94 @@ int main(int argc, char *argv[])
 	static_mainwindow = mainwin;
 	gtk_main();
 
+	exit_sylpheed(mainwin);
+
+	return 0;
+}
+
+static void save_all_caches(FolderItem *item, gpointer data)
+{
+	if (!item->cache)
+		return;
+	folder_item_write_cache(item);
+}
+
+static void exit_sylpheed(MainWindow *mainwin)
+{
+	gchar *filename;
+	GList *list;
+
+	debug_print("shutting down\n");
+
+	inc_autocheck_timer_remove();
+
+	if (prefs_common.clean_on_exit)
+		main_window_empty_trash(mainwin, prefs_common.ask_on_clean);
+
+	/* save prefs for opened folder */
+	if(mainwin->folderview->opened)
+	{
+		FolderItem *item;
+
+		item = gtk_ctree_node_get_row_data(GTK_CTREE(mainwin->folderview->ctree), mainwin->folderview->opened);
+		summary_save_prefs_to_folderitem(mainwin->folderview->summaryview, item);
+	}
+
+	/* save all state before exiting */
+	folder_write_list();
+	folder_func_to_all_folders(save_all_caches, NULL);
+	for (list = folder_get_list(); list != NULL; list = g_list_next(list)) {
+		Folder *folder = FOLDER(list->data);
+
+		folder_tree_destroy(folder);
+	}
+
+	main_window_get_size(mainwin);
+	main_window_get_position(mainwin);
+	prefs_common_save_config();
+	account_save_config_all();
+	addressbook_export_to_file();
+
+	filename = g_strconcat(get_rc_dir(), G_DIR_SEPARATOR_S, MENU_RC, NULL);
+#ifndef _MSC_VER
+#warning FIXME_GTK2 gtk_item_factory_dump_rc() not existing
+#endif
+#if 0
+	gtk_item_factory_dump_rc(filename, NULL, TRUE);
+#endif
+	gtk_accel_map_save(filename);
+	g_free(filename);
+
+	/* delete temporary files */
+	remove_all_files(get_mime_tmp_dir());
+#ifdef WIN32
+	remove_all_files(w32_get_exec_dir());
+#endif
+
+	close_log_file();
+
+	/* delete crashfile */
+#ifndef WIN32
+	if (!cmd.crash)
+#endif
+		unlink(get_crashfile_name());
+
+	lock_socket_remove();
+
+	main_window_destroy(mainwin);
+	
 	plugin_unload_all("GTK");
 
 	prefs_toolbar_done();
 
 	addressbook_destroy();
 
+#ifdef USE_GPGME
+	pgpmime_done();
+	sgpgme_done();
+#endif
+
+	prefs_fonts_done();
 #ifdef USE_ASPELL       
 	prefs_spelling_done();
 	gtkaspell_checkers_quit();
@@ -615,13 +678,6 @@ static gint get_queued_message_num(void)
 	return queue->total_msgs;
 }
 
-static void save_all_caches(FolderItem *item, gpointer data)
-{
-	if (!item->cache)
-		return;
-	folder_item_write_cache(item);
-}
-
 static void initial_processing(FolderItem *item, gpointer data)
 {
 	MainWindow *mainwin = (MainWindow *)data;
@@ -637,7 +693,8 @@ static void initial_processing(FolderItem *item, gpointer data)
 
 	main_window_cursor_wait(mainwin);
 	
-	folder_item_apply_processing(item);
+        if (item->prefs->enable_processing)
+                folder_item_apply_processing(item);
 
 	debug_print("done.\n");
 	STATUSBAR_POP(mainwin);
@@ -658,8 +715,14 @@ static void draft_all_messages(void)
 	}	
 }
 
-void clean_quit(void)	
+gboolean clean_quit(gpointer data)
 {
+	static gboolean firstrun = TRUE;
+
+	if (!firstrun)
+		return FALSE;
+	firstrun = FALSE;
+
 	/*!< Good idea to have the main window stored in a 
 	 *   static variable so we can check that variable
 	 *   to see if we're really allowed to do things
@@ -673,27 +736,19 @@ void clean_quit(void)
 	 * in the original spawner, and not in a spawned
 	 * child. */
 	if (!static_mainwindow) 
-		return;
+		return FALSE;
 		
 	draft_all_messages();
 
-	if (prefs_common.warn_queued_on_exit) {	
-		/* disable the popup */ 
-		prefs_common.warn_queued_on_exit = FALSE;	
-		app_will_exit(NULL, static_mainwindow);
-		prefs_common.warn_queued_on_exit = TRUE;
-		prefs_common_save_config();
-	} else {
-		app_will_exit(NULL, static_mainwindow);
-	}
+	exit_sylpheed(static_mainwindow);
 	exit(0);
+
+	return FALSE;
 }
 
 void app_will_exit(GtkWidget *widget, gpointer data)
 {
 	MainWindow *mainwin = data;
-	gchar *filename;
-	GList *list;
 	
 	if (compose_get_compose_list()) {
 		gint val = alertpanel(_("Notice"),
@@ -718,70 +773,8 @@ void app_will_exit(GtkWidget *widget, gpointer data)
 			return;
 		manage_window_focus_in(mainwin->window, NULL, NULL);
 	}
-
-	inc_autocheck_timer_remove();
-
-#if USE_GPGME
-        gpgmegtk_free_passphrase();
-#endif
-
-	if (prefs_common.clean_on_exit)
-		main_window_empty_trash(mainwin, prefs_common.ask_on_clean);
-
-	/* save prefs for opened folder */
-	if(mainwin->folderview->opened)
-	{
-		FolderItem *item;
-
-		item = gtk_ctree_node_get_row_data(GTK_CTREE(mainwin->folderview->ctree), mainwin->folderview->opened);
-		summary_save_prefs_to_folderitem(mainwin->folderview->summaryview, item);
-	}
-
-	/* save all state before exiting */
-	folder_write_list();
-	folder_func_to_all_folders(save_all_caches, NULL);
-	for (list = folder_get_list(); list != NULL; list = g_list_next(list)) {
-		Folder *folder = FOLDER(list->data);
-
-		folder_tree_destroy(folder);
-	}
-
-	main_window_get_size(mainwin);
-	main_window_get_position(mainwin);
-	prefs_common_save_config();
-	account_save_config_all();
-	addressbook_export_to_file();
-
-	filename = g_strconcat(get_rc_dir(), G_DIR_SEPARATOR_S, MENU_RC, NULL);
-	gtk_accel_map_save (filename);
-	g_free(filename);
-
-	/* delete temporary files */
-	remove_all_files(get_mime_tmp_dir());
-#ifdef WIN32
-	remove_all_files(w32_get_exec_dir());
-#endif
-
-	close_log_file();
-
-	/* delete crashfile */
-#ifndef WIN32
-	if (!cmd.crash)
-#endif
-		unlink(get_crashfile_name());
-
-	lock_socket_remove();
-
 	gtk_main_quit();
 }
-
-#if USE_GPGME
-static void idle_function_for_gpgme(void)
-{
-	while (gtk_events_pending())
-		gtk_main_iteration();
-}
-#endif /* USE_GPGME */
 
 /*
  * CLAWS: want this public so crash dialog can delete the
@@ -1038,9 +1031,6 @@ static void open_compose_new(const gchar *address, GPtrArray *attach_files)
 static void send_queue(void)
 {
 	GList *list;
-	FolderItem *def_outbox;
-
-	def_outbox = folder_get_default_outbox();
 
 	for (list = folder_get_list(); list != NULL; list = list->next) {
 		Folder *folder = list->data;
@@ -1053,10 +1043,6 @@ static void send_queue(void)
 				alertpanel_error(_("Some errors occurred while sending queued messages."));
 			if (res) 	
 				folder_item_scan(folder->queue);
-			if (prefs_common.savemsg && folder->outbox) {
-				if (folder->outbox == def_outbox)
-					def_outbox = NULL;
-			}
 		}
 	}
 }
@@ -1064,7 +1050,8 @@ static void send_queue(void)
 static void quit_signal_handler(int sig)
 {
 	debug_print("Quitting on signal %d\n", sig);
-	clean_quit();
+
+	g_timeout_add(0, clean_quit, NULL);
 }
 
 static void install_basic_sighandlers()

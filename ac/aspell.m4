@@ -1,5 +1,5 @@
 dnl Autoconf macros for libaspell
-dnl $Id: aspell.m4,v 1.9.4.1 2003-12-06 13:53:25 netztorte Exp $
+dnl $Id: aspell.m4,v 1.9.4.2 2004-01-18 18:22:09 netztorte Exp $
 
 # Configure paths for ASPELL
 # Shamelessly stolen from the one of GPGME by Werner Koch 
@@ -9,7 +9,7 @@ dnl AM_PATH_ASPELL([MINIMUM-VERSION,
 dnl               [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND ]]])
 dnl Test for aspell, and define ASPELL_CFLAGS, ASPELL_LIBS and ASPELL_PATH
 dnl
-AC_DEFUN(AM_PATH_ASPELL,
+AC_DEFUN([AM_PATH_ASPELL],
 [dnl
 dnl Get the cflags and libraries from the aspell-config script
 dnl

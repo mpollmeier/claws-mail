@@ -52,6 +52,8 @@
 #include "inputdialog.h"
 #include "log.h"
 #include "progressindicator.h"
+#include "remotefolder.h"
+#include "alertpanel.h"
 #if USE_OPENSSL
 #  include "ssl.h"
 #endif
@@ -61,14 +63,29 @@
 #define NNTPS_PORT	563
 #endif
 
-static Folder *news_folder_new(const gchar * name, const gchar * folder);
-static void news_folder_destroy(Folder * folder);
+typedef struct _NewsFolder	NewsFolder;
 
-static gchar *news_fetch_msg(Folder * folder, FolderItem * item, gint num);
+#define NEWS_FOLDER(obj)	((NewsFolder *)obj)
+
+struct _NewsFolder
+{
+	RemoteFolder rfolder;
+
+	gboolean use_auth;
+};
 
 static void news_folder_init		 (Folder	*folder,
 					  const gchar	*name,
 					  const gchar	*path);
+
+static Folder	*news_folder_new	(const gchar	*name,
+					 const gchar	*folder);
+static void	 news_folder_destroy	(Folder		*folder);
+
+static gchar *news_fetch_msg		(Folder		*folder,
+					 FolderItem	*item,
+					 gint		 num);
+
 
 #if USE_OPENSSL
 static Session *news_session_new	 (const gchar	*server,
@@ -118,7 +135,7 @@ static gchar *news_folder_get_path	 (Folder	*folder);
 gchar *news_item_get_path		 (Folder	*folder,
 					  FolderItem	*item);
 
-FolderClass news_class =
+static FolderClass news_class =
 {
 	F_NEWS,
 	"news",
@@ -129,8 +146,12 @@ FolderClass news_class =
 	news_folder_destroy,
 	NULL,
 	NULL,
+	NULL,
+	NULL,
 
 	/* FolderItem functions */
+	NULL,
+	NULL,
 	NULL,
 	NULL,
 	news_item_get_path,
@@ -163,7 +184,7 @@ FolderClass *news_get_class(void)
 	return &news_class;
 }
 
-Folder *news_folder_new(const gchar *name, const gchar *path)
+static Folder *news_folder_new(const gchar *name, const gchar *path)
 {
 	Folder *folder;
 
@@ -174,7 +195,7 @@ Folder *news_folder_new(const gchar *name, const gchar *path)
 	return folder;
 }
 
-void news_folder_destroy(Folder *folder)
+static void news_folder_destroy(Folder *folder)
 {
 	gchar *dir;
 
@@ -256,13 +277,16 @@ static Session *news_session_new_for_folder(Folder *folder)
 	return session;
 }
 
-NNTPSession *news_session_get(Folder *folder)
+static NNTPSession *news_session_get(Folder *folder)
 {
 	RemoteFolder *rfolder = REMOTE_FOLDER(folder);
 
 	g_return_val_if_fail(folder != NULL, NULL);
 	g_return_val_if_fail(FOLDER_CLASS(folder) == &news_class, NULL);
 	g_return_val_if_fail(folder->account != NULL, NULL);
+
+	if (prefs_common.work_offline)
+		return NULL;
 
 	if (!rfolder->session) {
 		rfolder->session = news_session_new_for_folder(folder);
@@ -290,7 +314,7 @@ NNTPSession *news_session_get(Folder *folder)
 	return NNTP_SESSION(rfolder->session);
 }
 
-gchar *news_fetch_msg(Folder *folder, FolderItem *item, gint num)
+static gchar *news_fetch_msg(Folder *folder, FolderItem *item, gint num)
 {
 	gchar *path, *filename;
 	NNTPSession *session;
@@ -588,7 +612,7 @@ static MsgInfo *news_parse_xover(const gchar *xover_str)
 {
 	MsgInfo *msginfo;
 	gchar buf[NNTPBUFSIZE];
-	gchar *subject, *sender, *size, *line, *date, *msgid, *ref, *tmp, *xref;
+	gchar *subject, *sender, *size, *line, *date, *msgid, *ref, *tmp;
 	gchar *p;
 	gint num, size_int, line_int;
 	gchar *xover_buf;

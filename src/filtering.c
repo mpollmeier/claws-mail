@@ -34,7 +34,9 @@
 
 #define PREFSBUFSIZE		1024
 
-GSList * global_processing = NULL;
+GSList * pre_global_processing = NULL;
+GSList * post_global_processing = NULL;
+GSList * filtering_rules = NULL;
 
 static gboolean filtering_is_final_action(FilteringAction *filtering_action);
 
@@ -57,27 +59,21 @@ static inline gint strlen_with_check(const gchar *expr, gint fline, const gchar 
 
 FilteringAction * filteringaction_new(int type, int account_id,
 				      gchar * destination,
-				      gint labelcolor)
+				      gint labelcolor, gint score)
 {
 	FilteringAction * action;
 
 	action = g_new0(FilteringAction, 1);
 
-	/* NOTE:
-	 * if type is MATCHACTION_CHANGE_SCORE, account_id = (-1, 0, 1) and
-	 * labelcolor = the score value change
-	 */
-
 	action->type = type;
 	action->account_id = account_id;
 	if (destination) {
 		action->destination	  = g_strdup(destination);
-		action->unesc_destination = matcher_unescape_str(g_strdup(destination));
 	} else {
 		action->destination       = NULL;
-		action->unesc_destination = NULL;
 	}
 	action->labelcolor = labelcolor;	
+        action->score = score;
 	return action;
 }
 
@@ -86,8 +82,6 @@ void filteringaction_free(FilteringAction * action)
 	g_return_if_fail(action);
 	if (action->destination)
 		g_free(action->destination);
-	if (action->unesc_destination)
-		g_free(action->unesc_destination);
 	g_free(action);
 }
 
@@ -115,10 +109,6 @@ static FilteringAction * filteringaction_copy(FilteringAction * src)
 		new->destination = g_strdup(src->destination);
 	else 
 		new->destination = NULL;
-	if (src->unesc_destination)
-		new->unesc_destination = g_strdup(src->unesc_destination);
-	else
-		new->unesc_destination = NULL;
 	new->labelcolor = src->labelcolor;
 
         return new;
@@ -132,10 +122,6 @@ FilteringProp * filteringprop_copy(FilteringProp *src)
 	new = g_new0(FilteringProp, 1);
 	new->matchers = g_new0(MatcherList, 1);
 
-#if 0
-	new->action = g_new0(FilteringAction, 1);
-#endif
-
 	for (tmp = src->matchers->matchers; tmp != NULL && tmp->data != NULL;) {
 		MatcherProp *matcher = (MatcherProp *)tmp->data;
 		
@@ -146,19 +132,6 @@ FilteringProp * filteringprop_copy(FilteringProp *src)
 
 	new->matchers->bool_and = src->matchers->bool_and;
 
-#if 0
-	new->action->type = src->action->type;
-	new->action->account_id = src->action->account_id;
-	if (src->action->destination)
-		new->action->destination = g_strdup(src->action->destination);
-	else 
-		new->action->destination = NULL;
-	if (src->action->unesc_destination)
-		new->action->unesc_destination = g_strdup(src->action->unesc_destination);
-	else
-		new->action->unesc_destination = NULL;
-	new->action->labelcolor = src->action->labelcolor;
-#endif
         new->action_list = NULL;
 
         for (tmp = src->action_list ; tmp != NULL ; tmp = tmp->next) {
@@ -204,8 +177,11 @@ static gboolean filteringaction_apply(FilteringAction * action, MsgInfo * info)
 	case MATCHACTION_MOVE:
 		dest_folder =
 			folder_find_item_from_identifier(action->destination);
-		if (!dest_folder)
+		if (!dest_folder) {
+			debug_print("*** folder not found '%s'\n",
+				action->destination ?action->destination :"");
 			return FALSE;
+		}
 		
 		if (folder_item_move_msg(dest_folder, info) == -1) {
 			debug_print("*** could not move message\n");
@@ -218,8 +194,11 @@ static gboolean filteringaction_apply(FilteringAction * action, MsgInfo * info)
 		dest_folder =
 			folder_find_item_from_identifier(action->destination);
 
-		if (!dest_folder)
+		if (!dest_folder) {
+			debug_print("*** folder not found '%s'\n",
+				action->destination ?action->destination :"");
 			return FALSE;
+		}
 
 		if (folder_item_copy_msg(dest_folder, info) == -1)
 			return FALSE;
@@ -261,42 +240,20 @@ static gboolean filteringaction_apply(FilteringAction * action, MsgInfo * info)
 		return TRUE;
 
 	case MATCHACTION_FORWARD:
-		account = account_find_from_id(action->account_id);
-		compose = compose_forward(account, info, FALSE, NULL);
-		if (compose->account->protocol == A_NNTP)
-			compose_entry_append(compose, action->destination,
-					     COMPOSE_NEWSGROUPS);
-		else
-			compose_entry_append(compose, action->destination,
-					     COMPOSE_TO);
-
-		val = compose_send(compose);
-		if (val == 0) {
-			gtk_widget_destroy(compose->window);
-			return TRUE;
-		}
-
-		gtk_widget_destroy(compose->window);
-		return FALSE;
-
 	case MATCHACTION_FORWARD_AS_ATTACHMENT:
-
 		account = account_find_from_id(action->account_id);
-		compose = compose_forward(account, info, TRUE, NULL);
-		if (compose->account->protocol == A_NNTP)
-			compose_entry_append(compose, action->destination,
-					     COMPOSE_NEWSGROUPS);
-		else
-			compose_entry_append(compose, action->destination,
-					     COMPOSE_TO);
+		compose = compose_forward(account, info,
+			action->type == MATCHACTION_FORWARD ? FALSE : TRUE,
+			NULL, TRUE);
+		compose_entry_append(compose, action->destination,
+				     compose->account->protocol == A_NNTP
+					    ? COMPOSE_NEWSGROUPS
+					    : COMPOSE_TO);
 
 		val = compose_send(compose);
-		if (val == 0) {
-			gtk_widget_destroy(compose->window);
-			return TRUE;
-		}
 		gtk_widget_destroy(compose->window);
-		return FALSE;
+
+		return val == 0 ? TRUE : FALSE;
 
 	case MATCHACTION_REDIRECT:
 		account = account_find_from_id(action->account_id);
@@ -308,16 +265,12 @@ static gboolean filteringaction_apply(FilteringAction * action, MsgInfo * info)
 					     COMPOSE_TO);
 
 		val = compose_send(compose);
-		if (val == 0) {
-			gtk_widget_destroy(compose->window);
-			return TRUE;
-		}
-
 		gtk_widget_destroy(compose->window);
-		return FALSE;
+		
+		return val == 0 ? TRUE : FALSE;
 
 	case MATCHACTION_EXECUTE:
-		cmd = matching_build_command(action->unesc_destination, info);
+		cmd = matching_build_command(action->destination, info);
 		if (cmd == NULL)
 			return FALSE;
 		else {
@@ -326,21 +279,42 @@ static gboolean filteringaction_apply(FilteringAction * action, MsgInfo * info)
 		}
 		return TRUE;
 
-	case MATCHACTION_CHANGE_SCORE:
-		/* NOTE:
-		 * action->account_id is 0 if just assignment, -1 if decrement
-		 * and 1 if increment by action->labelcolor 
-		 * action->labelcolor has the score value change
-		 */
-		info->score = action->account_id ==  1 ? info->score + action->labelcolor
-			    : action->account_id == -1 ? info->score - action->labelcolor
-			    : action->labelcolor; 
+	case MATCHACTION_SET_SCORE:
+		info->score = action->score;
 		return TRUE;
+
+	case MATCHACTION_CHANGE_SCORE:
+		info->score += action->score;
+		return TRUE;
+
+	case MATCHACTION_STOP:
+                return TRUE;
+
+	case MATCHACTION_HIDE:
+                info->hidden = TRUE;
+                return TRUE;
 
 	default:
 		break;
 	}
 	return FALSE;
+}
+
+gboolean filteringaction_apply_action_list(GSList *action_list, MsgInfo *info)
+{
+	GSList *p;
+	g_return_val_if_fail(action_list, FALSE);
+	g_return_val_if_fail(info, FALSE);
+	for (p = action_list; p && p->data; p = g_slist_next(p)) {
+		FilteringAction *a = (FilteringAction *) p->data;
+		if (filteringaction_apply(a, info)) {
+			if (filtering_is_final_action(a))
+				break;
+		} else
+			return FALSE;
+		
+	}
+	return TRUE;
 }
 
 static gboolean filtering_match_condition(FilteringProp *filtering, MsgInfo *info)
@@ -379,19 +353,8 @@ static gboolean filtering_is_final_action(FilteringAction *filtering_action)
 	switch(filtering_action->type) {
 	case MATCHACTION_MOVE:
 	case MATCHACTION_DELETE:
+	case MATCHACTION_STOP:
 		return TRUE; /* MsgInfo invalid for message */
-	case MATCHACTION_EXECUTE:
-	case MATCHACTION_COPY:
-	case MATCHACTION_MARK:
-	case MATCHACTION_UNMARK:
-	case MATCHACTION_LOCK:
-	case MATCHACTION_UNLOCK:
-	case MATCHACTION_MARK_AS_READ:
-	case MATCHACTION_MARK_AS_UNREAD:
-	case MATCHACTION_FORWARD:
-	case MATCHACTION_FORWARD_AS_ATTACHMENT:
-	case MATCHACTION_REDIRECT:
-		return FALSE; /* MsgInfo still valid for message */
 	default:
 		return FALSE;
 	}
@@ -410,10 +373,6 @@ static gboolean filter_msginfo(GSList * filtering_list, MsgInfo * info)
 
 		if (filtering_match_condition(filtering, info)) {
 			applied = filtering_apply_rule(filtering, info, &final);
-#if 0
-			if (TRUE == (final = filtering_is_final_action(filtering)))
-				break;
-#endif
                         if (final)
                                 break;
 		}		
@@ -436,7 +395,8 @@ gboolean filter_message_by_msginfo(GSList *flist, MsgInfo *info)
 gchar *filteringaction_to_string(gchar *dest, gint destlen, FilteringAction *action)
 {
 	const gchar *command_str;
-
+	gchar * quoted_dest;
+	
 	command_str = get_matchparser_tab_str(action->type);
 
 	if (command_str == NULL)
@@ -446,7 +406,9 @@ gchar *filteringaction_to_string(gchar *dest, gint destlen, FilteringAction *act
 	case MATCHACTION_MOVE:
 	case MATCHACTION_COPY:
 	case MATCHACTION_EXECUTE:
-		g_snprintf(dest, destlen, "%s \"%s\"", command_str, action->destination);
+		quoted_dest = matcher_quote_str(action->destination);
+		g_snprintf(dest, destlen, "%s \"%s\"", command_str, quoted_dest);
+		g_free(quoted_dest);
 		return dest;
 
 	case MATCHACTION_DELETE:
@@ -456,18 +418,28 @@ gchar *filteringaction_to_string(gchar *dest, gint destlen, FilteringAction *act
 	case MATCHACTION_UNLOCK:
 	case MATCHACTION_MARK_AS_READ:
 	case MATCHACTION_MARK_AS_UNREAD:
+	case MATCHACTION_STOP:
+	case MATCHACTION_HIDE:
 		g_snprintf(dest, destlen, "%s", command_str);
 		return dest;
 
 	case MATCHACTION_REDIRECT:
 	case MATCHACTION_FORWARD:
 	case MATCHACTION_FORWARD_AS_ATTACHMENT:
-		g_snprintf(dest, destlen, "%s %d \"%s\"", command_str, action->account_id, action->destination); 
+		quoted_dest = matcher_quote_str(action->destination);
+		g_snprintf(dest, destlen, "%s %d \"%s\"", command_str, action->account_id, quoted_dest);
+		g_free(quoted_dest);
 		return dest; 
 
 	case MATCHACTION_COLOR:
 		g_snprintf(dest, destlen, "%s %d", command_str, action->labelcolor);
 		return dest;  
+
+	case MATCHACTION_CHANGE_SCORE:
+	case MATCHACTION_SET_SCORE:
+		g_snprintf(dest, destlen, "%s %d", command_str, action->score);
+		return dest;  
+
 	default:
 		return NULL;
 	}
@@ -508,7 +480,6 @@ gchar * filteringprop_to_string(FilteringProp * prop)
 	gchar *list_str;
 	gchar *action_list_str;
 	gchar *filtering_str;
-        GSList * tmp;
 
         action_list_str = filteringaction_list_to_string(prop->action_list);
 
@@ -564,8 +535,12 @@ void prefs_filtering_clear(void)
 				prefs_filtering_free_func, NULL);
 	}
 
-	prefs_filtering_free(global_processing);
-	global_processing = NULL;
+	prefs_filtering_free(filtering_rules);
+	filtering_rules = NULL;
+	prefs_filtering_free(pre_global_processing);
+	pre_global_processing = NULL;
+	prefs_filtering_free(post_global_processing);
+	post_global_processing = NULL;
 }
 
 void prefs_filtering_clear_folder(Folder *folder)

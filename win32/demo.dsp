@@ -117,7 +117,7 @@ SOURCE="..\..\..\lib\glib-2.0.lib"
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\libiconv.lib
+SOURCE=..\..\..\lib\iconv.lib
 # End Source File
 # Begin Source File
 

@@ -356,11 +356,15 @@ SOURCE=..\src\ldif.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\localfolder.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\common\log.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\logwindow.c
+SOURCE=..\src\gtk\logwindow.c
 # End Source File
 # Begin Source File
 
@@ -393,10 +397,6 @@ SOURCE=..\src\matcher_parser_parse.c
 # Begin Source File
 
 SOURCE=..\src\mbox.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\mbox_folder.c
 # End Source File
 # Begin Source File
 
@@ -456,6 +456,10 @@ SOURCE=..\src\passphrase.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\pgpmime.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\pine.c
 # End Source File
 # Begin Source File
@@ -508,15 +512,15 @@ SOURCE=..\src\prefs_folder_item.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\prefs_fonts.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\prefs_gtk.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\src\prefs_matcher.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\prefs_scoring.c
 # End Source File
 # Begin Source File
 
@@ -540,6 +544,10 @@ SOURCE=..\src\gtk\prefswindow.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\privacy.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\procheader.c
 # End Source File
 # Begin Source File
@@ -552,7 +560,7 @@ SOURCE=..\src\procmsg.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\progressdialog.c
+SOURCE=..\src\gtk\progressdialog.c
 # End Source File
 # Begin Source File
 
@@ -580,11 +588,11 @@ SOURCE=..\src\recv.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\rfc2015.c
+SOURCE=..\src\remotefolder.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\scoring.c
+SOURCE=..\src\rfc2015.c
 # End Source File
 # Begin Source File
 
@@ -600,11 +608,11 @@ SOURCE=..\src\common\session.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\setup.c
+SOURCE=..\src\sgpgme.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\sigstatus.c
+SOURCE=..\src\setup.c
 # End Source File
 # Begin Source File
 
@@ -984,11 +992,15 @@ SOURCE=..\src\ldif.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\localfolder.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\common\log.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\logwindow.h
+SOURCE=..\src\gtk\logwindow.h
 # End Source File
 # Begin Source File
 
@@ -1068,6 +1080,10 @@ SOURCE=..\src\passphrase.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\pgpmime.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\common\plugin.h
 # End Source File
 # Begin Source File
@@ -1108,6 +1124,10 @@ SOURCE=..\src\prefs_folder_item.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\prefs_fonts.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\prefs_gtk.h
 # End Source File
 # Begin Source File
@@ -1132,6 +1152,10 @@ SOURCE=..\src\gtk\prefswindow.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\privacy.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\procheader.h
 # End Source File
 # Begin Source File
@@ -1144,7 +1168,7 @@ SOURCE=..\src\procmsg.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\progressdialog.h
+SOURCE=..\src\gtk\progressdialog.h
 # End Source File
 # Begin Source File
 
@@ -1172,6 +1196,10 @@ SOURCE=..\src\recv.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\remotefolder.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\rfc2015.h
 # End Source File
 # Begin Source File
@@ -1192,7 +1220,7 @@ SOURCE=..\src\setup.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\sigstatus.h
+SOURCE=..\src\sgpgme.h
 # End Source File
 # Begin Source File
 
@@ -1229,6 +1257,10 @@ SOURCE=..\src\statusbar.h
 # Begin Source File
 
 SOURCE=..\src\stock_pixmap.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\string_match.h
 # End Source File
 # Begin Source File
 
@@ -1288,7 +1320,7 @@ SOURCE=..\src\vcard.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\version.h
+SOURCE=..\src\common\version.h
 # End Source File
 # Begin Source File
 
@@ -1345,7 +1377,7 @@ SOURCE="..\..\..\lib\pango-1.0.lib"
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\libiconv.lib
+SOURCE=..\..\..\lib\iconv.lib
 # End Source File
 # Begin Source File
 

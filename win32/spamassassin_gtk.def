@@ -1,9 +1,9 @@
 
 EXPORTS
-	mswin_helper_timeout_tag 
 	plugin_desc 
 	plugin_done 
 	plugin_init 
 	plugin_name 
 	plugin_type 
-	gpg_started 
+	transports 
+	mswin_helper_timeout_tag 

@@ -150,7 +150,7 @@ MATCHER_PARSER_TARGETS=$(MATCHER_PARSER)_lex.c $(MATCHER_PARSER)_parse.c $(MATCH
 
 ### translation
 
-MOFILES=bg.mo cs.mo de.mo el.mo en_GB.mo es.mo fr.mo hr.mo hu.mo it.mo ja.mo ko.mo nl.mo pl.mo pt_BR.mo ru.mo sr.mo sv.mo zh_TW.Big5.mo
+MOFILES=bg.mo cs.mo de.mo el.mo en_GB.mo es.mo fr.mo hr.mo hu.mo it.mo ja.mo ko.mo nl.mo pl.mo pt_BR.mo ru.mo sr.mo sv.mo zh_CN.mo zh_TW.Big5.mo
 MONAME=sylpheed.mo
 # avoid check for backslash, different shells need different escaping. yucc!
 CHARSET_RE=\(.*Content-Type: text\/plain; charset=\)\([-a-zA-Z0-9]*\)\(.*\)
@@ -193,7 +193,7 @@ LIBS= \
 	$(LIBDIR)/gtk-win32-2.0.lib \
 	$(LIBDIR)/pangowin32-1.0.lib \
 	$(LIBDIR)/pango-1.0.lib \
-	$(LIBDIR)/libiconv.lib \
+	$(LIBDIR)/iconv.lib \
 	$(LIBDIR)/intl.lib \
 	$(LIBDIR)/libeay32.lib \
 	$(LIBDIR)/ssleay32.lib \
@@ -274,6 +274,7 @@ OBJECTS= \
 	ldapserver.o \
 	ldaputil.o \
 	ldif.o \
+	localfolder.o \
 	log.o \
 	logwindow.o \
 	main.o \
@@ -284,7 +285,6 @@ OBJECTS= \
 	matcher_parser_lex.o \
 	matcher_parser_parse.o \
 	mbox.o \
-	mbox_folder.o \
 	md5.o \
 	menu.o \
 	message_search.o \
@@ -299,10 +299,12 @@ OBJECTS= \
 	noticeview.o \
 	passcrypt.o \
 	passphrase.o \
+	pgpmime.o \
 	pine.o \
 	plugin.o \
 	pluginwindow.o \
 	pop.o \
+	privacy.o \
 	prefs.o \
 	prefs_account.o \
 	prefs_actions.o \
@@ -312,9 +314,9 @@ OBJECTS= \
 	prefs_filtering.o \
 	prefs_filtering_action.o \
 	prefs_folder_item.o \
+	prefs_fonts.o \
 	prefs_gtk.o \
 	prefs_matcher.o \
-	prefs_scoring.o \
 	prefs_spelling.o \
 	prefs_summary_column.o \
 	prefs_template.o \
@@ -330,13 +332,13 @@ OBJECTS= \
 	quote_fmt_parse.o \
 	quoted-printable.o \
 	recv.o \
+	remotefolder.o \
 	rfc2015.o \
-	scoring.o \
 	select-keys.o \
 	send_message.o \
 	session.o \
 	setup.o \
-	sigstatus.o \
+	sgpgme.o \
 	simple-gettext.o \
 	smtp.o \
 	socket.o \
@@ -613,6 +615,7 @@ ldapquery.o: 	ldapquery.c ldapquery.h
 ldapserver.o: 	ldapserver.c ldapserver.h
 ldaputil.o: 	ldaputil.c ldaputil.h
 ldif.o: 	ldif.c ldif.h
+localfolder.o:	localfolder.c localfolder.h
 log.o:	log.c log.h
 logwindow.o: 	logwindow.c logwindow.h
 main.o: 	main.c main.h
@@ -621,7 +624,6 @@ manage_window.o: 	manage_window.c manage_window.h
 manual.o: 	manual.c manual.h
 matcher.o: 	matcher.c matcher.h
 mbox.o: 	mbox.c mbox.h
-mbox_folder.o: 	mbox_folder.c mbox_folder.h
 md5.o: 	md5.c md5.h
 menu.o: 	menu.c menu.h
 message_search.o: 	message_search.c message_search.h
@@ -636,10 +638,12 @@ nntp.o: 	nntp.c nntp.h
 noticeview.o:	noticeview.c noticeview.h 
 passcrypt.o: 	passcrypt.c passcrypt.h
 passphrase.o: 	passphrase.c passphrase.h
+pgpmime.o:	pgpmime.c pgpmime.h
 pine.o: 	pine.c pine.h
 plugin.o: 	plugin.c plugin.h
 pluginwindow.o: 	pluginwindow.c pluginwindow.h
 pop.o: 	pop.c pop.h
+privacy.o: 	privacy.c privacy.h
 prefs.o: 	prefs.c prefs.h
 prefs_account.o: 	prefs_account.c prefs_account.h
 prefs_actions.o: 	prefs_actions.c prefs_actions.h
@@ -649,9 +653,9 @@ prefs_display_header.o: 	prefs_display_header.c prefs_display_header.h
 prefs_filtering.o: 	prefs_filtering.c prefs_filtering.h
 prefs_filtering_action.o:	prefs_filtering_action.c prefs_filtering_action.h
 prefs_folder_item.o: 	prefs_folder_item.c prefs_folder_item.h
+prefs_fonts.o: 	prefs_fonts.c prefs_fonts.h
 prefs_gtk.o: 	prefs_gtk.c prefs_gtk.h
 prefs_matcher.o: 	prefs_matcher.c prefs_matcher.h
-prefs_scoring.o: 	prefs_scoring.c prefs_scoring.h
 prefs_spelling.o:	prefs_spelling.c prefs_spelling.h
 prefs_summary_column.o: 	prefs_summary_column.c prefs_summary_column.h
 prefs_template.o: 	prefs_template.c prefs_template.h
@@ -664,13 +668,13 @@ progressdialog.o: 	progressdialog.c progressdialog.h
 progressindicator.o: 	progressindicator.c progressindicator.h
 quote_fmt.o:	quote_fmt.c quote_fmt.h
 recv.o: 	recv.c recv.h
+remotefolder.o: 	remotefolder.c remotefolder.h
 rfc2015.o: 	rfc2015.c rfc2015.h
-scoring.o: 	scoring.c scoring.h
 select-keys.o: 	select-keys.c select-keys.h
 send_message.o:	send_message.c send_message.h
 session.o: 	session.c session.h
 setup.o: 	setup.c setup.h
-sigstatus.o: 	sigstatus.c sigstatus.h
+sgpgme.o:	sgpgme.c sgpgme.h
 simple-gettext.o: 	simple-gettext.c
 smtp.o: 	smtp.c smtp.h
 socket.o: 	socket.c socket.h
