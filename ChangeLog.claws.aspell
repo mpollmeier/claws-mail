@@ -1,0 +1,48 @@
+2002-08-24 [melvin]
+
+	* configure.in
+		Fixed version string to avoid merge conflicts
+
+2002-08-23 [mevlin]
+
+	* ac/aspell.m4
+		Fixed a typo which resulted in incorrect default lib path 
+
+2002-08-23 [mevlin]
+
+	* ac/aspell.m4
+		Made "--enable-aspell-prefix=$aspell_prefix" set includes and 
+		libs path to $aspell_prefix/include and $aspell_prefix/lib
+		if they are not already set
+	* ac/gtkspell.c
+		Removed some debug output
+
+2002-08-20 [melvin]
+	
+	* README.claws
+		Updated spell checker text to reflect the switch to GNU/aspell
+	* acconfig.h
+	* ac/aspell.m4 *** NEW ***
+		Added for GNU/aspell support
+	* ac/pspell.m4 *** DELETED ***
+		Deleted obsolete file
+	* ac/Makefile.am
+		Updated for GNU/aspell support
+	* po/POTFILES.in
+		Replaced gtkspell.c with gtkaspell.c
+	* src/Makefile.am
+		Updated for GNU/aspell support
+	* src/about.c
+		Updated "about" string for GNU/aspell support
+	* src/compose.[ch]
+	* src/crash.c
+	* src/main.c
+	* src/prefs_common.[ch]
+		Updated for GNU/aspell support
+	* src/gtkspell.[ch] *** DELETED ***
+		Deleted obsolote files
+	* src/gtkaspell.[ch] *** NEW ***
+		Added new spell checker file (in fact, updated and renamed
+		gtkspell.[ch] for GNU/aspell support)
+		
+
