@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2001 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2002 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -219,14 +219,17 @@ Compose *compose_new_with_folderitem	(PrefsAccount	*account,
 void compose_followup_and_reply_to	(MsgInfo	*msginfo,
 					 gboolean	 quote,
 					 gboolean	 to_all,
-					 gboolean	 ignore_replyto);
+					 gboolean	 ignore_replyto,
+					 const gchar	*body);
 void compose_reply			(MsgInfo	*msginfo,
 					 gboolean	 quote,
 					 gboolean	 to_all,
-					 gboolean	 ignore_replyto);
+					 gboolean	 ignore_replyto,
+					 const gchar	*body);
 Compose *compose_forward		(PrefsAccount *account,
 					 MsgInfo	*msginfo,
-					 gboolean	 as_attach);
+					 gboolean	 as_attach,
+					 const gchar	*body);
 Compose *compose_forward_multiple	(PrefsAccount	*account, 
 					 GSList		*msginfo_list);
 Compose *compose_bounce			(PrefsAccount	*account,

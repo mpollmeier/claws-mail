@@ -900,18 +900,14 @@ gint folder_item_move_msg(FolderItem *dest, MsgInfo *msginfo)
 	if (num != -1) {
 		MsgInfo *newmsginfo;
 
-		newmsginfo = procmsg_msginfo_copy(msginfo);
+		newmsginfo = folder->fetch_msginfo(folder, dest, num);
+		newmsginfo->flags.perm_flags = msginfo->flags.perm_flags;
 		if (dest->stype == F_OUTBOX ||
 		    dest->stype == F_QUEUE  ||
 		    dest->stype == F_DRAFT  ||
 		    dest->stype == F_TRASH)
 			MSG_UNSET_PERM_FLAGS(newmsginfo->flags,
 					     MSG_NEW|MSG_UNREAD|MSG_DELETED);
-		MSG_UNSET_TMP_FLAGS(newmsginfo->flags,
-				     MSG_MOVE);
-		newmsginfo->to_folder = NULL;
-		newmsginfo->msgnum = num;
-		newmsginfo->folder = dest;
     		msgcache_add_msg(dest->cache, newmsginfo);
 
 		/* CLAWS */

@@ -2455,6 +2455,8 @@ void summary_step(SummaryView *summaryview, GtkScrollType type)
 {
 	GtkCTree *ctree = GTK_CTREE(summaryview->ctree);
 
+	if (summary_is_locked(summaryview)) return;
+
 	if (type == GTK_SCROLL_STEP_FORWARD) {
 		GtkCTreeNode *node;
 		node = gtkut_ctree_node_next(ctree, summaryview->selected);
@@ -3153,7 +3155,8 @@ void summary_move_to(SummaryView *summaryview)
 	if (!summaryview->folder_item ||
 	    summaryview->folder_item->folder->type == F_NEWS) return;
 
-	to_folder = foldersel_folder_sel(NULL, NULL);
+	to_folder = foldersel_folder_sel(summaryview->folder_item->folder,
+					 FOLDER_SEL_MOVE, NULL);
 	summary_move_selected_to(summaryview, to_folder);
 }
 
@@ -3243,7 +3246,8 @@ void summary_copy_to(SummaryView *summaryview)
 
 	if (!summaryview->folder_item) return;
 
-	to_folder = foldersel_folder_sel(NULL, NULL);
+	to_folder = foldersel_folder_sel(summaryview->folder_item->folder,
+					 FOLDER_SEL_COPY, NULL);
 	summary_copy_selected_to(summaryview, to_folder);
 }
 
@@ -3977,48 +3981,52 @@ void summary_filter_open(SummaryView *summaryview, PrefsFilterType type)
 void summary_reply(SummaryView *summaryview, ComposeMode mode)
 {
 	GtkWidget *widget;
+	GList *sel = GTK_CLIST(summaryview->ctree)->selection;
 	MsgInfo *msginfo;
-	GList  *sel = GTK_CLIST(summaryview->ctree)->selection;
+	gchar *text;
 
 	msginfo = gtk_ctree_node_get_row_data(GTK_CTREE(summaryview->ctree),
 					      summaryview->selected);
 	if (!msginfo) return;
 
+	text = gtkut_editable_get_selection
+		(GTK_EDITABLE(summaryview->messageview->textview->text));
+
 	switch (mode) {
 	case COMPOSE_REPLY:
 		compose_reply(msginfo, prefs_common.reply_with_quote,
-			      FALSE, FALSE);
+			      FALSE, FALSE, text);
 		break;
 	case COMPOSE_REPLY_WITH_QUOTE:
-		compose_reply(msginfo, TRUE, FALSE, FALSE);
+		compose_reply(msginfo, TRUE, FALSE, FALSE, text);
 		break;
 	case COMPOSE_REPLY_WITHOUT_QUOTE:
-		compose_reply(msginfo, FALSE, FALSE, FALSE);
+		compose_reply(msginfo, FALSE, FALSE, FALSE, NULL);
 		break;
 	case COMPOSE_REPLY_TO_SENDER:
 		compose_reply(msginfo, prefs_common.reply_with_quote,
-			      FALSE, TRUE);
+			      FALSE, TRUE, text);
 		break;
 	case COMPOSE_FOLLOWUP_AND_REPLY_TO:
 		compose_followup_and_reply_to(msginfo,
 					      prefs_common.reply_with_quote,
-					      FALSE, TRUE);
+					      FALSE, TRUE, text);
 		break;
 	case COMPOSE_REPLY_TO_SENDER_WITH_QUOTE:
-		compose_reply(msginfo, TRUE, FALSE, TRUE);
+		compose_reply(msginfo, TRUE, FALSE, TRUE, text);
 		break;
 	case COMPOSE_REPLY_TO_SENDER_WITHOUT_QUOTE:
-		compose_reply(msginfo, FALSE, FALSE, TRUE);
+		compose_reply(msginfo, FALSE, FALSE, TRUE, NULL);
 		break;
 	case COMPOSE_REPLY_TO_ALL:
 		compose_reply(msginfo, prefs_common.reply_with_quote,
-			      TRUE, TRUE);
+			      TRUE, FALSE, text);
 		break;
 	case COMPOSE_REPLY_TO_ALL_WITH_QUOTE:
-		compose_reply(msginfo, TRUE, TRUE, TRUE);
+		compose_reply(msginfo, TRUE, TRUE, FALSE, text);
 		break;
 	case COMPOSE_REPLY_TO_ALL_WITHOUT_QUOTE:
-		compose_reply(msginfo, FALSE, TRUE, TRUE);
+		compose_reply(msginfo, FALSE, TRUE, FALSE, NULL);
 		break;
 	case COMPOSE_FORWARD:
 		if (prefs_common.forward_as_attachment) {
@@ -4031,7 +4039,7 @@ void summary_reply(SummaryView *summaryview, ComposeMode mode)
 		break;
 	case COMPOSE_FORWARD_INLINE:
 		if (!sel->next) {
-			compose_forward(NULL, msginfo, FALSE);
+			compose_forward(NULL, msginfo, FALSE, text);
 			break;
 		}
 		/* if (sel->next) FALL THROUGH */
@@ -4054,6 +4062,7 @@ void summary_reply(SummaryView *summaryview, ComposeMode mode)
 	}
 
 	summary_set_marks_selected(summaryview);
+	g_free(text);
 }
 
 /* color label */

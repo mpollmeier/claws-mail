@@ -29,7 +29,8 @@ static gint stacksize = 0;
 static gchar *buffer = NULL;
 static gint bufmax = 0;
 static gint bufsize = 0;
-static gchar *quote_str = NULL;
+static const gchar *quote_str = NULL;
+static const gchar *body = NULL;
 static gint error = 0;
 
 static void add_visibility(gboolean val)
@@ -50,7 +51,7 @@ static void remove_visibility(void)
 	stacksize--;
 }
 
-static void add_buffer(gchar *s)
+static void add_buffer(const gchar *s)
 {
 	gint len;
 
@@ -93,9 +94,11 @@ gchar *quote_fmt_get_buffer(void)
 		add_buffer(tmp); \
 	}
 
-void quote_fmt_init(MsgInfo *info, gchar *my_quote_str)
+void quote_fmt_init(MsgInfo *info, const gchar *my_quote_str,
+		    const gchar *my_body)
 {
 	quote_str = my_quote_str;
+	body = my_body;
 	msginfo = info;
 	stacksize = 0;
 	add_visibility(TRUE);
@@ -265,8 +268,12 @@ special:
 			gchar buf[BUFFSIZE];
 			FILE *fp;
 
-			if ((fp = procmime_get_first_text_content(msginfo))
-			    == NULL)
+			if (body)
+				fp = str_open_as_stream(body);
+			else
+				fp = procmime_get_first_text_content(msginfo);
+
+			if (fp == NULL)
 				g_warning(_("Can't get text part\n"));
 			else {
 				while (fgets(buf, sizeof(buf), fp) != NULL) {
@@ -283,8 +290,12 @@ special:
 			gchar buf[BUFFSIZE];
 			FILE *fp;
 
-			if ((fp = procmime_get_first_text_content(msginfo))
-			    == NULL)
+			if (body)
+				fp = str_open_as_stream(body);
+			else
+				fp = procmime_get_first_text_content(msginfo);
+
+			if (fp == NULL)
 				g_warning(_("Can't get text part\n"));
 			else {
 				while (fgets(buf, sizeof(buf), fp) != NULL) {
@@ -303,8 +314,12 @@ special:
 			gchar buf[BUFFSIZE];
 			FILE *fp;
 
-			if ((fp = procmime_get_first_text_content(msginfo))
-			    == NULL)
+			if (body)
+				fp = str_open_as_stream(body);
+			else
+				fp = procmime_get_first_text_content(msginfo);
+
+			if (fp == NULL)
 				g_warning(_("Can't get text part\n"));
 			else {
 				while (fgets(buf, sizeof(buf), fp) != NULL) {
@@ -323,8 +338,12 @@ special:
 			gchar buf[BUFFSIZE];
 			FILE *fp;
 
-			if ((fp = procmime_get_first_text_content(msginfo))
-			    == NULL)
+			if (body)
+				fp = str_open_as_stream(body);
+			else
+				fp = procmime_get_first_text_content(msginfo);
+
+			if (fp == NULL)
 				g_warning(_("Can't get text part\n"));
 			else {
 				while (fgets(buf, sizeof(buf), fp) != NULL) {

@@ -708,7 +708,7 @@ FILE *procmsg_open_message(MsgInfo *msginfo)
 
 	g_return_val_if_fail(msginfo != NULL, NULL);
 
-	file = procmsg_get_message_file_path(msginfo);
+	file = procmsg_get_message_file(msginfo);
 	g_return_val_if_fail(file != NULL, NULL);
 
 	if ((fp = fopen(file, "r")) == NULL) {
@@ -1139,7 +1139,6 @@ gint procmsg_send_message_queue(const gchar *file)
 			MsgInfo *msginfo;
 			
 			msginfo = msgcache_get_msg(folder->cache, num);
-			msginfo->msgnum = num;
 			msginfo->flags.perm_flags = 0;
 			msginfo->flags.tmp_flags = 0;
 			procmsg_msginfo_free(msginfo);

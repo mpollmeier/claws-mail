@@ -313,6 +313,7 @@ gint move_file			(const gchar	*src,
 gint change_file_mode_rw	(FILE		*fp,
 				 const gchar	*file);
 FILE *my_tmpfile		(void);
+FILE *str_open_as_stream	(const gchar	*str);
 
 #define is_file_exist(file)		file_exist(file, FALSE)
 #define is_file_or_fifo_exist(file)	file_exist(file, TRUE)

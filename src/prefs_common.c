@@ -132,6 +132,7 @@ static struct Spelling {
 	GtkWidget *optmenu_dictionary;
 	GtkWidget *optmenu_sugmode;
 	GtkWidget *misspelled_btn;
+	GtkWidget *checkbtn_use_alternate;
 	GtkWidget *checkbtn_check_while_typing;
 } spelling;
 #endif
@@ -364,6 +365,9 @@ static PrefParam param[] = {
 	{"pspell_sugmode",  "1", &prefs_common.pspell_sugmode,
 	 P_INT, &spelling.optmenu_sugmode, 
 	 prefs_speller_sugmode_set_data_from_optmenu, prefs_speller_sugmode_set_optmenu },
+	{"use_alternate_dict", "FALSE", &prefs_common.use_alternate,
+	 P_BOOL, &spelling.checkbtn_use_alternate,
+	 prefs_set_data_from_toggle, prefs_set_toggle},
 	{"check_while_typing", "TRUE", &prefs_common.check_while_typing,
 	 P_BOOL, &spelling.checkbtn_check_while_typing,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
@@ -1300,7 +1304,8 @@ static void prefs_dictionary_set_optmenu(PrefParam *pparam)
 		for (cur = GTK_MENU_SHELL(menu)->children;
 		     cur != NULL; cur = cur->next) {
 			menuitem = GTK_WIDGET(cur->data);
-			dict_name = gtk_object_get_data(GTK_OBJECT(menuitem), "dict_name");
+			dict_name = gtk_object_get_data(GTK_OBJECT(menuitem), 
+							"dict_name");
 			if (!strcmp2(dict_name, *((gchar **)pparam->data))) {
 				gtk_option_menu_set_history(optmenu, n);
 				return;
@@ -1353,8 +1358,9 @@ static void prefs_spelling_checkbtn_enable_pspell_toggle_cb
 	gtk_widget_set_sensitive(spelling.optmenu_dictionary,  toggled);
 	gtk_widget_set_sensitive(spelling.optmenu_sugmode,     toggled);
 	gtk_widget_set_sensitive(spelling.btn_pspell_path,     toggled);
-	gtk_widget_set_sensitive(spelling.misspelled_btn, toggled);
-	gtk_widget_set_sensitive(spelling.checkbtn_check_while_typing,  toggled);
+	gtk_widget_set_sensitive(spelling.misspelled_btn,      toggled);
+	gtk_widget_set_sensitive(spelling.checkbtn_use_alternate,      toggled);
+	gtk_widget_set_sensitive(spelling.checkbtn_check_while_typing, toggled);
 }
 
 static void prefs_spelling_btn_pspell_path_clicked_cb(GtkWidget *widget,
@@ -1373,23 +1379,28 @@ static void prefs_spelling_btn_pspell_path_clicked_cb(GtkWidget *widget,
 	  
 		if (prefs_common.pspell_path)
 			g_free(prefs_common.pspell_path);
-		prefs_common.pspell_path = g_strdup_printf("%s%s",tmp,G_DIR_SEPARATOR_S);
+		prefs_common.pspell_path = g_strdup_printf("%s%s",tmp,
+							   G_DIR_SEPARATOR_S);
 
 		new_menu = gtkpspell_dictionary_option_menu_new(prefs_common.pspell_path);
 		gtk_option_menu_set_menu(GTK_OPTION_MENU(spelling.optmenu_dictionary),
 					 new_menu);
 
-		gtk_entry_set_text(GTK_ENTRY(spelling.entry_pspell_path), prefs_common.pspell_path);					 
+		gtk_entry_set_text(GTK_ENTRY(spelling.entry_pspell_path), 
+				   prefs_common.pspell_path);					 
 		/* select first one */
-		gtk_option_menu_set_history(GTK_OPTION_MENU(spelling.optmenu_dictionary), 0);
+		gtk_option_menu_set_history(GTK_OPTION_MENU(
+					spelling.optmenu_dictionary), 0);
 	
 		if (prefs_common.dictionary)
 			g_free(prefs_common.dictionary);
 
-		prefs_common.dictionary = gtkpspell_get_dictionary_menu_active_item(
-				gtk_option_menu_get_menu(GTK_OPTION_MENU(spelling.optmenu_dictionary)));
+		prefs_common.dictionary = 
+			gtkpspell_get_dictionary_menu_active_item(
+				gtk_option_menu_get_menu(
+					GTK_OPTION_MENU(
+						spelling.optmenu_dictionary)));
 		g_free(tmp);
-	
 
 	}
 }
@@ -1410,10 +1421,13 @@ static void prefs_spelling_create()
 	GtkWidget *optmenu_dictionary;
 	GtkWidget *sugmode_label;
 	GtkWidget *sugmode_optmenu;
+	GtkWidget *checkbtn_use_alternate;
+	GtkWidget *help_label;
 	GtkWidget *checkbtn_check_while_typing;
 	GtkWidget *color_label;
 	GtkWidget *hbox_col;
 	GtkWidget *col_align;
+	GtkWidget *hline;
 
 
 	vbox1 = gtk_vbox_new (FALSE, VSPACING);
@@ -1439,32 +1453,35 @@ static void prefs_spelling_create()
 	PACK_CHECK_BUTTON(vbox_spell, checkbtn_check_while_typing, 
 			  _("Check while typing"));
 
-	gtk_signal_connect(GTK_OBJECT(checkbtn_enable_pspell), "toggled",
-			   GTK_SIGNAL_FUNC(prefs_spelling_checkbtn_enable_pspell_toggle_cb),
-			   NULL);
+	PACK_CHECK_BUTTON(vbox_spell, checkbtn_use_alternate, 
+			  _("Enable alternate dictionary"));
 
+	help_label = gtk_label_new(_("Enabling alternate dictionary makes switching\nwith the last used dictionary faster."));
+	gtk_widget_show(help_label);
+	gtk_box_pack_start(GTK_BOX(vbox_spell), help_label, FALSE, TRUE, 0);
+	
 	spell_table = gtk_table_new(4, 3, FALSE);
-	gtk_container_set_border_width (GTK_CONTAINER (spell_table), 0);
+	gtk_container_set_border_width (GTK_CONTAINER (spell_table), VSPACING);
 	gtk_table_set_row_spacings(GTK_TABLE(spell_table), 8);
 	gtk_table_set_col_spacings(GTK_TABLE(spell_table), 8);
 
 	gtk_box_pack_start(GTK_BOX(vbox_spell), spell_table, TRUE, TRUE, 0);
 
-	
 	label_pspell_path = gtk_label_new (_("Dictionaries path:"));
 	gtk_misc_set_alignment(GTK_MISC(label_pspell_path), 1.0, 0.5);
 	gtk_widget_show(label_pspell_path);
-	gtk_table_attach (GTK_TABLE (spell_table), label_pspell_path, 0, 1, 0, 1,
-			  GTK_FILL, (GTK_EXPAND | GTK_FILL), 0, 0);
+	gtk_table_attach (GTK_TABLE (spell_table), label_pspell_path, 0, 1, 0,
+			  1, GTK_FILL, (GTK_EXPAND | GTK_FILL), 0, 0);
 	
 	hbox_pspell_path = gtk_hbox_new (FALSE, 8);
-	gtk_table_attach (GTK_TABLE (spell_table), hbox_pspell_path, 1, 2, 0, 1,
-			  GTK_FILL, (GTK_EXPAND | GTK_FILL), 0, 0);
+	gtk_table_attach (GTK_TABLE (spell_table), hbox_pspell_path, 1, 2, 0,
+			  1, GTK_FILL, (GTK_EXPAND | GTK_FILL), 0, 0);
 	gtk_widget_show(hbox_pspell_path);
 
 	entry_pspell_path = gtk_entry_new();
 	gtk_widget_show(entry_pspell_path);
-	gtk_box_pack_start(GTK_BOX(hbox_pspell_path), entry_pspell_path, TRUE, TRUE, 0);	
+	gtk_box_pack_start(GTK_BOX(hbox_pspell_path), entry_pspell_path, TRUE,
+			   TRUE, 0);	
 	
 	gtk_widget_set_sensitive(entry_pspell_path, prefs_common.enable_pspell);
 
@@ -1486,9 +1503,10 @@ static void prefs_spelling_create()
 	optmenu_dictionary = gtk_option_menu_new();
 	gtk_widget_show(optmenu_dictionary);
 	gtk_option_menu_set_menu(GTK_OPTION_MENU(optmenu_dictionary), 
-				 gtkpspell_dictionary_option_menu_new(prefs_common.pspell_path));
-	gtk_table_attach (GTK_TABLE (spell_table), optmenu_dictionary, 1, 2, 1, 2,
-			  GTK_FILL, (GTK_EXPAND | GTK_FILL), 0, 0);
+				 gtkpspell_dictionary_option_menu_new(
+					 prefs_common.pspell_path));
+	gtk_table_attach (GTK_TABLE (spell_table), optmenu_dictionary, 1, 2, 1,
+			  2, GTK_FILL, (GTK_EXPAND | GTK_FILL), 0, 0);
 	gtk_widget_set_sensitive(optmenu_dictionary, prefs_common.enable_pspell);
 
 	/* Suggestion mode */
@@ -1533,6 +1551,7 @@ static void prefs_spelling_create()
 	spelling.btn_pspell_path	= btn_pspell_path;
 	spelling.optmenu_dictionary     = optmenu_dictionary;
 	spelling.optmenu_sugmode        = sugmode_optmenu;
+	spelling.checkbtn_use_alternate = checkbtn_use_alternate;
 	spelling.checkbtn_check_while_typing = checkbtn_check_while_typing;
 }
 
@@ -2762,35 +2781,55 @@ static GtkWidget *date_format_create(GtkButton *button, void *data)
 	GtkWidget *cancel_btn;
 	GtkWidget *datefmt_entry;
 
-	const struct {
+	struct {
 		gchar *fmt;
 		gchar *txt;
 	} time_format[] = {
-		{ "%a", _("the full abbreviated weekday name") },
-		{ "%A", _("the full weekday name") },
-		{ "%b", _("the abbreviated month name") },
-		{ "%B", _("the full month name") },
-		{ "%c", _("the preferred date and time for the current locale") },
-		{ "%C", _("the century number (year/100)") },
-		{ "%d", _("the day of the month as a decimal number") },
-		{ "%H", _("the hour as a decimal number using a 24-hour clock") },
-		{ "%I", _("the hour as a decimal number using a 12-hour clock") },
-		{ "%j", _("the day of the year as a decimal number") },
-		{ "%m", _("the month as a decimal number") },
-		{ "%M", _("the minute as a decimal number") },
-		{ "%p", _("either AM or PM") },
-		{ "%S", _("the second as a decimal number") },
-		{ "%w", _("the day of the week as a decimal number") },
-		{ "%x", _("the preferred date for the current locale") },
-		{ "%y", _("the last two digits of a year") },
-		{ "%Y", _("the year as a decimal number") },
-		{ "%Z", _("the time zone or name or abbreviation") }
+		{ "%a", NULL },
+		{ "%A", NULL },
+		{ "%b", NULL },
+		{ "%B", NULL },
+		{ "%c", NULL },
+		{ "%C", NULL },
+		{ "%d", NULL },
+		{ "%H", NULL },
+		{ "%I", NULL },
+		{ "%j", NULL },
+		{ "%m", NULL },
+		{ "%M", NULL },
+		{ "%p", NULL },
+		{ "%S", NULL },
+		{ "%w", NULL },
+		{ "%x", NULL },
+		{ "%y", NULL },
+		{ "%Y", NULL },
+		{ "%Z", NULL }
 	};
 
 	gchar *titles[2];
 	gint i;
 	const gint TIME_FORMAT_ELEMS =
 		sizeof time_format / sizeof time_format[0];
+
+	time_format[0].txt  = _("the full abbreviated weekday name");
+	time_format[1].txt  = _("the full weekday name");
+	time_format[2].txt  = _("the abbreviated month name");
+	time_format[3].txt  = _("the full month name");
+	time_format[4].txt  = _("the preferred date and time for the current locale");
+	time_format[5].txt  = _("the century number (year/100)");
+	time_format[6].txt  = _("the day of the month as a decimal number");
+	time_format[7].txt  = _("the hour as a decimal number using a 24-hour clock");
+	time_format[8].txt  = _("the hour as a decimal number using a 12-hour clock");
+	time_format[9].txt  = _("the day of the year as a decimal number");
+	time_format[10].txt = _("the month as a decimal number");
+	time_format[11].txt = _("the minute as a decimal number");
+	time_format[12].txt = _("either AM or PM");
+	time_format[13].txt = _("the second as a decimal number");
+	time_format[14].txt = _("the day of the week as a decimal number");
+	time_format[15].txt = _("the preferred date for the current locale");
+	time_format[16].txt = _("the last two digits of a year");
+	time_format[17].txt = _("the year as a decimal number");
+	time_format[18].txt = _("the time zone or name or abbreviation");
 
 	if (datefmt_win) return datefmt_win;
 

@@ -172,7 +172,8 @@ static gchar *compose_parse_references		(const gchar	*ref,
 static gchar *compose_quote_fmt			(Compose	*compose,
 						 MsgInfo	*msginfo,
 						 const gchar	*fmt,
-						 const gchar	*qmark);
+						 const gchar	*qmark,
+						 const gchar	*body);
 
 static void compose_reply_set_entry		(Compose	*compose,
 						 MsgInfo	*msginfo,
@@ -441,7 +442,8 @@ static void compose_attach_parts	(Compose	*compose,
 static void compose_generic_reply(MsgInfo *msginfo, gboolean quote,
 				  gboolean to_all,
 				  gboolean ignore_replyto,
-				  gboolean followup_and_reply_to);
+				  gboolean followup_and_reply_to,
+				  const gchar *body);
 
 void compose_headerentry_changed_cb	   (GtkWidget	       *entry,
 					    ComposeHeaderEntry *headerentry);
@@ -461,7 +463,6 @@ static void compose_check_forwards_go	   (Compose *compose);
 static gboolean compose_send_control_enter (Compose *compose);
 static void text_activated		   (GtkWidget	*widget,
 					    Compose	*compose);
-
 
 static GtkItemFactoryEntry compose_popup_entries[] =
 {
@@ -665,7 +666,7 @@ Compose *compose_bounce(PrefsAccount *account, MsgInfo *msginfo)
 				   msginfo->subject);
 	gtk_editable_set_editable(GTK_EDITABLE(c->subject_entry), FALSE);
 
-	compose_quote_fmt(c, msginfo, "%M", NULL);
+	compose_quote_fmt(c, msginfo, "%M", NULL, NULL);
 	gtk_editable_set_editable(GTK_EDITABLE(c->text), FALSE);
 
 	ifactory = gtk_item_factory_from_widget(c->popupmenu);
@@ -798,22 +799,26 @@ Compose *compose_new_followup_and_replyto(PrefsAccount *account,
 */
 
 void compose_reply(MsgInfo *msginfo, gboolean quote, gboolean to_all,
-		   gboolean ignore_replyto)
+		   gboolean ignore_replyto, const gchar *body)
 {
-	compose_generic_reply(msginfo, quote, to_all, ignore_replyto, FALSE);
+	compose_generic_reply(msginfo, quote, to_all, ignore_replyto, FALSE,
+			      body);
 }
 
 void compose_followup_and_reply_to(MsgInfo *msginfo, gboolean quote,
 				   gboolean to_all,
-				   gboolean ignore_replyto)
+				   gboolean ignore_replyto,
+				   const gchar *body)
 {
-	compose_generic_reply(msginfo, quote, to_all, ignore_replyto, TRUE);
+	compose_generic_reply(msginfo, quote, to_all, ignore_replyto, TRUE,
+			      body);
 }
 
 static void compose_generic_reply(MsgInfo *msginfo, gboolean quote,
 				  gboolean to_all,
 				  gboolean ignore_replyto,
-				  gboolean followup_and_reply_to)
+				  gboolean followup_and_reply_to,
+				  const gchar *body)
 {
 	Compose *compose;
 	PrefsAccount *account;
@@ -920,7 +925,7 @@ static void compose_generic_reply(MsgInfo *msginfo, gboolean quote,
 
 		quote_str = compose_quote_fmt(compose, msginfo,
 					      prefs_common.quotefmt,
-					      qmark);
+					      qmark, body);
 	}
 
 	if (prefs_common.auto_sig)
@@ -935,7 +940,7 @@ static void compose_generic_reply(MsgInfo *msginfo, gboolean quote,
 	gtk_stext_thaw(text);
 	gtk_widget_grab_focus(compose->text);
 
-        if (prefs_common.auto_exteditor)
+	if (prefs_common.auto_exteditor)
 		compose_exec_ext_editor(compose);
 }
 
@@ -1161,7 +1166,7 @@ if (msginfo->var && *msginfo->var) { \
 }
 
 Compose *compose_forward(PrefsAccount *account, MsgInfo *msginfo,
-			 gboolean as_attach)
+			 gboolean as_attach, const gchar *body)
 {
 	Compose *compose;
 	/*	PrefsAccount *account; */
@@ -1233,7 +1238,8 @@ Compose *compose_forward(PrefsAccount *account, MsgInfo *msginfo,
 			qmark = "> ";
 
 		quote_str = compose_quote_fmt(compose, msginfo,
-					      prefs_common.fw_quotefmt, qmark);
+					      prefs_common.fw_quotefmt, qmark,
+					      body);
 		compose_attach_parts(compose, msginfo);
 	}
 
@@ -1703,7 +1709,8 @@ static gchar *compose_parse_references(const gchar *ref, const gchar *msgid)
 }
 
 static gchar *compose_quote_fmt(Compose *compose, MsgInfo *msginfo,
-				const gchar *fmt, const gchar *qmark)
+				const gchar *fmt, const gchar *qmark,
+				const gchar *body)
 {
 	GtkSText *text = GTK_STEXT(compose->text);
 	gchar *quote_str = NULL;
@@ -1712,7 +1719,7 @@ static gchar *compose_quote_fmt(Compose *compose, MsgInfo *msginfo,
 	gint len;
 
 	if (qmark != NULL) {
-		quote_fmt_init(msginfo, NULL);
+		quote_fmt_init(msginfo, NULL, NULL);
 		quote_fmt_scan_string(qmark);
 		quote_fmt_parse();
 
@@ -1724,7 +1731,7 @@ static gchar *compose_quote_fmt(Compose *compose, MsgInfo *msginfo,
 	}
 
 	if (fmt && *fmt != '\0') {
-		quote_fmt_init(msginfo, quote_str);
+		quote_fmt_init(msginfo, quote_str, body);
 		quote_fmt_scan_string(fmt);
 		quote_fmt_parse();
 
@@ -1757,9 +1764,10 @@ static void compose_reply_set_entry(Compose *compose, MsgInfo *msginfo,
 				    gboolean to_all, gboolean ignore_replyto,
 				    gboolean followup_and_reply_to)
 {
-	GSList *cc_list;
+	GSList *cc_list = NULL;
 	GSList *cur;
-	gchar *from;
+	gchar *from = NULL;
+	gchar *replyto = NULL;
 	GHashTable *to_table;
 
 	g_return_if_fail(compose->account != NULL);
@@ -1773,11 +1781,6 @@ static void compose_reply_set_entry(Compose *compose, MsgInfo *msginfo,
 				     ? compose->mailinglist
 				     : msginfo->from ? msginfo->from : ""),
 				     COMPOSE_TO);
-
-	if (compose->replyto && to_all)
-		compose_entry_append
-			(compose, compose->replyto, COMPOSE_CC);
-
 
 	if (compose->account->protocol == A_NNTP) {
 		if (ignore_replyto)
@@ -1812,15 +1815,30 @@ static void compose_reply_set_entry(Compose *compose, MsgInfo *msginfo,
 
 	if (!to_all || compose->account->protocol == A_NNTP) return;
 
-	from = g_strdup(compose->replyto ? compose->replyto :
-			msginfo->from ? msginfo->from : "");
-	extract_address(from);
+	if (compose->replyto) {
+		Xstrdup_a(replyto, compose->replyto, return);
+		extract_address(replyto);
+	}
+	if (msginfo->from) {
+		Xstrdup_a(from, msginfo->from, return);
+		extract_address(from);
+	}
 
-	cc_list = address_list_append(NULL, msginfo->to);
+	if (compose->mailinglist && from) {
+		cc_list = address_list_append(cc_list, from);
+	}
+
+	if (replyto && from)
+		cc_list = address_list_append(cc_list, from);
+
+	if (!compose->mailinglist)
+		cc_list = address_list_append(cc_list, msginfo->to);
+
 	cc_list = address_list_append(cc_list, compose->cc);
 
 	to_table = g_hash_table_new(g_str_hash, g_str_equal);
-	g_hash_table_insert(to_table, from, GINT_TO_POINTER(1));
+	if (replyto)
+		g_hash_table_insert(to_table, replyto, GINT_TO_POINTER(1));
 	if (compose->account)
 		g_hash_table_insert(to_table, compose->account->address,
 				    GINT_TO_POINTER(1));
@@ -1837,7 +1855,6 @@ static void compose_reply_set_entry(Compose *compose, MsgInfo *msginfo,
 		cur = next;
 	}
 	g_hash_table_destroy(to_table);
-	g_free(from);
 
 	if (cc_list) {
 		for (cur = cc_list; cur != NULL; cur = cur->next)
@@ -2724,10 +2741,9 @@ gint compose_send(Compose *compose)
 	}
 	
 	val = procmsg_send_message_queue(folder_item_fetch_msg(folder, msgnum));
-	if(!val) {
-		folder_item_remove_msg(folder, msgnum);
-		folderview_update_item(folder, TRUE);
-	}
+
+	folder_item_remove_msg(folder, msgnum);
+	folderview_update_item(folder, TRUE);
 
 	return val;
 }
@@ -4164,11 +4180,15 @@ static GtkWidget *compose_create_header(Compose *compose)
 
 GtkWidget *compose_create_attach(Compose *compose)
 {
-	gchar *titles[] = {_("MIME type"), _("Size"), _("Name")};
+	gchar *titles[N_ATTACH_COLS];
 	gint i;
 
 	GtkWidget *attach_scrwin;
 	GtkWidget *attach_clist;
+
+	titles[COL_MIMETYPE] = _("MIME type");
+	titles[COL_SIZE]     = _("Size");
+	titles[COL_NAME]     = _("Name");
 
 	/* attachment list */
 	attach_scrwin = gtk_scrolled_window_new(NULL, NULL);
@@ -4276,7 +4296,7 @@ static void compose_savemsg_select_cb(GtkWidget *widget, Compose *compose)
 	FolderItem *dest;
 	gchar * path;
 
-	dest = foldersel_folder_sel(NULL, NULL);
+	dest = foldersel_folder_sel(NULL, FOLDER_SEL_COPY, NULL);
 	if (!dest) return;
 
 	path = folder_item_get_identifier(dest);
@@ -4314,6 +4334,7 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 
 	UndoMain *undostruct;
 
+	gchar *titles[N_ATTACH_COLS];
 	guint n_menu_entries;
 	GtkStyle  *style, *new_style;
 	GdkColormap *cmap;
@@ -4335,6 +4356,10 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 
 	debug_print(_("Creating compose window...\n"));
 	compose = g_new0(Compose, 1);
+
+	titles[COL_MIMETYPE] = _("MIME type");
+	titles[COL_SIZE]     = _("Size");
+	titles[COL_NAME]     = _("Name");
 
 	compose->account = account;
 	compose->orig_account = account;
@@ -4658,6 +4683,7 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 					  conv_get_current_charset_str(),
 					  prefs_common.misspelled_col,
 					  prefs_common.check_while_typing,
+					  prefs_common.use_alternate,
 					  GTK_STEXT(text));
 		if (!gtkpspell) {
 			alertpanel_error(_("Spell checker could not be started.\n%s"), gtkpspellcheckers->error_message);
@@ -5007,7 +5033,7 @@ static void compose_template_apply(Compose *compose, Template *tmpl)
 
 		memset(&dummyinfo, 0, sizeof(MsgInfo));
 		parsed_str = compose_quote_fmt(compose, &dummyinfo,
-					       tmpl->value, NULL);
+					       tmpl->value, NULL, NULL);
 	} else {
 		if (prefs_common.quotemark && *prefs_common.quotemark)
 			qmark = prefs_common.quotemark;
@@ -5015,7 +5041,7 @@ static void compose_template_apply(Compose *compose, Template *tmpl)
 			qmark = "> ";
 
 		parsed_str = compose_quote_fmt(compose, compose->replyinfo,
-					       tmpl->value, qmark);
+					       tmpl->value, qmark, NULL);
 	}
 
 	if (parsed_str && prefs_common.auto_sig)

@@ -1437,28 +1437,40 @@ static SensitiveCond main_window_get_current_state(MainWindow *mainwin)
 void main_window_set_toolbar_sensitive(MainWindow *mainwin)
 {
 	SensitiveCond state;
-    gboolean sensitive;
+	gboolean sensitive;
 	gint i;
 
-	const struct {
+	struct {
 		GtkWidget *widget;
 		SensitiveCond cond;
-	} entry[] = {
-		{mainwin->get_btn         , M_HAVE_ACCOUNT|M_UNLOCKED},
-		{mainwin->getall_btn      , M_HAVE_ACCOUNT|M_UNLOCKED},
-		{mainwin->compose_mail_btn, M_HAVE_ACCOUNT},
-		{mainwin->compose_news_btn, M_HAVE_NEWS_ACCOUNT},
-		{mainwin->reply_btn       , M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
-		{mainwin->replyall_btn    , M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
-		{mainwin->replysender_btn , M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
-		{mainwin->fwd_btn         , M_HAVE_ACCOUNT|M_TARGET_EXIST},
-		/* {mainwin->prefs_btn      , M_UNLOCKED},
-		{mainwin->account_btn    , M_UNLOCKED}, */
-		{mainwin->next_btn        , M_MSG_EXIST},
-		{mainwin->delete_btn      , M_TARGET_EXIST|M_ALLOW_DELETE|M_UNLOCKED},
-		{mainwin->exec_btn        , M_MSG_EXIST|M_EXEC|M_UNLOCKED},
-		{NULL, 0}
-	};
+	} entry[11];
+
+	entry[0].widget  = mainwin->get_btn;
+	entry[0].cond    = M_HAVE_ACCOUNT|M_UNLOCKED;
+	entry[1].widget  = mainwin->getall_btn;
+	entry[1].cond    = M_HAVE_ACCOUNT|M_UNLOCKED;
+	entry[2].widget  = mainwin->compose_news_btn;
+	entry[2].cond    = M_HAVE_NEWS_ACCOUNT;
+	entry[3].widget  = mainwin->reply_btn;
+	entry[3].cond    = M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST;
+	entry[4].widget  = mainwin->replyall_btn;
+	entry[4].cond    = M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST;
+	entry[5].widget  = mainwin->replysender_btn;
+	entry[5].cond    = M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST;
+	entry[6].widget  = mainwin->fwd_btn;
+	entry[6].cond    = M_HAVE_ACCOUNT|M_TARGET_EXIST;
+/*	entry[6].widget  = mainwin->prefs_btn;
+	entry[6].cond    = M_UNLOCKED;
+	entry[7].widget  = mainwin->account_btn;
+	entry[7].cond    = M_UNLOCKED; */
+	entry[7].widget  = mainwin->next_btn;
+	entry[7].cond    = M_MSG_EXIST;
+	entry[8].widget  = mainwin->delete_btn;
+	entry[8].cond    = M_TARGET_EXIST|M_ALLOW_DELETE|M_UNLOCKED;
+	entry[9].widget = mainwin->exec_btn;
+	entry[9].cond   = M_MSG_EXIST|M_EXEC|M_UNLOCKED;
+	entry[10].widget = NULL;
+	entry[10].cond   = 0;
 
 	state = main_window_get_current_state(mainwin);
 
@@ -1500,9 +1512,9 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 		{"/View/Thread view"               , M_UNTHREADED},
 		{"/View/Unthread view"             , M_THREADED},
 		{"/View/Hide read messages"	   , M_HIDE_READ_MSG},
-		{"/View/Go to"                     , M_MSG_EXIST},
 		{"/View/Go to/Prev message"        , M_MSG_EXIST},
 		{"/View/Go to/Next message"        , M_MSG_EXIST},
+		{"/View/Go to/Prev unread message" , M_MSG_EXIST},
 		{"/View/Go to/Next unread message" , M_MSG_EXIST},
 		{"/View/Go to/Prev marked message" , M_MSG_EXIST},
 		{"/View/Go to/Next marked message" , M_MSG_EXIST},
@@ -2816,7 +2828,7 @@ static void goto_folder_cb(MainWindow *mainwin, guint action,
 {
 	FolderItem *to_folder;
 
-	to_folder = foldersel_folder_sel(NULL, NULL);
+	to_folder = foldersel_folder_sel(NULL, FOLDER_SEL_ALL, NULL);
 
 	if (to_folder)
 		folderview_select(mainwin->folderview, to_folder);
