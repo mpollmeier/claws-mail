@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: sylpheed\n"
-"POT-Creation-Date: 2002-05-10 17:44+0200\n"
+"POT-Creation-Date: 2002-05-18 18:10+0200\n"
 "PO-Revision-Date: 2001-10-08\n"
 "Last-Translator: Joakim Andreasson <joakim.andreasson@gmx.net>\n"
 "Language-Team: Joakim Andreasson <joakim.andreasson@gmx.net>\n"
@@ -89,16 +89,16 @@ msgstr ""
 
 #. Button panel
 #: src/about.c:243 src/addressadd.c:239 src/addrgather.c:505
-#: src/alertpanel.c:239 src/compose.c:2775 src/compose.c:5307
+#: src/alertpanel.c:239 src/compose.c:2815 src/compose.c:5416
 #: src/editaddress.c:495 src/editbook.c:204 src/editgroup.c:364
 #: src/editjpilot.c:344 src/editldap.c:243 src/editldap_basedn.c:212
-#: src/editvcard.c:239 src/export.c:187 src/foldersel.c:186
+#: src/editvcard.c:239 src/export.c:187 src/foldersel.c:191
 #: src/grouplistdialog.c:241 src/gtkspell.c:1354 src/gtkspell.c:2357
 #: src/import.c:191 src/importmutt.c:287 src/importpine.c:287
-#: src/inputdialog.c:202 src/main.c:411 src/main.c:419 src/mainwindow.c:2486
-#: src/messageview.c:335 src/mimeview.c:831 src/passphrase.c:130
-#: src/prefs.c:475 src/prefs_actions.c:267 src/prefs_common.c:3173
-#: src/prefs_common.c:3329 src/prefs_common.c:3649
+#: src/inputdialog.c:202 src/main.c:411 src/main.c:419 src/mainwindow.c:2560
+#: src/messageview.c:335 src/mimeview.c:837 src/passphrase.c:130
+#: src/prefs.c:475 src/prefs_actions.c:267 src/prefs_common.c:3176
+#: src/prefs_common.c:3332 src/prefs_common.c:3652
 #: src/prefs_customheader.c:157 src/prefs_display_header.c:194
 #: src/prefs_filter.c:203 src/prefs_filtering.c:341
 #: src/prefs_folder_item.c:449 src/prefs_matcher.c:307
@@ -144,7 +144,7 @@ msgid ""
 msgstr ""
 
 #: src/account.c:500 src/addressadd.c:183 src/addressbook.c:534
-#: src/compose.c:4116 src/compose.c:4289 src/editaddress.c:756
+#: src/compose.c:4175 src/compose.c:4349 src/editaddress.c:756
 #: src/editaddress.c:805 src/editbook.c:174 src/editgroup.c:252
 #: src/editjpilot.c:295 src/editldap.c:298 src/editvcard.c:210
 #: src/importmutt.c:261 src/importpine.c:261 src/mimeview.c:153
@@ -207,10 +207,10 @@ msgid "Do you really want to delete this account?"
 msgstr "Vill du verkligen ta bort detta konto? "
 
 #: src/account.c:659 src/addressbook.c:916 src/addressbook.c:2081
-#: src/compose.c:2654 src/compose.c:3067 src/compose.c:5481 src/compose.c:5931
-#: src/exphtmldlg.c:156 src/folderview.c:2030 src/folderview.c:2094
-#: src/folderview.c:2199 src/folderview.c:2333 src/folderview.c:2369
-#: src/inc.c:172 src/inc.c:262 src/mainwindow.c:1370 src/mainwindow.c:2680
+#: src/compose.c:2694 src/compose.c:3107 src/compose.c:5590 src/compose.c:6040
+#: src/exphtmldlg.c:156 src/folderview.c:2034 src/folderview.c:2098
+#: src/folderview.c:2203 src/folderview.c:2337 src/folderview.c:2373
+#: src/inc.c:172 src/inc.c:262 src/mainwindow.c:1390 src/mainwindow.c:2769
 #: src/message_search.c:198 src/messageview.c:394 src/prefs_actions.c:872
 #: src/prefs_customheader.c:541 src/prefs_filter.c:813
 #: src/prefs_filtering.c:972 src/prefs_scoring.c:637 src/prefs_template.c:514
@@ -220,9 +220,9 @@ msgstr "Vill du verkligen ta bort detta konto? "
 msgid "Yes"
 msgstr "Ja"
 
-#: src/account.c:659 src/compose.c:3067 src/compose.c:5481
-#: src/folderview.c:2030 src/folderview.c:2094 src/folderview.c:2199
-#: src/folderview.c:2333 src/folderview.c:2369
+#: src/account.c:659 src/compose.c:3107 src/compose.c:5590
+#: src/folderview.c:2034 src/folderview.c:2098 src/folderview.c:2203
+#: src/folderview.c:2337 src/folderview.c:2373
 msgid "+No"
 msgstr "+Nej"
 
@@ -234,7 +234,7 @@ msgstr ""
 msgid "Add Address to Book"
 msgstr "Lägg till adressbok"
 
-#: src/addressadd.c:193 src/compose.c:4835 src/select-keys.c:302
+#: src/addressadd.c:193 src/compose.c:4899 src/select-keys.c:302
 msgid "Address"
 msgstr "Adress"
 
@@ -248,16 +248,16 @@ msgid "Select Address Book Folder"
 msgstr "Välj adressboksmapp"
 
 #: src/addressadd.c:240 src/addressbook.c:2075 src/addrgather.c:506
-#: src/compose.c:2775 src/compose.c:5308 src/compose.c:6089 src/compose.c:6124
+#: src/compose.c:2815 src/compose.c:5417 src/compose.c:6198 src/compose.c:6233
 #: src/editaddress.c:496 src/editbook.c:205 src/editgroup.c:365
 #: src/editjpilot.c:345 src/editldap.c:244 src/editldap_basedn.c:213
 #: src/editvcard.c:240 src/exphtmldlg.c:662 src/export.c:188
-#: src/foldersel.c:187 src/grouplistdialog.c:242 src/gtkspell.c:1363
+#: src/foldersel.c:192 src/grouplistdialog.c:242 src/gtkspell.c:1363
 #: src/import.c:192 src/importldif.c:747 src/importmutt.c:288
 #: src/importpine.c:288 src/inputdialog.c:203 src/main.c:411 src/main.c:419
-#: src/mainwindow.c:2486 src/messageview.c:335 src/mimeview.c:831
+#: src/mainwindow.c:2560 src/messageview.c:335 src/mimeview.c:837
 #: src/passphrase.c:134 src/prefs.c:476 src/prefs_actions.c:268
-#: src/prefs_common.c:3174 src/prefs_common.c:3650
+#: src/prefs_common.c:3177 src/prefs_common.c:3653
 #: src/prefs_customheader.c:158 src/prefs_display_header.c:195
 #: src/prefs_filter.c:204 src/prefs_filtering.c:342
 #: src/prefs_folder_item.c:450 src/prefs_matcher.c:308 src/prefs_scoring.c:197
@@ -267,7 +267,7 @@ msgstr "Välj adressboksmapp"
 msgid "Cancel"
 msgstr "Avbryt"
 
-#: src/addressbook.c:348 src/compose.c:480 src/mainwindow.c:478
+#: src/addressbook.c:348 src/compose.c:493 src/mainwindow.c:493
 msgid "/_File"
 msgstr "/_Arkiv"
 
@@ -289,8 +289,8 @@ msgstr "/_Arkiv/Ny _J-Pilot"
 msgid "/_File/New _Server"
 msgstr "/_Arkiv/Ny _Server"
 
-#: src/addressbook.c:357 src/addressbook.c:360 src/compose.c:484
-#: src/mainwindow.c:491 src/mainwindow.c:494
+#: src/addressbook.c:357 src/addressbook.c:360 src/compose.c:497
+#: src/mainwindow.c:506 src/mainwindow.c:509
 msgid "/_File/---"
 msgstr "/_Arkiv/---"
 
@@ -306,12 +306,12 @@ msgstr "/_Arkiv/_Ta bort"
 msgid "/_File/_Save"
 msgstr "/_Arkiv/_Spara"
 
-#: src/addressbook.c:362 src/compose.c:485
+#: src/addressbook.c:362 src/compose.c:498
 msgid "/_File/_Close"
 msgstr "/_Arkiv/Stän_g"
 
 #: src/addressbook.c:363 src/addressbook.c:392 src/addressbook.c:406
-#: src/compose.c:487 src/mainwindow.c:497
+#: src/compose.c:500 src/mainwindow.c:512
 msgid "/_Edit"
 msgstr "/_Redigera"
 
@@ -320,16 +320,16 @@ msgstr "/_Redigera"
 msgid "/_Edit/C_ut"
 msgstr "/_Redigera/Klipp _ut"
 
-#: src/addressbook.c:365 src/compose.c:492 src/mainwindow.c:498
+#: src/addressbook.c:365 src/compose.c:505 src/mainwindow.c:513
 msgid "/_Edit/_Copy"
 msgstr "/_Redigera/_Kopiera"
 
-#: src/addressbook.c:366 src/compose.c:493
+#: src/addressbook.c:366 src/compose.c:506
 msgid "/_Edit/_Paste"
 msgstr "/_Redigera/_Infoga"
 
-#: src/addressbook.c:367 src/compose.c:490 src/compose.c:571
-#: src/mainwindow.c:501
+#: src/addressbook.c:367 src/compose.c:503 src/compose.c:584
+#: src/mainwindow.c:516
 msgid "/_Edit/---"
 msgstr "/_Redigera/---"
 
@@ -366,9 +366,9 @@ msgstr "/A_dress/R_edigera"
 msgid "/_Address/_Delete"
 msgstr "/_A_dress/_Ta bort"
 
-#: src/addressbook.c:376 src/addressbook.c:380 src/mainwindow.c:688
-#: src/mainwindow.c:697 src/mainwindow.c:708 src/mainwindow.c:710
-#: src/mainwindow.c:712 src/mainwindow.c:715
+#: src/addressbook.c:376 src/addressbook.c:380 src/mainwindow.c:705
+#: src/mainwindow.c:714 src/mainwindow.c:725 src/mainwindow.c:727
+#: src/mainwindow.c:729 src/mainwindow.c:732
 #, fuzzy
 msgid "/_Tools/---"
 msgstr "/V_erktyg"
@@ -393,11 +393,11 @@ msgstr "Fil att importera:"
 msgid "/_Tools/Export _HTML..."
 msgstr "/_Arkiv/_Importera mbox-fil..."
 
-#: src/addressbook.c:382 src/compose.c:638 src/mainwindow.c:739
+#: src/addressbook.c:382 src/compose.c:658 src/mainwindow.c:756
 msgid "/_Help"
 msgstr "/_Hjälp"
 
-#: src/addressbook.c:383 src/compose.c:639 src/mainwindow.c:753
+#: src/addressbook.c:383 src/compose.c:659 src/mainwindow.c:770
 msgid "/_Help/_About"
 msgstr "/_Hjälp/_Om"
 
@@ -414,12 +414,12 @@ msgid "/New _Folder"
 msgstr "/Ny _katalog"
 
 #: src/addressbook.c:391 src/addressbook.c:394 src/addressbook.c:405
-#: src/addressbook.c:408 src/addressbook.c:412 src/compose.c:474
-#: src/folderview.c:268 src/folderview.c:270 src/folderview.c:279
-#: src/folderview.c:283 src/folderview.c:287 src/folderview.c:289
-#: src/folderview.c:299 src/folderview.c:303 src/folderview.c:307
-#: src/folderview.c:309 src/folderview.c:319 src/folderview.c:323
-#: src/folderview.c:325 src/summaryview.c:402 src/summaryview.c:404
+#: src/addressbook.c:408 src/addressbook.c:412 src/compose.c:487
+#: src/folderview.c:271 src/folderview.c:273 src/folderview.c:282
+#: src/folderview.c:286 src/folderview.c:290 src/folderview.c:292
+#: src/folderview.c:302 src/folderview.c:306 src/folderview.c:310
+#: src/folderview.c:312 src/folderview.c:322 src/folderview.c:326
+#: src/folderview.c:328 src/summaryview.c:402 src/summaryview.c:404
 #: src/summaryview.c:407 src/summaryview.c:412 src/summaryview.c:424
 #: src/summaryview.c:436 src/summaryview.c:442
 msgid "/---"
@@ -452,7 +452,7 @@ msgstr "/A_dress"
 msgid "E-Mail address"
 msgstr "Epostadress"
 
-#: src/addressbook.c:539 src/compose.c:4836 src/prefs_common.c:2702
+#: src/addressbook.c:539 src/compose.c:4900 src/prefs_common.c:2705
 msgid "Address book"
 msgstr "Adressbok"
 
@@ -462,7 +462,7 @@ msgstr "Namn:"
 
 #. Buttons
 #: src/addressbook.c:670 src/addressbook.c:2074 src/addressbook.c:2081
-#: src/editaddress.c:698 src/editaddress.c:832 src/mainwindow.c:2052
+#: src/editaddress.c:698 src/editaddress.c:832 src/mainwindow.c:2094
 #: src/prefs_actions.c:367 src/prefs_display_header.c:281
 #: src/prefs_display_header.c:337 src/prefs_filter.c:413
 #: src/prefs_filtering.c:225 src/prefs_filtering.c:535 src/prefs_matcher.c:506
@@ -474,17 +474,17 @@ msgstr "Ta bort"
 msgid "Lookup"
 msgstr "Leta upp"
 
-#: src/addressbook.c:688 src/compose.c:1316 src/compose.c:3934
-#: src/compose.c:4682 src/headerview.c:55 src/prefs_template.c:169
+#: src/addressbook.c:688 src/compose.c:1336 src/compose.c:3993
+#: src/compose.c:4742 src/headerview.c:55 src/prefs_template.c:169
 #: src/summary_search.c:154
 msgid "To:"
 msgstr "Till:"
 
-#: src/addressbook.c:692 src/compose.c:1300
+#: src/addressbook.c:692 src/compose.c:1320
 msgid "Cc:"
 msgstr ""
 
-#: src/addressbook.c:696 src/compose.c:1303
+#: src/addressbook.c:696 src/compose.c:1323
 msgid "Bcc:"
 msgstr ""
 
@@ -501,9 +501,9 @@ msgstr ""
 msgid "Really delete the address(es)?"
 msgstr "Vill du verkligen t abort adress(erna)?"
 
-#: src/addressbook.c:916 src/addressbook.c:2081 src/compose.c:2654
-#: src/compose.c:5931 src/exphtmldlg.c:156 src/inc.c:172 src/inc.c:262
-#: src/mainwindow.c:1370 src/mainwindow.c:2680 src/message_search.c:198
+#: src/addressbook.c:916 src/addressbook.c:2081 src/compose.c:2694
+#: src/compose.c:6040 src/exphtmldlg.c:156 src/inc.c:172 src/inc.c:262
+#: src/mainwindow.c:1390 src/mainwindow.c:2769 src/message_search.c:198
 #: src/messageview.c:394 src/prefs_actions.c:872 src/prefs_customheader.c:541
 #: src/prefs_filter.c:813 src/prefs_filtering.c:972 src/prefs_scoring.c:637
 #: src/prefs_template.c:514 src/summary_search.c:310 src/summaryview.c:733
@@ -625,7 +625,7 @@ msgid "Group"
 msgstr "Grupp"
 
 #. special folder setting (maybe these options are redundant)
-#: src/addressbook.c:3504 src/exporthtml.c:916 src/folderview.c:353
+#: src/addressbook.c:3504 src/exporthtml.c:916 src/folderview.c:356
 #: src/prefs_account.c:1733
 msgid "Folder"
 msgstr "Mapp"
@@ -740,11 +740,11 @@ msgstr "Vanliga adresser"
 msgid "Personal address"
 msgstr "Personliga adresser"
 
-#: src/alertpanel.c:120 src/compose.c:5481 src/main.c:409
+#: src/alertpanel.c:120 src/compose.c:5590 src/main.c:409
 msgid "Notice"
 msgstr "Meddelande"
 
-#: src/alertpanel.c:146 src/compose.c:3065 src/inc.c:533
+#: src/alertpanel.c:146 src/compose.c:3105 src/inc.c:533
 msgid "Error"
 msgstr "Fel"
 
@@ -793,367 +793,396 @@ msgstr "Brun"
 #. * pass an invalid (high) value. also we attach a data pointer so we
 #. * can always get back the SummaryView pointer.
 #: src/colorlabel.c:281 src/exphtmldlg.c:448 src/gtkspell.c:1427
-#: src/gtkspell.c:2118 src/summaryview.c:4340
+#: src/gtkspell.c:2118 src/summaryview.c:4376
 msgid "None"
 msgstr "Ingen"
 
-#: src/compose.c:472
+#: src/compose.c:485
 msgid "/_Add..."
 msgstr "/_Lägg till..."
 
-#: src/compose.c:473
+#: src/compose.c:486
 msgid "/_Remove"
 msgstr "/_Ta bort"
 
-#: src/compose.c:475 src/folderview.c:271 src/folderview.c:291
-#: src/folderview.c:311 src/folderview.c:327
+#: src/compose.c:488 src/folderview.c:274 src/folderview.c:294
+#: src/folderview.c:314 src/folderview.c:330
 msgid "/_Property..."
 msgstr "/_Egenskaper..."
 
-#: src/compose.c:481
+#: src/compose.c:494
 msgid "/_File/_Attach file"
 msgstr "/_Arkiv/_Bifoga fil"
 
-#: src/compose.c:482
+#: src/compose.c:495
 msgid "/_File/_Insert file"
 msgstr "/_Arkiv/_Infoga fil"
 
-#: src/compose.c:483
+#: src/compose.c:496
 msgid "/_File/Insert si_gnature"
 msgstr "/_Arkiv/Infoga si_gnatur"
 
-#: src/compose.c:488
+#: src/compose.c:501
 msgid "/_Edit/_Undo"
 msgstr "/_Redigera/_Ångra"
 
-#: src/compose.c:489
+#: src/compose.c:502
 msgid "/_Edit/_Redo"
 msgstr "/_Redigera/Gör _om"
 
-#: src/compose.c:491
+#: src/compose.c:504
 msgid "/_Edit/Cu_t"
 msgstr "/_Redigera/Klipp _ut"
 
-#: src/compose.c:494 src/mainwindow.c:499
+#: src/compose.c:507 src/mainwindow.c:514
 msgid "/_Edit/Select _all"
 msgstr "/_Redigera/Markrera _allt"
 
-#: src/compose.c:495
+#: src/compose.c:508
 #, fuzzy
 msgid "/_Edit/A_dvanced"
 msgstr "/_Redigera/_Ångra"
 
-#: src/compose.c:496
+#: src/compose.c:509
 msgid "/_Edit/A_dvanced/Move a character backward"
 msgstr ""
 
-#: src/compose.c:501
+#: src/compose.c:514
 msgid "/_Edit/A_dvanced/Move a character forward"
 msgstr ""
 
-#: src/compose.c:506
+#: src/compose.c:519
 msgid "/_Edit/A_dvanced/Move a word backward"
 msgstr ""
 
-#: src/compose.c:511
+#: src/compose.c:524
 msgid "/_Edit/A_dvanced/Move a word forward"
 msgstr ""
 
-#: src/compose.c:516
+#: src/compose.c:529
 msgid "/_Edit/A_dvanced/Move to beginning of line"
 msgstr ""
 
-#: src/compose.c:521
+#: src/compose.c:534
 msgid "/_Edit/A_dvanced/Move to end of line"
 msgstr ""
 
-#: src/compose.c:526
+#: src/compose.c:539
 msgid "/_Edit/A_dvanced/Move to previous line"
 msgstr ""
 
-#: src/compose.c:531
+#: src/compose.c:544
 msgid "/_Edit/A_dvanced/Move to next line"
 msgstr ""
 
-#: src/compose.c:536
+#: src/compose.c:549
 msgid "/_Edit/A_dvanced/Delete a character backward"
 msgstr ""
 
-#: src/compose.c:541
+#: src/compose.c:554
 msgid "/_Edit/A_dvanced/Delete a character forward"
 msgstr ""
 
-#: src/compose.c:546
+#: src/compose.c:559
 msgid "/_Edit/A_dvanced/Delete a word backward"
 msgstr ""
 
-#: src/compose.c:551
+#: src/compose.c:564
 msgid "/_Edit/A_dvanced/Delete a word forward"
 msgstr ""
 
-#: src/compose.c:556
+#: src/compose.c:569
 msgid "/_Edit/A_dvanced/Delete line"
 msgstr ""
 
-#: src/compose.c:561
+#: src/compose.c:574
 msgid "/_Edit/A_dvanced/Delete entire line"
 msgstr ""
 
-#: src/compose.c:566
+#: src/compose.c:579
 msgid "/_Edit/A_dvanced/Delete to end of line"
 msgstr ""
 
-#: src/compose.c:572
+#: src/compose.c:585
 msgid "/_Edit/_Wrap current paragraph"
 msgstr "/_Redigera/Bryt rader i _stycke"
 
-#: src/compose.c:574
+#: src/compose.c:587
 msgid "/_Edit/Wrap all long _lines"
 msgstr "/_Redigera/Bryt _långa rader"
 
-#: src/compose.c:576
+#: src/compose.c:589
 msgid "/_Edit/Edit with e_xternal editor"
 msgstr "/_Redigera/Redigera med e_xtern redigerare"
 
-#: src/compose.c:579
+#: src/compose.c:592
 #, fuzzy
 msgid "/_Spelling"
 msgstr "/_Öppna"
 
-#: src/compose.c:580
+#: src/compose.c:593
 msgid "/_Spelling/_Check all or check selection"
 msgstr ""
 
-#: src/compose.c:582
+#: src/compose.c:595
 msgid "/_Spelling/_Highlight all misspelled words"
 msgstr ""
 
-#: src/compose.c:584
+#: src/compose.c:597
 msgid "/_Spelling/Check _backwards misspelled word"
 msgstr ""
 
-#: src/compose.c:586
+#: src/compose.c:599
 msgid "/_Spelling/_Forward to next misspelled word"
 msgstr ""
 
-#: src/compose.c:588
+#: src/compose.c:601
 #, fuzzy
 msgid "/_Spelling/---"
 msgstr "/_Hjälp/---"
 
-#: src/compose.c:589
+#: src/compose.c:602
 #, fuzzy
 msgid "/_Spelling/_Spelling Configuration"
 msgstr "/_Konfiguration"
 
-#: src/compose.c:593 src/mainwindow.c:505 src/summaryview.c:437
+#: src/compose.c:606 src/mainwindow.c:520 src/summaryview.c:437
 msgid "/_View"
 msgstr "/_Visa"
 
-#: src/compose.c:594
+#: src/compose.c:607
 #, fuzzy
 msgid "/_View/_To"
 msgstr "/_Visa/_Verktygsrad"
 
-#: src/compose.c:595
+#: src/compose.c:608
 #, fuzzy
 msgid "/_View/_Cc"
 msgstr "/_Visa"
 
-#: src/compose.c:596
+#: src/compose.c:609
 #, fuzzy
 msgid "/_View/_Bcc"
 msgstr "/_Visa/Visa _källkod"
 
-#: src/compose.c:597
+#: src/compose.c:610
 #, fuzzy
 msgid "/_View/_Reply to"
 msgstr "/_Meddelande/_Svara till"
 
-#: src/compose.c:598 src/compose.c:600 src/compose.c:602 src/mainwindow.c:519
-#: src/mainwindow.c:524 src/mainwindow.c:544 src/mainwindow.c:565
-#: src/mainwindow.c:647 src/mainwindow.c:651
+#: src/compose.c:611 src/compose.c:613 src/compose.c:615 src/mainwindow.c:534
+#: src/mainwindow.c:539 src/mainwindow.c:561 src/mainwindow.c:582
+#: src/mainwindow.c:664 src/mainwindow.c:668
 msgid "/_View/---"
 msgstr "/_Visa/---"
 
-#: src/compose.c:599
+#: src/compose.c:612
 #, fuzzy
 msgid "/_View/_Followup to"
 msgstr "/_Meddelande/_Följ upp till"
 
-#: src/compose.c:601
+#: src/compose.c:614
 #, fuzzy
 msgid "/_View/R_uler"
 msgstr "/_Visa/Visa _källkod"
 
-#: src/compose.c:603
+#: src/compose.c:616
 #, fuzzy
 msgid "/_View/_Attachment"
 msgstr "/_Arkiv/_Bifoga fil"
 
-#: src/compose.c:605 src/mainwindow.c:654
+#: src/compose.c:618 src/mainwindow.c:671
 msgid "/_Message"
 msgstr "/_Meddelande"
 
-#: src/compose.c:606
+#: src/compose.c:619
 msgid "/_Message/_Send"
 msgstr "/_Meddelande/_Skicka"
 
-#: src/compose.c:608
+#: src/compose.c:621
 msgid "/_Message/Send _later"
 msgstr "/_Meddelande/Skicka s_enare"
 
-#: src/compose.c:610 src/compose.c:616 src/compose.c:621 src/compose.c:623
-#: src/compose.c:627 src/compose.c:631 src/mainwindow.c:659
-#: src/mainwindow.c:661 src/mainwindow.c:670 src/mainwindow.c:672
-#: src/mainwindow.c:676
+#: src/compose.c:623 src/compose.c:629 src/compose.c:634 src/compose.c:636
+#: src/compose.c:640 src/compose.c:644 src/compose.c:651 src/mainwindow.c:676
+#: src/mainwindow.c:678 src/mainwindow.c:687 src/mainwindow.c:689
+#: src/mainwindow.c:693
 msgid "/_Message/---"
 msgstr "/_Meddelande/---"
 
-#: src/compose.c:611
+#: src/compose.c:624
 msgid "/_Message/Save to _draft folder"
 msgstr "/_Meddelande/Spara till _utkastsmapp"
 
-#: src/compose.c:613
+#: src/compose.c:626
 #, fuzzy
 msgid "/_Message/Save and _keep editing"
 msgstr "/_Meddelande/Skicka s_enare"
 
-#: src/compose.c:617
+#: src/compose.c:630
 msgid "/_Message/_To"
 msgstr "/_Meddelande/_Till"
 
-#: src/compose.c:618
+#: src/compose.c:631
 msgid "/_Message/_Cc"
 msgstr "/_Meddelande/_Cc"
 
-#: src/compose.c:619
+#: src/compose.c:632
 msgid "/_Message/_Bcc"
 msgstr "/_Meddelande/_Bcc"
 
-#: src/compose.c:620
+#: src/compose.c:633
 msgid "/_Message/_Reply to"
 msgstr "/_Meddelande/_Svara till"
 
-#: src/compose.c:622
+#: src/compose.c:635
 msgid "/_Message/_Followup to"
 msgstr "/_Meddelande/_Följ upp till"
 
-#: src/compose.c:624
+#: src/compose.c:637
 msgid "/_Message/_Attach"
 msgstr "/_Meddelande/_Bifoga"
 
-#: src/compose.c:628
+#: src/compose.c:641
 msgid "/_Message/Si_gn"
 msgstr "/_Meddelande/Si_gnera"
 
-#: src/compose.c:629
+#: src/compose.c:642
 msgid "/_Message/_Encrypt"
 msgstr "/_Meddelande/_Kryptera"
 
-#: src/compose.c:632
+#: src/compose.c:645
+#, fuzzy
+msgid "/_Message/Priority"
+msgstr "/_Meddelande/_Till"
+
+#: src/compose.c:646
+msgid "/_Message/Priority/Highest"
+msgstr ""
+
+#: src/compose.c:647
+#, fuzzy
+msgid "/_Message/Priority/High"
+msgstr "/_Meddelande/Si_gnera"
+
+#: src/compose.c:648
+#, fuzzy
+msgid "/_Message/Priority/Normal"
+msgstr "/_Meddelande/Ski_cka vidare"
+
+#: src/compose.c:649
+#, fuzzy
+msgid "/_Message/Priority/Low"
+msgstr "/_Meddelande/Ski_cka vidare"
+
+#: src/compose.c:650
+#, fuzzy
+msgid "/_Message/Priority/Lowest"
+msgstr "/_Meddelande/Ski_cka vidare"
+
+#: src/compose.c:652
 #, fuzzy
 msgid "/_Message/_Request Return Receipt"
 msgstr "/_Meddelande/_Ta bort"
 
-#: src/compose.c:633 src/mainwindow.c:686
+#: src/compose.c:653 src/mainwindow.c:703
 #, fuzzy
 msgid "/_Tools"
 msgstr "/V_erktyg"
 
-#: src/compose.c:634
+#: src/compose.c:654
 #, fuzzy
 msgid "/_Tools/Show _ruler"
 msgstr "/V_erktyg/Visa linjal"
 
-#: src/compose.c:635
+#: src/compose.c:655
 #, fuzzy
 msgid "/_Tools/_Address book"
 msgstr "/V_erktyg/_Adressbok"
 
-#: src/compose.c:636
+#: src/compose.c:656
 msgid "/_Tools/_Template"
 msgstr ""
 
-#: src/compose.c:637 src/mainwindow.c:709
+#: src/compose.c:657 src/mainwindow.c:726
 msgid "/_Tools/Actio_ns"
 msgstr ""
 
-#: src/compose.c:996 src/compose.c:1980 src/mimeview.c:457
+#: src/compose.c:1016 src/compose.c:2020 src/mimeview.c:463
 msgid "Can't get the part of multipart message."
 msgstr "Kan inte ta emot delen av multipart-meddelandet."
 
-#: src/compose.c:1068 src/compose.c:1153
+#: src/compose.c:1088 src/compose.c:1173
 #, c-format
 msgid "%s: file not exist\n"
 msgstr "%s: filen finns inte\n"
 
-#: src/compose.c:1246 src/procmsg.c:1006
+#: src/compose.c:1266 src/procmsg.c:1008
 msgid "Can't get text part\n"
 msgstr "Kan inte hämta textdel\n"
 
-#: src/compose.c:1306
+#: src/compose.c:1326
 #, fuzzy
 msgid "Reply-To:"
 msgstr "Svara till"
 
-#: src/compose.c:1309 src/compose.c:3931 src/compose.c:4684
+#: src/compose.c:1329 src/compose.c:3990 src/compose.c:4744
 #: src/headerview.c:56
 msgid "Newsgroups:"
 msgstr "Nyhetsgrupper:"
 
-#: src/compose.c:1312
+#: src/compose.c:1332
 msgid "Followup-To:"
 msgstr ""
 
-#: src/compose.c:1572
+#: src/compose.c:1610
 msgid "Quote mark format error."
 msgstr ""
 
-#: src/compose.c:1584
+#: src/compose.c:1622
 msgid "Message reply/forward format error."
 msgstr ""
 
-#: src/compose.c:1879
+#: src/compose.c:1919
 #, c-format
 msgid "File %s doesn't exist\n"
 msgstr "Filen %s finns inte\n"
 
-#: src/compose.c:1883
+#: src/compose.c:1923
 #, c-format
 msgid "Can't get file size of %s\n"
 msgstr "Kan inte hämta filstorlek av %s\n"
 
-#: src/compose.c:1887
+#: src/compose.c:1927
 #, fuzzy, c-format
 msgid "File %s is empty."
 msgstr "Filen %s är tom\n"
 
-#: src/compose.c:1891
+#: src/compose.c:1931
 #, fuzzy, c-format
 msgid "Can't read %s."
 msgstr "kan inte skapa %s\n"
 
-#: src/compose.c:1916
+#: src/compose.c:1956
 #, c-format
 msgid "Message: %s"
 msgstr "Meddelande: %s"
 
-#: src/compose.c:2560
+#: src/compose.c:2600
 msgid " [Edited]"
 msgstr " [Redigerat]"
 
-#: src/compose.c:2562
+#: src/compose.c:2602
 #, c-format
 msgid "%s - Compose message%s"
 msgstr "%s - Komponera meddelande%s"
 
-#: src/compose.c:2565
+#: src/compose.c:2605
 #, c-format
 msgid "Compose message%s"
 msgstr "Komponera meddelande%s"
 
-#: src/compose.c:2589
+#: src/compose.c:2629
 msgid ""
 "Account for sending mail is not specified.\n"
 "Please select a mail account before sending."
@@ -1161,38 +1190,38 @@ msgstr ""
 "Konto för att skicka post är inte specificerat.\n"
 "Var god välj ett epostkonto innan du skickar."
 
-#: src/compose.c:2644
+#: src/compose.c:2684
 msgid "Recipient is not specified."
 msgstr "Mottagare har inte specificerats."
 
-#: src/compose.c:2652 src/compose.c:4763 src/mainwindow.c:1977
+#: src/compose.c:2692 src/compose.c:4827 src/mainwindow.c:2019
 #: src/prefs_account.c:685 src/prefs_actions.c:1632 src/prefs_common.c:966
 msgid "Send"
 msgstr "Skicka"
 
-#: src/compose.c:2653
+#: src/compose.c:2693
 msgid "Subject is empty. Send it anyway?"
 msgstr ""
 
-#: src/compose.c:2673
+#: src/compose.c:2713
 #, fuzzy
 msgid "Could not queue message for sending"
 msgstr "Avsänding av köade meddelanden misslyckades"
 
-#: src/compose.c:2717 src/compose.c:3248
+#: src/compose.c:2757 src/compose.c:3288
 msgid "can't get recipient list."
 msgstr "kan inte hämta mottagarlista"
 
-#: src/compose.c:2758 src/procmsg.c:1372
+#: src/compose.c:2798 src/procmsg.c:1374
 #, c-format
 msgid "Error occurred while posting the message to %s ."
 msgstr "Fel uppstod vid avsändning av meddelande till %s."
 
-#: src/compose.c:2772 src/messageview.c:332
+#: src/compose.c:2812 src/messageview.c:332
 msgid "Queueing"
 msgstr "Placerar i kö"
 
-#: src/compose.c:2773
+#: src/compose.c:2813
 msgid ""
 "Error occurred while sending the message.\n"
 "Put this message into queue folder?"
@@ -1200,238 +1229,243 @@ msgstr ""
 "Fel uppstod vid avsändning av meddelandet.\n"
 "Placera detta meddelande i kömappen?"
 
-#: src/compose.c:2779
+#: src/compose.c:2819
 msgid "Can't queue the message."
 msgstr "Kan inte lägga meddelandet i kö."
 
-#: src/compose.c:2782
+#: src/compose.c:2822
 msgid "Error occurred while sending the message."
 msgstr "Ett fel uppstod vid meddelandets avsändande"
 
-#: src/compose.c:2798
+#: src/compose.c:2838
 #, fuzzy
 msgid "Can't save the message to Sent."
 msgstr "Kan inte spara meddelande till outbox."
 
-#: src/compose.c:2827
+#: src/compose.c:2867
 msgid "Writing bounce header\n"
 msgstr ""
 
-#: src/compose.c:2919 src/compose.c:3033 src/compose.c:3173 src/compose.c:3318
+#: src/compose.c:2959 src/compose.c:3073 src/compose.c:3213 src/compose.c:3358
 #: src/mbox_folder.c:1315 src/mbox_folder.c:1416 src/mbox_folder.c:1987
 #: src/mbox_folder.c:2018 src/mbox_folder.c:2081 src/mbox_folder.c:2114
 #: src/messageview.c:204 src/messageview.c:290 src/news.c:991
-#: src/procmsg.c:1353 src/utils.c:1951
+#: src/procmsg.c:1355 src/utils.c:1951
 msgid "can't change file mode\n"
 msgstr "can ej ändra filrättigheter\n"
 
-#: src/compose.c:3066
+#: src/compose.c:3106
 #, fuzzy
 msgid ""
 "Can't convert the character encoding of the message.\n"
 "Send it anyway?"
 msgstr "Kan inte ändra meddelandets kodning."
 
-#: src/compose.c:3083
+#: src/compose.c:3123
 msgid "can't write headers\n"
 msgstr "kan ej skriva brevhuvuden\n"
 
-#: src/compose.c:3212
+#: src/compose.c:3252
 msgid "can't remove the old message\n"
 msgstr "kan inte ta bort det gamla meddelandet\n"
 
-#: src/compose.c:3236 src/messageview.c:185
+#: src/compose.c:3276 src/messageview.c:185
 msgid "queueing message...\n"
 msgstr "lägger meddelandet i kö...\n"
 
-#: src/compose.c:3262
+#: src/compose.c:3302
 msgid "No account for sending mails available!"
 msgstr ""
 
-#: src/compose.c:3272
+#: src/compose.c:3312
 msgid "No account for posting news available!"
 msgstr ""
 
-#: src/compose.c:3402
+#: src/compose.c:3442
 #, fuzzy
 msgid "can't find queue folder\n"
 msgstr "kan inte välja mapp: %s\n"
 
-#: src/compose.c:3409 src/messageview.c:253
+#: src/compose.c:3449 src/messageview.c:253
 msgid "can't queue the message\n"
 msgstr "kan inte lägga meddelandet i kö\n"
 
-#: src/compose.c:3452
+#: src/compose.c:3492
 #, c-format
 msgid "Can't open file %s\n"
 msgstr "Kan inte öppna filen %s\n"
 
-#: src/compose.c:3558
+#: src/compose.c:3598
 #, fuzzy, c-format
 msgid "Writing %s-header\n"
 msgstr "Skaper brevhuvudvy...\n"
 
-#: src/compose.c:3867
+#: src/compose.c:3858
+#, c-format
+msgid "compose: priority unknown : %d\n"
+msgstr ""
+
+#: src/compose.c:3926
 #, c-format
 msgid "generated Message-ID: %s\n"
 msgstr "genererat Message-ID: %s\n"
 
-#: src/compose.c:4010 src/headerview.c:54 src/summary_search.c:147
+#: src/compose.c:4069 src/headerview.c:54 src/summary_search.c:147
 msgid "From:"
 msgstr "Från:"
 
-#: src/compose.c:4114 src/compose.c:4287 src/compose.c:5248
+#: src/compose.c:4173 src/compose.c:4347 src/compose.c:5357
 msgid "MIME type"
 msgstr "MIME-typ"
 
 #. S_COL_DATE
-#: src/compose.c:4115 src/compose.c:4288 src/mimeview.c:152
+#: src/compose.c:4174 src/compose.c:4348 src/mimeview.c:152
 #: src/prefs_summary_column.c:73 src/select-keys.c:299
 #: src/selective_download.c:472 src/summaryview.c:454
 msgid "Size"
 msgstr "Storlek"
 
 #. Save Message to folder
-#: src/compose.c:4179
+#: src/compose.c:4238
 #, fuzzy
 msgid "Save Message to "
 msgstr "Spara skickade meddelanden till utkorgen"
 
-#: src/compose.c:4198 src/prefs_filtering.c:493
+#: src/compose.c:4258 src/prefs_filtering.c:493
 #, fuzzy
 msgid "Select ..."
 msgstr " Välj... "
 
-#: src/compose.c:4284
+#: src/compose.c:4344
 msgid "Creating compose window...\n"
 msgstr "Skapar kompositionsfönster...\n"
 
 #. header labels and entries
-#: src/compose.c:4338 src/prefs_account.c:1167 src/prefs_customheader.c:188
+#: src/compose.c:4398 src/prefs_account.c:1167 src/prefs_customheader.c:188
 #: src/prefs_filter.c:256 src/prefs_matcher.c:150
 msgid "Header"
 msgstr "Brevhuvud"
 
 #. attachment list
-#: src/compose.c:4340 src/mimeview.c:199
+#: src/compose.c:4400 src/mimeview.c:199
 #, fuzzy
 msgid "Attachments"
 msgstr "Bifoga"
 
 #. Others Tab
-#: src/compose.c:4342
+#: src/compose.c:4402
 #, fuzzy
 msgid "Others"
 msgstr "Övrigt"
 
-#: src/compose.c:4357 src/headerview.c:57 src/prefs_template.c:171
+#: src/compose.c:4417 src/headerview.c:57 src/prefs_template.c:171
 #: src/summary_search.c:161
 msgid "Subject:"
 msgstr "Ärende:"
 
-#: src/compose.c:4604
+#: src/compose.c:4664
 #, c-format
 msgid ""
 "Spell checker could not be started.\n"
 "%s"
 msgstr ""
 
-#: src/compose.c:4611
+#: src/compose.c:4671
 #, c-format
 msgid "Pspell: could not set suggestion mode %s"
 msgstr ""
 
-#: src/compose.c:4764
+#: src/compose.c:4828
 msgid "Send message"
 msgstr "Skicka meddelande"
 
-#: src/compose.c:4770
+#: src/compose.c:4834
 msgid "Send later"
 msgstr "Skicka senare"
 
-#: src/compose.c:4771
+#: src/compose.c:4835
 msgid "Put into queue folder and send later"
 msgstr "Placera i kömapp och skicka senare"
 
-#: src/compose.c:4778
+#: src/compose.c:4842
 msgid "Draft"
 msgstr "Utkast"
 
-#: src/compose.c:4779
+#: src/compose.c:4843
 msgid "Save to draft folder"
 msgstr "Spara till utkastsmapp"
 
-#: src/compose.c:4788 src/compose.c:6124
+#: src/compose.c:4852 src/compose.c:6233
 msgid "Insert"
 msgstr "Infoga"
 
-#: src/compose.c:4789
+#: src/compose.c:4853
 msgid "Insert file"
 msgstr "Infoga fil"
 
-#: src/compose.c:4796
+#: src/compose.c:4860
 msgid "Attach"
 msgstr "Bifoga"
 
-#: src/compose.c:4797
+#: src/compose.c:4861
 msgid "Attach file"
 msgstr "Bifoga fil"
 
-#: src/compose.c:4806 src/prefs_common.c:1739
+#: src/compose.c:4870 src/prefs_common.c:1739
 msgid "Signature"
 msgstr "Signatur"
 
-#: src/compose.c:4807
+#: src/compose.c:4871
 msgid "Insert signature"
 msgstr "Infoga signatur"
 
-#: src/compose.c:4815 src/prefs_common.c:2870
+#: src/compose.c:4879 src/prefs_common.c:2873
 msgid "Editor"
 msgstr "Redigerare"
 
-#: src/compose.c:4816
+#: src/compose.c:4880
 msgid "Edit with external editor"
 msgstr "Redigera med extern redigerare"
 
-#: src/compose.c:4824
+#: src/compose.c:4888
 msgid "Linewrap"
 msgstr "Radbrytning"
 
-#: src/compose.c:4825
+#: src/compose.c:4889
 #, fuzzy
 msgid "Wrap all long lines"
 msgstr "Bryt långa rader"
 
-#: src/compose.c:5143
+#: src/compose.c:5252
 msgid "Invalid MIME type."
 msgstr "Felaktig MIME-typ"
 
-#: src/compose.c:5161
+#: src/compose.c:5270
 msgid "File doesn't exist or is empty."
 msgstr "Filen finns inte eller är tom."
 
-#: src/compose.c:5230
+#: src/compose.c:5339
 msgid "Property"
 msgstr "Egenskaper"
 
-#: src/compose.c:5275
+#: src/compose.c:5384
 msgid "Encoding"
 msgstr "Kodning"
 
-#: src/compose.c:5304
+#: src/compose.c:5413
 msgid "Path"
 msgstr "Sökväg"
 
-#: src/compose.c:5305
+#: src/compose.c:5414
 msgid "File name"
 msgstr "Filnamn"
 
-#: src/compose.c:5452
+#: src/compose.c:5561
 #, c-format
 msgid "External editor command line is invalid: `%s'\n"
 msgstr "Kommandorad för extern redigerare är felaktig: `%s'\n"
 
-#: src/compose.c:5478
+#: src/compose.c:5587
 #, c-format
 msgid ""
 "The external editor is still working.\n"
@@ -1442,71 +1476,71 @@ msgstr ""
 "Framtvinga avslutning av processen?\n"
 "processgrupps-id: %d"
 
-#: src/compose.c:5491
+#: src/compose.c:5600
 #, c-format
 msgid "Terminated process group id: %d"
 msgstr "Avslutad processgrupps-id: %d"
 
-#: src/compose.c:5492
+#: src/compose.c:5601
 #, c-format
 msgid "Temporary file: %s"
 msgstr "Temporär fil: %s"
 
-#: src/compose.c:5516
+#: src/compose.c:5625
 msgid "Compose: input from monitoring process\n"
 msgstr "Komponera: indata från bevakad process\n"
 
 #. failed
-#: src/compose.c:5549
+#: src/compose.c:5658
 msgid "Couldn't exec external editor\n"
 msgstr "Kunde inte exekvera extern redigerare\n"
 
-#: src/compose.c:5553
+#: src/compose.c:5662
 msgid "Couldn't write to file\n"
 msgstr "Kunde inte skriva till fil\n"
 
-#: src/compose.c:5555
+#: src/compose.c:5664
 msgid "Pipe read failed\n"
 msgstr "Rörledningsläsning misslyckades\n"
 
-#: src/compose.c:5929 src/inc.c:170 src/inc.c:260 src/mainwindow.c:2678
+#: src/compose.c:6038 src/inc.c:170 src/inc.c:260 src/mainwindow.c:2767
 msgid "Offline warning"
 msgstr ""
 
-#: src/compose.c:5930 src/inc.c:171 src/inc.c:261 src/mainwindow.c:2679
+#: src/compose.c:6039 src/inc.c:171 src/inc.c:261 src/mainwindow.c:2768
 msgid "You're working offline. Override?"
 msgstr ""
 
-#: src/compose.c:6034 src/compose.c:6055
+#: src/compose.c:6143 src/compose.c:6164
 msgid "Select file"
 msgstr "Välj fil"
 
-#: src/compose.c:6087
+#: src/compose.c:6196
 msgid "Discard message"
 msgstr "Kassera meddelande"
 
-#: src/compose.c:6088
+#: src/compose.c:6197
 msgid "This message has been modified. discard it?"
 msgstr "Detta meddelande har modifierats. Kassera det?"
 
-#: src/compose.c:6089
+#: src/compose.c:6198
 msgid "Discard"
 msgstr "Kassera"
 
-#: src/compose.c:6089
+#: src/compose.c:6198
 msgid "to Draft"
 msgstr "till Utkast"
 
-#: src/compose.c:6121
+#: src/compose.c:6230
 #, c-format
 msgid "Do you want to apply the template `%s' ?"
 msgstr ""
 
-#: src/compose.c:6123
+#: src/compose.c:6232
 msgid "Apply template"
 msgstr ""
 
-#: src/compose.c:6124
+#: src/compose.c:6233
 #, fuzzy
 msgid "Replace"
 msgstr "Svara"
@@ -1667,12 +1701,12 @@ msgstr "Redigera mapp"
 msgid "Input the new name of folder:"
 msgstr "Skriv in namnet på den nya mappen:"
 
-#: src/editgroup.c:504 src/folderview.c:1762 src/folderview.c:1828
-#: src/folderview.c:2126
+#: src/editgroup.c:504 src/folderview.c:1766 src/folderview.c:1832
+#: src/folderview.c:2130
 msgid "New folder"
 msgstr "Ny mapp"
 
-#: src/editgroup.c:505 src/folderview.c:1763 src/folderview.c:1829
+#: src/editgroup.c:505 src/folderview.c:1767 src/folderview.c:1833
 msgid "Input the name of new folder:"
 msgstr "Skriv in namnet på den nya mappen:"
 
@@ -1847,7 +1881,7 @@ msgstr ""
 msgid "Stylesheet"
 msgstr ""
 
-#: src/exphtmldlg.c:454 src/prefs_common.c:3639 src/prefs_common.c:3960
+#: src/exphtmldlg.c:454 src/prefs_common.c:3642 src/prefs_common.c:3963
 #, fuzzy
 msgid "Default"
 msgstr "Ta bort"
@@ -1923,7 +1957,7 @@ msgstr "Exporterar adressbok till fil..."
 msgid "Prev"
 msgstr "Inst."
 
-#: src/exphtmldlg.c:661 src/importldif.c:746 src/mainwindow.c:2070
+#: src/exphtmldlg.c:661 src/importldif.c:746 src/mainwindow.c:2112
 msgid "Next"
 msgstr "Nästa"
 
@@ -2029,180 +2063,180 @@ msgstr "Avsänding av köat meddelande %d misslyckades.\n"
 msgid "Save cache for folder %s\n"
 msgstr "Välj mapp"
 
-#: src/foldersel.c:142
+#: src/foldersel.c:146
 msgid "Select folder"
 msgstr "Välj mapp"
 
-#: src/foldersel.c:218 src/folderview.c:997
+#: src/foldersel.c:223 src/folderview.c:1001
 msgid "Inbox"
 msgstr "Inkorgen"
 
-#: src/foldersel.c:221 src/folderview.c:1013
+#: src/foldersel.c:226 src/folderview.c:1017
 #, fuzzy
 msgid "Sent"
 msgstr "Skicka"
 
-#: src/foldersel.c:224 src/folderview.c:1029
+#: src/foldersel.c:229 src/folderview.c:1033
 msgid "Queue"
 msgstr "Kö"
 
-#: src/foldersel.c:227 src/folderview.c:1045
+#: src/foldersel.c:232 src/folderview.c:1049
 msgid "Trash"
 msgstr "Papperskorg"
 
-#: src/foldersel.c:230 src/folderview.c:1059
+#: src/foldersel.c:235 src/folderview.c:1063
 #, fuzzy
 msgid "Drafts"
 msgstr "Utkast"
 
-#: src/folderview.c:265 src/folderview.c:280 src/folderview.c:300
+#: src/folderview.c:268 src/folderview.c:283 src/folderview.c:303
 msgid "/Create _new folder..."
 msgstr "/Skapa _ny mapp..."
 
-#: src/folderview.c:266 src/folderview.c:281 src/folderview.c:301
+#: src/folderview.c:269 src/folderview.c:284 src/folderview.c:304
 msgid "/_Rename folder..."
 msgstr "/Byt n_amn på mapp..."
 
-#: src/folderview.c:267 src/folderview.c:282 src/folderview.c:302
+#: src/folderview.c:270 src/folderview.c:285 src/folderview.c:305
 msgid "/_Delete folder"
 msgstr "/_Ta bort mapp"
 
-#: src/folderview.c:269 src/folderview.c:288
+#: src/folderview.c:272 src/folderview.c:291
 msgid "/Remove _mailbox"
 msgstr "/Ta bort post_låda"
 
-#: src/folderview.c:272 src/folderview.c:292 src/folderview.c:312
-#: src/folderview.c:328
+#: src/folderview.c:275 src/folderview.c:295 src/folderview.c:315
+#: src/folderview.c:331
 #, fuzzy
 msgid "/_Processing..."
 msgstr "/Skriv _ut"
 
-#: src/folderview.c:273
+#: src/folderview.c:276
 #, fuzzy
 msgid "/_Scoring..."
 msgstr "/Skriv _ut"
 
-#: src/folderview.c:278 src/folderview.c:298 src/folderview.c:318
+#: src/folderview.c:281 src/folderview.c:301 src/folderview.c:321
 #, fuzzy
 msgid "/Mark all _read"
 msgstr "/_Markera/Markera alla som l_ästa"
 
-#: src/folderview.c:284 src/folderview.c:304
+#: src/folderview.c:287 src/folderview.c:307
 #, fuzzy
 msgid "/_Check for new messages"
 msgstr "Komponera nytt meddelande"
 
-#: src/folderview.c:286 src/folderview.c:306
+#: src/folderview.c:289 src/folderview.c:309
 #, fuzzy
 msgid "/R_escan folder tree"
 msgstr "/_Uppdatera mapphierarki"
 
-#: src/folderview.c:290 src/folderview.c:310 src/folderview.c:326
+#: src/folderview.c:293 src/folderview.c:313 src/folderview.c:329
 #, fuzzy
 msgid "/_Search folder..."
 msgstr "Välj mapp"
 
-#: src/folderview.c:293 src/folderview.c:313 src/folderview.c:329
+#: src/folderview.c:296 src/folderview.c:316 src/folderview.c:332
 #, fuzzy
 msgid "/S_coring..."
 msgstr "/Skriv _ut"
 
-#: src/folderview.c:308
+#: src/folderview.c:311
 msgid "/Remove _IMAP4 account"
 msgstr "/Ta bort _IMAP4-konto"
 
-#: src/folderview.c:320
+#: src/folderview.c:323
 msgid "/_Subscribe to newsgroup..."
 msgstr "/_Prenumerera på nyhetsgrupp"
 
-#: src/folderview.c:322
+#: src/folderview.c:325
 msgid "/_Remove newsgroup"
 msgstr "/Ta _bort nyhetsgrupp"
 
-#: src/folderview.c:324
+#: src/folderview.c:327
 msgid "/Remove _news account"
 msgstr "/Ta bort _nyhetskonto"
 
-#: src/folderview.c:350
+#: src/folderview.c:353
 msgid "Creating folder view...\n"
 msgstr "Skapar mappvy...\n"
 
-#: src/folderview.c:354
+#: src/folderview.c:357
 msgid "New"
 msgstr "Ny(a)"
 
 #. S_COL_MARK
-#: src/folderview.c:355 src/prefs_summary_column.c:68
+#: src/folderview.c:358 src/prefs_summary_column.c:68
 msgid "Unread"
 msgstr "Oläst(a)"
 
-#: src/folderview.c:356 src/selective_download.c:451
+#: src/folderview.c:359 src/selective_download.c:451
 msgid "#"
 msgstr ""
 
-#: src/folderview.c:572
+#: src/folderview.c:576
 msgid "Setting folder info...\n"
 msgstr "Ställer in mappinfo...\n"
 
-#: src/folderview.c:573
+#: src/folderview.c:577
 msgid "Setting folder info..."
 msgstr "Ställer in mappinfo..."
 
-#: src/folderview.c:754 src/mainwindow.c:3105 src/setup.c:81
+#: src/folderview.c:758 src/mainwindow.c:3209 src/setup.c:81
 #, c-format
 msgid "Scanning folder %s%c%s ..."
 msgstr "Avsöker mapp %s%c%s..."
 
-#: src/folderview.c:758 src/mainwindow.c:3110 src/setup.c:86
+#: src/folderview.c:762 src/mainwindow.c:3214 src/setup.c:86
 #, c-format
 msgid "Scanning folder %s ..."
 msgstr "Avsöker mapphierarki %s..."
 
-#: src/folderview.c:799
+#: src/folderview.c:803
 #, fuzzy
 msgid "Rescanning folder tree..."
 msgstr "Uppdaterar mapphierarki..."
 
-#: src/folderview.c:818
+#: src/folderview.c:822
 #, fuzzy
 msgid "Rescanning all folder trees..."
 msgstr "Avsöker mapphierarki %s..."
 
-#: src/folderview.c:1614
+#: src/folderview.c:1618
 #, c-format
 msgid "Folder %s is selected\n"
 msgstr "Mappen %s är vald\n"
 
-#: src/folderview.c:1764 src/folderview.c:1830 src/folderview.c:2130
+#: src/folderview.c:1768 src/folderview.c:1834 src/folderview.c:2134
 msgid "NewFolder"
 msgstr "Nymapp"
 
-#: src/folderview.c:1769 src/folderview.c:1891 src/folderview.c:2135
+#: src/folderview.c:1773 src/folderview.c:1895 src/folderview.c:2139
 #, c-format
 msgid "`%c' can't be included in folder name."
 msgstr "'%c' kan ej inkluderas i ett mappnamn."
 
-#: src/folderview.c:1782 src/folderview.c:1835 src/folderview.c:1901
-#: src/folderview.c:1977 src/folderview.c:2147
+#: src/folderview.c:1786 src/folderview.c:1839 src/folderview.c:1905
+#: src/folderview.c:1981 src/folderview.c:2151
 #, c-format
 msgid "The folder `%s' already exists."
 msgstr "Mappen '%s' finns redan."
 
-#: src/folderview.c:1789 src/folderview.c:2154
+#: src/folderview.c:1793 src/folderview.c:2158
 #, c-format
 msgid "Can't create the folder `%s'."
 msgstr "Kan inte skapa mappen '%s'."
 
-#: src/folderview.c:1884 src/folderview.c:1967
+#: src/folderview.c:1888 src/folderview.c:1971
 #, c-format
 msgid "Input new name for `%s':"
 msgstr "Skriv in nytt namn för `%s':"
 
-#: src/folderview.c:1885 src/folderview.c:1969
+#: src/folderview.c:1889 src/folderview.c:1973
 msgid "Rename folder"
 msgstr "Byt namn på mapp"
 
-#: src/folderview.c:2027
+#: src/folderview.c:2031
 #, c-format
 msgid ""
 "All folder(s) and message(s) under `%s' will be deleted.\n"
@@ -2211,16 +2245,16 @@ msgstr ""
 "Alla mappar och meddelanden under '%s' kommer att raderas.\n"
 "Vill du verkligen radera?"
 
-#: src/folderview.c:2029
+#: src/folderview.c:2033
 msgid "Delete folder"
 msgstr "Ta bort mapp"
 
-#: src/folderview.c:2038
+#: src/folderview.c:2042
 #, c-format
 msgid "Can't remove the folder `%s'."
 msgstr "Kan inte ta bort mappen `%s'."
 
-#: src/folderview.c:2091
+#: src/folderview.c:2095
 #, fuzzy, c-format
 msgid ""
 "Really remove the mailbox `%s' ?\n"
@@ -2229,11 +2263,11 @@ msgstr ""
 "Vill du verkligen ta bort postldan `%s' ?\n"
 "(Meddelandena tas INTE bort från disk)"
 
-#: src/folderview.c:2093
+#: src/folderview.c:2097
 msgid "Remove folder"
 msgstr "Ta bort mapp"
 
-#: src/folderview.c:2127
+#: src/folderview.c:2131
 msgid ""
 "Input the name of new folder:\n"
 "(if you want to create a folder to store subfolders,\n"
@@ -2243,30 +2277,30 @@ msgstr ""
 "(om du vill skapa en mapp som skall innehålla undermappar,\n"
 " lägg till '/' vid slutet av namnet)"
 
-#: src/folderview.c:2197
+#: src/folderview.c:2201
 #, c-format
 msgid "Really delete IMAP4 account `%s'?"
 msgstr "Vill du verkligen ta bort IMAP4-kontot '%s'?"
 
-#: src/folderview.c:2198
+#: src/folderview.c:2202
 msgid "Delete IMAP4 account"
 msgstr "Ta bort IMAP4-konto"
 
-#: src/folderview.c:2331
+#: src/folderview.c:2335
 #, c-format
 msgid "Really delete newsgroup `%s'?"
 msgstr "Vill du verkligen ta bort nyhetsgrupp `%s'?"
 
-#: src/folderview.c:2332
+#: src/folderview.c:2336
 msgid "Delete newsgroup"
 msgstr "Ta bort nyhetsgrupp"
 
-#: src/folderview.c:2367
+#: src/folderview.c:2371
 #, c-format
 msgid "Really delete news account `%s'?"
 msgstr "Vill du verkligen ta bort nyhetskonto `%s'?"
 
-#: src/folderview.c:2368
+#: src/folderview.c:2372
 msgid "Delete news account"
 msgstr "Ta bort nyhetskonto"
 
@@ -2583,7 +2617,7 @@ msgstr "kan inte ta bort postlåda\n"
 msgid "getting message %d...\n"
 msgstr "hämtar meddelande %d...\n"
 
-#: src/imap.c:622 src/procmsg.c:775
+#: src/imap.c:622 src/procmsg.c:777
 #, c-format
 msgid "can't fetch message %d\n"
 msgstr "kan inte hämta meddelande %d\n"
@@ -2622,130 +2656,130 @@ msgstr "kan inte utplåna\n"
 msgid "can't set deleted flags: 1:%d\n"
 msgstr "kan inte sätta borttaget-flaggor: 1:%d\n"
 
-#: src/imap.c:1132
+#: src/imap.c:1117
 msgid "error occured while getting LIST.\n"
 msgstr "fel uppstod vid hämtning av LIST.\n"
 
-#: src/imap.c:1250
+#: src/imap.c:1235
 #, fuzzy, c-format
 msgid "Can't create '%s'\n"
 msgstr "kan inte skapa %s\n"
 
-#: src/imap.c:1255
+#: src/imap.c:1240
 #, fuzzy, c-format
 msgid "Can't create '%s' under INBOX\n"
 msgstr "kan inte skapa %s\n"
 
-#: src/imap.c:1316
+#: src/imap.c:1303
 msgid "can't create mailbox: LIST failed\n"
 msgstr "kan inte skapa postlåda: LIST mislyckades\n"
 
-#: src/imap.c:1337
+#: src/imap.c:1324
 msgid "can't create mailbox\n"
 msgstr "kan inte skapa postlåda\n"
 
-#: src/imap.c:1408
+#: src/imap.c:1395
 #, fuzzy, c-format
 msgid "can't rename mailbox: %s to %s\n"
 msgstr "kan inte skapa postlåda\n"
 
-#: src/imap.c:1474
+#: src/imap.c:1461
 msgid "can't delete mailbox\n"
 msgstr "kan inte ta bort postlåda\n"
 
-#: src/imap.c:1507 src/imap.c:3156
+#: src/imap.c:1494 src/imap.c:3143
 msgid "can't get envelope\n"
 msgstr "kan inte hämta kuvert\n"
 
-#: src/imap.c:1515 src/imap.c:3163
+#: src/imap.c:1502 src/imap.c:3150
 msgid "error occurred while getting envelope.\n"
 msgstr "fel uppstod vid hätning av kuvert.\n"
 
-#: src/imap.c:1537 src/imap.c:3174
+#: src/imap.c:1524 src/imap.c:3161
 #, c-format
 msgid "can't parse envelope: %s\n"
 msgstr "kan inte avsöka kuvert: %s\n"
 
-#: src/imap.c:1572
+#: src/imap.c:1559
 #, c-format
 msgid "Deleting cached messages %d - %d ... "
 msgstr "Tar bort cachade meddelanden %d - %d..."
 
-#: src/imap.c:1592 src/imap.c:1611 src/mainwindow.c:1003 src/mainwindow.c:1923
-#: src/mh.c:1131 src/mh.c:1138 src/news.c:971 src/procmsg.c:269
-#: src/procmsg.c:333 src/summaryview.c:1631 src/summaryview.c:1976
+#: src/imap.c:1579 src/imap.c:1598 src/mainwindow.c:1020 src/mainwindow.c:1965
+#: src/mh.c:1131 src/mh.c:1138 src/news.c:971 src/procmsg.c:271
+#: src/procmsg.c:335 src/summaryview.c:1631 src/summaryview.c:1976
 #: src/summaryview.c:2117 src/summaryview.c:2223 src/summaryview.c:3085
 #: src/summaryview.c:3712 src/summaryview.c:3776 src/summaryview.c:3801
-#: src/summaryview.c:3887 src/summaryview.c:3939
+#: src/summaryview.c:3887 src/summaryview.c:3975
 msgid "done.\n"
 msgstr "färdigt.\n"
 
-#: src/imap.c:1605
+#: src/imap.c:1592
 msgid "Deleting all cached messages... "
 msgstr "Tar bort alla cachade meddelanden..."
 
-#: src/imap.c:1621
+#: src/imap.c:1608
 #, c-format
 msgid "Can't establish IMAP4 session with: %s\n"
 msgstr ""
 
-#: src/imap.c:1639
+#: src/imap.c:1626
 #, c-format
 msgid "Can't connect to IMAP4 server: %s:%d\n"
 msgstr "Kan inte ansluta till IMAP4-värd: %s:%d\n"
 
-#: src/imap.c:1646
+#: src/imap.c:1633
 #, fuzzy, c-format
 msgid "Can't establish IMAP4 session with: %s:%d\n"
 msgstr "Kan inte ansluta till IMAP4-värd: %s:%d\n"
 
-#: src/imap.c:1662
+#: src/imap.c:1649
 msgid "Can't establish IMAP4 session\n"
 msgstr ""
 
-#: src/imap.c:1736
+#: src/imap.c:1723
 msgid "can't get namespace\n"
 msgstr "kan inte hämta namnutrymme\n"
 
-#: src/imap.c:2275
+#: src/imap.c:2262
 #, c-format
 msgid "can't select folder: %s\n"
 msgstr "kan inte välja mapp: %s\n"
 
-#: src/imap.c:2395
+#: src/imap.c:2382
 msgid "IMAP4 login failed.\n"
 msgstr "IMAP4 login misslyckades.\n"
 
-#: src/imap.c:2650
+#: src/imap.c:2637
 #, c-format
 msgid "can't append %s to %s\n"
 msgstr "kan inte lägga till %s till %s\n"
 
-#: src/imap.c:2655
+#: src/imap.c:2642
 #, fuzzy
 msgid "(sending file...)"
 msgstr "Skickar DATA..."
 
-#: src/imap.c:2691
+#: src/imap.c:2678
 #, c-format
 msgid "can't copy %d to %s\n"
 msgstr "kan inte kopiera %d till %s\n"
 
-#: src/imap.c:2716
+#: src/imap.c:2703
 #, c-format
 msgid "error while imap command: STORE %d:%d %s\n"
 msgstr "fel vid imapkommando: STORE %d:%d %s\n"
 
-#: src/imap.c:2730
+#: src/imap.c:2717
 msgid "error while imap command: EXPUNGE\n"
 msgstr "fel vid imapkommando: EXPUNGE\n"
 
-#: src/imap.c:2929 src/imap.c:2966
+#: src/imap.c:2916 src/imap.c:2953
 #, c-format
 msgid "iconv cannot convert UTF-7 to %s\n"
 msgstr ""
 
-#: src/imap.c:3000 src/imap.c:3033
+#: src/imap.c:2987 src/imap.c:3020
 #, c-format
 msgid "iconv cannot convert %s to UTF-7\n"
 msgstr ""
@@ -2923,76 +2957,76 @@ msgstr "hämtar nya meddelanden från kontot %s...\n"
 msgid "%s: Retrieving new messages"
 msgstr "%s: Hämtar nya meddelanden"
 
-#: src/inc.c:701
+#: src/inc.c:702
 #, c-format
 msgid "Connecting to POP3 server: %s ..."
 msgstr "Ansluter till POP3-värd: %s ..."
 
-#: src/inc.c:709
+#: src/inc.c:710
 #, c-format
 msgid "Can't connect to POP3 server: %s:%d\n"
 msgstr "Kan inte ansluta till POP3-värd: %s:%d\n"
 
-#: src/inc.c:716
+#: src/inc.c:717
 #, fuzzy, c-format
 msgid "Can't connect to POP3 server: %s:%d"
 msgstr "Kan inte ansluta till POP3-värd: %s:%d\n"
 
-#: src/inc.c:915 src/inc.c:990
+#: src/inc.c:916 src/inc.c:982
 #, c-format
 msgid "Retrieving message (%d / %d) (%s / %s)"
 msgstr "Tar emot meddelande (%d / %d) (%s / %s)"
 
-#: src/inc.c:949
+#: src/inc.c:947
 msgid "Authenticating..."
 msgstr "Autentifierar..."
 
-#: src/inc.c:954
+#: src/inc.c:951
 msgid "Getting the number of new messages (STAT)..."
 msgstr "Tar emot meddelandenas antal (STAT)..."
 
-#: src/inc.c:959
+#: src/inc.c:955
 msgid "Getting the number of new messages (LAST)..."
 msgstr "Tar emot meddelandenas antal (LAST)..."
 
-#: src/inc.c:964
+#: src/inc.c:959
 msgid "Getting the number of new messages (UIDL)..."
 msgstr "Tar emot meddelandenas antal (UIDL)..."
 
-#: src/inc.c:969
+#: src/inc.c:963
 msgid "Getting the size of messages (LIST)..."
 msgstr "Tar emot meddelandenas storlek (LIST)..."
 
-#: src/inc.c:974
+#: src/inc.c:967
 #, fuzzy, c-format
 msgid "Retrieving header (%d / %d)"
 msgstr "Tar emot meddelande (%d / %d) (%s / %s)"
 
-#: src/inc.c:1006
+#: src/inc.c:998
 msgid "Deleting message"
 msgstr "Tar bort meddelande"
 
-#: src/inc.c:1010
+#: src/inc.c:1002
 msgid "Quitting"
 msgstr "Avslutar"
 
-#: src/inc.c:1045
+#: src/inc.c:1037
 msgid "a message won't be received\n"
 msgstr "ett meddelande kan inte tas emot\n"
 
-#: src/inc.c:1075
+#: src/inc.c:1067
 msgid "Error occurred while processing mail."
 msgstr "Fel uppstod vid behandling av post."
 
-#: src/inc.c:1079
+#: src/inc.c:1071
 msgid "No disk space left."
 msgstr "Inget diskutrymme kvar"
 
-#: src/inc.c:1180
+#: src/inc.c:1172
 msgid "no messages in local mailbox.\n"
 msgstr "inga meddelanden i lokal postlåda.\n"
 
-#: src/inc.c:1196
+#: src/inc.c:1188
 #, c-format
 msgid "Getting new messages from %s into %s...\n"
 msgstr "Hämtar nya meddelanden från %s till %s...\n"
@@ -3092,752 +3126,767 @@ msgstr "Några osända meddelanden ligger i kö. Avsluta nu?"
 msgid "another Sylpheed is already running.\n"
 msgstr "en annan Sylpheed är redan igång.\n"
 
-#: src/main.c:595 src/mainwindow.c:2689
+#: src/main.c:595 src/mainwindow.c:2778
 msgid "Some errors occurred while sending queued messages."
 msgstr "Några fel uppstod vid avsändande av meddelanden i kö."
 
-#: src/mainwindow.c:479
+#: src/mainwindow.c:494
 msgid "/_File/_Add mailbox..."
 msgstr "/_Arkiv/_Ny postlåda..."
 
-#: src/mainwindow.c:480
+#: src/mainwindow.c:495
 #, fuzzy
 msgid "/_File/_Add mbox mailbox..."
 msgstr "/_Arkiv/_Ny postlåda..."
 
-#: src/mainwindow.c:481
+#: src/mainwindow.c:496
 #, fuzzy
 msgid "/_File/_Rescan folder tree"
 msgstr "/_Arkiv/_Uppdatera mappträdet"
 
-#: src/mainwindow.c:482
+#: src/mainwindow.c:497
 msgid "/_File/_Folder"
 msgstr "/_Arkiv/_Mapp"
 
-#: src/mainwindow.c:483
+#: src/mainwindow.c:498
 msgid "/_File/_Folder/Create _new folder..."
 msgstr "/_Arkiv/_Mapp/Skapa _ny mapp..."
 
-#: src/mainwindow.c:485
+#: src/mainwindow.c:500
 msgid "/_File/_Folder/_Rename folder..."
 msgstr "/_Arkiv/_Mapp/_Byt namn på mapp..."
 
-#: src/mainwindow.c:486
+#: src/mainwindow.c:501
 msgid "/_File/_Folder/_Delete folder"
 msgstr "/_Arkiv/_Mapp/_Ta bort mapp"
 
-#: src/mainwindow.c:487
+#: src/mainwindow.c:502
 msgid "/_File/_Import mbox file..."
 msgstr "/_Arkiv/_Importera mbox-fil..."
 
-#: src/mainwindow.c:488
+#: src/mainwindow.c:503
 msgid "/_File/_Export to mbox file..."
 msgstr "/_Arkiv/_Exportera till mbox-fil..."
 
-#: src/mainwindow.c:489
+#: src/mainwindow.c:504
 msgid "/_File/Empty _trash"
 msgstr "/_Arkiv/Töm _papperskorg"
 
-#: src/mainwindow.c:490
+#: src/mainwindow.c:505
 #, fuzzy
 msgid "/_File/_Work offline"
 msgstr "/_Arkiv/_Infoga fil"
 
-#: src/mainwindow.c:492
+#: src/mainwindow.c:507
 msgid "/_File/_Save as..."
 msgstr "/_Arkiv/_Spara som..."
 
-#: src/mainwindow.c:493
+#: src/mainwindow.c:508
 msgid "/_File/_Print..."
 msgstr "/_Arkiv/Skriv _ut..."
 
-#: src/mainwindow.c:495
+#: src/mainwindow.c:510
 msgid "/_File/E_xit"
 msgstr "/_Arkiv/_Avsluta"
 
-#: src/mainwindow.c:500
+#: src/mainwindow.c:515
 #, fuzzy
 msgid "/_Edit/Select thread"
 msgstr "/_Redigera/Markrera _allt"
 
-#: src/mainwindow.c:502
+#: src/mainwindow.c:517
 #, fuzzy
 msgid "/_Edit/_Find in current message..."
 msgstr "/_Redigera/Bryt rader i _stycke"
 
-#: src/mainwindow.c:504
+#: src/mainwindow.c:519
 #, fuzzy
 msgid "/_Edit/_Search folder..."
 msgstr "/_Redigera/_Sök"
 
-#: src/mainwindow.c:506
+#: src/mainwindow.c:521
 #, fuzzy
 msgid "/_View/Show or hi_de"
 msgstr "/_Visa/Visa hela _brevhuvudet"
 
-#: src/mainwindow.c:507
+#: src/mainwindow.c:522
 #, fuzzy
 msgid "/_View/Show or hi_de/_Toolbar"
 msgstr "/_Visa/_Verktygsrad"
 
-#: src/mainwindow.c:509
+#: src/mainwindow.c:524
 #, fuzzy
 msgid "/_View/Show or hi_de/_Toolbar/Icon _and text"
 msgstr "/_Visa/_Verktygsrad/Ikoner _och text"
 
-#: src/mainwindow.c:511
+#: src/mainwindow.c:526
 #, fuzzy
 msgid "/_View/Show or hi_de/_Toolbar/_Icon"
 msgstr "/_Visa/_Verktygsrad/_Ikoner"
 
-#: src/mainwindow.c:513
+#: src/mainwindow.c:528
 #, fuzzy
 msgid "/_View/Show or hi_de/_Toolbar/_Text"
 msgstr "/_Visa/_Verktygsrad/_Text"
 
-#: src/mainwindow.c:515
+#: src/mainwindow.c:530
 #, fuzzy
 msgid "/_View/Show or hi_de/_Toolbar/_None"
 msgstr "/_Visa/_Verktygsrad/I_ngetdera"
 
-#: src/mainwindow.c:517
+#: src/mainwindow.c:532
 #, fuzzy
 msgid "/_View/Show or hi_de/Status _bar"
 msgstr "/_Visa/_Statusrad"
 
-#: src/mainwindow.c:520
+#: src/mainwindow.c:535
 #, fuzzy
 msgid "/_View/Separate _Folder Tree"
 msgstr "/_Visa/Separat ma_pphierarki"
 
-#: src/mainwindow.c:521
+#: src/mainwindow.c:536
 #, fuzzy
 msgid "/_View/Separate _Message View"
 msgstr "/_Visa/Separat m_eddelandevy"
 
-#: src/mainwindow.c:522
+#: src/mainwindow.c:537
 #, fuzzy
 msgid "/_View/E_xpand Summary View"
 msgstr "Sammanfattningsvy"
 
-#: src/mainwindow.c:523
+#: src/mainwindow.c:538
 #, fuzzy
 msgid "/_View/Ex_pand Message View"
 msgstr "/_Visa/Me_ddelandevy"
 
-#: src/mainwindow.c:525
+#: src/mainwindow.c:540
 #, fuzzy
 msgid "/_View/_Sort"
 msgstr "/_Visa/Visa _källkod"
 
-#: src/mainwindow.c:526
+#: src/mainwindow.c:541
 #, fuzzy
-msgid "/_View/_Sort/Sort by _number"
+msgid "/_View/_Sort/by _number"
 msgstr "/_Sammanfattning/_Sortera/Sortera efter _nummer"
 
-#: src/mainwindow.c:527
+#: src/mainwindow.c:542
 #, fuzzy
-msgid "/_View/_Sort/Sort by s_ize"
+msgid "/_View/_Sort/by s_ize"
 msgstr "/_Sammanfattning/_Sortera/Sortera efter stor_lek"
 
-#: src/mainwindow.c:528
+#: src/mainwindow.c:543
 #, fuzzy
-msgid "/_View/_Sort/Sort by _date"
+msgid "/_View/_Sort/by _date"
 msgstr "/_Sammanfattning/_Sortera/Sortera efter _datum"
 
-#: src/mainwindow.c:529
+#: src/mainwindow.c:544
 #, fuzzy
-msgid "/_View/_Sort/Sort by _from"
+msgid "/_View/_Sort/by _from"
 msgstr "/_Sammanfattning/_Sortera/Sortera efter _från"
 
-#: src/mainwindow.c:530
+#: src/mainwindow.c:545
 #, fuzzy
-msgid "/_View/_Sort/Sort by _subject"
+msgid "/_View/_Sort/by _subject"
 msgstr "/_Sammanfattning/_Sortera/Sortera efter _ärende"
 
-#: src/mainwindow.c:531
+#: src/mainwindow.c:546
 #, fuzzy
-msgid "/_View/_Sort/Sort by _color label"
+msgid "/_View/_Sort/by _color label"
 msgstr "/_Sammanfattning/_Sortera/Sortera efter fä_rg"
 
-#: src/mainwindow.c:533
+#: src/mainwindow.c:548
 #, fuzzy
-msgid "/_View/_Sort/Sort by _mark"
+msgid "/_View/_Sort/by _mark"
 msgstr "/_Sammanfattning/_Sortera/Sortera efter _markering"
 
-#: src/mainwindow.c:534
+#: src/mainwindow.c:549
 #, fuzzy
-msgid "/_View/_Sort/Sort by _unread"
+msgid "/_View/_Sort/by _unread"
 msgstr "/_Sammanfattning/_Sortera/Sortera efter _oläst"
 
-#: src/mainwindow.c:535
+#: src/mainwindow.c:550
 #, fuzzy
-msgid "/_View/_Sort/Sort by a_ttachment"
+msgid "/_View/_Sort/by a_ttachment"
 msgstr "/_Sammanfattning/_Sortera/Sortera efter _bifogade filer"
 
-#: src/mainwindow.c:537
+#: src/mainwindow.c:552
 #, fuzzy
 msgid "/_View/_Sort/---"
 msgstr "/_Visa/_Kodning/---"
 
-#: src/mainwindow.c:538
+#: src/mainwindow.c:553
 #, fuzzy
 msgid "/_View/_Sort/_Attract by subject"
 msgstr "/_Sammanfattning/_Sortera/_Attrahera efter ärende"
 
-#: src/mainwindow.c:540
+#: src/mainwindow.c:555
 #, fuzzy
 msgid "/_View/Th_read view"
 msgstr "/_Visa/Me_ddelandevy"
 
-#: src/mainwindow.c:541
+#: src/mainwindow.c:556
+#, fuzzy
+msgid "/_View/E_xpand all threads"
+msgstr "Expandera trådar"
+
+#: src/mainwindow.c:557
+#, fuzzy
+msgid "/_View/Co_llapse all threads"
+msgstr "/_Visa/Visa hela _brevhuvudet"
+
+#: src/mainwindow.c:558
 #, fuzzy
 msgid "/_View/_Hide read messages"
 msgstr "/_Visa/Separat m_eddelandevy"
 
-#: src/mainwindow.c:542
+#: src/mainwindow.c:559
 #, fuzzy
 msgid "/_View/Set display _item..."
 msgstr "/_Sammanfattning/Ställ _in visade fält"
 
-#: src/mainwindow.c:545
+#: src/mainwindow.c:562
 #, fuzzy
 msgid "/_View/_Go to"
 msgstr "/_Visa/_Kodning"
 
-#: src/mainwindow.c:546
+#: src/mainwindow.c:563
 #, fuzzy
 msgid "/_View/_Go to/_Prev message"
 msgstr "/_Sammanfattning/Go _till/_Föreg. meddelande"
 
-#: src/mainwindow.c:547
+#: src/mainwindow.c:564
 #, fuzzy
 msgid "/_View/_Go to/_Next message"
 msgstr "/_Sammanfattning/Go _till/_Nästa meddelande"
 
-#: src/mainwindow.c:548 src/mainwindow.c:553 src/mainwindow.c:558
-#: src/mainwindow.c:563
+#: src/mainwindow.c:565 src/mainwindow.c:570 src/mainwindow.c:575
+#: src/mainwindow.c:580
 #, fuzzy
 msgid "/_View/_Go to/---"
 msgstr "/_Visa/_Kodning/---"
 
-#: src/mainwindow.c:549
+#: src/mainwindow.c:566
 #, fuzzy
 msgid "/_View/_Go to/P_rev unread message"
 msgstr "/_Sammanfattning/Go _till/F_öreg. olästa meddelande"
 
-#: src/mainwindow.c:551
+#: src/mainwindow.c:568
 #, fuzzy
 msgid "/_View/_Go to/N_ext unread message"
 msgstr "/_Sammanfattning/Go _till/N_ästa olästa meddelande"
 
-#: src/mainwindow.c:554
+#: src/mainwindow.c:571
 #, fuzzy
 msgid "/_View/_Go to/Prev _marked message"
 msgstr "/_Sammanfattning/Go _till/Föreg. _markerade meddelande"
 
-#: src/mainwindow.c:556
+#: src/mainwindow.c:573
 #, fuzzy
 msgid "/_View/_Go to/Next m_arked message"
 msgstr "/_Sammanfattning/Go _till/Nästa m_arkerade meddelande"
 
-#: src/mainwindow.c:559
+#: src/mainwindow.c:576
 #, fuzzy
 msgid "/_View/_Go to/Prev _labeled message"
 msgstr "/_Sammanfattning/Go _till/_Föreg. _färgade meddelande"
 
-#: src/mainwindow.c:561
+#: src/mainwindow.c:578
 #, fuzzy
 msgid "/_View/_Go to/Next la_beled message"
 msgstr "/_Sammanfattning/Go _till/Nästa fä_rgade meddelande"
 
-#: src/mainwindow.c:564
+#: src/mainwindow.c:581
 #, fuzzy
 msgid "/_View/_Go to/Other _folder..."
 msgstr "/_Sammanfattning/_Gå till en annan mapp..."
 
-#: src/mainwindow.c:568 src/mainwindow.c:575
+#: src/mainwindow.c:585 src/mainwindow.c:592
 msgid "/_View/_Code set/---"
 msgstr "/_Visa/_Kodning/---"
 
-#: src/mainwindow.c:572
+#: src/mainwindow.c:589
 msgid "/_View/_Code set"
 msgstr "/_Visa/_Kodning"
 
-#: src/mainwindow.c:573
+#: src/mainwindow.c:590
 msgid "/_View/_Code set/_Auto detect"
 msgstr "/_Visa/_Kodning/_Automatisk"
 
-#: src/mainwindow.c:576
+#: src/mainwindow.c:593
 msgid "/_View/_Code set/7bit ascii (US-ASC_II)"
 msgstr "/_Visa/_Kodning/7 bitars ascii (US-ASC_II)"
 
-#: src/mainwindow.c:580
+#: src/mainwindow.c:597
 msgid "/_View/_Code set/Unicode (_UTF-8)"
 msgstr "/_Visa/_Kodning/Unicode (_UTF-8)"
 
-#: src/mainwindow.c:584
+#: src/mainwindow.c:601
 msgid "/_View/_Code set/Western European (ISO-8859-_1)"
 msgstr "/_Visa/_Kodning/Västeuropeisk (ISO-8859-_1)"
 
-#: src/mainwindow.c:586
+#: src/mainwindow.c:603
 #, fuzzy
 msgid "/_View/_Code set/Western European (ISO-8859-15)"
 msgstr "/_Visa/_Kodning/Västeuropeisk (ISO-8859-_1)"
 
-#: src/mainwindow.c:590
+#: src/mainwindow.c:607
 msgid "/_View/_Code set/Central European (ISO-8859-_2)"
 msgstr "/_Visa/_Kodning/Centraleuropeisk (ISO-8859-_2)"
 
-#: src/mainwindow.c:593
+#: src/mainwindow.c:610
 msgid "/_View/_Code set/_Baltic (ISO-8859-13)"
 msgstr "/_Visa/_Kodning/_Baltisk (ISO-8859-13)"
 
-#: src/mainwindow.c:595
+#: src/mainwindow.c:612
 msgid "/_View/_Code set/Baltic (ISO-8859-_4)"
 msgstr "/_Visa/_Kodning/Baltisk (ISO-8859-_4)"
 
-#: src/mainwindow.c:598
+#: src/mainwindow.c:615
 msgid "/_View/_Code set/Greek (ISO-8859-_7)"
 msgstr "/_Visa/_Kodning/Grekisk (ISO-8859-_7)"
 
-#: src/mainwindow.c:601
+#: src/mainwindow.c:618
 msgid "/_View/_Code set/Turkish (ISO-8859-_9)"
 msgstr "/_Visa/_Kodning/Turkisk (ISO-8859-_9)"
 
-#: src/mainwindow.c:604
+#: src/mainwindow.c:621
 msgid "/_View/_Code set/Cyrillic (ISO-8859-_5)"
 msgstr "/_Visa/_Kodning/Kyrillisk (ISO-8859-_5)"
 
-#: src/mainwindow.c:606
+#: src/mainwindow.c:623
 msgid "/_View/_Code set/Cyrillic (KOI8-_R)"
 msgstr "/_Visa/_Kodning/Kyrillisk (KOI8-_R)"
 
-#: src/mainwindow.c:608
+#: src/mainwindow.c:625
 msgid "/_View/_Code set/Cyrillic (Windows-1251)"
 msgstr "/_Visa/_Kodning/Kyrillisk (Windows-1251)"
 
-#: src/mainwindow.c:612
+#: src/mainwindow.c:629
 msgid "/_View/_Code set/Japanese (ISO-2022-_JP)"
 msgstr "/_Visa/_Kodning/Japansk (ISO-2022-_JP)"
 
-#: src/mainwindow.c:615
+#: src/mainwindow.c:632
 msgid "/_View/_Code set/Japanese (ISO-2022-JP-2)"
 msgstr "/_Visa/_Kodning/Japansk (ISO-2022-JP-2)"
 
-#: src/mainwindow.c:618
+#: src/mainwindow.c:635
 msgid "/_View/_Code set/Japanese (_EUC-JP)"
 msgstr "/_Visa/_Kodning/Japansk (_EUC-JP)"
 
-#: src/mainwindow.c:620
+#: src/mainwindow.c:637
 msgid "/_View/_Code set/Japanese (_Shift__JIS)"
 msgstr "/_Visa/_Kodning/Japansk (_Shift__JIS)"
 
-#: src/mainwindow.c:624
+#: src/mainwindow.c:641
 msgid "/_View/_Code set/Simplified Chinese (_GB2312)"
 msgstr "/_Visa/_Kodning/Förenklad kinesisk (_GB2312)"
 
-#: src/mainwindow.c:626
+#: src/mainwindow.c:643
 msgid "/_View/_Code set/Traditional Chinese (_Big5)"
 msgstr "/_Visa/_Kodning/Traditionell kinesisk (_Big5)"
 
-#: src/mainwindow.c:628
+#: src/mainwindow.c:645
 msgid "/_View/_Code set/Traditional Chinese (EUC-_TW)"
 msgstr "/_Visa/_Kodning/Traditionell kinesisk (EUC-_TW)"
 
-#: src/mainwindow.c:630
+#: src/mainwindow.c:647
 msgid "/_View/_Code set/Chinese (ISO-2022-_CN)"
 msgstr "/_Visa/_Kodning/Kinesisk (ISO-2022-_CN)"
 
-#: src/mainwindow.c:633
+#: src/mainwindow.c:650
 msgid "/_View/_Code set/Korean (EUC-_KR)"
 msgstr "/_Visa/_Kodning/Koreansk (EUC-KR)"
 
-#: src/mainwindow.c:635
+#: src/mainwindow.c:652
 msgid "/_View/_Code set/Korean (ISO-2022-KR)"
 msgstr "/_Visa/_Kodning/Koreansk (ISO-2022-KR)"
 
-#: src/mainwindow.c:638
+#: src/mainwindow.c:655
 #, fuzzy
 msgid "/_View/_Code set/Thai (TIS-620)"
 msgstr "/_Visa/_Kodning/Kinesisk (ISO-2022-_CN)"
 
-#: src/mainwindow.c:640
+#: src/mainwindow.c:657
 #, fuzzy
 msgid "/_View/_Code set/Thai (Windows-874)"
 msgstr "/_Visa/_Kodning/Kyrillisk (Windows-1251)"
 
-#: src/mainwindow.c:648 src/summaryview.c:438
+#: src/mainwindow.c:665 src/summaryview.c:438
 #, fuzzy
 msgid "/_View/Open in new _window"
 msgstr "/_Öppna i nytt fönster"
 
-#: src/mainwindow.c:649
+#: src/mainwindow.c:666
 #, fuzzy
 msgid "/_View/Mess_age source"
 msgstr "/_Visa/Me_ddelandevy"
 
-#: src/mainwindow.c:650
+#: src/mainwindow.c:667
 msgid "/_View/Show all _header"
 msgstr "/_Visa/Visa hela _brevhuvudet"
 
-#: src/mainwindow.c:652
+#: src/mainwindow.c:669
 #, fuzzy
-msgid "/_View/_Update"
+msgid "/_View/_Update summary"
 msgstr "/_Visa/_Kodning"
 
-#: src/mainwindow.c:655
+#: src/mainwindow.c:672
 msgid "/_Message/Get new ma_il"
 msgstr "/_Meddelande/Hämta ny _post"
 
-#: src/mainwindow.c:656
+#: src/mainwindow.c:673
 msgid "/_Message/Get from _all accounts"
 msgstr "/_Meddelande/Hämta från _alla konton"
 
-#: src/mainwindow.c:658
+#: src/mainwindow.c:675
 #, fuzzy
 msgid "/_Message/Cancel receivin_g"
 msgstr "/_Meddelande/_Ta bort"
 
-#: src/mainwindow.c:660
+#: src/mainwindow.c:677
 #, fuzzy
 msgid "/_Message/_Send queued messages"
 msgstr "/_Meddelande/Skicka _köade meddelanden"
 
-#: src/mainwindow.c:662
+#: src/mainwindow.c:679
 #, fuzzy
 msgid "/_Message/Compose a_n email message"
 msgstr "/_Meddelande/Komponera _nytt meddelande"
 
-#: src/mainwindow.c:663
+#: src/mainwindow.c:680
 #, fuzzy
 msgid "/_Message/Compose a news message"
 msgstr "/_Meddelande/Komponera _nytt meddelande"
 
-#: src/mainwindow.c:664
+#: src/mainwindow.c:681
 msgid "/_Message/_Reply"
 msgstr "/_Meddelande/Sva_ra"
 
-#: src/mainwindow.c:665
+#: src/mainwindow.c:682
 msgid "/_Message/Repl_y to sender"
 msgstr "/_Meddelande/S_vara till avsändaren"
 
-#: src/mainwindow.c:666
+#: src/mainwindow.c:683
 #, fuzzy
 msgid "/_Message/Follow-up and reply to"
 msgstr "/_Meddelande/_Följ upp till"
 
-#: src/mainwindow.c:667
+#: src/mainwindow.c:684
 msgid "/_Message/Reply to a_ll"
 msgstr "/_Meddelande/Svara till a_lla"
 
-#: src/mainwindow.c:668
+#: src/mainwindow.c:685
 msgid "/_Message/_Forward"
 msgstr "/_Meddelande/Ski_cka vidare"
 
-#: src/mainwindow.c:669
+#: src/mainwindow.c:686
 #, fuzzy
 msgid "/_Message/Bounce"
 msgstr "/_Meddelande/_Bcc"
 
-#: src/mainwindow.c:671
+#: src/mainwindow.c:688
 msgid "/_Message/Re-_edit"
 msgstr "/_Meddelande/Redigera _om"
 
-#: src/mainwindow.c:673
+#: src/mainwindow.c:690
 msgid "/_Message/M_ove..."
 msgstr "/_Meddelande/Fl_ytta..."
 
-#: src/mainwindow.c:674
+#: src/mainwindow.c:691
 msgid "/_Message/_Copy..."
 msgstr "/_Meddelande/_Kopiera"
 
-#: src/mainwindow.c:675
+#: src/mainwindow.c:692
 msgid "/_Message/_Delete"
 msgstr "/_Meddelande/_Ta bort"
 
-#: src/mainwindow.c:677
+#: src/mainwindow.c:694
 msgid "/_Message/_Mark"
 msgstr "/_Meddelande/_Markera"
 
-#: src/mainwindow.c:678
+#: src/mainwindow.c:695
 msgid "/_Message/_Mark/_Mark"
 msgstr "/_Meddelande/_Markera/_Markera"
 
-#: src/mainwindow.c:679
+#: src/mainwindow.c:696
 msgid "/_Message/_Mark/_Unmark"
 msgstr "/_Meddelande/_Markera/_Avmarkera"
 
-#: src/mainwindow.c:680
+#: src/mainwindow.c:697
 msgid "/_Message/_Mark/---"
 msgstr "/_Meddelande/_Markera/---"
 
-#: src/mainwindow.c:681
+#: src/mainwindow.c:698
 msgid "/_Message/_Mark/Mark as unr_ead"
 msgstr "/_Meddelande/_Markera/Markera som _oläst"
 
-#: src/mainwindow.c:682
+#: src/mainwindow.c:699
 msgid "/_Message/_Mark/Mark as rea_d"
 msgstr "/_Meddelande/_Markera/Markera som _läst"
 
-#: src/mainwindow.c:684
+#: src/mainwindow.c:701
 msgid "/_Message/_Mark/Mark all _read"
 msgstr "/_Meddelande/_Markera/Markera all som l_ästa"
 
-#: src/mainwindow.c:687
+#: src/mainwindow.c:704
 msgid "/_Tools/_Selective download..."
 msgstr ""
 
-#: src/mainwindow.c:689
+#: src/mainwindow.c:706
 #, fuzzy
 msgid "/_Tools/_Address book..."
 msgstr "/V_erktyg/_Adressbok"
 
-#: src/mainwindow.c:690
+#: src/mainwindow.c:707
 #, fuzzy
 msgid "/_Tools/Add sender to address boo_k"
 msgstr "/Lägg till avsändaren till adressboken"
 
-#: src/mainwindow.c:692
+#: src/mainwindow.c:709
 #, fuzzy
 msgid "/_Tools/_Harvest addresses"
 msgstr "/V_erktyg/_Adressbok"
 
-#: src/mainwindow.c:693
+#: src/mainwindow.c:710
 msgid "/_Tools/_Harvest addresses/from _Folder..."
 msgstr ""
 
-#: src/mainwindow.c:695
+#: src/mainwindow.c:712
 msgid "/_Tools/_Harvest addresses/from _Messages..."
 msgstr ""
 
-#: src/mainwindow.c:698
+#: src/mainwindow.c:715
 #, fuzzy
 msgid "/_Tools/_Filter messages"
 msgstr "/_Sammanfattning/_Filtrera meddelanden"
 
-#: src/mainwindow.c:699
+#: src/mainwindow.c:716
 #, fuzzy
 msgid "/_Tools/_Create filter rule"
 msgstr "/_Arkiv/_Uppdatera mappträdet"
 
-#: src/mainwindow.c:700
+#: src/mainwindow.c:717
 msgid "/_Tools/_Create filter rule/_Automatically"
 msgstr ""
 
-#: src/mainwindow.c:702
+#: src/mainwindow.c:719
 msgid "/_Tools/_Create filter rule/by _From"
 msgstr ""
 
-#: src/mainwindow.c:704
+#: src/mainwindow.c:721
 msgid "/_Tools/_Create filter rule/by _To"
 msgstr ""
 
-#: src/mainwindow.c:706
+#: src/mainwindow.c:723
 msgid "/_Tools/_Create filter rule/by _Subject"
 msgstr ""
 
-#: src/mainwindow.c:711
+#: src/mainwindow.c:728
 #, fuzzy
 msgid "/_Tools/E_xecute"
 msgstr "/E_xekvera"
 
-#: src/mainwindow.c:713
+#: src/mainwindow.c:730
 #, fuzzy
 msgid "/_Tools/Delete du_plicated messages"
 msgstr "/_Sammanfattning/Ta bort meddelande_dubletter"
 
-#: src/mainwindow.c:716
+#: src/mainwindow.c:733
 #, fuzzy
 msgid "/_Tools/_Log window"
 msgstr "/_Verktyg/_Loggfönster"
 
-#: src/mainwindow.c:718
+#: src/mainwindow.c:735
 msgid "/_Configuration"
 msgstr "/_Konfiguration"
 
-#: src/mainwindow.c:719
+#: src/mainwindow.c:736
 msgid "/_Configuration/_Common preferences..."
 msgstr "/_Konfiguration/_Allmänna inställningar..."
 
-#: src/mainwindow.c:721
+#: src/mainwindow.c:738
 msgid "/_Configuration/_Filter setting..."
 msgstr "/_Konfiguration/_Filterinställningar..."
 
-#: src/mainwindow.c:723
+#: src/mainwindow.c:740
 #, fuzzy
 msgid "/_Configuration/_Scoring..."
 msgstr "/_Konfiguration/_Filterinställningar..."
 
-#: src/mainwindow.c:725
+#: src/mainwindow.c:742
 #, fuzzy
 msgid "/_Configuration/_Filtering..."
 msgstr "/_Konfiguration/_Filterinställningar..."
 
-#: src/mainwindow.c:727
+#: src/mainwindow.c:744
 #, fuzzy
 msgid "/_Configuration/_Template..."
 msgstr "/_Konfiguration/_Filterinställningar..."
 
-#: src/mainwindow.c:728
+#: src/mainwindow.c:745
 #, fuzzy
 msgid "/_Configuration/_Actions..."
 msgstr "/_Konfiguration/_Redigera konton..."
 
-#: src/mainwindow.c:729
+#: src/mainwindow.c:746
 msgid "/_Configuration/---"
 msgstr "/_Konfiguration/---"
 
-#: src/mainwindow.c:730
+#: src/mainwindow.c:747
 #, fuzzy
 msgid "/_Configuration/_Preferences for current account..."
 msgstr "/_Konfiguration/_Kontoinställningar..."
 
-#: src/mainwindow.c:732
+#: src/mainwindow.c:749
 msgid "/_Configuration/Create _new account..."
 msgstr "/_Konfiguration/Skapa _nytt konto..."
 
-#: src/mainwindow.c:734
+#: src/mainwindow.c:751
 msgid "/_Configuration/_Edit accounts..."
 msgstr "/_Konfiguration/_Redigera konton..."
 
-#: src/mainwindow.c:736
+#: src/mainwindow.c:753
 msgid "/_Configuration/C_hange current account"
 msgstr "/_Konfiguration/_Ändra aktuellt konto"
 
-#: src/mainwindow.c:740
+#: src/mainwindow.c:757
 msgid "/_Help/_Manual"
 msgstr "/_Hjälp/_Handbok"
 
-#: src/mainwindow.c:741
+#: src/mainwindow.c:758
 msgid "/_Help/_Manual/_English"
 msgstr "/_Hjälp/_Handbok/_Engelsk"
 
-#: src/mainwindow.c:742
+#: src/mainwindow.c:759
 #, fuzzy
 msgid "/_Help/_Manual/_German"
 msgstr "/_Hjälp/_Handbok/_Japansk"
 
-#: src/mainwindow.c:743
+#: src/mainwindow.c:760
 #, fuzzy
 msgid "/_Help/_Manual/_Spanish"
 msgstr "/_Hjälp/_Handbok/_Engelsk"
 
-#: src/mainwindow.c:744
+#: src/mainwindow.c:761
 #, fuzzy
 msgid "/_Help/_Manual/_French"
 msgstr "/_Hjälp/_Handbok/_Engelsk"
 
-#: src/mainwindow.c:745
+#: src/mainwindow.c:762
 msgid "/_Help/_Manual/_Japanese"
 msgstr "/_Hjälp/_Handbok/_Japansk"
 
-#: src/mainwindow.c:746
+#: src/mainwindow.c:763
 #, fuzzy
 msgid "/_Help/_FAQ"
 msgstr "/_Hjälp/_Om"
 
-#: src/mainwindow.c:747
+#: src/mainwindow.c:764
 #, fuzzy
 msgid "/_Help/_FAQ/_English"
 msgstr "/_Hjälp/_Handbok/_Engelsk"
 
-#: src/mainwindow.c:748
+#: src/mainwindow.c:765
 #, fuzzy
 msgid "/_Help/_FAQ/_German"
 msgstr "/_Hjälp/_Handbok"
 
-#: src/mainwindow.c:749
+#: src/mainwindow.c:766
 #, fuzzy
 msgid "/_Help/_FAQ/_Spanish"
 msgstr "/_Hjälp/_Handbok/_Engelsk"
 
-#: src/mainwindow.c:750
+#: src/mainwindow.c:767
 msgid "/_Help/_FAQ/_French"
 msgstr ""
 
-#: src/mainwindow.c:751
+#: src/mainwindow.c:768
 #, fuzzy
 msgid "/_Help/_FAQ/_Italian"
 msgstr "/_Hjälp/_Om"
 
-#: src/mainwindow.c:752
+#: src/mainwindow.c:769
 msgid "/_Help/---"
 msgstr "/_Hjälp/---"
 
-#: src/mainwindow.c:757
+#: src/mainwindow.c:774
 #, fuzzy
 msgid "/Reply with _quote"
 msgstr "/Svara till a_lla"
 
-#: src/mainwindow.c:758
+#: src/mainwindow.c:775
 msgid "/_Reply without quote"
 msgstr ""
 
-#: src/mainwindow.c:762
+#: src/mainwindow.c:779
 #, fuzzy
 msgid "/Reply to all with _quote"
 msgstr "/Svara till a_lla"
 
-#: src/mainwindow.c:763
+#: src/mainwindow.c:780
 #, fuzzy
 msgid "/_Reply to all without quote"
 msgstr "/Svara till a_lla"
 
-#: src/mainwindow.c:767
+#: src/mainwindow.c:784
 #, fuzzy
 msgid "/Reply to sender with _quote"
 msgstr "/S_vara till avsändaren"
 
-#: src/mainwindow.c:768
+#: src/mainwindow.c:785
 #, fuzzy
 msgid "/_Reply to sender without quote"
 msgstr "/S_vara till avsändaren"
 
-#: src/mainwindow.c:772
+#: src/mainwindow.c:789
 msgid "/_Forward message (inline style)"
 msgstr ""
 
-#: src/mainwindow.c:773
+#: src/mainwindow.c:790
 #, fuzzy
 msgid "/Forward message as _attachment"
 msgstr "/Skicka vidare som fil_tillägg"
 
-#: src/mainwindow.c:814
+#: src/mainwindow.c:831
 msgid "Creating main window...\n"
 msgstr "Skapar huvudfönster...\n"
 
-#: src/mainwindow.c:1000
+#: src/mainwindow.c:1017
 #, c-format
 msgid "MainWindow: color allocation %d failed\n"
 msgstr "Huvudfönster: färgallokation %d misslyckades\n"
 
-#: src/mainwindow.c:1234 src/mainwindow.c:1251 src/prefs_folder_item.c:425
+#: src/mainwindow.c:1251 src/mainwindow.c:1268 src/prefs_folder_item.c:425
 msgid "Untitled"
 msgstr "Namnlös"
 
-#: src/mainwindow.c:1252 src/selective_download.c:420
+#: src/mainwindow.c:1269 src/selective_download.c:420
 msgid "none"
 msgstr "inget"
 
-#: src/mainwindow.c:1350
+#: src/mainwindow.c:1290
+#, c-format
+msgid "Changing window separation type from %d to %d\n"
+msgstr ""
+
+#: src/mainwindow.c:1370
 #, c-format
 msgid "window position: x = %d, y = %d\n"
 msgstr "fönsterplacering: x = %d, y = %d\n"
 
-#: src/mainwindow.c:1368
+#: src/mainwindow.c:1388
 msgid "Empty trash"
 msgstr "Töm papperskorg"
 
-#: src/mainwindow.c:1369
+#: src/mainwindow.c:1389
 msgid "Empty all messages in trash?"
 msgstr "Töm alla meddelanden i papperskorgen?"
 
-#: src/mainwindow.c:1394
+#: src/mainwindow.c:1414
 msgid "Add mailbox"
 msgstr "Lägg till postlåda"
 
-#: src/mainwindow.c:1395
+#: src/mainwindow.c:1415
 msgid ""
 "Input the location of mailbox.\n"
 "If the existing mailbox is specified, it will be\n"
@@ -3847,16 +3896,16 @@ msgstr ""
 "Om den existerande postlådan specificeras, kommer den\n"
 "att genomsökas automatiskt."
 
-#: src/mainwindow.c:1401 src/mainwindow.c:1439
+#: src/mainwindow.c:1421 src/mainwindow.c:1459
 #, c-format
 msgid "The mailbox `%s' already exists."
 msgstr "Postlådan '%s' finns redan."
 
-#: src/mainwindow.c:1406 src/setup.c:57
+#: src/mainwindow.c:1426 src/setup.c:57
 msgid "Mailbox"
 msgstr "Postlåda"
 
-#: src/mainwindow.c:1412 src/setup.c:63
+#: src/mainwindow.c:1432 src/setup.c:63
 msgid ""
 "Creation of the mailbox failed.\n"
 "Maybe some files already exist, or you don't have the permission to write "
@@ -3865,159 +3914,183 @@ msgstr ""
 "Skapelse av postlåda misslyckades.\n"
 "Några filer finns kanske redan, eller så saknar du skrivrättigheter där."
 
-#: src/mainwindow.c:1432
+#: src/mainwindow.c:1452
 #, fuzzy
 msgid "Add mbox mailbox"
 msgstr "Lägg till postlåda"
 
-#: src/mainwindow.c:1433
+#: src/mainwindow.c:1453
 msgid "Input the location of mailbox."
 msgstr ""
 
-#: src/mainwindow.c:1454
+#: src/mainwindow.c:1474
 #, fuzzy
 msgid "Creation of the mailbox failed."
 msgstr "kan inte skapa postlåda: LIST mislyckades\n"
 
-#: src/mainwindow.c:1750
+#: src/mainwindow.c:1774
 msgid "Setting widgets..."
 msgstr "Ställer in mojänger..."
 
-#: src/mainwindow.c:1756
+#: src/mainwindow.c:1780
 msgid "Sylpheed - Folder View"
 msgstr ""
 
-#: src/mainwindow.c:1772 src/messageview.c:120
+#: src/mainwindow.c:1796 src/messageview.c:120
 msgid "Sylpheed - Message View"
 msgstr ""
 
-#: src/mainwindow.c:1960
+#: src/mainwindow.c:2002
 msgid "Get"
 msgstr "Hämta"
 
-#: src/mainwindow.c:1961
+#: src/mainwindow.c:2003
 #, fuzzy
 msgid "Get new mail from current account"
 msgstr "'Hämta allt' hämtar post på detta konto"
 
-#: src/mainwindow.c:1966
+#: src/mainwindow.c:2008
 msgid "Get all"
 msgstr "Hämta allt"
 
-#: src/mainwindow.c:1967
+#: src/mainwindow.c:2009
 #, fuzzy
 msgid "Get new mail from all accounts"
 msgstr "Hämta ny post från alla konton"
 
-#: src/mainwindow.c:1978
+#: src/mainwindow.c:2020
 msgid "Send queued message(s)"
 msgstr "Sänd köa(t/de) meddelande(n)"
 
-#: src/mainwindow.c:1987
+#: src/mainwindow.c:2029
 msgid "Email"
 msgstr ""
 
-#: src/mainwindow.c:1988
+#: src/mainwindow.c:2030
 #, fuzzy
 msgid "Compose an email message"
 msgstr "Komponera nytt meddelande"
 
-#: src/mainwindow.c:1997 src/prefs_common.c:1180
+#: src/mainwindow.c:2039 src/prefs_common.c:1180
 msgid "News"
 msgstr "Nyheter"
 
-#: src/mainwindow.c:1998
+#: src/mainwindow.c:2040
 #, fuzzy
 msgid "Compose a news message"
 msgstr "Komponera nytt meddelande"
 
-#: src/mainwindow.c:2010
+#: src/mainwindow.c:2052
 msgid "Reply"
 msgstr "Svara"
 
-#: src/mainwindow.c:2011
+#: src/mainwindow.c:2053
 msgid "Reply to the message - Right button: more options"
 msgstr ""
 
-#: src/mainwindow.c:2021
+#: src/mainwindow.c:2063
 msgid "All"
 msgstr ""
 
-#: src/mainwindow.c:2022
+#: src/mainwindow.c:2064
 msgid "Reply to all - Right button: more options"
 msgstr ""
 
-#: src/mainwindow.c:2031
+#: src/mainwindow.c:2073
 #, fuzzy
 msgid "Sender"
 msgstr "Skicka"
 
-#: src/mainwindow.c:2032
+#: src/mainwindow.c:2074
 msgid "Reply to sender - Right button: more options"
 msgstr ""
 
-#: src/mainwindow.c:2041 src/prefs_filtering.c:230
+#: src/mainwindow.c:2083 src/prefs_filtering.c:230
 msgid "Forward"
 msgstr "Skicka vidare"
 
-#: src/mainwindow.c:2042
+#: src/mainwindow.c:2084
 msgid "Forward the message - Right button: more options"
 msgstr ""
 
-#: src/mainwindow.c:2053
+#: src/mainwindow.c:2095
 msgid "Delete the message"
 msgstr "Ta bort meddelandet"
 
-#: src/mainwindow.c:2061 src/prefs_filtering.c:233 src/prefs_filtering.c:474
+#: src/mainwindow.c:2103 src/prefs_filtering.c:233 src/prefs_filtering.c:474
 #: src/prefs_matcher.c:157
 msgid "Execute"
 msgstr "Exekvera"
 
-#: src/mainwindow.c:2062
+#: src/mainwindow.c:2104
 msgid "Execute marked process"
 msgstr "Exekvera markerad process"
 
-#: src/mainwindow.c:2071
+#: src/mainwindow.c:2113
 msgid "Next unread message"
 msgstr "Nästa olästa meddelande"
 
-#: src/mainwindow.c:2485
+#: src/mainwindow.c:2124
+#, fuzzy
+msgid "Prefs"
+msgstr "Inst."
+
+#: src/mainwindow.c:2125
+#, fuzzy
+msgid "Common preferences"
+msgstr "Allmänna inställningar"
+
+#: src/mainwindow.c:2132 src/prefs_filtering.c:429 src/progressdialog.c:52
+msgid "Account"
+msgstr "Konto"
+
+#: src/mainwindow.c:2133
+#, fuzzy
+msgid "Account setting"
+msgstr "Kontoinställningar"
+
+#: src/mainwindow.c:2559
 msgid "Exit"
 msgstr "Avslua"
 
-#: src/mainwindow.c:2485
+#: src/mainwindow.c:2559
 msgid "Exit this program?"
 msgstr "Avsluta detta program?"
 
-#: src/mainwindow.c:2855
+#: src/mainwindow.c:2944
 #, c-format
 msgid "forced charset: %s\n"
 msgstr "forcerad teckenuppsättning: %s\n"
 
-#: src/matcher.c:958
+#: src/matcher.c:308
+#, fuzzy, c-format
+msgid "Command exit code: %i\n"
+msgstr "Kommando"
+
+#: src/matcher.c:965
 #, fuzzy
 msgid "filename is not set"
 msgstr "Brevuvudsnamn är inte angivet."
 
-#: src/matcher.c:987 src/matcher.c:994 src/matcher.c:1001 src/matcher.c:1008
-#: src/matcher.c:1015 src/matcher.c:1022 src/matcher.c:1029 src/matcher.c:1036
+#: src/matcher.c:994 src/matcher.c:1001 src/matcher.c:1008 src/matcher.c:1015
+#: src/matcher.c:1022 src/matcher.c:1029 src/matcher.c:1036 src/matcher.c:1043
 #: src/prefs_filter.c:278 src/prefs_filter.c:702 src/prefs_filter.c:858
 #: src/prefs_filter.c:868
 msgid "(none)"
 msgstr "(ingen)"
 
-#: src/matcher.c:1171
+#: src/matcher.c:1178
 #, fuzzy
 msgid "Writing matcher configuration...\n"
 msgstr "Skriver filterkonfiguration...\n"
 
-#: src/matcher.c:1177 src/matcher.c:1188 src/prefs.c:139 src/prefs.c:167
+#: src/matcher.c:1184 src/matcher.c:1195 src/prefs.c:139 src/prefs.c:167
 #: src/prefs.c:212 src/prefs_account.c:533 src/prefs_account.c:547
 #: src/prefs_actions.c:489 src/prefs_actions.c:508
 #: src/prefs_customheader.c:386 src/prefs_customheader.c:432
 #: src/prefs_display_header.c:414 src/prefs_display_header.c:439
-#: src/prefs_filter.c:537 src/prefs_filter.c:561 src/procmime.c:775
-#: src/procmime.c:790
+#: src/prefs_filter.c:537 src/prefs_filter.c:561 src/procmime.c:799
+#: src/procmime.c:814
 msgid "failed to write configuration to file\n"
 msgstr "misslyckades skriva konfiguration till fil\n"
 
@@ -4284,7 +4357,7 @@ msgstr "Ett fel uppstod vid meddelandets avsändande"
 msgid "can't copy message %s to %s\n"
 msgstr "Kan inte koopiera %s till %s\n"
 
-#: src/mh.c:517 src/procmsg.c:1518
+#: src/mh.c:517 src/procmsg.c:1520
 msgid "Can't open mark file.\n"
 msgstr "Kan inte öppna markeringsfil.\n"
 
@@ -4342,27 +4415,27 @@ msgstr ""
 msgid "Select \"Check signature\" to check"
 msgstr "Välj \"Undersök signatur\" för att undersöka"
 
-#: src/mimeview.c:772 src/mimeview.c:837 src/mimeview.c:856 src/mimeview.c:880
+#: src/mimeview.c:778 src/mimeview.c:843 src/mimeview.c:862 src/mimeview.c:886
 msgid "Can't save the part of multipart message."
 msgstr "Kan inte spara delen av multipart-meddelandet"
 
-#: src/mimeview.c:824 src/summaryview.c:3372
+#: src/mimeview.c:830 src/summaryview.c:3372
 msgid "Save as"
 msgstr "Spara som"
 
-#: src/mimeview.c:829 src/summaryview.c:3377
+#: src/mimeview.c:835 src/summaryview.c:3377
 msgid "Overwrite"
 msgstr "Skriv över"
 
-#: src/mimeview.c:830 src/summaryview.c:3378
+#: src/mimeview.c:836 src/summaryview.c:3378
 msgid "Overwrite existing file?"
 msgstr "Skriv över förefintlig fil?"
 
-#: src/mimeview.c:890
+#: src/mimeview.c:896
 msgid "Open with"
 msgstr "Öppna med"
 
-#: src/mimeview.c:891
+#: src/mimeview.c:897
 #, c-format
 msgid ""
 "Enter the command line to open file:\n"
@@ -4371,7 +4444,7 @@ msgstr ""
 "Skriv in kommandot för att öppna filen:\n"
 "(`%s' kommer att ersättas med filnamnet)"
 
-#: src/mimeview.c:947
+#: src/mimeview.c:953
 #, c-format
 msgid "MIME viewer command line is invalid: `%s'"
 msgstr "MIME-visningskommandot är felaktigt: %s'"
@@ -4536,28 +4609,28 @@ msgstr ""
 msgid "POP3: Skipping message %d (%d bytes)\n"
 msgstr "Skickar meddelande (%d / %d byte)"
 
-#: src/pop.c:106 src/pop.c:136 src/pop.c:190
+#: src/pop.c:104 src/pop.c:134 src/pop.c:186
 msgid "error occurred on authentication\n"
 msgstr "fel uppstod vid autentifikation\n"
 
-#: src/pop.c:156
+#: src/pop.c:152
 msgid "Required APOP timestamp not found in greeting\n"
 msgstr "Nödvändig APOP-tidsmarkering ej funnen i hälsning\n"
 
-#: src/pop.c:162
+#: src/pop.c:158
 msgid "Timestamp syntax error in greeting\n"
 msgstr "Syntaxfel på tidsmarkering i hälsning\n"
 
-#: src/pop.c:217 src/pop.c:256
+#: src/pop.c:209 src/pop.c:244
 msgid "POP3 protocol error\n"
 msgstr "POP3 protokollfel\n"
 
-#: src/pop.c:570
+#: src/pop.c:552
 #, fuzzy
 msgid "error occurred on DELE\n"
 msgstr "fel uppstod vid autentifikation\n"
 
-#: src/pop.c:668
+#: src/pop.c:648
 #, fuzzy, c-format
 msgid "next to delete %i\n"
 msgstr "kan inte ta bort postlåda\n"
@@ -4775,7 +4848,7 @@ msgstr "Generera Meddelande-ID"
 msgid "Add user-defined header"
 msgstr "Lägg till anvädardefinierat brevhuvud"
 
-#: src/prefs_account.c:1184 src/prefs_common.c:2324 src/prefs_common.c:2349
+#: src/prefs_account.c:1184 src/prefs_common.c:2327 src/prefs_common.c:2352
 msgid " Edit... "
 msgstr "Redigera..."
 
@@ -5049,7 +5122,7 @@ msgstr "Hämta ny post automatiskt"
 msgid "every"
 msgstr "Aldrig"
 
-#: src/prefs_common.c:1119 src/prefs_common.c:2499
+#: src/prefs_common.c:1119 src/prefs_common.c:2502
 msgid "minute(s)"
 msgstr "minut"
 
@@ -5399,142 +5472,142 @@ msgstr "Visa antal olästa bredvid mappnamn"
 msgid "Automatically display images"
 msgstr "Undersök signaturer automatiskt"
 
-#: src/prefs_common.c:2188
+#: src/prefs_common.c:2191
 msgid "Abbreviate newsgroups longer than"
 msgstr ""
 
-#: src/prefs_common.c:2203
+#: src/prefs_common.c:2206
 #, fuzzy
 msgid "letters"
 msgstr "Ta bort"
 
 #. ---- Summary ----
-#: src/prefs_common.c:2209
+#: src/prefs_common.c:2212
 msgid "Summary View"
 msgstr "Sammanfattningsvy"
 
-#: src/prefs_common.c:2218
+#: src/prefs_common.c:2221
 msgid "Display recipient on `From' column if sender is yourself"
 msgstr "Visa mottagare i 'Från'-kolumnen am avsänaren är du själv"
 
-#: src/prefs_common.c:2221
+#: src/prefs_common.c:2224
 #, fuzzy
 msgid "Display sender using address book"
 msgstr "/Lägg till avsändaren till adressboken"
 
-#: src/prefs_common.c:2223
+#: src/prefs_common.c:2226
 msgid "Enable horizontal scroll bar"
 msgstr "Aktivera horisnotell rullningslist"
 
-#: src/prefs_common.c:2225
+#: src/prefs_common.c:2228
 msgid "Expand threads"
 msgstr "Expandera trådar"
 
-#: src/prefs_common.c:2228
+#: src/prefs_common.c:2231
 msgid "Display unread messages with bold font"
 msgstr "Visa oläst meddelanden med fetstil"
 
-#: src/prefs_common.c:2236 src/prefs_common.c:3104 src/prefs_common.c:3142
+#: src/prefs_common.c:2239 src/prefs_common.c:3107 src/prefs_common.c:3145
 msgid "Date format"
 msgstr "Datumformat"
 
-#: src/prefs_common.c:2258
+#: src/prefs_common.c:2261
 msgid " Set display item of summary... "
 msgstr " Ställ in fält att visa i sammanfattningen... "
 
-#: src/prefs_common.c:2319
+#: src/prefs_common.c:2322
 msgid "Enable coloration of message"
 msgstr "Aktivera färgläggning av meddelande"
 
-#: src/prefs_common.c:2338
+#: src/prefs_common.c:2341
 msgid "Display 2-byte alphabet and numeric with 1-byte character"
 msgstr "Visa 2-bytesalfabet och -siffror med 1-bytestecken"
 
-#: src/prefs_common.c:2340
+#: src/prefs_common.c:2343
 msgid "Display header pane above message view"
 msgstr "Visa brevhuvudsruta ovanför meddelandevy"
 
-#: src/prefs_common.c:2347
+#: src/prefs_common.c:2350
 msgid "Display short headers on message view"
 msgstr "Visa kortfattade brevhuvuden på meddelandevy"
 
-#: src/prefs_common.c:2369
+#: src/prefs_common.c:2372
 msgid "Line space"
 msgstr "Radavstånd"
 
-#: src/prefs_common.c:2383 src/prefs_common.c:2423
+#: src/prefs_common.c:2386 src/prefs_common.c:2426
 msgid "pixel(s)"
 msgstr "punkt(er)"
 
-#: src/prefs_common.c:2388
+#: src/prefs_common.c:2391
 msgid "Leave space on head"
 msgstr "Lämna utrymme i brevhuvud"
 
-#: src/prefs_common.c:2390
+#: src/prefs_common.c:2393
 msgid "Scroll"
 msgstr "Rulla"
 
-#: src/prefs_common.c:2397
+#: src/prefs_common.c:2400
 msgid "Half page"
 msgstr "Halv sida"
 
-#: src/prefs_common.c:2403
+#: src/prefs_common.c:2406
 msgid "Smooth scroll"
 msgstr "Mjuk rullning"
 
-#: src/prefs_common.c:2409
+#: src/prefs_common.c:2412
 msgid "Step"
 msgstr "Steg"
 
-#: src/prefs_common.c:2476
+#: src/prefs_common.c:2479
 msgid "Automatically check signatures"
 msgstr "Undersök signaturer automatiskt"
 
-#: src/prefs_common.c:2479
+#: src/prefs_common.c:2482
 msgid "Show signature check result in a popup window"
 msgstr "Visa resultat av signaturundersökning i meddelandefönster"
 
-#: src/prefs_common.c:2485
+#: src/prefs_common.c:2488
 msgid "Store passphrase temporarily"
 msgstr ""
 
-#: src/prefs_common.c:2487
+#: src/prefs_common.c:2490
 #, fuzzy
 msgid "- remove after"
 msgstr "Ta bort mapp"
 
-#: src/prefs_common.c:2507
+#: src/prefs_common.c:2510
 msgid ""
 "(A setting of '0' will store the passphrase\n"
 " for the whole session)"
 msgstr ""
 
-#: src/prefs_common.c:2520
+#: src/prefs_common.c:2523
 msgid "Grab input while entering a passphrase"
 msgstr "Fånga inskrivning av lösenfas"
 
-#: src/prefs_common.c:2525
+#: src/prefs_common.c:2528
 msgid "Display warning on startup if GnuPG doesn't work"
 msgstr "Visa varning vid start om GnuPG inte fungerar"
 
 #. create default signkey box
-#: src/prefs_common.c:2532
+#: src/prefs_common.c:2535
 msgid "Default Sign Key"
 msgstr "Förinställd signeringsnyckel"
 
-#: src/prefs_common.c:2654
+#: src/prefs_common.c:2657
 msgid "Open first unread message when entering a folder"
 msgstr "Öppna första olästa meddelande vid öppning av mapp"
 
-#: src/prefs_common.c:2658
+#: src/prefs_common.c:2661
 msgid "Go to inbox after receiving new mail"
 msgstr "Gå till inkorgen vid efter hämtande av post"
 
-#: src/prefs_common.c:2666
+#: src/prefs_common.c:2669
 msgid "Execute immediately when moving or deleting messages"
 msgstr "Exekvera omedelbart vid flyttning och borttagande av meddelanden"
 
-#: src/prefs_common.c:2673
+#: src/prefs_common.c:2676
 #, fuzzy
 msgid ""
 "(Messages will be marked until execution\n"
@@ -5543,241 +5616,241 @@ msgstr ""
 "(meddelanden kommer endast att markeras till exekvering\n"
 " om detta är avstängt)"
 
-#: src/prefs_common.c:2685
+#: src/prefs_common.c:2688
 msgid "Show receive dialog"
 msgstr "Visa mottagningsdialog"
 
-#: src/prefs_common.c:2695 src/prefs_common.c:2729
+#: src/prefs_common.c:2698 src/prefs_common.c:2732
 msgid "Always"
 msgstr "Alltid"
 
-#: src/prefs_common.c:2696
+#: src/prefs_common.c:2699
 msgid "Only if a window is active"
 msgstr "Endast om ett fönster är aktivt"
 
-#: src/prefs_common.c:2698
+#: src/prefs_common.c:2701
 msgid "Never"
 msgstr "Aldrig"
 
-#: src/prefs_common.c:2711
+#: src/prefs_common.c:2714
 msgid "Add address to destination when double-clicked"
 msgstr "Lägg till adress till destination vid dubbelklick"
 
-#: src/prefs_common.c:2718
+#: src/prefs_common.c:2721
 #, fuzzy
 msgid "Show no-unread-message dialog"
 msgstr "Visa mottagningsdialog"
 
-#: src/prefs_common.c:2731
+#: src/prefs_common.c:2734
 msgid "Assume 'Yes'"
 msgstr ""
 
-#: src/prefs_common.c:2733
+#: src/prefs_common.c:2736
 msgid "Assume 'No'"
 msgstr ""
 
-#: src/prefs_common.c:2764
+#: src/prefs_common.c:2767
 msgid " Set key bindings... "
 msgstr ""
 
-#: src/prefs_common.c:2829
+#: src/prefs_common.c:2832
 #, fuzzy, c-format
 msgid "External commands (%s will be replaced with file name / URI)"
 msgstr "Extern redigerare (%s kommer att ersättas med filnamn)"
 
-#: src/prefs_common.c:2838
+#: src/prefs_common.c:2841
 msgid "Web browser"
 msgstr ""
 
-#: src/prefs_common.c:2859 src/summaryview.c:3402
+#: src/prefs_common.c:2862 src/summaryview.c:3402
 msgid "Print"
 msgstr "Skriv ut"
 
 #. On Exit
-#: src/prefs_common.c:2892
+#: src/prefs_common.c:2895
 msgid "On exit"
 msgstr "Vid avslut"
 
-#: src/prefs_common.c:2900
+#: src/prefs_common.c:2903
 msgid "Confirm on exit"
 msgstr "Bekräfta avslut"
 
-#: src/prefs_common.c:2907
+#: src/prefs_common.c:2910
 msgid "Empty trash on exit"
 msgstr "Töm papperskorg vid avslut"
 
-#: src/prefs_common.c:2909
+#: src/prefs_common.c:2912
 msgid "Ask before emptying"
 msgstr "Fråga innan tömning"
 
-#: src/prefs_common.c:2913
+#: src/prefs_common.c:2916
 msgid "Warn if there are queued messages"
 msgstr "Varna om det finns köade meddelanden"
 
-#: src/prefs_common.c:3080
+#: src/prefs_common.c:3083
 msgid "the full abbreviated weekday name"
 msgstr "fullständigt förkortat veckodagsnamn"
 
-#: src/prefs_common.c:3081
+#: src/prefs_common.c:3084
 msgid "the full weekday name"
 msgstr "fullständigt veckodagsnamn"
 
-#: src/prefs_common.c:3082
+#: src/prefs_common.c:3085
 msgid "the abbreviated month name"
 msgstr "förkortat månadsnamn"
 
-#: src/prefs_common.c:3083
+#: src/prefs_common.c:3086
 msgid "the full month name"
 msgstr "fullständigt månadsnamn"
 
-#: src/prefs_common.c:3084
+#: src/prefs_common.c:3087
 msgid "the preferred date and time for the current locale"
 msgstr "föredraget datum och tid för gällande lokalistion"
 
-#: src/prefs_common.c:3085
+#: src/prefs_common.c:3088
 msgid "the century number (year/100)"
 msgstr "århundrandetal (årtal/100)"
 
-#: src/prefs_common.c:3086
+#: src/prefs_common.c:3089
 msgid "the day of the month as a decimal number"
 msgstr "dagen i månaden som decimaltal"
 
-#: src/prefs_common.c:3087
+#: src/prefs_common.c:3090
 msgid "the hour as a decimal number using a 24-hour clock"
 msgstr "timmen som decimaltal enligt 24-timmarsräkning"
 
-#: src/prefs_common.c:3088
+#: src/prefs_common.c:3091
 msgid "the hour as a decimal number using a 12-hour clock"
 msgstr "timmen som decimaltal enligt 12-timmarsräkning"
 
-#: src/prefs_common.c:3089
+#: src/prefs_common.c:3092
 msgid "the day of the year as a decimal number"
 msgstr "dagen på året som ett decimaltal"
 
-#: src/prefs_common.c:3090
+#: src/prefs_common.c:3093
 msgid "the month as a decimal number"
 msgstr "månaden som ett decimaltal"
 
-#: src/prefs_common.c:3091
+#: src/prefs_common.c:3094
 msgid "the minute as a decimal number"
 msgstr "minuten som ett decimaltal"
 
-#: src/prefs_common.c:3092
+#: src/prefs_common.c:3095
 msgid "either AM or PM"
 msgstr "antingen AM eller PM"
 
-#: src/prefs_common.c:3093
+#: src/prefs_common.c:3096
 msgid "the second as a decimal number"
 msgstr "sekunden som ett decimaltal"
 
-#: src/prefs_common.c:3094
+#: src/prefs_common.c:3097
 msgid "the day of the week as a decimal number"
 msgstr "veckodagen som ett decimaltal"
 
-#: src/prefs_common.c:3095
+#: src/prefs_common.c:3098
 msgid "the preferred date for the current locale"
 msgstr "föredraget datum för gällande lokalistion"
 
-#: src/prefs_common.c:3096
+#: src/prefs_common.c:3099
 msgid "the last two digits of a year"
 msgstr "e sista två siffrorna av ett årtal"
 
-#: src/prefs_common.c:3097
+#: src/prefs_common.c:3100
 msgid "the year as a decimal number"
 msgstr "ärtalet som ett decimaltal"
 
-#: src/prefs_common.c:3098
+#: src/prefs_common.c:3101
 msgid "the time zone or name or abbreviation"
 msgstr "tidszon, namn eller förkortning"
 
-#: src/prefs_common.c:3119
+#: src/prefs_common.c:3122
 msgid "Specifier"
 msgstr "Symbol"
 
-#: src/prefs_common.c:3120
+#: src/prefs_common.c:3123
 msgid "Description"
 msgstr "Beskrivning"
 
-#: src/prefs_common.c:3159
+#: src/prefs_common.c:3162
 msgid "Example"
 msgstr "Exempel"
 
-#: src/prefs_common.c:3247
+#: src/prefs_common.c:3250
 msgid "Set message colors"
 msgstr "Ställ in meddelandefärger"
 
-#: src/prefs_common.c:3255
+#: src/prefs_common.c:3258
 msgid "Colors"
 msgstr "Färger"
 
-#: src/prefs_common.c:3296
+#: src/prefs_common.c:3299
 msgid "Quoted Text - First Level"
 msgstr "Citerad text - Första nivå"
 
-#: src/prefs_common.c:3302
+#: src/prefs_common.c:3305
 msgid "Quoted Text - Second Level"
 msgstr "Citerad text - Andra nivå"
 
-#: src/prefs_common.c:3308
+#: src/prefs_common.c:3311
 msgid "Quoted Text - Third Level"
 msgstr "Citerad text -Tredje nivå"
 
-#: src/prefs_common.c:3314
+#: src/prefs_common.c:3317
 msgid "URI link"
 msgstr "URI-länk"
 
-#: src/prefs_common.c:3320
+#: src/prefs_common.c:3323
 #, fuzzy
 msgid "Target folder"
 msgstr "Ny mapp"
 
-#: src/prefs_common.c:3327
+#: src/prefs_common.c:3330
 msgid "Recycle quote colors"
 msgstr "Omcykla citeringsfärger"
 
-#: src/prefs_common.c:3390
+#: src/prefs_common.c:3393
 msgid "Pick color for quotation level 1"
 msgstr "Välj färg för citeringsnivå 1"
 
-#: src/prefs_common.c:3393
+#: src/prefs_common.c:3396
 msgid "Pick color for quotation level 2"
 msgstr "Välj färg för citeringsnivå 2"
 
-#: src/prefs_common.c:3396
+#: src/prefs_common.c:3399
 msgid "Pick color for quotation level 3"
 msgstr "Välj färg för citeringsnivå 3"
 
-#: src/prefs_common.c:3399
+#: src/prefs_common.c:3402
 msgid "Pick color for URI"
 msgstr "Välj färg för URI"
 
-#: src/prefs_common.c:3402
+#: src/prefs_common.c:3405
 #, fuzzy
 msgid "Pick color for target folder"
 msgstr "Välj färg för citeringsnivå 3"
 
-#: src/prefs_common.c:3406
+#: src/prefs_common.c:3409
 #, fuzzy
 msgid "Pick color for misspelled word"
 msgstr "Välj färg för URI"
 
-#: src/prefs_common.c:3539
+#: src/prefs_common.c:3542
 msgid "Font selection"
 msgstr "Typsnittsval"
 
-#: src/prefs_common.c:3613
+#: src/prefs_common.c:3616
 #, fuzzy
 msgid "Key bindings"
 msgstr "Skickar"
 
-#: src/prefs_common.c:3627
+#: src/prefs_common.c:3630
 msgid ""
 "Select the preset of key bindings.\n"
 "You can also modify each menu's shortcuts by pressing\n"
 "any key(s) when placing the mouse pointer on the item."
 msgstr ""
 
-#: src/prefs_common.c:3642 src/prefs_common.c:3966
+#: src/prefs_common.c:3645 src/prefs_common.c:3969
 msgid "Old Sylpheed"
 msgstr ""
 
@@ -5997,10 +6070,6 @@ msgstr ""
 #: src/prefs_filtering.c:390
 #, fuzzy
 msgid "Action"
-msgstr "Konto"
-
-#: src/prefs_filtering.c:429 src/progressdialog.c:52
-msgid "Account"
 msgstr "Konto"
 
 #: src/prefs_filtering.c:500 src/prefs_matcher.c:405
@@ -6340,25 +6409,25 @@ msgstr "Läser konfiguration...\n"
 msgid "Writing actions configuration...\n"
 msgstr "Skriver filterkonfiguration...\n"
 
-#: src/prefs_actions.c:660 src/prefs_actions.c:666
+#: src/prefs_actions.c:661 src/prefs_actions.c:667
 #, fuzzy
 msgid "Could not get message file."
 msgstr "Kunde inte läsa fil."
 
-#: src/prefs_actions.c:674
+#: src/prefs_actions.c:675
 msgid "Could not get message part."
 msgstr ""
 
-#: src/prefs_actions.c:680
+#: src/prefs_actions.c:681
 #, fuzzy
 msgid "No message part selected."
 msgstr "ett meddelande kan inte tas emot\n"
 
-#: src/prefs_actions.c:684
+#: src/prefs_actions.c:685
 msgid "No message file selected."
 msgstr ""
 
-#: src/prefs_actions.c:703
+#: src/prefs_actions.c:704
 #, fuzzy
 msgid "Can't get part of multipart message"
 msgstr "Kan inte ta emot delen av multipart-meddelandet."
@@ -6599,123 +6668,123 @@ msgstr "Ta bort meddelandet"
 msgid "Do you really want to delete this template?"
 msgstr "Vill du verkligen ta bort detta brevhuvud?"
 
-#: src/procmime.c:901
+#: src/procmime.c:925
 #, fuzzy
 msgid "procmime_get_text_content(): Code conversion failed.\n"
 msgstr "Kodkonversation misslyckades.\n"
 
-#: src/procmsg.c:143 src/procmsg.c:159
+#: src/procmsg.c:145 src/procmsg.c:161
 msgid "Cache data is corrupted\n"
 msgstr "Cache-data är korrupt\n"
 
-#: src/procmsg.c:209
+#: src/procmsg.c:211
 msgid "\tNo cache file\n"
 msgstr "\tIngen cachefil\n"
 
-#: src/procmsg.c:216
+#: src/procmsg.c:218
 #, fuzzy
 msgid "\tReading summary cache...\n"
 msgstr "\tLäser sammanfattningscache..."
 
-#: src/procmsg.c:221
+#: src/procmsg.c:223
 msgid "Cache version is different. Discarding it.\n"
 msgstr "Cacheversion är annorlunda. Kasserar den.\n"
 
-#: src/procmsg.c:291
+#: src/procmsg.c:293
 #, fuzzy
 msgid "\tMarking the messages...\n"
 msgstr "\tMarkerar meddelandena..."
 
-#: src/procmsg.c:335
+#: src/procmsg.c:337
 #, c-format
 msgid "\t%d new message(s)\n"
 msgstr "\t%d ny(tt/a) medelande(n)\n"
 
-#: src/procmsg.c:441
+#: src/procmsg.c:443
 msgid "can't open mark file\n"
 msgstr "kan inte öppna markeringsfil\n"
 
-#: src/procmsg.c:545
+#: src/procmsg.c:547
 msgid "Mark file not found.\n"
 msgstr "Markeringsfil ej funnen.\n"
 
-#: src/procmsg.c:547
+#: src/procmsg.c:549
 #, c-format
 msgid "Mark version is different (%d != %d). Discarding it.\n"
 msgstr "Markeringsversion är annorlunda (%d != %d). Kasserar den.\n"
 
-#: src/procmsg.c:563
+#: src/procmsg.c:565
 msgid "Can't open mark file with append mode.\n"
 msgstr "Kan inte öppna markerings fil i tilläggsläge.\n"
 
-#: src/procmsg.c:568
+#: src/procmsg.c:570
 msgid "Can't open mark file with write mode.\n"
 msgstr "Kan inte öppna markeringsfil i skrivningsläge.\n"
 
-#: src/procmsg.c:912
+#: src/procmsg.c:914
 #, c-format
 msgid "Sending queued message %d failed.\n"
 msgstr "Avsänding av köat meddelande %d misslyckades.\n"
 
-#: src/procmsg.c:944 src/procmsg.c:1393
+#: src/procmsg.c:946 src/procmsg.c:1395
 msgid "saving sent message...\n"
 msgstr "sparar skickat meddelande...\n"
 
-#: src/procmsg.c:977
+#: src/procmsg.c:979
 msgid "can't save message\n"
 msgstr "kan inte spara meddelande\n"
 
-#: src/procmsg.c:1040
+#: src/procmsg.c:1042
 #, c-format
 msgid "Print command line is invalid: `%s'\n"
 msgstr "Utskriftskommando är felaktigt: `%s'\n"
 
-#: src/procmsg.c:1289
+#: src/procmsg.c:1291
 #, fuzzy
 msgid "Sending message by mail\n"
 msgstr "Skickar meddelande"
 
-#: src/procmsg.c:1291 src/send.c:162
+#: src/procmsg.c:1293 src/send.c:162
 msgid "Queued message header is broken.\n"
 msgstr "Brevuhuvud i köat medelande är trasigt.\n"
 
-#: src/procmsg.c:1304 src/send.c:173
+#: src/procmsg.c:1306 src/send.c:173
 msgid "Account not found. Using current account...\n"
 msgstr "Konto ej funnet. Använder aktuellt konto...\n"
 
-#: src/procmsg.c:1315 src/send.c:184
+#: src/procmsg.c:1317 src/send.c:184
 msgid "Account not found.\n"
 msgstr "Konto ej funnet.\n"
 
-#: src/procmsg.c:1327
+#: src/procmsg.c:1329
 #, fuzzy, c-format
 msgid "Error occurred while sending the message to `%s'."
 msgstr "Ett fel uppstod vid meddelandets avsändande"
 
-#: src/procmsg.c:1331
+#: src/procmsg.c:1333
 #, fuzzy, c-format
 msgid "Error occurred while sending the message with command `%s'."
 msgstr "Fel uppstod vid avsändning av meddelande till %s."
 
-#: src/procmsg.c:1349
+#: src/procmsg.c:1351
 msgid "Could not create temporary file for news sending."
 msgstr ""
 
-#: src/procmsg.c:1360
+#: src/procmsg.c:1362
 msgid "Error when writing temporary file for news sending."
 msgstr ""
 
-#: src/procmsg.c:1366
+#: src/procmsg.c:1368
 #, fuzzy
 msgid "Sending message by news\n"
 msgstr "Skickar meddelande"
 
-#: src/procmsg.c:1418
+#: src/procmsg.c:1420
 #, fuzzy, c-format
 msgid "Setting flags for message %d in folder %s\n"
 msgstr "Hämtar meddelanden från %s till %s...\n"
 
-#: src/procmsg.c:1464
+#: src/procmsg.c:1466
 #, fuzzy, c-format
 msgid "Unsetting flags for message %d in folder %s\n"
 msgstr "Hämtar meddelanden från %s till %s...\n"
@@ -7568,58 +7637,58 @@ msgstr "Avtrådar..."
 msgid "Unthreading for execution..."
 msgstr "Avtrådar för exekvering..."
 
-#: src/summaryview.c:3857 src/summaryview.c:5187
+#: src/summaryview.c:3857 src/summaryview.c:5223
 #, c-format
 msgid "Processing (%s)..."
 msgstr ""
 
-#: src/summaryview.c:3897
+#: src/summaryview.c:3933
 msgid "No filter rules defined."
 msgstr ""
 
-#: src/summaryview.c:3903
+#: src/summaryview.c:3939
 msgid "filtering..."
 msgstr "filtrerar..."
 
-#: src/summaryview.c:3904
+#: src/summaryview.c:3940
 msgid "Filtering..."
 msgstr "Filtrerar..."
 
-#: src/summaryview.c:4996
+#: src/summaryview.c:5032
 #, c-format
 msgid "nfcp: checking <%s>"
 msgstr ""
 
-#: src/summaryview.c:4999
+#: src/summaryview.c:5035
 #, c-format
 msgid " <%s>"
 msgstr ""
 
-#: src/summaryview.c:5008
+#: src/summaryview.c:5044
 msgid "\n"
 msgstr ""
 
-#: src/summaryview.c:5040
+#: src/summaryview.c:5076
 #, c-format
 msgid "Cross-reference %d: Hash <%s>\n"
 msgstr ""
 
-#: src/summaryview.c:5079
+#: src/summaryview.c:5115
 #, fuzzy, c-format
 msgid "Message %d selected\n"
 msgstr "Meddelande %d är markerat\n"
 
-#: src/summaryview.c:5118
+#: src/summaryview.c:5154
 #, fuzzy, c-format
 msgid "Message %d is marked as ignore thread\n"
 msgstr "Meddelande %d är markerat som blivande läst\n"
 
-#: src/summaryview.c:5150
+#: src/summaryview.c:5186
 #, fuzzy, c-format
 msgid "Message %d is marked as unignore thread\n"
 msgstr "Meddelande %d är markerat som oläst\n"
 
-#: src/summaryview.c:5268
+#: src/summaryview.c:5304
 #, c-format
 msgid ""
 "Regular expression (regexp) error:\n"
@@ -7656,19 +7725,19 @@ msgstr "%s finns redan."
 msgid "%s:%d writing template \"%s\" to %s\n"
 msgstr ""
 
-#: src/textview.c:168
+#: src/textview.c:171
 msgid "Creating text view...\n"
 msgstr "Skapar textvy...\n"
 
-#: src/textview.c:523
+#: src/textview.c:540
 msgid "To save this part, pop up the context menu with "
 msgstr "För att spara denna del, ta fram snabbmenyn med "
 
-#: src/textview.c:524
+#: src/textview.c:541
 msgid "right click and select `Save as...', "
 msgstr "ett högerklick och välj 'Spara som...',  "
 
-#: src/textview.c:525
+#: src/textview.c:542
 msgid ""
 "or press `y' key.\n"
 "\n"
@@ -7676,11 +7745,11 @@ msgstr ""
 "eller tryck på 'y'-knappen.\n"
 "\n"
 
-#: src/textview.c:527
+#: src/textview.c:544
 msgid "To display this part as a text message, select "
 msgstr "För att visa denna del som textmeddelande, välj "
 
-#: src/textview.c:528
+#: src/textview.c:545
 msgid ""
 "`Display as text', or press `t' key.\n"
 "\n"
@@ -7688,12 +7757,12 @@ msgstr ""
 "'Visa som text', eller tryck på 't'-knappen.\n"
 "\n"
 
-#: src/textview.c:530
+#: src/textview.c:547
 #, fuzzy
 msgid "To display this part as an image, select "
 msgstr "För att visa denna del som textmeddelande, välj "
 
-#: src/textview.c:531
+#: src/textview.c:548
 #, fuzzy
 msgid ""
 "`Display image', or press `i' key.\n"
@@ -7702,31 +7771,31 @@ msgstr ""
 "'Visa som text', eller tryck på 't'-knappen.\n"
 "\n"
 
-#: src/textview.c:533
+#: src/textview.c:550
 msgid "To open this part with external program, select "
 msgstr "För att öppna denna del med ett externt program, välj "
 
-#: src/textview.c:534
+#: src/textview.c:551
 msgid "`Open' or `Open with...', "
 msgstr "'Öppna' eller 'Öppna med...',"
 
-#: src/textview.c:535
+#: src/textview.c:552
 msgid "or double-click, or click the center button, "
 msgstr "eller dubbelklicka, eller klicka den mittersta musknappen"
 
-#: src/textview.c:536
+#: src/textview.c:553
 msgid "or press `l' key."
 msgstr "eller tryck på 'l'-knappen."
 
-#: src/textview.c:555
+#: src/textview.c:572
 msgid "This signature has not been checked yet.\n"
 msgstr "Denna signatur har inte undersökts ännu.\n"
 
-#: src/textview.c:556
+#: src/textview.c:573
 msgid "To check it, pop up the context menu with\n"
 msgstr "För att undersöka den, öppna snabbmenyn genom att\n"
 
-#: src/textview.c:557
+#: src/textview.c:574
 msgid "right click and select `Check signature'.\n"
 msgstr "högerklicka och välj 'Undersök signatur'.\n"
 
@@ -7866,9 +7935,6 @@ msgstr "Kommandorad för att öppna URI är felaktig: `%s'"
 
 #~ msgid "Reply all"
 #~ msgstr "Svara alla"
-
-#~ msgid "Common preference"
-#~ msgstr "Allmänna inställningar"
 
 #~ msgid "Usually used"
 #~ msgstr "Vanligtvis använt"

@@ -9,7 +9,7 @@ MINOR_VERSION=7
 MICRO_VERSION=6
 INTERFACE_AGE=0
 BINARY_AGE=0
-EXTRA_VERSION=claws4
+EXTRA_VERSION=claws9
 VERSION=$MAJOR_VERSION.$MINOR_VERSION.$MICRO_VERSION$EXTRA_VERSION
 
 VERSION=${VERSION}-nc
@@ -352,9 +352,7 @@ AC_CHECK_FUNCS(gethostname mkdir mktime socket strstr \
 AC_OUTPUT([
 Makefile
 sylpheed.spec
-intl/Makefile
 ac/Makefile
-po/Makefile.in
 libkcc/Makefile
 src/version.h
 src/Makefile
@@ -371,6 +369,7 @@ manual/es/Makefile
 manual/fr/Makefile
 manual/ja/Makefile
 tools/Makefile
+intl/Makefile po/Makefile.in
 ])
 
 dnl Output the configuration summary

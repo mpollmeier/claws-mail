@@ -1061,6 +1061,18 @@ MsgInfo *folder_item_fetch_msginfo(FolderItem *item, gint num)
 	return msginfo;
 }
 
+GSList *folder_item_get_msg_list(FolderItem *item)
+{
+	g_return_val_if_fail(item != NULL, NULL);
+	
+	if(item->cache == 0)
+		folder_item_read_cache(item);
+
+	g_return_val_if_fail(item->cache != NULL, NULL);
+	
+	return msgcache_get_msg_list(item->cache);
+}
+
 gchar *folder_item_fetch_msg(FolderItem *item, gint num)
 {
 	Folder *folder;

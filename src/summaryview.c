@@ -806,9 +806,7 @@ gboolean summary_show(SummaryView *summaryview, FolderItem *item,
 	USE LIST FROM CACHE, WILL NOT DISPLAY ANY MESSAGES DROPED
 	BY OTHER PROGRAMS TO THE FOLDER
 */
-	if(!item->cache)
-		folder_item_read_cache(item);
-	mlist = msgcache_get_msg_list(item->cache);
+	mlist = folder_item_get_msg_list(item);
 
 	summary_processing(summaryview, mlist);
 
@@ -5229,9 +5227,7 @@ static gboolean processing_apply_func(GNode *node, gpointer data)
 		mlist = item->folder->get_msg_list(item->folder, item,
 						   TRUE);
 */		
-		if(!item->cache)
-			folder_item_read_cache(item);
-		mlist = msgcache_get_msg_list(item->cache);
+		mlist = folder_item_get_msg_list(item);
 		for(cur = mlist ; cur != NULL ; cur = cur->next) {
 			MsgInfo * msginfo;
 			

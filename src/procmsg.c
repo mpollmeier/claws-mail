@@ -897,9 +897,7 @@ gint procmsg_send_queue(FolderItem *queue, gboolean save_msgs)
 	g_return_val_if_fail(queue != NULL, -1);
 
 	folder_item_scan(queue);
-	if(!queue->cache)
-		folder_item_read_cache(queue);
-	list = msgcache_get_msg_list(queue->cache);
+	list = folder_item_get_msg_list(queue);
 
 
 	for(elem = list; elem != NULL; elem = elem->next) {
@@ -942,6 +940,7 @@ gint procmsg_save_to_outbox(FolderItem *outbox, const gchar *file,
 	gint num;
 	FILE *fp;
 	MsgFlags flag = {0, 0};
+	MsgInfo *msginfo;
 
 	debug_print(_("saving sent message...\n"));
 
@@ -982,13 +981,13 @@ gint procmsg_save_to_outbox(FolderItem *outbox, const gchar *file,
 		}
 		return -1;
 	}
-	folderview_update_item(outbox, FALSE);
-	
+	msginfo = folder_item_fetch_msginfo(outbox, num);
+	procmsg_msginfo_unset_flags(msginfo, ~0, ~0);
+	procmsg_msginfo_free(msginfo);
+
 	if(is_queued) {
 		unlink(file);
 	}
-
-	procmsg_add_flags(outbox, num, flag);
 
 	return 0;
 }
@@ -1480,12 +1479,12 @@ void procmsg_msginfo_unset_flags(MsgInfo *msginfo, MsgPermFlags perm_flags, MsgT
 	}
 
 	/* if ignore thread flag is unset */
-	if((perm_flags & MSG_IGNORE_THREAD) && !MSG_IS_IGNORE_THREAD(msginfo->flags)) {
-		if(MSG_IS_NEW(msginfo->flags) || (perm_flags & MSG_NEW)) {
+	if((perm_flags & MSG_IGNORE_THREAD) && MSG_IS_IGNORE_THREAD(msginfo->flags)) {
+		if(MSG_IS_NEW(msginfo->flags) && !(perm_flags & MSG_NEW)) {
 			item->new++;
 			changed = TRUE;
 		}
-		if(MSG_IS_UNREAD(msginfo->flags) || (perm_flags & MSG_UNREAD)) {
+		if(MSG_IS_UNREAD(msginfo->flags) && !(perm_flags & MSG_UNREAD)) {
 			item->unread++;
 			changed = TRUE;
 		}

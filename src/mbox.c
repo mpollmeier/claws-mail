@@ -409,9 +409,7 @@ gint export_to_mbox(FolderItem *src, const gchar *mbox)
 		return -1;
 	}
 
-	if(!src->cache)
-		folder_item_read_cache(src);
-	mlist = msgcache_get_msg_list(src->cache);
+	mlist = folder_item_get_msg_list(src);
 
 	for (cur = mlist; cur != NULL; cur = cur->next) {
 		msginfo = (MsgInfo *)cur->data;

@@ -567,7 +567,7 @@ static gint inc_start(IncProgressDialog *inc_dialog)
 			/* get list of messages in processing */
 			processing = folder_get_default_processing();
 			folder_item_scan(processing);
-			msglist = msgcache_get_msg_list(processing->cache);
+			msglist = folder_item_get_msg_list(processing);
 
 			/* process messages */
 			for(msglist_element = msglist; msglist_element != NULL; msglist_element = msglist_element->next) {
