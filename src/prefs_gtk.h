@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef __PREFS_H__
-#define __PREFS_H__
+#ifndef __PREFS_GTK_H__
+#define __PREFS_GTK_H__
 
 #include <glib.h>
 #include <gtk/gtkwidget.h>
@@ -30,9 +30,9 @@
 #include <stdio.h>
 
 typedef struct _PrefParam	PrefParam;
-typedef struct _PrefFile	PrefFile;
 typedef struct _PrefsDialog	PrefsDialog;
 
+#include "prefs.h"
 #include "account.h"
 
 #define VSPACING		10
@@ -40,11 +40,7 @@ typedef struct _PrefsDialog	PrefsDialog;
 #define VSPACING_NARROW_2	2
 #define VBOX_BORDER		16
 #define DEFAULT_ENTRY_WIDTH	80
-#ifdef WIN32
-#define PREFSBUFSIZE		4096
-#else
 #define PREFSBUFSIZE		1024
-#endif
 
 typedef enum
 {
@@ -67,11 +63,6 @@ struct _PrefParam {
 	GtkWidget    **widget;
 	DataSetFunc    data_set_func;
 	WidgetSetFunc  widget_set_func;
-};
-
-struct _PrefFile {
-	FILE *fp;
-	gchar *path;
 };
 
 struct _PrefsDialog 
@@ -139,9 +130,6 @@ struct _PrefsDialog
 			   GTK_SIGNAL_FUNC(prefs_button_toggled), targetwid); \
 }
 
-#ifdef WIN32
-void prefs_init_config		(PrefParam	*param);
-#endif
 void prefs_read_config		(PrefParam	*param,
 				 const gchar	*label,
 				 const gchar	*rcfile);
@@ -178,7 +166,5 @@ void prefs_set_data_from_toggle	(PrefParam	*pparam);
 void prefs_set_toggle		(PrefParam	*pparam);
 void prefs_set_data_from_spinbtn(PrefParam	*pparam);
 void prefs_set_spinbtn		(PrefParam	*pparam);
-gboolean prefs_is_readonly(const gchar * path);
-gboolean prefs_rc_is_readonly(const gchar * rcfile);
 
 #endif /* __PREFS_H__ */
