@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2001 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2002 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,9 @@
 #define __NNTP_H__
 
 #include "socket.h"
+#if USE_SSL
+#  include "ssl.h"
+#endif
 
 typedef struct _NNTPSockInfo	NNTPSockInfo;
 
@@ -49,21 +52,17 @@ struct _NNTPSockInfo
 NNTPSockInfo *nntp_open		(const gchar	*server,
 				 gushort	 port,
 				 gchar		*buf,
-				 gboolean use_ssl);
-#else
-NNTPSockInfo *nntp_open		(const gchar	*server,
-				 gushort	 port,
-				 gchar		*buf);
-#endif
-
-#if USE_SSL
+				 SSLType	 ssl_type);
 NNTPSockInfo *nntp_open_auth	(const gchar	*server,
 				 gushort	 port,
 				 gchar		*buf,
 				 const gchar	*userid,
 				 const gchar	*passwd,
-				 gboolean use_ssl);
+				 SSLType	 ssl_type);
 #else
+NNTPSockInfo *nntp_open		(const gchar	*server,
+				 gushort	 port,
+				 gchar		*buf);
 NNTPSockInfo *nntp_open_auth	(const gchar	*server,
 				 gushort	 port,
 				 gchar		*buf,

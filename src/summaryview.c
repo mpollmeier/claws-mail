@@ -398,7 +398,7 @@ static GtkItemFactoryEntry summary_popup_entries[] =
 	{N_("/Follow-up and reply to"),	NULL, summary_reply_cb,	COMPOSE_FOLLOWUP_AND_REPLY_TO, NULL},
 	{N_("/Reply to a_ll"),		NULL, summary_reply_cb,	COMPOSE_REPLY_TO_ALL, NULL},
 	{N_("/_Forward"),		NULL, summary_reply_cb, COMPOSE_FORWARD, NULL},
-	{N_("/Bounce"),	                NULL, summary_reply_cb, COMPOSE_BOUNCE, NULL},
+	{N_("/Redirect"),	        NULL, summary_reply_cb, COMPOSE_REDIRECT, NULL},
 	{N_("/---"),			NULL, NULL,		0, "<Separator>"},
 	{N_("/Re-_edit"),		NULL, summary_reedit,   0, NULL},
 	{N_("/---"),			NULL, NULL,		0, "<Separator>"},
@@ -545,8 +545,6 @@ SummaryView *summary_create(void)
 	summaryview->popupfactory = popupfactory;
 	summaryview->msg_is_toggled_on = TRUE;
 	summaryview->lock_count = 0;
-	summaryview->sort_mode = SORT_BY_NONE;
-	summaryview->sort_type = GTK_SORT_ASCENDING;
 
 	gtk_widget_show_all(vbox);
 
@@ -884,25 +882,14 @@ gboolean summary_show(SummaryView *summaryview, FolderItem *item,
 	folderview_update_msg_num(summaryview->folderview,
 				  summaryview->folderview->opened);
 
+	if (item->sort_key != SORT_BY_NONE)
+		summary_sort(summaryview, item->sort_key, item->sort_type);
+
 	summary_write_cache(summaryview);
 
 	gtk_signal_handler_unblock_by_data(GTK_OBJECT(ctree), summaryview);
 
 	gtk_clist_thaw(GTK_CLIST(ctree));
-
-	/* sort before */
-	sort_mode = prefs_folder_item_get_sort_mode(item);
-	sort_type = prefs_folder_item_get_sort_type(item);
-
-	if (sort_mode != SORT_BY_NONE) {
-		summaryview->sort_mode = sort_mode;
-		if (sort_type == GTK_SORT_DESCENDING)
-			summaryview->sort_type = GTK_SORT_ASCENDING;
-		else
-			summaryview->sort_type = GTK_SORT_DESCENDING;
-
-		summary_sort(summaryview, sort_mode);
-	}
 
 	if (is_refresh) {
 		summaryview->displayed =
@@ -917,9 +904,9 @@ gboolean summary_show(SummaryView *summaryview, FolderItem *item,
 			node = summary_find_next_unread_msg(summaryview, NULL);
 			if (node == NULL && GTK_CLIST(ctree)->row_list != NULL)
 				node = gtk_ctree_node_nth
-					(ctree, sort_type == 
-					 GTK_SORT_DESCENDING ? 0 : 
-					 GTK_CLIST(ctree)->rows - 1);
+					(ctree,
+					 item->sort_type == SORT_DESCENDING
+					 ? 0 : GTK_CLIST(ctree)->rows - 1);
 			summary_select_node(summaryview, node, FALSE, TRUE);
 		}
 	} else {
@@ -931,12 +918,11 @@ gboolean summary_show(SummaryView *summaryview, FolderItem *item,
 			node = summary_find_next_unread_msg(summaryview, NULL);
 
 		if (node == NULL && GTK_CLIST(ctree)->row_list != NULL) {
-			/* Get the last visible node on screen */
-			/* FIXME: huh, what happens if node is null? that allowed?? */
-			node = gtk_ctree_node_nth(ctree, sort_type == 
-						  GTK_SORT_DESCENDING ? 0 : 
-						  GTK_CLIST(ctree)->rows - 1);
-		}	
+			node = gtk_ctree_node_nth
+				(ctree,
+				 item->sort_type == SORT_DESCENDING
+				 ? 0 : GTK_CLIST(ctree)->rows - 1);
+		}
 		if (prefs_common.open_unread_on_enter) {
 			summary_unlock(summaryview);
 			summary_select_node(summaryview, node, TRUE, TRUE);
@@ -1005,8 +991,6 @@ void summary_clear_list(SummaryView *summaryview)
 		g_hash_table_destroy(summaryview->folder_table);
 		summaryview->folder_table = NULL;
 	}
-	summaryview->sort_mode = SORT_BY_NONE;
-	summaryview->sort_type = GTK_SORT_ASCENDING;
 
 	gtk_clist_clear(clist);
 	if (summaryview->col_pos[S_COL_SUBJECT] == N_SUMMARY_COLS - 1) {
@@ -1110,7 +1094,7 @@ static void summary_set_menu_sensitive(SummaryView *summaryview)
 	menu_set_sensitive(ifactory, "/Reply to sender",	  sens);
 	menu_set_sensitive(ifactory, "/Reply to all",		  sens);
 	menu_set_sensitive(ifactory, "/Forward",		  TRUE);
-	menu_set_sensitive(ifactory, "/Bounce",	                  TRUE);
+	menu_set_sensitive(ifactory, "/Redirect",	          TRUE);
 
 	menu_set_sensitive(ifactory, "/Add sender to address book", sens);
 	menu_set_sensitive(ifactory, "/Create filter rule",         sens);
@@ -1809,8 +1793,9 @@ static void summary_set_column_titles(SummaryView *summaryview)
 	SummaryColumnType type;
 	gboolean single_char;
 	GtkJustification justify;
+	FolderItem *item = summaryview->folder_item;
 
-	static SummarySortType sort_by[N_SUMMARY_COLS] = {
+	static FolderSortKey sort_by[N_SUMMARY_COLS] = {
 		SORT_BY_MARK,
 		SORT_BY_UNREAD,
 		SORT_BY_MIME,
@@ -1879,9 +1864,9 @@ static void summary_set_column_titles(SummaryView *summaryview)
 			gtk_box_pack_start(GTK_BOX(hbox), label,
 					   FALSE, FALSE, 0);
 
-		if (summaryview->sort_mode == sort_by[type]) {
+		if (item && item->sort_key == sort_by[type]) {
 			arrow = gtk_arrow_new
-				(summaryview->sort_type == GTK_SORT_ASCENDING
+				(item->sort_type == SORT_ASCENDING
 				 ? GTK_ARROW_DOWN : GTK_ARROW_UP,
 				 GTK_SHADOW_IN);
 			if (justify == GTK_JUSTIFY_RIGHT)
@@ -1897,16 +1882,17 @@ static void summary_set_column_titles(SummaryView *summaryview)
 	}
 }
 
-void summary_sort(SummaryView *summaryview, SummarySortType type)
+void summary_sort(SummaryView *summaryview,
+		  FolderSortKey sort_key, FolderSortType sort_type)
 {
 	GtkCTree *ctree = GTK_CTREE(summaryview->ctree);
 	GtkCList *clist = GTK_CLIST(summaryview->ctree);
 	GtkCListCompareFunc cmp_func;
+	FolderItem *item = summaryview->folder_item;
 
-	if (!summaryview->folder_item)
-		return;
+	if (!item) return;
 
-	switch (type) {
+	switch (sort_key) {
 	case SORT_BY_MARK:
 		cmp_func = (GtkCListCompareFunc)summary_cmp_by_mark;
 		break;
@@ -1940,6 +1926,12 @@ void summary_sort(SummaryView *summaryview, SummarySortType type)
 	case SORT_BY_LABEL:
 		cmp_func = (GtkCListCompareFunc)summary_cmp_by_label;
 		break;
+	case SORT_BY_NONE:
+		item->sort_key = sort_key;
+		item->sort_type = SORT_ASCENDING;
+		summary_set_column_titles(summaryview);
+		summary_set_menu_sensitive(summaryview);
+		return;
 	default:
 		return;
 	}
@@ -1951,25 +1943,16 @@ void summary_sort(SummaryView *summaryview, SummarySortType type)
 
 	gtk_clist_set_compare_func(clist, cmp_func);
 
-	/* toggle sort type if the same column is selected */
-	if (summaryview->sort_mode == type)
-		summaryview->sort_type =
-			summaryview->sort_type == GTK_SORT_ASCENDING
-			? GTK_SORT_DESCENDING : GTK_SORT_ASCENDING;
-	else
-		summaryview->sort_type = GTK_SORT_ASCENDING;
-	gtk_clist_set_sort_type(clist, summaryview->sort_type);
-	summaryview->sort_mode = type;
+	gtk_clist_set_sort_type(clist, (GtkSortType)sort_type);
+	item->sort_key = sort_key;
+	item->sort_type = sort_type;
 
 	summary_set_column_titles(summaryview);
+	summary_set_menu_sensitive(summaryview);
 
 	gtk_ctree_sort_recursive(ctree, NULL);
 
 	gtk_ctree_node_moveto(ctree, summaryview->selected, -1, 0.5, 0);
-	prefs_folder_item_set_config(summaryview->folder_item,
-				     summaryview->sort_type,
-				     summaryview->sort_mode);
-	prefs_folder_item_save_config(summaryview->folder_item);
 
 	debug_print(_("done.\n"));
 	STATUSBAR_POP(summaryview->mainwin);
@@ -4204,8 +4187,8 @@ void summary_reply(SummaryView *summaryview, ComposeMode mode)
 			g_slist_free(msginfo_list);
 		}			
 		break;
-	case COMPOSE_BOUNCE:
-		compose_bounce(NULL, msginfo);
+	case COMPOSE_REDIRECT:
+		compose_redirect(NULL, msginfo);
 		break;
 	default:
 		g_warning("summary_reply_cb(): invalid action: %d\n", mode);
@@ -4804,57 +4787,72 @@ static void summary_create_filter_cb(SummaryView *summaryview,
 	summary_filter_open(summaryview, (PrefsFilterType)action);
 }
 
+static void summary_sort_by_column_click(SummaryView *summaryview,
+					 FolderSortKey sort_key)
+{
+	FolderItem *item = summaryview->folder_item;
+
+	if (!item) return;
+
+	if (item->sort_key == sort_key)
+		summary_sort(summaryview, sort_key,
+			     item->sort_type == SORT_ASCENDING
+			     ? SORT_DESCENDING : SORT_ASCENDING);
+	else
+		summary_sort(summaryview, sort_key, SORT_ASCENDING);
+}
+
 static void summary_mark_clicked(GtkWidget *button, SummaryView *summaryview)
 {
-	summary_sort(summaryview, SORT_BY_MARK);
+	summary_sort_by_column_click(summaryview, SORT_BY_MARK);
 }
 
 static void summary_unread_clicked(GtkWidget *button, SummaryView *summaryview)
 {
-	summary_sort(summaryview, SORT_BY_UNREAD);
+	summary_sort_by_column_click(summaryview, SORT_BY_UNREAD);
 }
 
 static void summary_mime_clicked(GtkWidget *button, SummaryView *summaryview)
 {
-	summary_sort(summaryview, SORT_BY_MIME);
+	summary_sort_by_column_click(summaryview, SORT_BY_MIME);
 }
 
 static void summary_num_clicked(GtkWidget *button, SummaryView *summaryview)
 {
-	summary_sort(summaryview, SORT_BY_NUMBER);
-}
-
-static void summary_score_clicked(GtkWidget *button,
-				  SummaryView *summaryview)
-{
-	summary_sort(summaryview, SORT_BY_SCORE);
-}
-
-static void summary_locked_clicked(GtkWidget *button,
-				  SummaryView *summaryview)
-{
-	summary_sort(summaryview, SORT_BY_LOCKED);
+	summary_sort_by_column_click(summaryview, SORT_BY_NUMBER);
 }
 
 static void summary_size_clicked(GtkWidget *button, SummaryView *summaryview)
 {
-	summary_sort(summaryview, SORT_BY_SIZE);
+	summary_sort_by_column_click(summaryview, SORT_BY_SIZE);
 }
 
 static void summary_date_clicked(GtkWidget *button, SummaryView *summaryview)
 {
-	summary_sort(summaryview, SORT_BY_DATE);
+	summary_sort_by_column_click(summaryview, SORT_BY_DATE);
 }
 
 static void summary_from_clicked(GtkWidget *button, SummaryView *summaryview)
 {
-	summary_sort(summaryview, SORT_BY_FROM);
+	summary_sort_by_column_click(summaryview, SORT_BY_FROM);
 }
 
 static void summary_subject_clicked(GtkWidget *button,
 				    SummaryView *summaryview)
 {
-	summary_sort(summaryview, SORT_BY_SUBJECT);
+	summary_sort_by_column_click(summaryview, SORT_BY_SUBJECT);
+}
+
+static void summary_score_clicked(GtkWidget *button,
+				  SummaryView *summaryview)
+{
+	summary_sort_by_column_click(summaryview, SORT_BY_SCORE);
+}
+
+static void summary_locked_clicked(GtkWidget *button,
+				   SummaryView *summaryview)
+{
+	summary_sort_by_column_click(summaryview, SORT_BY_LOCKED);
 }
 
 static void summary_start_drag(GtkWidget *widget, gint button, GdkEvent *event,

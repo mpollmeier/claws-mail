@@ -669,7 +669,7 @@ Compose *compose_new(PrefsAccount *account)
 	return compose_generic_new(account, NULL, NULL);
 }
 
-Compose *compose_bounce(PrefsAccount *account, MsgInfo *msginfo)
+Compose *compose_redirect(PrefsAccount *account, MsgInfo *msginfo)
 {
 	Compose *c;
 	gchar *filename;
@@ -681,7 +681,7 @@ Compose *compose_bounce(PrefsAccount *account, MsgInfo *msginfo)
 	if (filename == NULL)
 		return NULL;
 
-	c->bounce_filename = filename;
+	c->redirect_filename = filename;
 
 	if (msginfo->subject)
 		gtk_entry_set_text(GTK_ENTRY(c->subject_entry),
@@ -734,6 +734,7 @@ Compose *compose_new_with_folderitem(PrefsAccount *account, FolderItem *item)
 Compose *compose_generic_new(PrefsAccount *account, const gchar *mailto, FolderItem *item)
 {
 	Compose *compose;
+	GtkSText *text;
 
 	if (item && item->prefs && item->prefs->enable_default_account)
 		account = account_find_from_id(item->prefs->default_account);
@@ -744,10 +745,19 @@ Compose *compose_generic_new(PrefsAccount *account, const gchar *mailto, FolderI
 	compose = compose_create(account, COMPOSE_NEW);
 	compose->replyinfo = NULL;
 
+	text = GTK_STEXT(compose->text);
+	gtk_stext_freeze(text);
+
 	if (prefs_common.auto_sig)
 		compose_insert_sig(compose);
-	gtk_editable_set_position(GTK_EDITABLE(compose->text), 0);
-	gtk_stext_set_point(GTK_STEXT(compose->text), 0);
+	gtk_editable_set_position(GTK_EDITABLE(text), 0);
+	gtk_stext_set_point(text, 0);
+
+	gtk_stext_thaw(text);
+
+	/* workaround for initial XIM problem */
+	gtk_widget_grab_focus(compose->text);
+	gtkut_widget_wait_for_draw(compose->text);
 
 	if (account->protocol != A_NNTP) {
 		if (mailto) {
@@ -2851,8 +2861,8 @@ static gboolean compose_use_attach(Compose *compose) {
     return(gtk_clist_get_row_data(GTK_CLIST(compose->attach_clist), 0) != NULL);
 }
 
-static gint compose_bounce_write_headers_from_headerlist(Compose *compose, 
-							 FILE *fp)
+static gint compose_redirect_write_headers_from_headerlist(Compose *compose, 
+							   FILE *fp)
 {
 	gchar buf[BUFFSIZE];
 	gchar *str;
@@ -2860,17 +2870,14 @@ static gint compose_bounce_write_headers_from_headerlist(Compose *compose,
 	GSList *list;
 	ComposeHeaderEntry *headerentry;
 	gchar *headerentryname;
-	gchar *header_w_colon;
 	gchar *cc_hdr;
 	gchar *to_hdr;
 
-	debug_print(_("Writing bounce header\n"));
+	debug_print(_("Writing redirect header\n"));
 
-	header_w_colon = g_strconcat("To:", NULL);
-	to_hdr = (prefs_common.trans_hdr ? gettext(header_w_colon) : header_w_colon);
-	header_w_colon = g_strconcat("Cc:", NULL);
-	cc_hdr = (prefs_common.trans_hdr ? gettext(header_w_colon) : header_w_colon);
-	
+	cc_hdr = prefs_common.trans_hdr ? _("Cc:") : "Cc:";
+ 	to_hdr = prefs_common.trans_hdr ? _("To:") : "To:";
+
 	first_address = TRUE;
 	for(list = compose->header_list; list; list = list->next) {
 		headerentry = ((ComposeHeaderEntry *)list->data);
@@ -2902,7 +2909,7 @@ static gint compose_bounce_write_headers_from_headerlist(Compose *compose,
 	return(0);
 }
 
-static gint compose_bounce_write_headers(Compose *compose, FILE *fp)
+static gint compose_redirect_write_headers(Compose *compose, FILE *fp)
 {
 	gchar buf[BUFFSIZE];
 	gchar *str;
@@ -2912,11 +2919,11 @@ static gint compose_bounce_write_headers(Compose *compose, FILE *fp)
 	g_return_val_if_fail(compose->account != NULL, -1);
 	g_return_val_if_fail(compose->account->address != NULL, -1);
 
-	/* Date */
+	/* Resent-Date */
 	get_rfc822_date(buf, sizeof(buf));
 	fprintf(fp, "Resent-Date: %s\n", buf);
 
-	/* From */
+	/* Resent-From */
 	if (compose->account->name && *compose->account->name) {
 		compose_convert_header
 			(buf, sizeof(buf), compose->account->name,
@@ -2926,8 +2933,26 @@ static gint compose_bounce_write_headers(Compose *compose, FILE *fp)
 	} else
 		fprintf(fp, "Resent-From: %s\n", compose->account->address);
 
-	/* To */
-	compose_bounce_write_headers_from_headerlist(compose, fp);
+	/* Subject */
+	str = gtk_entry_get_text(GTK_ENTRY(compose->subject_entry));
+	if (*str != '\0') {
+		Xstrdup_a(str, str, return -1);
+		g_strstrip(str);
+		if (*str != '\0') {
+			compose_convert_header(buf, sizeof(buf), str,
+					       strlen("Subject: "));
+			fprintf(fp, "Subject: %s\n", buf);
+		}
+	}
+
+	/* Resent-Message-ID */
+	if (compose->account->gen_msgid) {
+		compose_generate_msgid(compose, buf, sizeof(buf));
+		fprintf(fp, "Resent-Message-Id: <%s>\n", buf);
+		compose->msgid = g_strdup(buf);
+	}
+
+	compose_redirect_write_headers_from_headerlist(compose, fp);
 
 	/* separator between header and body */
 	fputs("\n", fp);
@@ -2935,14 +2960,14 @@ static gint compose_bounce_write_headers(Compose *compose, FILE *fp)
 	return 0;
 }
 
-static gint compose_bounce_write_to_file(Compose *compose, const gchar *file)
+static gint compose_redirect_write_to_file(Compose *compose, const gchar *file)
 {
 	FILE *fp;
 	FILE *fdest;
 	size_t len;
 	gchar buf[BUFFSIZE];
 
-	if ((fp = fopen(compose->bounce_filename, "rb")) == NULL) {
+	if ((fp = fopen(compose->redirect_filename, "rb")) == NULL) {
 		FILE_OP_ERROR(file, "fopen");
 		return -1;
 	}
@@ -2961,16 +2986,22 @@ static gint compose_bounce_write_to_file(Compose *compose, const gchar *file)
 
 	while (procheader_get_unfolded_line(buf, sizeof(buf), fp)) {
 		/* should filter returnpath, delivered-to */
-		if ((g_strncasecmp(buf, "Return-Path:",
-				   strlen("Return-Path:")) == 0)
-		    || (g_strncasecmp(buf, "Delivered-To:",
-				      strlen("Delivered-To:")) == 0))
+		if (g_strncasecmp(buf, "Return-Path:",
+				   strlen("Return-Path:")) == 0 ||
+		    g_strncasecmp(buf, "Delivered-To:",
+				  strlen("Delivered-To:")) == 0 ||
+		    g_strncasecmp(buf, "Received:",
+				  strlen("Received:")) == 0 ||
+		    g_strncasecmp(buf, "Subject:",
+				  strlen("Subject:")) == 0 ||
+		    g_strncasecmp(buf, "X-UIDL:",
+				  strlen("X-UIDL:")) == 0)
 			continue;
 
 		if (fputs(buf, fdest) == -1)
 			goto error;
 
-		if (!prefs_common.bounce_keep_from) {
+		if (!prefs_common.redirect_keep_from) {
 			if (g_strncasecmp(buf, "From:",
 					  strlen("From:")) == 0) {
 				fputs(" (by way of ", fdest);
@@ -2994,20 +3025,27 @@ static gint compose_bounce_write_to_file(Compose *compose, const gchar *file)
 			goto error;
 	}
 
-	compose_bounce_write_headers(compose, fdest);
+	compose_redirect_write_headers(compose, fdest);
 
-	while ((len = fread(buf, sizeof(gchar), BUFFSIZE, fp)) > 0) {
-		if (fwrite(buf, sizeof(gchar), len, fdest) == -1)
+	while ((len = fread(buf, sizeof(gchar), sizeof(buf), fp)) > 0) {
+		if (fwrite(buf, sizeof(gchar), len, fdest) != len) {
+			FILE_OP_ERROR(file, "fwrite");
 			goto error;
+		}
 	}
 
-	fclose(fdest);
 	fclose(fp);
+	if (fclose(fdest) == EOF) {
+		FILE_OP_ERROR(file, "fclose");
+		unlink(file);
+		return -1;
+	}
 
 	return 0;
  error:
-	fclose(fdest);
 	fclose(fp);
+	fclose(fdest);
+	unlink(file);
 
 	return -1;
 }
@@ -3321,8 +3359,8 @@ static gint compose_queue_sub(Compose *compose, gint *msgnum, FolderItem **item,
 	tmp2 = g_strdup_printf("%s%ctmp%d", g_get_tmp_dir(),
 				      G_DIR_SEPARATOR, (gint)compose);
 
-	if (compose->bounce_filename != NULL) {
-		if (compose_bounce_write_to_file(compose, tmp2) < 0) {
+	if (compose->redirect_filename != NULL) {
+		if (compose_redirect_write_to_file(compose, tmp2) < 0) {
 			unlink(tmp2);
 			lock = FALSE;
 			return -1;
@@ -4516,9 +4554,6 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 		new_style = gtk_style_copy(style);
 
 	if (prefs_common.textfont) {
-		CharSet charset;
-
-		charset = conv_get_current_charset();
 		if (MB_CUR_MAX == 1) {
 			gchar *fontstr, *p;
 
@@ -4648,7 +4683,7 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 	compose->exteditor_readdes = -1;
 	compose->exteditor_tag     = -1;
 
-	compose->bounce_filename = NULL;
+	compose->redirect_filename = NULL;
 	compose->undostruct = undostruct;
 #if USE_PSPELL
 	
@@ -5130,8 +5165,8 @@ static void compose_destroy(Compose *compose)
 	g_free(compose->msgid);
 	g_free(compose->boundary);
 
-	if (compose->bounce_filename)
-		g_free(compose->bounce_filename);
+	if (compose->redirect_filename)
+		g_free(compose->redirect_filename);
 
 	g_free(compose->exteditor_file);
 
@@ -6137,7 +6172,7 @@ static void compose_attach_cb(gpointer data, guint action, GtkWidget *widget)
 	Compose *compose = (Compose *)data;
 	GList *file_list;
 
-	if (compose->bounce_filename != NULL)
+	if (compose->redirect_filename != NULL)
 		return;
 
 	file_list = filesel_select_multiple_files(_("Select file"), NULL);

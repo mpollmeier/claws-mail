@@ -91,7 +91,7 @@ static MatchParser matchparser_tab[] = {
 	{MATCHACTION_FORWARD_AS_ATTACHMENT, "forward_as_attachment"},
 	{MATCHACTION_EXECUTE, "execute"},
 	{MATCHACTION_COLOR, "color"},
-	{MATCHACTION_BOUNCE, "bounce"},
+	{MATCHACTION_REDIRECT, "redirect"},
 	{MATCHACTION_DELETE_ON_SERVER, "delete_on_server"}
 };
 
@@ -1211,8 +1211,10 @@ void prefs_matcher_read_config(void)
 	f = fopen(rcpath, "rb");
 	g_free(rcpath);
 
-	if (f != NULL)
+	if (f != NULL) {
 		matcher_parser_start_parsing(f);
+		fclose(f);
+	}
 	else {
 		/* previous version compatibily */
 

@@ -1,3 +1,132 @@
+2002-06-04
+
+	* src/compose.c: compose_reply(), compose_forward(): lockup を起こす
+	  ので直前の変更を元に戻した。
+
+2002-06-04
+
+	* src/compose.c: compose_reply(), compose_forward(): 署名部分を
+	  自動改行しないようにした。
+	  compose_new_with_recipient(): 起動直後の XIM の問題を回避。
+
+2002-06-04
+
+	* src/mainwindow.c: ソートの昇順 / 降順を別のメニュー項目から指定
+	  できるようにした。
+	  「表示/ソート/ソートしない」メニュー項目を追加。
+	* src/summaryview.[ch]: summary_sort(): ソートタイプの引数を追加。
+
+2002-05-31
+
+	* 永続的なソート順を実装。
+	* src/folder.[ch]:
+	  folder_build_tree(): 'sort_key' と 'sort_type' 属性を読み込む。
+	  folder_write_list_recursive(): ソート状態を書き込む。
+	  src/mainwindow.c
+	  src/summaryview.[ch]: summary_show(): 必要であればソートする。
+	  降順ソートの場合先頭のノードを選択。
+	  SummarySortType とソート状態の変数を SummaryView から削除。
+
+2002-05-30
+
+	* src/account.c
+	  src/news.[ch]
+	  src/nntp.[ch]
+	  src/prefs_account.[ch]: SSL 上の NNTP を有効にした。
+	* src/nntp.c: nntp_group(): GROUP コマンドが一度失敗したときに
+	  MODE READER コマンドを発行して再試行するようにした(broken な
+	  ニュースサーバでの問題を回避できるらしい)。
+
+2002-05-30
+
+	* faq/it/*.html: DOS 改行を修正。
+	* faq/*/*.html: ">" を &quot; に変更。
+
+2002-05-29
+
+	* src/prefs_account.c: prefs_account_protocol_activated(): SSL タブ
+	  の不要なフレームを隠すようにした。
+
+2002-05-29
+
+	* src/pop.[ch]
+	  src/inc.c
+	  src/prefs_account.[ch]: POP3 で STLS コマンドを有効にした。
+	* src/account.c: account_clist_set_row(): TLS の設定を表示。
+
+2002-05-28
+
+	* src/compose.c: compose_send_later_cb(): 「リダイレクト」機能に
+	  対応。
+	* src/imap.[ch]
+	  src/ssl.h
+	  src/prefs_account.[ch]: IMAP4 で STARTTLS コマンドを有効にした。
+	* src/send.c
+	  src/smtp.[ch]: SSLSMTPType の代わりに SSLType を使用。
+
+2002-05-28
+
+	* src/utils.[ch]: make_dir(): mkdir() と chmod() のラッパー。
+	* src/compose.c: compose_create(): 不要な行を削除。
+
+2002-05-27
+
+	* src/news.c: news_scan_group(): 特定の場合に誤った値をセットする
+	  バグを修正。
+	* src/prefs_account.c: 高度な設定 - フォルダ の設定の英語を修正。
+
+2002-05-23
+
+	* src/textview.c: textview_show_message(), textview_show_part():
+	  GtkSText *text が正しくないオブジェクトを指していたバグを修正。
+	  textview_add_part(): RFC822 ヘッダを追加するときに GtkSText を
+	  フリーズするようにした。
+	  textview_show_part(): シングルパート MIME メッセージをテキストと
+	  して表示できないバグを修正。
+
+2002-05-22
+
+	* src/compose.c: compose_redirect_write_to_file():
+	  change_file_mode_rw() の対象を訂正。 fclose() が成功したかどうか
+	  をチェック。エラーが起こった場合は不完全なファイルを unlink 。
+
+2002-05-22
+
+	* src/compose.c:
+	  compose_create(): リダイレクトモード時は草稿関連のメニューを無効
+	  にするようにした。
+	  compose_redirect_write_to_file(): fwrite() のエラーハンドリング
+	  を修正。
+	* src/prefs_common.c: 「差出人が自分の場合は `差出人' カラムに宛先
+	  を表示する」オプションをデフォルトでオフにした。
+
+2002-05-21
+
+	* src/compose.[ch]: 「リダイレクト」(または Bounce)機能を実装。
+	  claws ブランチの実装に基づく。
+	  compose_redirect(): 新規ウィンドウを作成し、編集不可にする。
+	  compose_redirect_write_to_file(): いくつかを除いて元のメッセージ
+	  のヘッダと本文をコピー。
+	  compose_redirect_write_headers(): さらに "Resent-*" ヘッダを追加。
+	  compose_create(): リダイレクトモード時のメニューセンシティビティ
+	  をセット。
+
+2002-05-20
+
+	* src/codeconv.c: conv_encode_header(): エンコードされた文字列と
+	  次の折り返された文字列との間に不要なスペースが挿入されるバグを
+	  修正(とみたまさひろさん thanks)。
+
+2002-05-19
+
+	* src/mainwindow.[ch]: リファクタリングを行った。
+	  main_window_toggle_message_view(): summary_toggle_view_real() を
+	  ここに移動。
+	* src/messageview.[ch]: messageview_is_visible(): 新規。
+	* src/summary_search.c
+	  src/summaryview.[ch]: SummaryView::msg_is_toggled_on: 削除。
+	  代わりに messageview_is_visible() を使用。
+
 2002-05-17
 
 	* src/mainwindow.c: 「すべてのスレッドを展開/閉じる」メニューを追加。

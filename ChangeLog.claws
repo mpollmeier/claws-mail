@@ -1,3 +1,154 @@
+2002-06-05 [paul]	0.7.6claws30
+
+	* sync with 0.7.6cvs24
+		see ChangeLog 2002-06-04
+
+2002-06-04 [paul]	0.7.6claws29
+
+	* po/pt_BR.po
+		updated by Fabio Junior Beneditto
+
+2002-06-03 [thorsten]	0.7.6claws28
+
+	* src/matcher.c
+		fclose() matcherrc after reading
+
+2002-06-03 [paul]	0.7.6claws27
+
+	* sync with 0.7.6cvs21
+		see ChangeLog 2002-05-31
+
+2002-05-31 [paul]	0.7.6claws26
+
+	* sync with 0.7.6cvs20
+		see ChangeLog 2002-05-29 and 2002-05-30
+
+2002-05-31 [paul]	0.7.6claws25
+
+	* src/imap.c
+		hopefully fix last buggy sync
+
+	* README.claws
+		correct typo in 'Actions' examples
+
+2002-05-29 [paul]	0.7.6claws24
+
+	* sync with 0.7.6cvs18
+		see ChangeLog 2002-05-28 and 2002-05-29
+
+	* src/news.c
+	  src/nntp.[ch]
+		sync with above 
+
+2002-05-28 [paul]	0.7.6claws23
+
+	* sync with 0.7.6cvs16
+		see ChangeLog 2002-05-28
+
+2002-05-27 [thorsten]	0.7.6claws22 
+
+	* faq/it/sylpheed-faq-1.html
+	  faq/it/sylpheed-faq-2.html
+	  faq/it/sylpheed-faq-3.html
+	  faq/it/sylpheed-faq.html
+		corrected DOS lineendings
+	* faq/de/sylpheed-faq-1.html
+	  faq/de/sylpheed-faq-2.html
+	  faq/en/sylpheed-faq-1.html
+	  faq/en/sylpheed-faq-2.html
+	  faq/en/sylpheed-faq-3.html
+	  faq/es/sylpheed-faq-1.html
+	  faq/es/sylpheed-faq-2.html
+	  faq/es/sylpheed-faq-3.html
+	  faq/fr/sylpheed-faq-1.html
+	  faq/it/sylpheed-faq-1.html
+	  faq/it/sylpheed-faq-2.html
+	  faq/it/sylpheed-faq-3.html
+	  faq/it/sylpheed-faq.html
+		changed ">" to &quot;
+
+2002-05-27 [paul]	0.7.6claws21
+	
+	* sync with 0.7.6cvs15
+		see ChangeLog 2002-05-27
+
+2002-05-27 [paul]	0.7.6claws20
+
+	* src/prefs_account.c
+		correct a typo
+
+2002-05-26 [paul]	0.7.6claws19
+
+	* tools/README
+		correct a typo
+
+2002-05-25 [paul]	0.7.6claws18
+
+	* tools/README
+		add description of kmail2sylpheed.pl
+
+2002-05-25 [paul]	0.7.6claws17
+
+	* tools/kmail2sylpheed.pl	** NEW FILE **
+		perl script that converts an exported Kmail address
+		book, converts it to sylpheed addressbook file,
+		writes the file to .sylpheed, and updates
+		addrbook--index.xml 
+
+2002-05-25 [paul]	0.7.6claws16
+
+	* sync with 0.7.6cvs14
+		see ChangeLog 2002-05-23
+
+2002-05-24 [paul]	0.7.6claws15
+
+	* README.claws
+		make a correction and add some more info
+
+2002-05-24 [paul]	0.7.6claws14
+
+	* src/compose.c
+		fix memory leak in 
+		compose_redirect_write_headers_from_headerlist()
+		add Subject and Resent-Message-ID to
+		compose_redirect_write_headers()
+		Received, Subject, and X-UIDL are filtered out in 
+		compose_redirect_write_to_file()
+
+2002-05-23 [paul]	0.7.6claws13
+
+	* src/compose.[ch]
+	  src/filtering.c
+	  src/mainwindow.c
+	  src/matcher.[ch]
+	  src/matcher_parser_lex.l
+	  src/matcher_parser_parse.y
+	  src/prefs_common.[ch]
+	  src/prefs_filtering.c
+	  src/summaryview.c
+		rename 'Bounce' to 'Redirect'
+
+2002-05-23 [paul]	0.7.6claws12
+
+	* more sync with 0.7.6cvs13
+	  src/compose.c
+		see ChangeLog 2002-05-22
+
+2002-05-22 [paul]	0.7.6claws11
+
+	* sync with 0.7.6cvs13
+	  src/codeconv.c
+		see ChangeLog 2002-05-20
+	  src/prefs_common.c
+		see ChangeLog 2002-05-22
+
+2002-05-21 [melvin]	0.7.6claws10
+
+	* src/folderview.c
+		Added missing filtering and scoring headers
+		Fixed bad function call that showed garbage 
+		in Folder->Processing
+
 2002-05-21 [paul]	0.7.6claws9
 
 	* tools/Makefile.am
