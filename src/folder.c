@@ -112,6 +112,7 @@ static void folder_init(Folder *folder, const gchar *name)
 	/* Init Folder functions */
 	folder->fetch_msg = NULL;
 	folder->fetch_msginfo = NULL;
+	folder->fetch_msginfos = NULL;
 	folder->get_num_list = NULL;
 	folder->ui_func = NULL;
 	folder->ui_func_data = NULL;
@@ -819,7 +820,7 @@ typedef enum {
 gint folder_item_scan(FolderItem *item)
 {
 	Folder *folder;
-	GSList *folder_list, *cache_list, *elem;
+	GSList *folder_list, *cache_list, *elem, *new_list = NULL;
 	gint i;
 	guint min = 0xffffffff, max = 0, maxgetcount = 0;
 	FolderScanInfo *folderscaninfo;
@@ -871,6 +872,8 @@ gint folder_item_scan(FolderItem *item)
 		}
 		g_slist_free(folder_list);
 		g_slist_free(cache_list);
+
+		return 0;
 	}
 
 	folderscaninfo = g_new0(FolderScanInfo, max - min + 1);
@@ -897,15 +900,8 @@ gint folder_item_scan(FolderItem *item)
 		    (folder->fetch_msginfo != NULL) &&
 		    (folder->type != F_NEWS || 
 		    (prefs_common.max_articles == 0) || (num > (max - prefs_common.max_articles)))) {
-			MsgFlags flags;
-			MsgInfo *msginfo;
-
-			msginfo = folder->fetch_msginfo(folder, item, num);
-			if(msginfo != NULL) {
-				msgcache_add_msg(item->cache, msginfo);
-				procmsg_msginfo_free(msginfo);
-				debug_print(_("Added newly found message %d to cache.\n"), num);
-			}
+			new_list = g_slist_prepend(new_list, GINT_TO_POINTER(num));
+			debug_print(_("Remembered message %d for fetching\n"), num);
 		}
 		/* Remove message from cache if not in folder and in cache */
 		if(!(folderscaninfo[i] & IN_FOLDER) && 
@@ -935,8 +931,36 @@ gint folder_item_scan(FolderItem *item)
 		}
 	}
 
+	if(!folder->fetch_msginfos) {
+		for(elem = new_list; elem != NULL; elem = g_slist_next(elem)) {
+			MsgFlags flags;
+			MsgInfo *msginfo;
+			guint num;
+
+			num = GPOINTER_TO_INT(elem->data);
+			msginfo = folder->fetch_msginfo(folder, item, num);
+			if(msginfo != NULL) {
+				msgcache_add_msg(item->cache, msginfo);
+				procmsg_msginfo_free(msginfo);
+				debug_print(_("Added newly found message %d to cache.\n"), num);
+			}
+		}
+	} else {
+		GSList *newmsg_list;
+		MsgInfo *msginfo;
+		
+		newmsg_list = folder->fetch_msginfos(folder, item, new_list);
+		for(elem = newmsg_list; elem != NULL; elem = g_slist_next(elem)) {
+			msginfo = (MsgInfo *) elem->data;
+			msgcache_add_msg(item->cache, msginfo);
+			procmsg_msginfo_free(msginfo);
+		}
+		g_slist_free(newmsg_list);
+	}
+
 	g_slist_free(folder_list);
 	g_slist_free(cache_list);
+	g_slist_free(new_list);
 	g_free(folderscaninfo);
 
 	return 0;

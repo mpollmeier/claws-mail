@@ -106,6 +106,9 @@ GSList *news_get_num_list		 (Folder 	*folder,
 MsgInfo *news_fetch_msginfo		 (Folder 	*folder, 
 					  FolderItem 	*item,
 					  gint 		 num);
+GSList *news_fetch_msginfos		 (Folder 	*folder,
+					  FolderItem 	*item,
+					  GSList 	*msgnum_list);
 
 Folder *news_folder_new(const gchar *name, const gchar *path)
 {
@@ -139,6 +142,7 @@ static void news_folder_init(Folder *folder, const gchar *name,
 	folder->remove_msg   = news_remove_msg;
 	folder->get_num_list = news_get_num_list;
 	folder->fetch_msginfo = news_fetch_msginfo;
+	folder->fetch_msginfos = news_fetch_msginfos;
 }
 
 #if USE_SSL
@@ -1115,4 +1119,139 @@ MsgInfo *news_fetch_msginfo(Folder *folder, FolderItem *item, gint num)
 	READ_TO_LISTEND("xhdr (cc)");
 
 	return msginfo;
+}
+
+static GSList *news_fetch_msginfo_from_to(NNTPSession *session, FolderItem *item, guint begin, guint end)
+{
+	gchar buf[NNTPBUFSIZE];
+	GSList *newlist = NULL;
+	GSList *llast = NULL;
+	MsgInfo *msginfo;
+
+	g_return_val_if_fail(session != NULL, NULL);
+	g_return_val_if_fail(item != NULL, NULL);
+
+	log_message(_("getting xover %d - %d in %s...\n"),
+		    begin, end, item->path);
+	if (nntp_xover(session->nntp_sock, begin, end) != NN_SUCCESS) {
+		log_warning(_("can't get xover\n"));
+		return NULL;
+	}
+
+	for (;;) {
+		if (sock_gets(SESSION(session)->sock, buf, sizeof(buf)) < 0) {
+			log_warning(_("error occurred while getting xover.\n"));
+			return newlist;
+		}
+
+		if (buf[0] == '.' && buf[1] == '\r') break;
+
+		msginfo = news_parse_xover(buf);
+		if (!msginfo) {
+			log_warning(_("invalid xover line: %s\n"), buf);
+			continue;
+		}
+
+		msginfo->folder = item;
+		msginfo->flags.perm_flags = MSG_NEW|MSG_UNREAD;
+		msginfo->flags.tmp_flags = MSG_NEWS;
+		msginfo->newsgroups = g_strdup(item->path);
+
+		if (!newlist)
+			llast = newlist = g_slist_append(newlist, msginfo);
+		else {
+			llast = g_slist_append(llast, msginfo);
+			llast = llast->next;
+		}
+	}
+
+	if (nntp_xhdr(session->nntp_sock, "to", begin, end) != NN_SUCCESS) {
+		log_warning(_("can't get xhdr\n"));
+		return newlist;
+	}
+
+	llast = newlist;
+
+	for (;;) {
+		if (sock_gets(SESSION(session)->sock, buf, sizeof(buf)) < 0) {
+			log_warning(_("error occurred while getting xhdr.\n"));
+			return newlist;
+		}
+
+		if (buf[0] == '.' && buf[1] == '\r') break;
+		if (!llast) {
+			g_warning("llast == NULL\n");
+			continue;
+		}
+
+		msginfo = (MsgInfo *)llast->data;
+		msginfo->to = news_parse_xhdr(buf, msginfo);
+
+		llast = llast->next;
+	}
+
+	if (nntp_xhdr(session->nntp_sock, "cc", begin, end) != NN_SUCCESS) {
+		log_warning(_("can't get xhdr\n"));
+		return newlist;
+	}
+
+	llast = newlist;
+
+	for (;;) {
+		if (sock_gets(SESSION(session)->sock, buf, sizeof(buf)) < 0) {
+			log_warning(_("error occurred while getting xhdr.\n"));
+			return newlist;
+		}
+
+		if (buf[0] == '.' && buf[1] == '\r') break;
+		if (!llast) {
+			g_warning("llast == NULL\n");
+			continue;
+		}
+
+		msginfo = (MsgInfo *)llast->data;
+		msginfo->cc = news_parse_xhdr(buf, msginfo);
+
+		llast = llast->next;
+	}
+
+	return newlist;
+}
+
+gint news_fetch_msgnum_sort(gconstpointer a, gconstpointer b)
+{
+	return (GPOINTER_TO_INT(a) - GPOINTER_TO_INT(b));
+}
+
+GSList *news_fetch_msginfos(Folder *folder, FolderItem *item, GSList *msgnum_list)
+{
+	NNTPSession *session;
+	GSList *elem, *msginfo_list = NULL, *tmp_msginfo_list;
+	guint first, last, next;
+	
+	g_return_val_if_fail(folder != NULL, NULL);
+	g_return_val_if_fail(folder->type == F_NEWS, NULL);
+	g_return_val_if_fail(msgnum_list != NULL, NULL);
+	g_return_val_if_fail(item != NULL, NULL);
+	
+	session = news_session_get(folder);
+	g_return_val_if_fail(session != NULL, NULL);
+
+	msgnum_list = g_slist_sort(msgnum_list, news_fetch_msgnum_sort);
+
+	first = GPOINTER_TO_INT(msgnum_list->data);
+	last = first;
+	for(elem = g_slist_next(msgnum_list); elem != NULL; elem = g_slist_next(elem)) {
+		next = GPOINTER_TO_INT(elem->data);
+		if(next != (last + 1)) {
+			tmp_msginfo_list = news_fetch_msginfo_from_to(session, item, first, last);
+			msginfo_list = g_slist_concat(msginfo_list, tmp_msginfo_list);
+			first = next;
+		}
+		last = next;
+	}
+	tmp_msginfo_list = news_fetch_msginfo_from_to(session, item, first, last);
+	msginfo_list = g_slist_concat(msginfo_list, tmp_msginfo_list);
+
+	return msginfo_list;
 }

@@ -117,6 +117,9 @@ struct _Folder
 	MsgInfo *(*fetch_msginfo)	(Folder		*folder,
 					 FolderItem	*item,
 					 gint		 num);
+	GSList  *(*fetch_msginfos)	(Folder		*folder,
+					 FolderItem	*item,
+					 GSList		*msgnum_list);
 	gint     (*add_msg)		(Folder		*folder,
 					 FolderItem	*dest,
 					 const gchar	*file,
