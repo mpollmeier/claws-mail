@@ -452,9 +452,11 @@ SummaryView *summary_create(void)
 	GtkWidget *scrolledwin;
 	GtkWidget *ctree;
 	GtkWidget *hbox;
+	GtkWidget *hbox_l;
 	GtkWidget *statlabel_folder;
 	GtkWidget *statlabel_select;
 	GtkWidget *statlabel_msgs;
+	GtkWidget *hbox_spc;
 	GtkWidget *toggle_view_btn;
 	GtkWidget *toggle_view_arrow;
 	GtkWidget *popupmenu;
@@ -487,10 +489,13 @@ SummaryView *summary_create(void)
 	hbox = gtk_hbox_new(FALSE, 0);
 	gtk_box_pack_end(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
+	hbox_l = gtk_hbox_new(FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(hbox), hbox_l, TRUE, TRUE, 0);
+
 	statlabel_folder = gtk_label_new("");
-	gtk_box_pack_start(GTK_BOX(hbox), statlabel_folder, FALSE, FALSE, 2);
+	gtk_box_pack_start(GTK_BOX(hbox_l), statlabel_folder, FALSE, FALSE, 2);
 	statlabel_select = gtk_label_new("");
-	gtk_box_pack_start(GTK_BOX(hbox), statlabel_select, FALSE, FALSE, 16);
+	gtk_box_pack_start(GTK_BOX(hbox_l), statlabel_select, FALSE, FALSE, 12);
 
 	/* toggle view buttons */
 	toggle_view_btn = gtk_button_new();
@@ -504,6 +509,9 @@ SummaryView *summary_create(void)
 	statlabel_msgs = gtk_label_new("");
 	gtk_box_pack_end(GTK_BOX(hbox), statlabel_msgs, FALSE, FALSE, 4);
 
+	hbox_spc = gtk_hbox_new(FALSE, 0);
+	gtk_box_pack_end(GTK_BOX(hbox), hbox_spc, FALSE, FALSE, 6);
+
 	/* create popup menu */
 	n_entries = sizeof(summary_popup_entries) /
 		sizeof(summary_popup_entries[0]);
@@ -515,6 +523,7 @@ SummaryView *summary_create(void)
 	summaryview->scrolledwin = scrolledwin;
 	summaryview->ctree = ctree;
 	summaryview->hbox = hbox;
+	summaryview->hbox_l = hbox_l;
 	summaryview->statlabel_folder = statlabel_folder;
 	summaryview->statlabel_select = statlabel_select;
 	summaryview->statlabel_msgs = statlabel_msgs;
@@ -594,9 +603,9 @@ void summary_init(SummaryView *summaryview)
 	gtk_widget_set_style(summaryview->statlabel_select, style);
 	gtk_widget_set_style(summaryview->statlabel_msgs, style);
 
-	pixmap = stock_pixmap_widget(summaryview->hbox, STOCK_PIXMAP_DIR_OPEN);
-	gtk_box_pack_start(GTK_BOX(summaryview->hbox), pixmap, FALSE, FALSE, 4);
-	gtk_box_reorder_child(GTK_BOX(summaryview->hbox), pixmap, 0);
+	pixmap = stock_pixmap_widget(summaryview->hbox_l, STOCK_PIXMAP_DIR_OPEN);
+	gtk_box_pack_start(GTK_BOX(summaryview->hbox_l), pixmap, FALSE, FALSE, 4);
+	gtk_box_reorder_child(GTK_BOX(summaryview->hbox_l), pixmap, 0);
 	gtk_widget_show(pixmap);
 	summaryview->folder_pixmap = pixmap;
 
@@ -765,6 +774,7 @@ gboolean summary_show(SummaryView *summaryview, FolderItem *item,
 	g_free(buf);
 
 	summaryview->folder_item = item;
+	item->opened = TRUE;
 
 	gtk_signal_handler_block_by_data(GTK_OBJECT(ctree), summaryview);
 
@@ -957,7 +967,10 @@ void summary_clear_list(SummaryView *summaryview)
 	gtk_ctree_pre_recursive(GTK_CTREE(summaryview->ctree),
 				NULL, summary_free_msginfo_func, NULL);
 
-	summaryview->folder_item = NULL;
+	if (summaryview->folder_item) {
+		summaryview->folder_item->opened = FALSE;
+		summaryview->folder_item = NULL;
+	}
 
 	summaryview->display_msg = FALSE;
 
@@ -2180,13 +2193,7 @@ gint summary_write_cache(SummaryView *summaryview)
 
 	gtk_ctree_pre_recursive(ctree, NULL, summary_write_cache_func, &fps);
 
-	for(cur = summaryview->killed_messages ; cur != NULL ;
-	    cur = g_slist_next(cur)) {
-		MsgInfo *msginfo = (MsgInfo *) cur->data;
-
-		procmsg_write_cache(msginfo, fps.cache_fp);
-		procmsg_write_flags(msginfo, fps.mark_fp);
-	}
+	procmsg_flush_mark_queue(summaryview->folder_item, fps.mark_fp);
 
 	fclose(fps.cache_fp);
 	fclose(fps.mark_fp);
@@ -2207,6 +2214,28 @@ static void summary_write_cache_func(GtkCTree *ctree, GtkCTreeNode *node,
 
 	procmsg_write_cache(msginfo, fps->cache_fp);
 	procmsg_write_flags(msginfo, fps->mark_fp);
+}
+
+static gchar *summary_complete_address(const gchar *addr)
+{
+	gint count;
+	gchar *res, *tmp, *email_addr;
+
+	Xstrdup_a(email_addr, addr, return NULL);
+	extract_address(email_addr);
+	g_return_val_if_fail(*email_addr, NULL);
+
+	/*
+	 * completion stuff must be already initialized
+	 */
+	res = NULL;
+	if (1 < (count = complete_address(email_addr))) {
+		tmp = get_complete_address(1);
+		res = procheader_get_fromname(tmp);
+		g_free(tmp);	
+	}
+	
+	return res;
 }
 
 static void summary_set_header(SummaryView *summaryview, gchar *text[],
@@ -2248,34 +2277,37 @@ static void summary_set_header(SummaryView *summaryview, gchar *text[],
 		_("(No From)");
 	if (prefs_common.swap_from && msginfo->from && msginfo->to &&
 	    !MSG_IS_NEWS(msginfo->flags)) {
-		gchar *from;
+		gchar *addr = NULL;
 
-		Xstrdup_a(from, msginfo->from, return);
-		extract_address(from);
-		if (account_find_from_address(from)) {
+		if (prefs_common.use_addr_book) {
+			Xstrdup_a(addr, msginfo->from, return);
+			extract_address(addr);
+		}
+
+		if (account_find_from_address(addr)) {
+			addr = summary_complete_address(msginfo->to);
 			g_free(to);
-			to = g_strconcat("-->", msginfo->to, NULL);
+			to   = g_strconcat("-->", addr == NULL ? msginfo->to : addr, NULL);
 			text[col_pos[S_COL_FROM]] = to;
 		}
 	}
 
-	if ((text[col_pos[S_COL_FROM]] != to) && prefs_common.use_addr_book &&
-	    msginfo->from) {
-		gint count;
+	/*
+	 * CLAWS: note that the "text[col_pos[S_COL_FROM]] != to" is really a hack, 
+	 * checking whether the above block (which handles the special case of
+	 * the --> in sent boxes) was executed.
+	 */
+	if (text[col_pos[S_COL_FROM]] != to && prefs_common.use_addr_book && msginfo->from) {
 		gchar *from;
-  
-		Xstrdup_a(from, msginfo->from, return);
-		extract_address(from);
-		if (*from) {
-			count = complete_address(from);
-			if (count > 1) {
-				g_free(from_name);
-				from = get_complete_address(1);
-				from_name = procheader_get_fromname(from);
-				g_free(from);
-				text[col_pos[S_COL_FROM]] = from_name;
-			}
-		}
+		from = summary_complete_address(msginfo->from);
+		if (from) {
+			/*
+			 * FIXME: this text[col_pos[S_COL_FROM]] should be freed
+			 * but may have been assigned _("No From"). Should be
+			 * freed??? 
+			 */
+			text[col_pos[S_COL_FROM]] = from;
+		}	
 	}
 
 	if (prefs->enable_simplify_subject 
@@ -3327,7 +3359,10 @@ void summary_save_as(SummaryView *summaryview)
 	}
 
 	src = procmsg_get_message_file(msginfo);
-	copy_file(src, dest);
+	if (copy_file(src, dest) < 0) {
+		alertpanel_error(_("Can't save the file `%s'."),
+				 g_basename(dest));
+	}
 	g_free(src);
 }
 
@@ -3909,29 +3944,57 @@ static void summary_filter_func(GtkCTree *ctree, GtkCTreeNode *node,
 
 void summary_filter_open(SummaryView *summaryview, PrefsFilterType type)
 {
-	static HeaderEntry hentry[] = {{"List-Id:",        NULL, FALSE},
+	static HeaderEntry hentry[] = {{"X-BeenThere:",    NULL, FALSE},
 				       {"X-ML-Name:",      NULL, FALSE},
 				       {"X-List:",         NULL, FALSE},
 				       {"X-Mailing-list:", NULL, FALSE},
+				       {"List-Id:",        NULL, FALSE},
 				       {NULL,              NULL, FALSE}};
+
+	static gchar *header_strs[] = {"From", "from", "To", "to", "Subject", "subject"};
+
+	static gchar *hentry_strs[]   = {"X-BeenThere", "X-ML-Name", "X-List",
+					 "X-Mailing-List", "List-Id",
+					 "header \"X-BeenThere\"", "header \"X-ML-Name\"",
+					 "header \"X-List\"", "header \"X-Mailing-List\"",
+					 "header \"List-Id\""};
 	enum
 	{
-		H_LIST_ID        = 0,
+		H_X_BEENTHERE	 = 0,
 		H_X_ML_NAME      = 1,
 		H_X_LIST         = 2,
-		H_X_MAILING_LIST = 3
+		H_X_MAILING_LIST = 3,
+		H_LIST_ID	 = 4
+	};
+
+	enum
+	{
+		H_FROM    = 0,
+		H_TO      = 2,
+		H_SUBJECT = 4
 	};
 
 	MsgInfo *msginfo;
 	gchar *header = NULL;
 	gchar *key = NULL;
 	FILE *fp;
+	int header_offset;
+	int hentry_offset;
 
 	if (!summaryview->selected) return;
 
 	msginfo = gtk_ctree_node_get_row_data(GTK_CTREE(summaryview->ctree),
 					      summaryview->selected);
 	if (!msginfo) return;
+
+	if (global_processing) {
+		header_offset = 1;
+		hentry_offset = 5;
+	}
+	else {
+		header_offset = 0;
+		hentry_offset = 0;
+	}
 
 	switch (type) {
 	case FILTER_BY_NONE:
@@ -3941,50 +4004,58 @@ void summary_filter_open(SummaryView *summaryview, PrefsFilterType type)
 		procheader_get_header_fields(fp, hentry);
 		fclose(fp);
 
-		if (hentry[H_LIST_ID].body != NULL) {
-			header = "List-Id";
-			Xstrdup_a(key, hentry[H_LIST_ID].body, );
+		if (hentry[H_X_BEENTHERE].body != NULL) {
+			header = hentry_strs[H_X_BEENTHERE + hentry_offset];
+			Xstrdup_a(key, hentry[H_X_BEENTHERE].body, );
 		} else if (hentry[H_X_ML_NAME].body != NULL) {
-			header = "X-ML-Name";
+			header = hentry_strs[H_X_ML_NAME + hentry_offset];
 			Xstrdup_a(key, hentry[H_X_ML_NAME].body, );
 		} else if (hentry[H_X_LIST].body != NULL) {
-			header = "X-List";
+			header = hentry_strs[H_X_LIST + hentry_offset];
 			Xstrdup_a(key, hentry[H_X_LIST].body, );
 		} else if (hentry[H_X_MAILING_LIST].body != NULL) {
-			header = "X-Mailing-list";
+			header = hentry_strs[H_X_MAILING_LIST + hentry_offset];
 			Xstrdup_a(key, hentry[H_X_MAILING_LIST].body, );
+		} else if (hentry[H_LIST_ID].body != NULL) {
+			header = hentry_strs[H_LIST_ID + hentry_offset];
+			Xstrdup_a(key, hentry[H_LIST_ID].body, );
 		} else if (msginfo->subject) {
-			header = "Subject";
+			header = header_strs[H_SUBJECT + header_offset];
 			key = msginfo->subject;
 		}
 
-		g_free(hentry[H_LIST_ID].body);
-		hentry[H_LIST_ID].body = NULL;
+		g_free(hentry[H_X_BEENTHERE].body);
+		hentry[H_X_BEENTHERE].body = NULL;
 		g_free(hentry[H_X_ML_NAME].body);
 		hentry[H_X_ML_NAME].body = NULL;
 		g_free(hentry[H_X_LIST].body);
 		hentry[H_X_LIST].body = NULL;
 		g_free(hentry[H_X_MAILING_LIST].body);
 		hentry[H_X_MAILING_LIST].body = NULL;
+		g_free(hentry[H_LIST_ID].body);
+		hentry[H_LIST_ID].body = NULL;
 
 		break;
 	case FILTER_BY_FROM:
-		header = "From";
+		header = header_strs[H_FROM + header_offset];
 		key = msginfo->from;
 		break;
 	case FILTER_BY_TO:
-		header = "To";
+		header = header_strs[H_TO + header_offset];
 		key = msginfo->to;
 		break;
 	case FILTER_BY_SUBJECT:
-		header = "Subject";
+		header = header_strs[H_SUBJECT + header_offset];
 		key = msginfo->subject;
 		break;
 	default:
 		break;
 	}
 
-	prefs_filter_open(header, key);
+	if (global_processing)
+		prefs_filtering_open(NULL, header, key);
+	else
+		prefs_filter_open(header, key);
 }
 
 void summary_reply(SummaryView *summaryview, ComposeMode mode)

@@ -1,3 +1,92 @@
+2002-04-05
+
+	* src/filter.c
+	  src/inc.c: changed folder_find_item_from_path() to
+	  folder_find_item_from_identifier().
+	  src/prefs_account.c
+	  src/prefs_filter.c: use folder_item_get_identifier() to specify
+	  folder path.
+
+2002-04-05
+
+	* src/folder.[ch]: implemented "folder identifier" (and fixed a bug
+	  existed in claws' implementation).
+	  folder_find_from_name(): find Folder from name and type.
+	  folder_get_identifier(): return Folder id.
+	  folder_item_get_identifier(): return FolderItem id.
+	  folder_find_item_from_identifier(): find FolderItem from id.
+	  folder_get_type_string(): return folder type string.
+	  folder_get_type_from_string(): return FolderType from string
+	  (and fixed the wrong g_strcasecmp() usage).
+	* src/export.c
+	  src/import.c: use folder_item_get_identifier() and
+	  folder_find_item_from_identifier().
+
+2002-04-03
+
+	* src/imap.c: imap_parse_atom(): fixed a bug that cur_pos didn't
+	  point the correct address after reading the continuous line.
+	  imap_scan_folder(): set new number to 0 if unseen number is 0.
+	  imap_parse_flags(): don't add new and unread flag if \Seen flag
+	  exists.
+	* ac/Makefile.am: removed gpgme.m4 from MACROS.
+
+2002-04-02
+
+	* fixed the old problem that couldn't add flags to currently opened
+	  folders.
+	* src/compose.c:
+	  compose_send(): update outbox after saving.
+	  compose_queue()
+	  compose_draft_cb(): use procmsg_add_flags().
+	* src/folder.[ch]: added "opened" flag and "mark_queue" list to
+	  FolderItem.
+	* src/main.c: send_queue(): send from all queue folders.
+	* src/mainwindow.c: send_queue_cb(): send from all queue folders.
+	* src/procmsg.[ch]:
+	  procmsg_flush_mark_queue(): new. Write all queued flags into file.
+	  procmsg_add_flags(): new. Add specified flags to the folder.
+	  procmsg_send_queue(): added an argument to specify queue folder.
+	  procmsg_save_to_outbox(): use procmsg_add_flags().
+	* src/summaryview.c:
+	  summary_show(): up the opened flag of FolderItem.
+	  summary_clear_list(): down the opened flag of FolderItem.
+	  summary_write_cache(): call procmsg_flush_mark_queue().
+
+2002-04-01
+
+	* src/summaryview.[ch]: trim the tail of folder name and selected
+	  number on the status label if the space is not enough.
+
+2002-04-01
+
+	* src/imap.c: imap_create_special_folder(): fixed a bug that didn't
+	  set SpecialFolderItemType when creating special folders under
+	  INBOX.
+	* ac/gpgme.m4: removed.
+	* ac/README: added.
+	* ac/missing/gdk-pixbuf.m4
+	  ac/missing/gettext.m4
+	  ac/missing/gpgme.m4
+	  ac/missing/imlib.m4: added for convenience.
+
+2002-03-29
+
+	* src/esmtp.c: esmtp_auth(): fixed a bug that some garbages are
+	  shown after the decoded challenge string. Fixed a memory leak.
+	  Removed strtok().
+	* src/compose.c: compose_draft_cb(): mark draft messages as read.
+	* src/folderview.c: folderview_update_node(): disable emphasis
+	  for Outbox and Draft folders.
+
+2002-03-28
+
+	* src/messageview.c: messageview_show(): fixed a memory leak.
+	* src/summaryview.c: summary_save_as(): show error dialog if copy
+	  failed.
+	* src/about.c: about_show(): make the window active if it is already
+	  open.
+
 2002-03-27
 
 	* src/compose.c: show confirmation dialog before sending if Subject

@@ -952,7 +952,7 @@ void imap_scan_folder(Folder *folder, FolderItem *item)
 	statusbar_pop_all();
 	if (ok != IMAP_SUCCESS) return;
 
-	item->new = recent;
+	item->new = unseen > 0 ? recent : 0;
 	item->unread = unseen;
 	item->total = messages;
 	/* item->mtime = uid_validity; */
@@ -1228,6 +1228,8 @@ static FolderItem *imap_create_special_folder(Folder *folder,
 		new_item = imap_create_folder(folder, folder->inbox, name);
 		if (!new_item)
 			g_warning(_("Can't create '%s' under INBOX\n"), name);
+		else
+			new_item->stype = stype;
 	} else
 		new_item->stype = stype;
 
@@ -1791,6 +1793,7 @@ static gchar *imap_parse_atom(SockInfo *sock, gchar *src,
 				return cur_pos;
 			line_len += strlen(nextline);
 			g_string_append(str, nextline);
+			cur_pos = str->str;
 			strretchomp(nextline);
 			log_print("IMAP4< %s\n", nextline);
 			g_free(nextline);
@@ -1900,8 +1903,8 @@ static MsgFlags imap_parse_flags(const gchar *flag_str)
 	while ((p = strchr(p, '\\')) != NULL) {
 		p++;
 
-		if (g_strncasecmp(p, "Recent", 6) == 0) {
-			MSG_SET_PERM_FLAGS(flags, MSG_NEW|MSG_UNREAD);
+		if (g_strncasecmp(p, "Recent", 6) == 0 && MSG_IS_UNREAD(flags)) {
+			MSG_SET_PERM_FLAGS(flags, MSG_NEW);
 		} else if (g_strncasecmp(p, "Seen", 4) == 0) {
 			MSG_UNSET_PERM_FLAGS(flags, MSG_NEW|MSG_UNREAD);
 		} else if (g_strncasecmp(p, "Deleted", 7) == 0) {

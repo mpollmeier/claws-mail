@@ -1,3 +1,104 @@
+2002-04-05 [paul]	0.7.4claws65
+
+	* tools/filter_conv.pl
+		attempt to make the script all-encompassing and
+		be able to convert any main 'filter' rule thrown
+		at it
+
+2002-04-05 [paul]	0.7.4claws65
+
+	* tools/filter_conv.pl
+		allow for collapsed folder trees
+
+2002-04-05 [paul]	0.7.4claws64
+
+	* sync with 0.7.4cvs31
+		see ChangeLog entries 2002-04-05
+
+2002-04-03 [paul]	0.7.4claws63
+
+	* sync with 0.7.4cvs29
+		see ChangeLog entries 2002-04-02 and 2002-04-03
+
+2002-04-02 [paul]	0.7.4claws62
+
+	* sync with 0.7.4cvs26
+		see ChangeLog entry 2002-04-01
+
+2002-04-02 [match]	0.7.4claws61
+
+	* src/pine.[ch]
+	* src/importpine.[ch]
+	* src/addressbook.c
+		import Pine address book.
+
+2002-04-02 [match]	0.7.4claws60
+
+	* src/addrharvest.[ch]
+		improve address parsing of funky addresses.
+
+2002-04-02 [darko]	0.7.4claws59
+
+	* src/compose.c
+		wrap on send improvements, it now recognizes quoted
+		initials as part of the quotation string, and it
+		does not join lines separated by CR
+
+2002-04-01 [match]	0.7.4claws58
+
+	* src/mgutils.[ch]
+		added new functions.
+	* src/mutt.[ch]
+		remove excessive duplicate address generation
+		on import.
+
+2002-04-01 [alfons]	0.7.4claws57
+	
+	* src/summaryview.c
+		put back g_free() 
+
+2002-04-01 [paul]	0.7.4claws56
+
+	* sync with 0.7.4cvs25
+		see ChangeLog entry 2002-04-01
+
+2002-04-01 [alfons]	0.7.4aprilfool55
+
+	* src/summaryview.c
+		honour feature request item #537427 to allow for
+		displaying names from address book for sent mail also
+
+2002-03-29 [paul]	0.7.4claws54
+
+	* src/mainwindow.c
+	  src/prefs_filtering.[ch]
+	  src/prefs_matcher.c
+	  src/summaryview.c
+		add 'fast filter' for claws' filtering,
+		/Tools/Create filter rule/... patch submitted
+		by Neill Miller <neillm@thecodefactory.org>
+
+2002-03-29 [paul]	0.7.4claws53
+
+	* sync with 0.7.4cvs24
+		see ChangeLog entry 2002-03-29
+
+2002-03-28 [paul]	0.7.4claws52
+
+	* sync with 0.7.4cvs23
+		see ChangeLog entry 2002-03-28
+
+2002-03-27 [melvin]	0.7.4claws51
+
+	* src/prefs_actions.c
+		Added support to pass only one message part (as a
+		file) to the command using '%p'. No quotes are needed
+		because doubles quotes are automatically added.
+		Fixed bug where Sylpheed could block when waiting for
+		a child process to finish.
+		Changed the help menu to remove quotes around symbols to 
+		avoid misinterpretation (they must not be used).
+
 2002-03-27 [melvin]	0.7.4claws50
 
 	* src/inc.c

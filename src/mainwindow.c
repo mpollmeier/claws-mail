@@ -2573,16 +2573,15 @@ static void send_queue_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
 {
 	GList *list;
 
-	if (procmsg_send_queue(prefs_common.savemsg) < 0)
-		alertpanel_error(_("Some errors occurred while sending queued messages."));
-
-	statusbar_pop_all();
-
 	for (list = folder_get_list(); list != NULL; list = list->next) {
-		Folder *folder;
+		Folder *folder = list->data;
 
-		folder = list->data;
 		if (folder->queue) {
+			if (procmsg_send_queue
+				(folder->queue, prefs_common.savemsg) < 0)
+				alertpanel_error(_("Some errors occurred while sending queued messages."));
+			statusbar_pop_all();
+			folder_item_scan(folder->queue);
 			folderview_update_item(folder->queue, TRUE);
 		}
 	}
@@ -2934,7 +2933,7 @@ static void prefs_scoring_open_cb(MainWindow *mainwin, guint action,
 static void prefs_filtering_open_cb(MainWindow *mainwin, guint action,
 				    GtkWidget *widget)
 {
-	prefs_filtering_open(NULL);
+	prefs_filtering_open(NULL, NULL, NULL);
 }
 
 static void prefs_template_open_cb(MainWindow *mainwin, guint action,

@@ -215,10 +215,13 @@ struct _FolderItem
 	guint ret_rcpt       : 1; /* return receipt       */
 
 	gint op_count;
+	guint opened    : 1; /* opened by summary view */
 
 	FolderItem *parent;
 
 	Folder *folder;
+
+	GSList *mark_queue;
 
 	gpointer data;
 
@@ -272,8 +275,14 @@ void   folder_count_total_msgs	(guint		*new,
 				 guint		*unread,
 				 guint		*total);
 
-Folder     *folder_find_from_path	(const gchar	*path);
-FolderItem *folder_find_item_from_path	(const gchar	*path);
+Folder     *folder_find_from_path		(const gchar	*path);
+Folder     *folder_find_from_name		(const gchar	*name,
+						 FolderType	 type);
+FolderItem *folder_find_item_from_path		(const gchar	*path);
+gchar      *folder_get_identifier		(Folder		*folder);
+gchar      *folder_item_get_identifier		(FolderItem	*item);
+FolderItem *folder_find_item_from_identifier	(const gchar	*identifier);
+
 Folder     *folder_get_default_folder	(void);
 FolderItem *folder_get_default_inbox	(void);
 FolderItem *folder_get_default_outbox	(void);
@@ -286,6 +295,8 @@ void folder_set_missing_folders		(void);
 gchar *folder_item_get_path		(FolderItem	*item);
 void   folder_item_scan			(FolderItem	*item);
 void   folder_item_scan_foreach		(GHashTable	*table);
+MsgInfo *folder_item_fetch_msginfo	(FolderItem 	*item,
+					 gint		 num);
 gchar *folder_item_fetch_msg		(FolderItem	*item,
 					 gint		 num);
 gint   folder_item_add_msg		(FolderItem	*dest,

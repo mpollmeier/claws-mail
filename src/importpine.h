@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2001 Hiroyuki Yamamoto
+ * Copyright (C) 2002 Match Grun
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,18 +17,19 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef __PREFS_FILTERING_H__
-#define __PREFS_FILTERING_H__
+/*
+ * Import Pine data.
+ */
+
+#ifndef __IMPORT_PINE_H__
+#define __IMPORT_PINE_H__
+
+/* Function prototypes */
+AddressBookFile *addressbook_imp_pine( AddressIndex *addrIndex );
+
+#endif /* __IMPORT_PINE_H__ */
 
 /*
-void prefs_scoring_read_config	(void);
-void prefs_scoring_write_config	(void);
+* End of Source.
 */
-void prefs_filtering_open		(FolderItem * item,
-					 const gchar	*header,
-					 const gchar	*key);
-void prefs_filtering_rename_path	(const gchar	*old_path,
-				 	 const gchar	*new_path);
-void prefs_filtering_delete_path	(const gchar	*path);
 
-#endif /* __PREFS_FILTERING_H__ */
