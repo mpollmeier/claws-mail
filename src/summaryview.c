@@ -886,7 +886,9 @@ gboolean summary_show(SummaryView *summaryview, FolderItem *item,
 			node = summary_find_next_unread_msg(summaryview, NULL);
 			if (node == NULL && GTK_CLIST(ctree)->row_list != NULL)
 				node = gtk_ctree_node_nth
-					(ctree, GTK_CLIST(ctree)->rows - 1);
+					(ctree, sort_type == 
+					 GTK_SORT_DESCENDING ? 0 : 
+					 GTK_CLIST(ctree)->rows - 1);
 			summary_select_node(summaryview, node, FALSE, TRUE);
 		}
 	} else {
@@ -900,7 +902,9 @@ gboolean summary_show(SummaryView *summaryview, FolderItem *item,
 		if (node == NULL && GTK_CLIST(ctree)->row_list != NULL) {
 			/* Get the last visible node on screen */
 			/* FIXME: huh, what happens if node is null? that allowed?? */
-			node = gtk_ctree_node_nth(ctree, GTK_CLIST(ctree)->rows - 1);
+			node = gtk_ctree_node_nth(ctree, sort_type == 
+						  GTK_SORT_DESCENDING ? 0 : 
+						  GTK_CLIST(ctree)->rows - 1);
 		}	
 		if (prefs_common.open_unread_on_enter) {
 			summary_unlock(summaryview);
@@ -1727,8 +1731,7 @@ static void summary_status_show(SummaryView *summaryview)
 	g_free(cp);
 	g_free(itstr);
 
-	if (summaryview->folder_item &&
-	    FOLDER_IS_LOCAL(summaryview->folder_item->folder)) {
+	if (FOLDER_IS_LOCAL(summaryview->folder_item->folder)) {
 		str = g_strdup_printf(_("%d new, %d unread, %d total (%s)"),
 				      summaryview->newmsgs,
 				      summaryview->unread,
@@ -1743,11 +1746,12 @@ static void summary_status_show(SummaryView *summaryview)
 	gtk_label_set(GTK_LABEL(summaryview->statlabel_msgs), str);
 	g_free(str);
 
+	summaryview->folder_item->new    = summaryview->newmsgs;
+	summaryview->folder_item->unread = summaryview->unread;
+	summaryview->folder_item->total  = summaryview->messages;
+
 	folderview_update_msg_num(summaryview->folderview,
-				  summaryview->folderview->opened,
-				  summaryview->newmsgs,
-				  summaryview->unread,
-				  summaryview->messages);
+				  summaryview->folderview->opened);
 }
 
 static void summary_set_column_titles(SummaryView *summaryview)
@@ -2423,14 +2427,21 @@ void summary_reedit(SummaryView *summaryview)
 void summary_step(SummaryView *summaryview, GtkScrollType type)
 {
 	GtkCTree *ctree = GTK_CTREE(summaryview->ctree);
+	GtkCTreeNode *node;
 
 	if (summary_is_locked(summaryview)) return;
 
 	if (type == GTK_SCROLL_STEP_FORWARD) {
-		GtkCTreeNode *node;
 		node = gtkut_ctree_node_next(ctree, summaryview->selected);
 		if (node)
 			gtkut_ctree_expand_parent_all(ctree, node);
+		else
+			return;
+	} else {
+		if (summaryview->selected) {
+			node = GTK_CTREE_NODE_PREV(summaryview->selected);
+			if (!node) return;
+		}
 	}
 
 	if (summaryview->msg_is_toggled_on)
@@ -5062,6 +5073,8 @@ void summary_reflect_prefs_pixmap_theme(SummaryView *summaryview)
 	gtk_box_reorder_child(GTK_BOX(summaryview->hbox), pixmap, 0);
 	gtk_widget_show(pixmap);
 	summaryview->folder_pixmap = pixmap; 
+
+	summary_write_cache(summaryview);
 
 	folderview_unselect(summaryview->folderview);
 	folderview_select(summaryview->folderview, summaryview->folder_item);

@@ -358,7 +358,7 @@ static PrefParam param[] = {
 	{"enable_pspell", "TRUE", &prefs_common.enable_pspell,
 	 P_BOOL, &spelling.checkbtn_enable_pspell,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
-	{"pspell_path", "/usr/local/share/pspell/", &prefs_common.pspell_path, 
+	{"pspell_path", PSPELL_PATH, &prefs_common.pspell_path, 
 	 P_STRING, &spelling.entry_pspell_path, 
 	 prefs_set_data_from_entry, prefs_set_entry},
 	{"dictionary",  "", &prefs_common.dictionary,
@@ -3988,9 +3988,25 @@ static void prefs_common_ok(void)
 
 static void prefs_common_apply(void)
 {
+	gchar *entry_pixmap_theme_str;
+	gboolean update_pixmap_theme;
+	
+	entry_pixmap_theme_str = gtk_entry_get_text(GTK_ENTRY(interface.entry_pixmap_theme));
+	if (entry_pixmap_theme_str && 
+		(strcmp(prefs_common.pixmap_theme_path, entry_pixmap_theme_str) != 0) )
+		update_pixmap_theme = TRUE;
+	else
+		update_pixmap_theme = FALSE;
+	
 	prefs_set_data_from_dialog(param);
-	main_window_reflect_prefs_all();
-	compose_reflect_prefs_pixmap_theme();
+	
+	if (update_pixmap_theme)
+	{
+		main_window_reflect_prefs_all_real(TRUE);
+		compose_reflect_prefs_pixmap_theme();
+	} else
+		main_window_reflect_prefs_all_real(FALSE);
+	
 	prefs_common_save_config();
 
 	inc_autocheck_timer_remove();

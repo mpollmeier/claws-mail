@@ -1,3 +1,58 @@
+2002-02-17 [melvin]	0.7.1claws12
+
+	* src/prefs_actions.c
+		Replaced children wait loop with double fork technique.
+		Now, input/output window updated at each new output.
+		free_children(): Fixed a memory leak.
+		Made input/output window non closable if running children
+		still exist.
+		Added missing <unistd.h> include.
+		Added some --debug outputs.
+
+2002-02-17 [melvin]	0.7.1claws11
+
+	* src/summaryview.c
+		Fixed bug where descending sort order did not select top
+		message.
+
+2002-02-17 [melvin]	0.7.1claws10
+
+	* acconfig.h
+		Added PSPELL_PATH macro and removed obsolete ISPELL_PATH
+	* src/prefs_common.c
+		Pspell data package directory no more hard coded but
+		set during configuration (PSPELL_PATH). (Thanks to 
+				Gustavo Noronha Silva.)
+
+2002-02-17 [melvin]	0.7.1claws9
+
+	* configure.in
+		Added PSPELL_PATH macro and removed obsolete ISPELL_PATH
+	* src/gtkspell.c
+		Fixed compile-time warnings.
+
+2002-02-16 [alfons]	0.7.1claws8
+
+	* src/filesel.c
+		fix inadvertent free of NULL pointer which caused
+		sylpheed to crash when closing the save-as dialog
+		using the window close button
+
+2002-02-16 [carsten]	0.7.1claws7
+	* src/mainwindow.[ch]
+	  src/summaryview.c
+	  src/prefs_common.c
+	  	fixes for pixmap theming code:
+			- recently changed mail attributes shouldn't get
+			  lost any longer
+			- theme is only reloaded iff another theme was
+			  selected
+
+2002-02-16 [paul]	0.7.1claws6
+
+	* sync with sylpheed 0.7.2 release
+		see ChangeLog entry 2002-02-15 and 2002-02-16
+
 2002-02-15 [paul]	0.7.1claws5
 
 	* sync with sylpheed 0.7.1cvs9
