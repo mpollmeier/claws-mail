@@ -67,13 +67,17 @@ static void mbox_folder_init(Folder *folder, const gchar *name, const gchar *pat
 
 	folder->type = F_MBOX;
 
+/*
 	folder->get_msg_list        = mbox_get_msg_list;
+*/
 	folder->fetch_msg           = mbox_fetch_msg;
 	folder->add_msg             = mbox_add_msg;
 	folder->copy_msg            = mbox_copy_msg;
 	folder->remove_msg          = mbox_remove_msg;
 	folder->remove_all_msg      = mbox_remove_all_msg;
+/*
 	folder->scan                = mbox_scan_folder;
+*/
 	folder->create_tree         = mbox_create_tree;
 	folder->create_folder       = mbox_create_folder;
 	folder->rename_folder       = mbox_rename_folder;

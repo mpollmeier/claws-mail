@@ -94,6 +94,7 @@ static struct Cmd {
 	gboolean compose;
 	const gchar *compose_mailto;
 	gboolean status;
+	gboolean send;
 } cmd;
 
 static void parse_cmd_opt(int argc, char *argv[]);
@@ -261,6 +262,7 @@ int main(int argc, char *argv[])
 	prefs_display_header_write_config();
 	/* prefs_filtering_read_config(); */
 	addressbook_read_file();
+	renderer_read_config();
 
 	gtkut_widget_init();
 
@@ -308,6 +310,11 @@ int main(int argc, char *argv[])
 	if (cmd.compose)
 		open_compose_new_with_recipient(cmd.compose_mailto);
 
+	if (cmd.send) {
+		if (procmsg_send_queue() < 0)
+			alertpanel_error(_("Some errors occurred while sending queued messages."));
+	}
+	
 	/* ignore SIGPIPE signal for preventing sudden death of program */
 	signal(SIGPIPE, SIG_IGN);
 
@@ -348,6 +355,8 @@ static void parse_cmd_opt(int argc, char *argv[])
 			exit(0);
 		} else if (!strncmp(argv[i], "--status", 8)) {
 			cmd.status = TRUE;
+		} else if (!strncmp(argv[i], "--send", 6)) {
+			cmd.send = TRUE;
 		} else if (!strncmp(argv[i], "--help", 6)) {
 			g_print(_("Usage: %s [OPTION]...\n"),
 				g_basename(argv[0]));
@@ -355,6 +364,7 @@ static void parse_cmd_opt(int argc, char *argv[])
 			puts(_("  --compose [address]    open composition window"));
 			puts(_("  --receive              receive new messages"));
 			puts(_("  --receive-all          receive new messages of all accounts"));
+			puts(_("  --send		 send all queued messages"));
 			puts(_("  --status               show the total number of messages"));
 			puts(_("  --debug                debug mode"));
 			puts(_("  --help                 display this help and exit"));
@@ -485,6 +495,13 @@ static gint prohibit_duplicate_launch(void)
 		fd_write(uxsock, "receive_all\n", 12);
 	else if (cmd.receive)
 		fd_write(uxsock, "receive\n", 8);
+	else if (cmd.send) {
+		gchar buf[BUFFSIZE];
+
+		fd_write(uxsock, "send\n", 5);
+		fd_gets(uxsock, buf, sizeof(buf));
+		fputs(buf, stdout);
+	}
 	else if (cmd.compose) {
 		gchar *compose_str;
 
@@ -527,6 +544,21 @@ static void lock_socket_input_cb(gpointer data,
 	} else if (!strncmp(buf, "receive", 7)){
 		main_window_popup(mainwin);
 		inc_mail(mainwin);
+	} else if (!strncmp(buf, "send", 4)) {
+		gint queued = get_queued_message_num();
+
+		if (queued > 0) {
+			if (procmsg_send_queue() < 0)
+				g_snprintf(buf, sizeof(buf),
+					"%s\n", /* avoids adding another translatable */
+					_("Some errors occurred while sending queued messages."));
+			else 	/* queue sent ok */
+				g_snprintf(buf, sizeof(buf), _("\%d queued message(s) sent\n"), queued);
+		} 
+		else {
+			g_snprintf(buf, sizeof(buf), "%s\n", _("No queued messages found."));
+		}
+		fd_write(sock, buf, strlen(buf));
 	} else if (!strncmp(buf, "compose", 7)) {
 		open_compose_new_with_recipient(buf + strlen("compose") + 1);
 	} else if (!strncmp(buf, "status", 6)) {

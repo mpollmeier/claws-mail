@@ -279,6 +279,10 @@ static void view_source_cb		(MainWindow	*mainwin,
 					 guint		 action,
 					 GtkWidget	*widget);
 
+static void show_all_header_cb		(MainWindow	*mainwin,
+					 guint		 action,
+					 GtkWidget	*widget);
+
 static void reedit_cb			(MainWindow	*mainwin,
 					 guint		 action,
 					 GtkWidget	*widget);
@@ -450,8 +454,8 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_File/_Export to mbox file..."),	NULL, export_mbox_cb, 0, NULL},
 	{N_("/_File/Empty _trash"),		"<shift>D", empty_trash_cb, 0, NULL},
 	{N_("/_File/---"),			NULL, NULL, 0, "<Separator>"},
-	{N_("/_File/_Save as..."),		"y", save_as_cb, 0, NULL},
-	{N_("/_File/_Print..."),		"<control>P", print_cb, 0, NULL},
+	{N_("/_File/_Save as..."),		"<control>S", save_as_cb, 0, NULL},
+	{N_("/_File/_Print..."),		NULL, print_cb, 0, NULL},
 	{N_("/_File/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_File/E_xit"),			"<control>Q", app_exit_cb, 0, NULL},
 
@@ -480,7 +484,7 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_View/_Sort/Sort by s_ize"),	NULL, sort_summary_cb, SORT_BY_SIZE, NULL},
 	{N_("/_View/_Sort/Sort by _date"),	NULL, sort_summary_cb, SORT_BY_DATE, NULL},
 	{N_("/_View/_Sort/Sort by _from"),	NULL, sort_summary_cb, SORT_BY_FROM, NULL},
-	{N_("/_View/_Sort/Sort by _subject"),NULL, sort_summary_cb, SORT_BY_SUBJECT, NULL},
+	{N_("/_View/_Sort/Sort by _subject"),	NULL, sort_summary_cb, SORT_BY_SUBJECT, NULL},
 	{N_("/_View/_Sort/Sort by _color label"),
 						NULL, sort_summary_cb, SORT_BY_LABEL, NULL},
 	{N_("/_View/_Sort/Sort by _mark"),	NULL, sort_summary_cb, SORT_BY_MARK, NULL},
@@ -576,8 +580,8 @@ static GtkItemFactoryEntry mainwin_entries[] =
 
 	{N_("/_View/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_View/_Go to"),			NULL, NULL, 0, "<Branch>"},
-	{N_("/_View/_Go to/_Prev message"),	"p", prev_cb, 0, NULL},
-	{N_("/_View/_Go to/_Next message"),	"n", next_cb, 0, NULL},
+	{N_("/_View/_Go to/_Prev message"),	"P", prev_cb, 0, NULL},
+	{N_("/_View/_Go to/_Next message"),	"N", next_cb, 0, NULL},
 	{N_("/_View/_Go to/---"),		NULL, NULL, 0, "<Separator>"},
 	{N_("/_View/_Go to/P_rev unread message"),
 						"<shift>P", prev_unread_cb, 0, NULL},
@@ -594,43 +598,43 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_View/_Go to/Next la_beled message"),
 						NULL, next_labeled_cb, 0, NULL},
 	{N_("/_View/_Go to/---"),		NULL, NULL, 0, "<Separator>"},
-	{N_("/_View/_Go to/Other _folder..."),	"<alt>G", goto_folder_cb, 0, NULL},
+	{N_("/_View/_Go to/Other _folder..."),	"G", goto_folder_cb, 0, NULL},
 	{N_("/_View/---"),			NULL, NULL, 0, "<Separator>"},
-	{N_("/_View/Open in new _window"),	"<shift><control>N", open_msg_cb, 0, NULL},
+	{N_("/_View/Open in new _window"),	"<control><alt>N", open_msg_cb, 0, NULL},
 	{N_("/_View/_View source"),		"<control>U", view_source_cb, 0, NULL},
-	{N_("/_View/Show all _header"),		"<control>H", header_window_show_cb, 0, NULL},
+	{N_("/_View/Show all _header"),		"<control>H", show_all_header_cb, 0, NULL},
 	{N_("/_View/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_View/_Update"),			"<control><alt>U", update_summary_cb,  0, NULL},
 
 	{N_("/_Message"),			NULL, NULL, 0, "<Branch>"},
-	{N_("/_Message/Get new ma_il"),	"<control><alt>I",	inc_mail_cb, 0, NULL},
+	{N_("/_Message/Get new ma_il"),		"<control>I",	inc_mail_cb, 0, NULL},
 	{N_("/_Message/Get from _all accounts"),
 						"<shift><control>I", inc_all_account_mail_cb, 0, NULL},
 	{N_("/_Message/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_Message/Send queued messa_ges"),
 						NULL, send_queue_cb, 0, NULL},
 	{N_("/_Message/---"),			NULL, NULL, 0, "<Separator>"},
-	{N_("/_Message/Compose a_n email message"),	"w", compose_mail_cb, 0, NULL},
+	{N_("/_Message/Compose a_n email message"),	"<control>M", compose_mail_cb, 0, NULL},
 	{N_("/_Message/Compose a news message"),	NULL,	compose_news_cb, 0, NULL},
 	{N_("/_Message/_Reply"),		"<control>R", 	reply_cb, COMPOSE_REPLY, NULL},
 	{N_("/_Message/Repl_y to sender"),	"<control><alt>R", reply_cb, COMPOSE_REPLY_TO_SENDER, NULL},
 	{N_("/_Message/Follow-up and reply to"), NULL, reply_cb, COMPOSE_FOLLOWUP_AND_REPLY_TO, NULL},
-	{N_("/_Message/Reply to a_ll"),		"<control><shift>R", reply_cb, COMPOSE_REPLY_TO_ALL, NULL},
+	{N_("/_Message/Reply to a_ll"),		"<shift><control>R", reply_cb, COMPOSE_REPLY_TO_ALL, NULL},
 	{N_("/_Message/_Forward"),		"<control><alt>F", reply_cb, COMPOSE_FORWARD, NULL},
 	{N_("/_Message/Bounce"),		NULL, reply_cb, COMPOSE_BOUNCE, NULL},
 	{N_("/_Message/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_Message/Re-_edit"),		NULL, reedit_cb, 0, NULL},
 	{N_("/_Message/---"),			NULL, NULL, 0, "<Separator>"},
-	{N_("/_Message/M_ove..."),		"o", move_to_cb, 0, NULL},
-	{N_("/_Message/_Copy..."),		"<shift>O", copy_to_cb, 0, NULL},
-	{N_("/_Message/_Delete"),		"d", delete_cb,  0, NULL},
+	{N_("/_Message/M_ove..."),		"<control>O", move_to_cb, 0, NULL},
+	{N_("/_Message/_Copy..."),		"<shift><control>O", copy_to_cb, 0, NULL},
+	{N_("/_Message/_Delete"),		"<control>D", delete_cb,  0, NULL},
 	{N_("/_Message/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_Message/Delete du_plicated messages"),
 						NULL, delete_duplicated_cb,   0, NULL},
 	{N_("/_Message/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_Message/_Mark"),			NULL, NULL, 0, "<Branch>"},
 	{N_("/_Message/_Mark/_Mark"),		NULL, mark_cb,   0, NULL},
-	{N_("/_Message/_Mark/_Unmark"),		"u", unmark_cb, 0, NULL},
+	{N_("/_Message/_Mark/_Unmark"),		"U", unmark_cb, 0, NULL},
 	{N_("/_Message/_Mark/---"),		NULL, NULL, 0, "<Separator>"},
 	{N_("/_Message/_Mark/Mark as unr_ead"),	NULL, mark_as_unread_cb, 0, NULL},
 	{N_("/_Message/_Mark/Mark as rea_d"),
@@ -638,7 +642,7 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_Message/_Mark/Mark all _read"),	NULL, mark_all_read_cb, 0, NULL},
 
 	{N_("/_Tool"),				NULL, NULL, 0, "<Branch>"},
-	{N_("/_Tool/_Address book"),		"<control><alt>A", addressbook_open_cb, 0, NULL},
+	{N_("/_Tool/_Address book"),		"<shift><control>A", addressbook_open_cb, 0, NULL},
 	{N_("/_Tool/Add sender to address boo_k"),
 						NULL, add_address_cb, 0, NULL},
 	{N_("/_Tool/---"),			NULL, NULL, 0, "<Separator>"},
@@ -653,7 +657,7 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_Tool/_Create filter rule/by _Subject"),
 						NULL, create_filter_cb, FILTER_BY_SUBJECT, NULL},
 	{N_("/_Tool/---"),			NULL, NULL, 0, "<Separator>"},
-	{N_("/_Tool/E_xecute"),			"x", execute_summary_cb, 0, NULL},
+	{N_("/_Tool/E_xecute"),			"X", execute_summary_cb, 0, NULL},
 	{N_("/_Tool/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_Tool/_Log window"),		"<control>L", log_window_show_cb, 0, NULL},
 
@@ -1257,7 +1261,6 @@ void main_window_empty_trash(MainWindow *mainwin, gboolean confirm)
 	for (list = folder_get_list(); list != NULL; list = list->next) {
 		folder = list->data;
 		if (folder && folder->trash && folder->trash->total != 0) {
-			folder_item_scan(folder->trash);
 			folderview_update_item(folder->trash, TRUE);
 		}
 	}
@@ -1361,10 +1364,12 @@ typedef enum
 	M_EXEC                = 1 << 4,
 	M_ALLOW_REEDIT        = 1 << 5,
 	M_HAVE_ACCOUNT        = 1 << 6,
-	M_THREADED            = 1 << 7,
+	M_THREADED	      = 1 << 7,
 	M_UNTHREADED	      = 1 << 8,
-	M_NEWS                = 1 << 9,
-	M_HAVE_NEWS_ACCOUNT   = 1 << 10
+	M_ALLOW_DELETE	      = 1 << 9,
+	M_NEWS                = 1 << 10,
+	M_HAVE_NEWS_ACCOUNT   = 1 << 11,
+	M_HIDE_READ_MSG	      = 1 << 12
 } SensitiveCond;
 
 static SensitiveCond main_window_get_current_state(MainWindow *mainwin)
@@ -1381,18 +1386,23 @@ static SensitiveCond main_window_get_current_state(MainWindow *mainwin)
 	if (selection != SUMMARY_NONE)
 		state |= M_MSG_EXIST;
 	if (item) {
+		state |= M_EXEC;
 		if (item->threaded)
 			state |= M_THREADED;
 		else
 			state |= M_UNTHREADED;	
+		if (item->folder->type != F_NEWS)
+			state |= M_ALLOW_DELETE;
+
+		if (selection == SUMMARY_NONE && item->hide_read_msgs
+		    || selection != SUMMARY_NONE)
+			state |= M_HIDE_READ_MSG;	
 	}		
 	if (selection == SUMMARY_SELECTED_SINGLE ||
 	    selection == SUMMARY_SELECTED_MULTIPLE)
 		state |= M_TARGET_EXIST;
 	if (selection == SUMMARY_SELECTED_SINGLE)
 		state |= M_SINGLE_TARGET_EXIST;
-	if (item && item->folder->type != F_NEWS)
-		state |= M_EXEC;
 	if (mainwin->summaryview->folder_item &&
 	    mainwin->summaryview->folder_item->folder->type == F_NEWS)
 		state |= M_NEWS;
@@ -1431,11 +1441,11 @@ void main_window_set_toolbar_sensitive(MainWindow *mainwin)
 		{mainwin->reply_btn       , M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
 		{mainwin->replyall_btn    , M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
 		{mainwin->replysender_btn , M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
-		{mainwin->fwd_btn         , M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
+		{mainwin->fwd_btn         , M_HAVE_ACCOUNT|M_TARGET_EXIST},
 		/* {mainwin->prefs_btn      , M_UNLOCKED},
 		{mainwin->account_btn    , M_UNLOCKED}, */
 		{mainwin->next_btn        , M_MSG_EXIST},
-		{mainwin->delete_btn      , M_TARGET_EXIST|M_EXEC|M_UNLOCKED},
+		{mainwin->delete_btn      , M_TARGET_EXIST|M_ALLOW_DELETE|M_UNLOCKED},
 		{mainwin->exec_btn        , M_MSG_EXIST|M_EXEC|M_UNLOCKED},
 		{NULL, 0}
 	};
@@ -1478,6 +1488,7 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 		{"/View/Sort"                      , M_MSG_EXIST},
 		{"/View/Thread view"               , M_UNTHREADED},
 		{"/View/Unthread view"             , M_THREADED},
+		{"/View/Hide read messages"	   , M_HIDE_READ_MSG},
 		{"/View/Go to"                     , M_MSG_EXIST},
 		{"/View/Go to/Prev message"        , M_MSG_EXIST},
 		{"/View/Go to/Next message"        , M_MSG_EXIST},
@@ -1497,14 +1508,14 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 		{"/Message/Reply to sender"       , M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
 		{"/Message/Reply to all"          , M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
 		{"/Message/Follow-up and reply to", M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST|M_NEWS},
-		{"/Message/Forward"               , M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
+		{"/Message/Forward"               , M_HAVE_ACCOUNT|M_TARGET_EXIST},
         	{"/Message/Bounce"		  , M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
-		{"/Message/Re-edit", M_HAVE_ACCOUNT|M_ALLOW_REEDIT},
-		{"/Message/Move...", M_TARGET_EXIST|M_EXEC|M_UNLOCKED},
-		{"/Message/Copy...", M_TARGET_EXIST|M_EXEC|M_UNLOCKED},
-		{"/Message/Delete" , M_TARGET_EXIST|M_EXEC|M_UNLOCKED},
-		{"/Message/Mark"   , M_TARGET_EXIST},
-		{"/Message/Delete duplicated messages", M_MSG_EXIST|M_EXEC|M_UNLOCKED},
+		{"/Message/Re-edit"		  , M_HAVE_ACCOUNT|M_ALLOW_REEDIT},
+		{"/Message/Move..."		  , M_TARGET_EXIST|M_ALLOW_DELETE|M_UNLOCKED},
+		{"/Message/Copy..."		  , M_TARGET_EXIST|M_EXEC|M_UNLOCKED},
+		{"/Message/Delete" 		  , M_TARGET_EXIST|M_ALLOW_DELETE|M_UNLOCKED},
+		{"/Message/Mark"   		  , M_TARGET_EXIST},
+		{"/Message/Delete duplicated messages", M_MSG_EXIST|M_ALLOW_DELETE|M_UNLOCKED},
 
 		{"/Tool/Add sender to address book", M_SINGLE_TARGET_EXIST},
 		{"/Tool/Filter messages"           , M_MSG_EXIST|M_EXEC|M_UNLOCKED},
@@ -2495,7 +2506,6 @@ static void send_queue_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
 
 		folder = list->data;
 		if (folder->queue) {
-			folder_item_scan(folder->queue);
 			folderview_update_item(folder->queue, TRUE);
 		}
 	}
@@ -2572,85 +2582,7 @@ static void compose_news_cb(MainWindow *mainwin, guint action,
 
 static void reply_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
 {
-	GList  *sel = GTK_CLIST(mainwin->summaryview->ctree)->selection;
-	MsgInfo *msginfo;
-
-	msginfo = gtk_ctree_node_get_row_data
-		(GTK_CTREE(mainwin->summaryview->ctree),
-		 mainwin->summaryview->selected);
-
-	if (!msginfo) return;
-
-	switch (action) {
-	case COMPOSE_REPLY:
-		compose_reply(msginfo, prefs_common.reply_with_quote,
-			      FALSE, FALSE);
-		break;
-	case COMPOSE_REPLY_WITH_QUOTE:
-		compose_reply(msginfo, TRUE, FALSE, FALSE);
-		break;
-	case COMPOSE_REPLY_WITHOUT_QUOTE:
-		compose_reply(msginfo, FALSE, FALSE, FALSE);
-		break;
-	case COMPOSE_REPLY_TO_SENDER:
-		compose_reply(msginfo, prefs_common.reply_with_quote,
-			      FALSE, TRUE);
-		break;
-	case COMPOSE_REPLY_TO_SENDER_WITH_QUOTE:
-		compose_reply(msginfo, TRUE, FALSE, TRUE);
-		break;
-	case COMPOSE_REPLY_TO_SENDER_WITHOUT_QUOTE:
-		compose_reply(msginfo, FALSE, FALSE, TRUE);
-		break;
-	case COMPOSE_FOLLOWUP_AND_REPLY_TO:
-		compose_followup_and_reply_to(msginfo,
-					      prefs_common.reply_with_quote,
-					      FALSE, TRUE);
-		break;
-	case COMPOSE_REPLY_TO_ALL:
-		compose_reply(msginfo, prefs_common.reply_with_quote,
-			      TRUE, TRUE);
-		break;
-	case COMPOSE_REPLY_TO_ALL_WITH_QUOTE:
-		compose_reply(msginfo, TRUE, TRUE, TRUE);
-		break;
-	case COMPOSE_REPLY_TO_ALL_WITHOUT_QUOTE:
-		compose_reply(msginfo, FALSE, TRUE, TRUE);
-		break;
-	case COMPOSE_FORWARD:
-		if (prefs_common.forward_as_attachment) {
-			reply_cb(mainwin, COMPOSE_FORWARD_AS_ATTACH, widget);
-			return;
-		} else {
-			reply_cb(mainwin, COMPOSE_FORWARD_INLINE, widget);
-			return;
-		}
-		break;
-	case COMPOSE_FORWARD_INLINE:
-		if (!sel->next) {
-			compose_forward(NULL, msginfo, FALSE);
-			break;
-		}
-		/* if (sel->next) FALL_THROUGH */
-	case COMPOSE_FORWARD_AS_ATTACH:
-		{
-			GSList *msginfo_list = NULL;
-			for ( ; sel != NULL; sel = sel->next)
-				msginfo_list = g_slist_append(msginfo_list, 
-					gtk_ctree_node_get_row_data(GTK_CTREE(mainwin->summaryview->ctree),
-						GTK_CTREE_NODE(sel->data)));
-			compose_forward_multiple(NULL, msginfo_list);
-			g_slist_free(msginfo_list);
-		}			
-		break;
-	case COMPOSE_BOUNCE:
-			compose_bounce(NULL, msginfo);
-			break;
-	default:
-		g_warning("reply_cb(): invalid action type: %d\n", action);
-	}
-
-	summary_set_marks_selected(mainwin->summaryview);
+	summary_reply(mainwin->summaryview, (ComposeMode)action);
 }
 
 static void move_to_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
@@ -2677,6 +2609,12 @@ static void view_source_cb(MainWindow *mainwin, guint action,
 			   GtkWidget *widget)
 {
 	summary_view_source(mainwin->summaryview);
+}
+
+static void show_all_header_cb(MainWindow *mainwin, guint action,
+			       GtkWidget *widget)
+{
+	summary_display_msg_selected(mainwin->summaryview, TRUE);
 }
 
 static void reedit_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
@@ -2812,6 +2750,7 @@ static void update_summary_cb(MainWindow *mainwin, guint action,
 					    folderview->opened);
 	if (!fitem) return;
 
+	folder_item_scan(fitem);
 	summary_show(mainwin->summaryview, fitem, TRUE);
 }
 

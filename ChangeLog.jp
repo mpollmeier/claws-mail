@@ -1,3 +1,133 @@
+2002-02-05
+
+	* src/compose.c: compose_exec_ext_editor_real(): g_strsplit() を
+	  strsplit_with_quote() で置き換えた。
+	* src/foldersel.c
+	  src/folderview.c: folderview_drag_motion_cb(): 少しコードの整理。
+	* src/folderview.c:
+	  folderview_drag_motion_cb()
+	  folderview_drag_received_cb(): IMAP4 フォルダへのドロップを可能
+	  にした。
+	* src/utils.c: get_file_size_as_crlf(): fread() の代わりに fgets()
+	  を使用。
+	* src/imap.c
+	  imap_copy_msg()
+	  imap_copy_msgs_with_dest(): メッセージのソースが現在のメール
+	  ボックスと異なっていれば imap_add_msg() を使用するようにした。
+	  正しい値を返すようにした。
+	  imap_cmd_append(): APPEND コマンドを正しく実装。
+
+2002-02-04
+
+	* src/mainwindow.c
+	  src/messageview.[ch]
+	  src/summaryview.[ch]
+	  src/textview.[ch]: 全ヘッダをメッセージビューに表示し、ヘッダ
+	  ウィンドウはもう使用しないようにした。
+	* src/mainwindow.c
+	  src/prefs_common.c: 「新規メッセージを作成」のデフォルトの
+	  ショートカットを変更。
+	* src/mainwindow.c
+	  src/summaryview.[ch]: summary_display_msg_selected(): 新規。
+	  「全てのヘッダを表示」を選択したら選択されたメッセージを表示
+	  するようにした。
+	* src/mh.c
+	  src/sourcewindow.c: いくつかの procmsg_get_message_file_path()
+	  を procmsg_get_message_file() に変更し、メッセージが確実に
+	  取得されているようにした。
+	* src/folderview.c: folderview_drag_motion_cb(): 任意のフォルダ
+	  から MH フォルダへの DnD を許可。
+	  folderview_drag_received_cb(): ドラッグ元フォルダがニュース
+	  あるいは IMAP の場合メッセージを移動するかわりにコピーするように
+	  した。
+	* src/mainwindow.c
+	  src/summaryview.c: ニュースフォルダからのコピーを許可。
+
+2002-02-03
+
+	* src/prefs_common.c: prefs_other_create(): 外部コマンドの設定の
+	  デザインを修正。
+	  prefs_keybind_apply_clicked(): Mew / Wanderlust キーバインド
+	  プリセットをよりオリジナルに近づけた。
+	  Mutt キーバインドプリセットを追加。
+	  メッセージ作成のキーバインドも変更。
+	* src/compose.c: いくつかのメニューショートカットを変更。
+	* src/codeconv.c: タイ語のエンコーディング用に locale_table を修正。
+
+2002-02-01
+
+	* src/Makefile.am: $(GPGME_CFLAGS) を INCLUDES に追加。
+	* src/prefs_common.c: prefs_interface_create(): メニューショート
+	  カットの説明を修正。
+
+2002-01-31
+
+	* src/gtkutils.[ch]: gtk_stext_clear() を追加。
+	* src/compose.[ch]
+	  src/mainwindow.c
+	  src/summaryview.[ch]: 複数転送ができるようにした。
+	* src/summaryview.c:
+	  summary_set_marks_selected(): 選択行全てにマークを付けるようにした。
+	  summary_reply(): summary_reply_cb() から移動。
+	* compose.[ch]: compose_forward(): メッセージリストを受けるように
+	  修正。
+	* src/mainwindow.c: 返信の処理を整理。
+	* src/summaryview.c: summary_reply(): メモリリークを修正。
+	  summary_key_pressed(): ハードコードされたマーク／未読としてマーク
+	  のショートカットを削除。
+	* src/mainwindow.c
+	  src/prefs_common.c: メニューにマーク／未読としてマークのショート
+	  カットを追加。
+
+2002-01-30
+
+	* src/compose.c: compose_wrap_line_all():
+	  prefs_common.linewrap_quote が指定されていなくても引用部を整形
+	  するようにした(prefs_common.linewrap_quote は単に返信時の自動
+	  改行のためにあるので)。
+	* src/prefs_account.c: prefs_account_open(): 新規アカウントを作成
+	  するときに tmp_ac_prefs を初期化するようにした。
+	* src/mh.c: mh_get_msg_list(): ディレクトリの更新を検出するために
+	  st_ctime も使うようにした。
+	* src/prefs_common.c: prefs_interface_create(): キーバインドセレクタ
+	  の説明を修正。
+
+2002-01-29
+
+	* src/mimeview.c: ボタン / キーイベント処理を修正して多重ダイアログ
+	  / 移動を修正。
+	* src/mimeview.[ch]
+	  src/textview.c: MIME モードでいくつかのキープレスイベントを
+	  MimeView に渡すようにした。
+	* src/prefs_filter.c: ルールの順序を正しくセットしないバグを修正。
+	* src/prefs_common.c: prefs_keybind_apply_clicked(): empty_menurc
+	  の文字列を修正。
+
+2002-01-28
+
+	* src/mainwindow.c
+	  src/prefs_common.c: メニューのショートカットを再構成。
+	  「表示 - サマリビューを切替」を追加。
+	* src/summaryview.[ch]: summary_toggle_view(): public な関数にした。
+	* src/prefs_common.[ch]: 「ショートカットキー」と「終了時」の位置を
+	  交換。
+	* src/importldif.c: imp_ldif_delete_event(): ダイアログをウィンドウ
+	  マネージャで閉じたときの segfault を修正(より正しい方法で)。
+	* src/imageview.[ch]
+	  src/messageview.c
+	  src/mimeview.c: テキストと画像パートを切り替えたときの誤った
+	  スクロール位置を修正。また不要な画像を開放するようにした
+	  (Sergey Vlasov さん thanks)。
+	* src/prefs_common.c: 「新着メールを受信した後受信箱に移動する」
+	  をデフォルトで無効にした。
+
+2002-01-28
+
+	* src/prefs_common.c: ショートカット簡易変更機能を実装。
+	* src/folderview.c: folderview_key_pressed()
+	  src/summaryview.c: summary_key_pressed(): ハードコードされたキー
+	  バインドをいくつか削除。
+
 2002-01-25
 
 	* src/procmime.c:

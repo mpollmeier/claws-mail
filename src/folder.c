@@ -63,6 +63,7 @@ static void folder_update_op_count_rec	(GNode		*node);
 static void folder_get_persist_prefs_recursive
 					(GNode *node, GHashTable *pptable);
 static gboolean persist_prefs_free	(gpointer key, gpointer val, gpointer data);
+void folder_item_read_cache		(FolderItem *item);
 
 
 Folder *folder_new(FolderType type, const gchar *name, const gchar *path)
@@ -97,6 +98,8 @@ static void folder_init(Folder *folder, const gchar *name)
 	g_return_if_fail(folder != NULL);
 
 	folder_set_name(folder, name);
+
+	/* Init folder data */
 	folder->type = F_UNKNOWN;
 	folder->account = NULL;
 	folder->inbox = NULL;
@@ -104,8 +107,15 @@ static void folder_init(Folder *folder, const gchar *name)
 	folder->draft = NULL;
 	folder->queue = NULL;
 	folder->trash = NULL;
+
+	/* Init Folder functions */
+	folder->fetch_msg = NULL;
+	folder->fetch_msginfo = NULL;
+	folder->get_num_list = NULL;
 	folder->ui_func = NULL;
 	folder->ui_func_data = NULL;
+
+	/* Create root folder item */
 	item = folder_item_new(name, NULL);
 	item->folder = folder;
 	folder->node = g_node_new(item);
@@ -607,17 +617,141 @@ gchar *folder_item_get_path(FolderItem *item)
 	return path;
 }
 
+void folder_item_set_default_flags(FolderItem *dest, MsgFlags *flags)
+{
+	if (!(dest->stype == F_OUTBOX ||
+	      dest->stype == F_QUEUE  ||
+	      dest->stype == F_DRAFT  ||
+	      dest->stype == F_TRASH)) {
+		flags->perm_flags = MSG_NEW|MSG_UNREAD;
+	} else {
+		flags->perm_flags = 0;
+	}
+	flags->tmp_flags = MSG_CACHED;
+	if (dest->folder->type == F_MH) {
+		if (dest->stype == F_QUEUE) {
+			MSG_SET_TMP_FLAGS(*flags, MSG_QUEUED);
+		} else if (dest->stype == F_DRAFT) {
+			MSG_SET_TMP_FLAGS(*flags, MSG_DRAFT);
+		}
+	} else if (dest->folder->type == F_IMAP) {
+		MSG_SET_TMP_FLAGS(*flags, MSG_IMAP);
+	} else if (dest->folder->type == F_NEWS) {
+		MSG_SET_TMP_FLAGS(*flags, MSG_NEWS);
+	}
+}
+
+typedef enum {
+    IN_CACHE  = 1 << 0,
+    IN_FOLDER = 1 << 1,
+} FolderScanInfo;
+
 void folder_item_scan(FolderItem *item)
 {
 	Folder *folder;
+	GSList *folder_list, *cache_list, *elem;
+	guint i, min = 0xffffffff, max = 0;
+	FolderScanInfo *folderscaninfo;
 
 	g_return_if_fail(item != NULL);
 
 	folder = item->folder;
 
-	g_return_if_fail(folder->scan != NULL);
+	g_return_if_fail(folder != NULL);
+	g_return_if_fail(folder->get_num_list != NULL);
 
-	folder->scan(folder, item);
+	/* Get list of messages for folder and cache */
+	folder_list = folder->get_num_list(item->folder, item);
+	if(!item->cache)
+		folder_item_read_cache(item);
+	cache_list = msgcache_get_msg_list(item->cache);
+
+	/* Get min und max number in folder */
+	for(elem = folder_list; elem != NULL; elem = elem->next) {
+		guint num = GPOINTER_TO_INT(elem->data);
+
+		min = MIN(num, min);
+		max = MAX(num, max);
+	}
+	for(elem = cache_list; elem != NULL; elem = elem->next) {
+		MsgInfo *msginfo = (MsgInfo *)elem->data;
+
+		min = MIN(msginfo->msgnum, min);
+		max = MAX(msginfo->msgnum, max);
+	}
+
+	debug_print("Folder message number range from %d to %d\n", min, max);
+
+	if(max == 0) {
+		for(elem = cache_list; elem != NULL; elem = elem->next) {
+			MsgInfo *msginfo = (MsgInfo *)elem->data;
+
+			procmsg_msginfo_free(msginfo);
+		}
+		g_slist_free(folder_list);
+		g_slist_free(cache_list);
+	}
+
+	folderscaninfo = g_new0(FolderScanInfo, max - min + 1);
+
+	for(elem = folder_list; elem != NULL; elem = elem->next) {
+		guint num = GPOINTER_TO_INT(elem->data);
+
+		folderscaninfo[num - min] |= IN_FOLDER;
+	}
+	for(elem = cache_list; elem != NULL; elem = elem->next) {
+		MsgInfo *msginfo = (MsgInfo *)elem->data;
+
+		folderscaninfo[msginfo->msgnum - min] |= IN_CACHE;
+		procmsg_msginfo_free(msginfo);
+	}
+
+	for(i = 0; i <= max - min; i++) {
+		guint num;
+		
+		num = i + min;
+		/* Add message to cache if in folder and not in cache */
+		if( (folderscaninfo[i] & IN_FOLDER) && 
+		   !(folderscaninfo[i] & IN_CACHE) && 
+		    (folder->fetch_msginfo != NULL)) {
+			MsgFlags flags;
+			MsgInfo *msginfo;
+
+			msginfo = folder->fetch_msginfo(folder, item, num);
+			msgcache_add_msg(item->cache, msginfo);
+			procmsg_msginfo_free(msginfo);
+			debug_print(_("Added newly found message %d to cache.\n"), num);
+		}
+		/* Remove message from cache if not in folder and in cache */
+		if(!(folderscaninfo[i] & IN_FOLDER) && 
+		    (folderscaninfo[i] & IN_CACHE)) {
+			msgcache_remove_msg(item->cache, i + min);
+			debug_print(_("Removed message %d from cache.\n"), num);
+		}
+		/* Check if msginfo needs update if in cache and in folder */
+		if((folderscaninfo[i] & IN_FOLDER) && 
+		   (folderscaninfo[i] & IN_CACHE)) {
+			MsgInfo *msginfo;
+
+			msginfo = msgcache_get_msg(item->cache, num);
+			if(folder->is_msg_changed(folder, item, msginfo)) {
+				MsgInfo *newmsginfo;
+
+				newmsginfo = folder->fetch_msginfo(folder, item, num);
+				msgcache_add_msg(item->cache, newmsginfo);
+				procmsg_msginfo_free(newmsginfo);
+
+				msgcache_remove_msg(item->cache, msginfo->msgnum);
+
+				debug_print(_("Updated msginfo for message %d.\n"), num);
+			}
+			procmsg_msginfo_free(msginfo);
+		}
+	}
+
+	g_slist_free(folder_list);
+	g_slist_free(cache_list);
+	g_free(folderscaninfo);
 }
 
 static void folder_item_scan_foreach_func(gpointer key, gpointer val,
@@ -704,26 +838,7 @@ gint folder_item_add_msg(FolderItem *dest, const gchar *file,
 	if (!dest->cache)
 		folder_item_read_cache(dest);
 
-	if (!(dest->stype == F_OUTBOX ||
-	      dest->stype == F_QUEUE  ||
-	      dest->stype == F_DRAFT  ||
-	      dest->stype == F_TRASH)) {
-		default_flags.perm_flags = MSG_NEW|MSG_UNREAD;
-	} else {
-		default_flags.perm_flags = 0;
-	}
-	default_flags.tmp_flags = MSG_CACHED;
-	if (dest->folder->type == F_MH) {
-		if (dest->stype == F_QUEUE) {
-			MSG_SET_TMP_FLAGS(default_flags, MSG_QUEUED);
-		} else if (dest->stype == F_DRAFT) {
-			MSG_SET_TMP_FLAGS(default_flags, MSG_DRAFT);
-		}
-	} else if (dest->folder->type == F_IMAP) {
-		MSG_SET_TMP_FLAGS(default_flags, MSG_IMAP);
-	} else if (dest->folder->type == F_NEWS) {
-		MSG_SET_TMP_FLAGS(default_flags, MSG_NEWS);
-	}
+	folder_item_set_default_flags(dest, &default_flags);
         msginfo = procheader_parse(file, default_flags, TRUE, FALSE);
 
 	num = folder->add_msg(folder, dest, file, remove_source);
@@ -784,7 +899,7 @@ gint folder_item_move_msg(FolderItem *dest, MsgInfo *msginfo)
 	src_folder = msginfo->folder->folder;
 
 	num = folder->copy_msg(folder, dest, msginfo);
-
+	
 	if (num != -1) {
 		MsgInfo *newmsginfo;
 
@@ -802,9 +917,12 @@ gint folder_item_move_msg(FolderItem *dest, MsgInfo *msginfo)
 		newmsginfo->folder = dest;
     		msgcache_add_msg(dest->cache, newmsginfo);
 
-		src_folder->remove_msg(src_folder,
-				       msginfo->folder,
-				       msginfo->msgnum);
+		/* CLAWS */
+		if(src_folder->remove_msg) {
+			src_folder->remove_msg(src_folder,
+					       msginfo->folder,
+					       msginfo->msgnum);
+		}
                 msgcache_remove_msg(msginfo->folder->cache, msginfo->msgnum);
 
 		if (MSG_IS_NEW(msginfo->flags))
@@ -823,8 +941,6 @@ gint folder_item_move_msg(FolderItem *dest, MsgInfo *msginfo)
 	
 	if (folder->finished_copy)
 		folder->finished_copy(folder, dest);
-
-	src_folder = msginfo->folder->folder;
 
 	return num;
 }
@@ -1063,6 +1179,7 @@ gint folder_item_remove_msg(FolderItem *item, gint num)
 {
 	Folder *folder;
 	gint ret;
+	MsgInfo *msginfo;
 
 	g_return_val_if_fail(item != NULL, -1);
 
@@ -1070,6 +1187,14 @@ gint folder_item_remove_msg(FolderItem *item, gint num)
 	if (!item->cache) folder_item_read_cache(item);
 
 	ret = folder->remove_msg(folder, item, num);
+
+	msginfo = msgcache_get_msg(item->cache, num);
+	if(MSG_IS_NEW(msginfo->flags))
+		item->new--;
+	if(MSG_IS_UNREAD(msginfo->flags))
+		item->unread--;
+	item->total--;
+	procmsg_msginfo_free(msginfo);
 	msgcache_remove_msg(item->cache, num);
 
 	return ret;

@@ -104,10 +104,15 @@ struct _Folder
 	gpointer data;
 
 	/* virtual functions */
+/*
 	GSList * (*get_msg_list)	(Folder		*folder,
 					 FolderItem	*item,
 					 gboolean	 use_cache);
+*/
 	gchar *  (*fetch_msg)		(Folder		*folder,
+					 FolderItem	*item,
+					 gint		 num);
+	MsgInfo *(*fetch_msginfo)	(Folder		*folder,
 					 FolderItem	*item,
 					 gint		 num);
 	gint     (*add_msg)		(Folder		*folder,
@@ -134,8 +139,12 @@ struct _Folder
 	gboolean (*is_msg_changed)	(Folder		*folder,
 					 FolderItem	*item,
 					 MsgInfo	*msginfo);
+/*
 	void     (*scan)		(Folder		*folder,
 					 FolderItem	*item);
+*/
+	GSList	* (*get_num_list)	(Folder		*folder,
+					 FolderItem	*iten);
 	void     (*scan_tree)		(Folder		*folder);
 
 	gint     (*create_tree)		(Folder		*folder);

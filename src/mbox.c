@@ -214,7 +214,6 @@ gint proc_mbox(FolderItem *dest, const gchar *mbox, GHashTable *folder_table)
 				val = GPOINTER_TO_INT(g_hash_table_lookup
 						      (folder_table, dropfolder));
 				if (val == 0) {
-					folder_item_scan(dropfolder);
 					g_hash_table_insert(folder_table, dropfolder,
 							    GINT_TO_POINTER(1));
 				}
@@ -232,7 +231,6 @@ gint proc_mbox(FolderItem *dest, const gchar *mbox, GHashTable *folder_table)
 			unlink(tmp_file);
 			return -1;
 		}
-		folder_item_scan(dropfolder);
 
 		if (global_processing) {
 			/* CLAWS: new filtering */
@@ -411,7 +409,9 @@ gint export_to_mbox(FolderItem *src, const gchar *mbox)
 		return -1;
 	}
 
-	mlist = src->folder->get_msg_list(src->folder, src, TRUE);
+	if(!src->cache)
+		folder_item_read_cache(src);
+	mlist = msgcache_get_msg_list(src->cache);
 
 	for (cur = mlist; cur != NULL; cur = cur->next) {
 		msginfo = (MsgInfo *)cur->data;

@@ -1,3 +1,171 @@
+2002-02-05 [paul]
+
+	* po/es.po
+		updated by Ricardo Mones Lastra
+
+2002-02-05 [paul]	0.7.0claws49
+
+	* sync with sylpheed 0.7.0cvs33
+		see ChangeLog entries 2002-02-04 (last 4 entries) and 2002-02-05
+
+2002-02-05 [paul]	0.7.0claws48
+
+	* src/compose.c
+		re-add 'Edit/Advanced/Delete entire line', previously named
+		'Delete Line+'
+
+2002-02-04 [paul]	0.7.0claws47
+
+	* src/compose.c
+	  src/summaryview.c
+		fix bug #494993 (Reply All not taking Reply-To into consi)
+		eliminate differences in behaviour of right-click 'Reply to all' 
+		in summary view and 'Reply to all' on the toolbar. 
+		fix bug where Reply-To gets ignored by 'Reply to all' in summary
+		view and From gets ignored by 'Reply to all' on toolbar.
+		fix bug where 'Reply to all' on toolbar uses To twice and ignores
+		From when no Reply-To header is present.
+
+2002-02-04 [paul]	0.7.0claws46
+
+	* sync with sylpheed 0.7.0cvs30
+		see ChangeLog entries 2002-02-03 and 2002-02-04
+
+2002-02-03 [melvin]	0.7.0claws45
+
+	* src/gtkspell.[ch]
+		Readded function to highlight all misspelled words.
+		Fixed bug where user-provided-words did not replace
+			correctly the misspelled word when using the mouse.
+		Fixed bug where checking a region selected from right to left did
+			not check the region at all.
+		Fixed bug where 'Check backwards' may not check at all.	
+		Fixed memory leaks where popup menus and accel_groups were not destroyed.
+		Fixed possible buffer overflow when checking for long strings (>1k).
+		Made cursor and scrollbar positions non changing after uncheck_all/check_all.
+		Accelerators code uses now gtk_widget_add_accel.
+		Removed and disabled obsolete and unfinished code.
+		Cleaning up.
+
+	* src/compose.c
+		Added menu item to Highlight all misspelled words.
+
+2002-02-01 [paul]	0.7.0claws44
+
+	* src/mainwindow.c
+		fix '/View/Hide read messages' sensitivity when all
+		messages in a folder are hidden
+
+2002-02-01 [paul]	0.7.0claws43
+
+	* src/main.c
+		add --send option to command line interface, sends all
+		queued mail. Patch submitted by Ricardo Mones Lastra.
+
+2002-01-31 [paul]	0.7.0claws42
+
+	* src/mainwindow.c
+		add '/View/Hide read messages' to main_window_set_menu_sensitive()
+
+2002-01-31 [paul]	0.7.0claws41
+
+	* sync with sylpheed 0.7.0cvs27
+		see ChangeLog entries 2002-01-30 (src/mh.c, src/prefs_common.c)
+		and 2002-01-31
+
+	* src/textview.c
+		comment out elements of textview_show_part() as temporary
+		workaround for attachment 'Display as text' bug 
+
+	* po/pt_BR.po
+		updated by Fabio Junior Beneditto
+
+2002-01-30 [paul]	0.7.0claws40
+
+	* sync with sylpheed 0.7.0cvs24
+		see ChangeLog entries 2002-01-29 (src/prefs_common.c)
+		and 2002-01-30
+
+	* src/compose.c
+		add {N_("/_Spelling"), ... "<Branch>"} to 
+		GtkItemFactoryEntry compose_entries[]
+
+	* src/prefs_common.c
+		add claws menu items to prefs_keybind_apply_clicked()
+		and remove non-claws menu items
+
+2002-01-29 [paul]	0.7.0claws39
+
+	* sync with sylpheed 0.7.0cvs22
+		see ChangeLog entries 2002-01-28 and 2002-01-29
+
+2002-01-28 [melvin]	0.7.0claws38
+
+	* src/compose.c
+		Added the declartion of compose_send_control_enter.
+
+	* src/compose.c
+	* src/gtkspell.[ch]
+		Added in a 'Spelling' menu which includes the configuration menu. 
+		Added a real 'Check all' and got rid from the old one which only
+		highlited misspelled word.
+		Made 'Check while typing' a disableable option.
+		Added a dialog when there are no more misspelled word.
+		Added a dialog if error occurs when switching to a dictionary.
+	
+	* src/prefs_common.[ch]
+		Added option for the default 'Check while typing' option.
+
+
+2002-01-28 [alfons]	0.7.0claws37
+
+	* src/compose.c
+		fix buglet and make code comply with sylpheed code style
+
+2002-01-28 [paul]	0.7.0claws36
+
+	* sync with sylpheed 0.7.0cvs19
+		see ChangeLog entries for 2002-01-28
+
+2002-01-28 [hoa]	0.7.0claws35
+
+	* src/defs.h
+		added rendererrc
+
+	* src/main.c
+		read the renderer config
+
+	* src/procmime.[ch]
+		use the renderer config to convert mime attachments
+
+	* src/textview.c
+		don't use textview_show_html/ertf,
+		use get_text_content instead
+
+2002-01-27 [alfons]	0.7.0claws34
+	
+	* src/news.c
+		make sylpheed believe it can delete a news message...
+		(messages are NOT deleted, maybe we should remove
+		processing from the folder properties after all.)
+
+2002-01-27 [alfons]	0.7.0claws33
+
+	* src/folder.c
+		add extra checks
+	* src/news.c
+		implement remove_msg() 
+
+2002-01-27 [alfons]	0.7.0claws32
+
+	* src/procmsg.h
+	* src/procheader.c
+	* src/messageview.c
+		fix return receipt / disposition notification again. this
+		stuff seems to break on _every_ major summary UI change, so
+		it's now implemented using a flag which is saved in the
+		marks cache
+		
 2002-01-26 [alfons]	0.7.0claws31
 
 	* src/import.c

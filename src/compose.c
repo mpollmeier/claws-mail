@@ -450,13 +450,16 @@ void compose_headerentry_key_press_event_cb(GtkWidget	       *entry,
 
 static void compose_show_first_last_header (Compose *compose, gboolean show_first);
 
+#if USE_PSPELL
+static void compose_check_all		   (Compose *compose);
+static void compose_highlight_all	   (Compose *compose);
+static void compose_check_backwards	   (Compose *compose);
+static void compose_check_forwards_go	   (Compose *compose);
+#endif
 
-static void compose_check_backwards(Compose *compose);
-
-static void compose_check_forwards_go(Compose *compose);
-
-static void text_activated		(GtkWidget	*widget,
-					 Compose	*compose);
+static gboolean compose_send_control_enter (Compose *compose);
+static void text_activated		   (GtkWidget	*widget,
+					    Compose	*compose);
 
 
 static GtkItemFactoryEntry compose_popup_entries[] =
@@ -541,7 +544,7 @@ static GtkItemFactoryEntry compose_entries[] =
 					COMPOSE_CALL_GTK_STEXT_DELETE_BACKWARD_WORD,
 					NULL},
 	{N_("/_Edit/A_dvanced/Delete a word forward"),
-					"<alt>D",
+					NULL, /* "<alt>D", */
 					compose_gtk_stext_action_cb,
 					COMPOSE_CALL_GTK_STEXT_DELETE_FORWARD_WORD,
 					NULL},
@@ -550,23 +553,37 @@ static GtkItemFactoryEntry compose_entries[] =
 					compose_gtk_stext_action_cb,
 					COMPOSE_CALL_GTK_STEXT_DELETE_LINE,
 					NULL},
+	{N_("/_Edit/A_dvanced/Delete entire line"),
+					NULL,
+					compose_gtk_stext_action_cb,
+					COMPOSE_CALL_GTK_STEXT_DELETE_LINE_N,
+					NULL},
 	{N_("/_Edit/A_dvanced/Delete to end of line"),
 					"<control>K",
 					compose_gtk_stext_action_cb,
 					COMPOSE_CALL_GTK_STEXT_DELETE_TO_LINE_END,
 					NULL},
 	{N_("/_Edit/---"),		NULL, NULL, 0, "<Separator>"},
-#if USE_PSPELL
-	{N_("/_Edit/Check backwards misspelled word"),	"<control>;", compose_check_backwards , 0, NULL},
-	{N_("/_Edit/Forward to next misspelled word"),	"<control>!", compose_check_forwards_go, 0, NULL},
-	{N_("/_Edit/---"),		NULL, NULL, 0, "<Separator>"},
-#endif
 	{N_("/_Edit/_Wrap current paragraph"),
 					"<control>L", compose_wrap_line, 0, NULL},
 	{N_("/_Edit/Wrap all long _lines"),
 					"<control><alt>L", compose_wrap_line_all, 0, NULL},
 	{N_("/_Edit/Edit with e_xternal editor"),
-					"<control>X", compose_ext_editor_cb, 0, NULL},
+					"<shift><control>X", compose_ext_editor_cb, 0, NULL},
+#if USE_PSPELL
+	{N_("/_Spelling"),		NULL, NULL, 0, "<Branch>"},
+	{N_("/_Spelling/_Check all or check selection"),
+					NULL, compose_check_all, 0, NULL},
+	{N_("/_Spelling/_Highlight all misspelled words"),
+					NULL, compose_highlight_all, 0, NULL},
+	{N_("/_Spelling/Check _backwards misspelled word"),
+					NULL, compose_check_backwards , 0, NULL},
+	{N_("/_Spelling/_Forward to next misspelled word"),
+					NULL, compose_check_forwards_go, 0, NULL},
+	{N_("/_Spelling/---"),		NULL, NULL, 0, "<Separator>"},
+	{N_("/_Spelling/_Spelling Configuration"),
+					NULL, NULL, 0, "<Branch>"},
+#endif
 #if 0 /* NEW COMPOSE GUI */
 	{N_("/_View"),			NULL, NULL, 0, "<Branch>"},
 	{N_("/_View/_To"),		NULL, compose_toggle_to_cb     , 0, "<ToggleItem>"},
@@ -583,10 +600,11 @@ static GtkItemFactoryEntry compose_entries[] =
 	{N_("/_Message"),		NULL, NULL, 0, "<Branch>"},
 	{N_("/_Message/_Send"),		"<control>Return",
 					compose_send_cb, 0, NULL},
-	{N_("/_Message/Send _later"),	"<shift><alt>S",
+	{N_("/_Message/Send _later"),	"<shift><control>S",
 					compose_send_later_cb,  0, NULL},
+	{N_("/_Message/---"),		NULL, NULL, 0, "<Separator>"},
 	{N_("/_Message/Save to _draft folder"),
-					"<alt>D", compose_draft_cb, 0, NULL},
+					"<shift><control>D", compose_draft_cb, 0, NULL},
 	{N_("/_Message/Save and _keep editing"),
 					"<control>S", compose_draft_cb, 1, NULL},
 #if 0 /* NEW COMPOSE GUI */
@@ -609,7 +627,7 @@ static GtkItemFactoryEntry compose_entries[] =
 	{N_("/_Message/_Request Return Receipt"),	NULL, compose_toggle_return_receipt_cb, 0, "<ToggleItem>"},
 	{N_("/_Tool"),			NULL, NULL, 0, "<Branch>"},
 	{N_("/_Tool/Show _ruler"),	NULL, compose_toggle_ruler_cb, 0, "<ToggleItem>"},
-	{N_("/_Tool/_Address book"),	"<control><alt>A", compose_address_cb , 0, NULL},
+	{N_("/_Tool/_Address book"),	"<shift><control>A", compose_address_cb , 0, NULL},
 	{N_("/_Tool/_Template"),	NULL, NULL, 0, "<Branch>"},
 	{N_("/_Help"),			NULL, NULL, 0, "<Branch>"},
 	{N_("/_Help/_About"),		NULL, about_show, 0, NULL}
@@ -1716,8 +1734,6 @@ static gchar *compose_quote_fmt(Compose *compose, MsgInfo *msginfo,
 		buf = "";
 
 	gtk_stext_freeze(text);
-	gtk_stext_set_point(text, 0);
-	gtk_stext_forward_delete(text, gtk_stext_get_length(text));
 
 	for (p = buf; *p != '\0'; ) {
 		lastp = strchr(p, '\n');
@@ -1754,6 +1770,12 @@ static void compose_reply_set_entry(Compose *compose, MsgInfo *msginfo,
 				     ? compose->mailinglist
 				     : msginfo->from ? msginfo->from : ""),
 				     COMPOSE_TO);
+
+	if (compose->replyto && to_all)
+		compose_entry_append
+			(compose, compose->replyto, COMPOSE_CC);
+
+
 	if (compose->account->protocol == A_NNTP) {
 		if (ignore_replyto)
 			compose_entry_append
@@ -1922,12 +1944,11 @@ static void compose_insert_sig(Compose *compose)
 
 	if (compose->account && compose->account->sig_path)
 		sigfile = g_strdup(compose->account->sig_path);
-	else {
+	else
 		sigfile = g_strconcat(get_home_dir(), G_DIR_SEPARATOR_S,
 				      DEFAULT_SIGNATURE, NULL);
-	}
 
-	if (!is_file_or_fifo_exist(sigfile) & (sigfile[0] != '|')) {
+	if (!is_file_or_fifo_exist(sigfile) && sigfile[0] != '|') {
 		g_free(sigfile);
 		return;
 	}
@@ -1941,13 +1962,9 @@ static void compose_insert_sig(Compose *compose)
 	}
 
 	if (sigfile[0] == '|')
-	{
 		compose_exec_sig(compose, sigfile);
-	}
 	else
-	{
 		compose_insert_file(compose, sigfile);
-	}
 	g_free(sigfile);
 }
 
@@ -2344,7 +2361,7 @@ static void compose_wrap_line_all(Compose *compose)
 	gint ch_len;
 	gboolean is_new_line = TRUE, do_delete = FALSE;
 	guint qlen = 0, i_len = 0;
-	guint linewrap_quote = prefs_common.linewrap_quote;
+	gboolean linewrap_quote = TRUE;
 	guint linewrap_len = prefs_common.linewrap_len;
 	gchar *qfmt = prefs_common.quotemark;
 	gchar cbuf[MB_LEN_MAX];
@@ -3222,7 +3239,6 @@ static gint compose_save_to_outbox(Compose *compose, const gchar *file)
 	if (!is_dir_exist(path))
 		make_dir_hier(path);
 
-	folder_item_scan(outbox);
 	if ((num = folder_item_add_msg(outbox, file, FALSE)) < 0) {
 		g_free(path);
 		g_warning(_("can't save message\n"));
@@ -3256,7 +3272,6 @@ static gint compose_remove_reedit_target(Compose *compose)
 	item = msginfo->folder;
 	g_return_val_if_fail(item != NULL, -1);
 
-	folder_item_scan(item);
 	if (procmsg_msg_exist(msginfo) &&
 	    (item->stype == F_DRAFT || item->stype == F_QUEUE)) {
 		if (folder_item_remove_msg(item, msginfo->msgnum) < 0) {
@@ -4631,21 +4646,31 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 	compose->bounce_filename = NULL;
 	compose->undostruct = undostruct;
 #if USE_PSPELL
-	menu_set_sensitive(ifactory, "/Edit/Check backwards misspelled word", FALSE);
-	menu_set_sensitive(ifactory, "/Edit/Forward to next misspelled word", FALSE);
+	
+	menu_set_sensitive(ifactory, "/Spelling", FALSE);
         if (prefs_common.enable_pspell) {
 		gtkpspell = gtkpspell_new((const gchar*)prefs_common.dictionary,
 					  conv_get_current_charset_str(),
+					  prefs_common.misspelled_col,
+					  prefs_common.check_while_typing,
 					  GTK_STEXT(text));
 		if (!gtkpspell) {
 			alertpanel_error(_("Spell checker could not be started.\n%s"), gtkpspellcheckers->error_message);
-			gtkpspell_checkers_reset();
+			gtkpspell_checkers_reset_error();
 		} else {
 
-			gtkpspell_set_sug_mode(gtkpspell, prefs_common.pspell_sugmode);
-			menu_set_sensitive(ifactory, "/Edit/Check backwards misspelled word", TRUE);
-			menu_set_sensitive(ifactory, "/Edit/Forward to next misspelled word", TRUE);
+			GtkWidget *menuitem;
+
+			if (!gtkpspell_set_sug_mode(gtkpspell, prefs_common.pspell_sugmode)) {
+				debug_print(_("Pspell: could not set suggestion mode %s"),
+				    gtkpspellcheckers->error_message);
+				gtkpspell_checkers_reset_error();
 			}
+
+			menuitem = gtk_item_factory_get_item(ifactory, "/Spelling/Spelling Configuration");
+			gtkpspell_populate_submenu(gtkpspell, menuitem);
+			menu_set_sensitive(ifactory, "/Spelling", TRUE);
+		}
         }
 #endif
 
@@ -4969,6 +4994,8 @@ static void compose_template_apply(Compose *compose, Template *tmpl)
 				   tmpl->subject);
 	if (tmpl->to && *tmpl->to != '\0')
 		compose_entry_append(compose, tmpl->to, COMPOSE_TO);
+
+	gtk_stext_clear(GTK_STEXT(compose->text));
 
 	if (compose->replyinfo == NULL) {
 		MsgInfo dummyinfo;
@@ -5450,7 +5477,7 @@ static gint compose_exec_ext_editor_real(const gchar *file)
 		g_snprintf(buf, sizeof(buf), def_cmd, file);
 	}
 
-	cmdline = g_strsplit(buf, " ", 1024);
+	cmdline = strsplit_with_quote(buf, " ", 1024);
 	execvp(cmdline[0], cmdline);
 
 	perror("execvp");
@@ -5932,7 +5959,6 @@ static void compose_draft_cb(gpointer data, guint action, GtkWidget *widget)
 		return;
 	}
 
-	folder_item_scan(draft);
 	if ((msgnum = folder_item_add_msg(draft, tmp, TRUE)) <= 0) {
 		unlink(tmp);
 		g_free(tmp);
@@ -5950,7 +5976,6 @@ static void compose_draft_cb(gpointer data, guint action, GtkWidget *widget)
 					       TRUE);
 	}
 
-	folder_item_scan(draft);
 	folderview_update_item(draft, TRUE);
 
 	lock = FALSE;
@@ -6616,6 +6641,18 @@ static gboolean compose_send_control_enter(Compose *compose)
 }
 
 #if USE_PSPELL
+static void compose_check_all(Compose *compose)
+{
+	if (compose->gtkpspell)
+		gtkpspell_check_all(compose->gtkpspell);
+}
+
+static void compose_highlight_all(Compose *compose)
+{
+	if (compose->gtkpspell)
+		gtkpspell_highlight_all(compose->gtkpspell);
+}
+
 static void compose_check_backwards(Compose *compose)
 {
 	if (compose->gtkpspell)	

@@ -67,6 +67,24 @@ void msgcache_remove_msg(MsgCache *cache, guint num)
 	debug_print(_("Cache size: %d\n"), g_hash_table_size(cache));
 }
 
+void msgcache_update_msg(MsgCache *cache, MsgInfo *msginfo)
+{
+	MsgInfo *oldmsginfo, *newmsginfo;
+	
+	g_return_val_if_fail(cache != NULL, NULL);
+
+	oldmsginfo = g_hash_table_lookup(cache, GINT_TO_POINTER(msginfo->msgnum));
+	if(msginfo) {
+		g_hash_table_remove(cache, GINT_TO_POINTER(oldmsginfo->msgnum));
+		procmsg_msginfo_free(oldmsginfo);
+	}
+
+	newmsginfo = procmsg_msginfo_new_ref(msginfo);
+	g_hash_table_insert(cache, GINT_TO_POINTER(msginfo->msgnum), newmsginfo);
+	
+	return;
+}
+
 static gint msgcache_read_cache_data_str(FILE *fp, gchar **str)
 {
 	gchar buf[BUFFSIZE];
@@ -340,7 +358,7 @@ static void msgcache_get_msg_list_func(gpointer key, gpointer value, gpointer us
 	GSList **listptr = user_data;
 	MsgInfo *msginfo = value;
 
-	*listptr = g_slist_append(*listptr, procmsg_msginfo_new_ref(msginfo));
+	*listptr = g_slist_prepend(*listptr, procmsg_msginfo_new_ref(msginfo));
 }
 
 GSList *msgcache_get_msg_list(MsgCache *cache)

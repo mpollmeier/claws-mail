@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2001 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2002 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -131,6 +131,8 @@ static struct Spelling {
 	GtkWidget *btn_pspell_path;
 	GtkWidget *optmenu_dictionary;
 	GtkWidget *optmenu_sugmode;
+	GtkWidget *misspelled_btn;
+	GtkWidget *checkbtn_check_while_typing;
 } spelling;
 #endif
 
@@ -194,13 +196,10 @@ static struct Interface {
 	GtkWidget *checkbtn_openunread;
 	GtkWidget *checkbtn_openinbox;
 	GtkWidget *checkbtn_immedexec;
-	GtkWidget *checkbtn_confonexit;
-	GtkWidget *checkbtn_cleanonexit;
-	GtkWidget *checkbtn_askonclean;
-	GtkWidget *checkbtn_warnqueued;
 	GtkWidget *checkbtn_addaddrbyclick;
 	GtkWidget *optmenu_recvdialog;
  	GtkWidget *optmenu_nextunreadmsgdialog;
+	GtkWidget *keybind_combo;
 } interface;
 
 static struct Other {
@@ -209,6 +208,10 @@ static struct Other {
 	GtkWidget *printcmd_entry;
 	GtkWidget *exteditor_combo;
 	GtkWidget *exteditor_entry;
+	GtkWidget *checkbtn_confonexit;
+	GtkWidget *checkbtn_cleanonexit;
+	GtkWidget *checkbtn_askonclean;
+	GtkWidget *checkbtn_warnqueued;
 } other;
 
 static struct MessageColorButtons {
@@ -217,7 +220,6 @@ static struct MessageColorButtons {
 	GtkWidget *quote_level3_btn;
 	GtkWidget *uri_btn;
 	GtkWidget *tgt_folder_btn;
-	GtkWidget *misspelled_btn;
 } color_buttons;
 
 static GtkWidget *quote_desc_win;
@@ -357,6 +359,9 @@ static PrefParam param[] = {
 	{"pspell_sugmode",  "1", &prefs_common.pspell_sugmode,
 	 P_INT, &spelling.optmenu_sugmode, 
 	 prefs_speller_sugmode_set_data_from_optmenu, prefs_speller_sugmode_set_optmenu },
+	{"check_while_typing", "TRUE", &prefs_common.check_while_typing,
+	 P_BOOL, &spelling.checkbtn_check_while_typing,
+	 prefs_set_data_from_toggle, prefs_set_toggle},
 	{"misspelled_color", "16711680", &prefs_common.misspelled_col, P_INT,
 	 NULL, NULL, NULL},
 #endif
@@ -656,7 +661,7 @@ static PrefParam param[] = {
 	{"open_unread_on_enter", "FALSE", &prefs_common.open_unread_on_enter,
 	 P_BOOL, &interface.checkbtn_openunread,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
-	{"open_inbox_on_inc", "TRUE", &prefs_common.open_inbox_on_inc,
+	{"open_inbox_on_inc", "FALSE", &prefs_common.open_inbox_on_inc,
 	 P_BOOL, &interface.checkbtn_openinbox,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
 	{"immediate_execution", "TRUE", &prefs_common.immediate_exec, P_BOOL,
@@ -674,21 +679,6 @@ static PrefParam param[] = {
 	{"add_address_by_click", "FALSE", &prefs_common.add_address_by_click,
 	 P_BOOL, &interface.checkbtn_addaddrbyclick,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
-	{"confirm_on_exit", "TRUE", &prefs_common.confirm_on_exit, P_BOOL,
-	 &interface.checkbtn_confonexit,
-	 prefs_set_data_from_toggle, prefs_set_toggle},
-	{"send_return_receipt", "TRUE", &prefs_common.return_receipt, P_BOOL,
-	 &send.checkbtn_returnreceipt,
-	 prefs_set_data_from_toggle, prefs_set_toggle},
-	{"clean_trash_on_exit", "FALSE", &prefs_common.clean_on_exit, P_BOOL,
-	 &interface.checkbtn_cleanonexit,
-	 prefs_set_data_from_toggle, prefs_set_toggle},
-	{"ask_on_cleaning", "TRUE", &prefs_common.ask_on_clean, P_BOOL,
-	 &interface.checkbtn_askonclean,
-	 prefs_set_data_from_toggle, prefs_set_toggle},
-	{"warn_queued_on_exit", "TRUE", &prefs_common.warn_queued_on_exit,
-	 P_BOOL, &interface.checkbtn_warnqueued,
-	 prefs_set_data_from_toggle, prefs_set_toggle},
 
 	/* Other */
 	{"uri_open_command", "netscape -remote 'openURL(%s,raise)'",
@@ -699,6 +689,22 @@ static PrefParam param[] = {
 	{"ext_editor_command", "gedit %s",
 	 &prefs_common.ext_editor_cmd, P_STRING,
 	 &other.exteditor_entry, prefs_set_data_from_entry, prefs_set_entry},
+
+	{"confirm_on_exit", "TRUE", &prefs_common.confirm_on_exit, P_BOOL,
+	 &other.checkbtn_confonexit,
+	 prefs_set_data_from_toggle, prefs_set_toggle},
+	{"send_return_receipt", "TRUE", &prefs_common.return_receipt, P_BOOL,
+	 &send.checkbtn_returnreceipt,
+	 prefs_set_data_from_toggle, prefs_set_toggle},
+	{"clean_trash_on_exit", "FALSE", &prefs_common.clean_on_exit, P_BOOL,
+	 &other.checkbtn_cleanonexit,
+	 prefs_set_data_from_toggle, prefs_set_toggle},
+	{"ask_on_cleaning", "TRUE", &prefs_common.ask_on_clean, P_BOOL,
+	 &other.checkbtn_askonclean,
+	 prefs_set_data_from_toggle, prefs_set_toggle},
+	{"warn_queued_on_exit", "TRUE", &prefs_common.warn_queued_on_exit,
+	 P_BOOL, &other.checkbtn_warnqueued,
+	 prefs_set_data_from_toggle, prefs_set_toggle},
 
 	{"kill_score", "-9999", &prefs_common.kill_score, P_INT,
 	 NULL, NULL, NULL},
@@ -773,6 +779,7 @@ static void prefs_font_selection_key_pressed	(GtkWidget	*widget,
 						 GdkEventKey	*event,
 						 gpointer	 data);
 static void prefs_font_selection_ok		(GtkButton	*button, GtkEntry *entry);
+static void prefs_keybind_apply_clicked		(GtkWidget	*widget);
 
 static gint prefs_common_deleted	(GtkWidget	*widget,
 					 GdkEventAny	*event,
@@ -1247,19 +1254,19 @@ static void prefs_send_create(void)
 static void prefs_dictionary_set_data_from_optmenu(PrefParam *param)
 {
 	gchar *str;
-	gchar *dict_name;
+	gchar *dict_fullname;
 	
 	g_return_if_fail(param);
 	g_return_if_fail(param->data);
 	g_return_if_fail(param->widget);
 	g_return_if_fail(*(param->widget));
 
-	dict_name = gtkpspell_get_dictionary_menu_active_item
+	dict_fullname = gtkpspell_get_dictionary_menu_active_item
 		(gtk_option_menu_get_menu(GTK_OPTION_MENU(*(param->widget))));
 	str = *((gchar **) param->data);
 	if (str)
 		g_free(str);
-	*((gchar **) param->data) = dict_name;
+	*((gchar **) param->data) = dict_fullname;
 }
 
 static void prefs_dictionary_set_optmenu(PrefParam *pparam)
@@ -1332,7 +1339,8 @@ static void prefs_spelling_checkbtn_enable_pspell_toggle_cb
 	gtk_widget_set_sensitive(spelling.optmenu_dictionary,  toggled);
 	gtk_widget_set_sensitive(spelling.optmenu_sugmode,     toggled);
 	gtk_widget_set_sensitive(spelling.btn_pspell_path,     toggled);
-	gtk_widget_set_sensitive(color_buttons.misspelled_btn, toggled);
+	gtk_widget_set_sensitive(spelling.misspelled_btn, toggled);
+	gtk_widget_set_sensitive(spelling.checkbtn_check_while_typing,  toggled);
 }
 
 static void prefs_spelling_btn_pspell_path_clicked_cb(GtkWidget *widget,
@@ -1360,7 +1368,10 @@ static void prefs_spelling_btn_pspell_path_clicked_cb(GtkWidget *widget,
 		gtk_entry_set_text(GTK_ENTRY(spelling.entry_pspell_path), prefs_common.pspell_path);					 
 		/* select first one */
 		gtk_option_menu_set_history(GTK_OPTION_MENU(spelling.optmenu_dictionary), 0);
-		
+	
+		if (prefs_common.dictionary)
+			g_free(prefs_common.dictionary);
+
 		prefs_common.dictionary = gtkpspell_get_dictionary_menu_active_item(
 				gtk_option_menu_get_menu(GTK_OPTION_MENU(spelling.optmenu_dictionary)));
 		g_free(tmp);
@@ -1385,6 +1396,7 @@ static void prefs_spelling_create()
 	GtkWidget *optmenu_dictionary;
 	GtkWidget *sugmode_label;
 	GtkWidget *sugmode_optmenu;
+	GtkWidget *checkbtn_check_while_typing;
 	GtkWidget *color_label;
 	GtkWidget *hbox_col;
 	GtkWidget *col_align;
@@ -1404,6 +1416,14 @@ static void prefs_spelling_create()
 
 	PACK_CHECK_BUTTON(vbox_spell, checkbtn_enable_pspell, 
 			  _("Enable spell checker (EXPERIMENTAL)"));
+
+	gtk_signal_connect(GTK_OBJECT(checkbtn_enable_pspell), "toggled",
+			   GTK_SIGNAL_FUNC(prefs_spelling_checkbtn_enable_pspell_toggle_cb),
+			   NULL);
+
+	/* Check while typing */
+	PACK_CHECK_BUTTON(vbox_spell, checkbtn_check_while_typing, 
+			  _("Check while typing"));
 
 	gtk_signal_connect(GTK_OBJECT(checkbtn_enable_pspell), "toggled",
 			   GTK_SIGNAL_FUNC(prefs_spelling_checkbtn_enable_pspell_toggle_cb),
@@ -1484,14 +1504,14 @@ static void prefs_spelling_create()
 	gtk_table_attach (GTK_TABLE (spell_table), col_align, 1, 2, 3, 4,
 			  GTK_FILL, GTK_SHRINK, 0, 0);
 
-	color_buttons.misspelled_btn = gtk_button_new_with_label ("");
-	set_button_bg_color(color_buttons.misspelled_btn,
+	spelling.misspelled_btn = gtk_button_new_with_label ("");
+	set_button_bg_color(spelling.misspelled_btn,
 			    prefs_common.misspelled_col);
-	gtk_widget_set_usize (color_buttons.misspelled_btn, 30, 20);
-	gtk_widget_set_sensitive(color_buttons.misspelled_btn, prefs_common.enable_pspell);
-	gtk_signal_connect (GTK_OBJECT (color_buttons.misspelled_btn), "clicked",
+	gtk_widget_set_usize (spelling.misspelled_btn, 30, 20);
+	gtk_widget_set_sensitive(spelling.misspelled_btn, prefs_common.enable_pspell);
+	gtk_signal_connect (GTK_OBJECT (spelling.misspelled_btn), "clicked",
 			    GTK_SIGNAL_FUNC(quote_color_set_dialog), "Misspelled word");
-	gtk_container_add(GTK_CONTAINER(col_align), color_buttons.misspelled_btn);
+	gtk_container_add(GTK_CONTAINER(col_align), spelling.misspelled_btn);
 
 
 	spelling.checkbtn_enable_pspell = checkbtn_enable_pspell;
@@ -1499,6 +1519,7 @@ static void prefs_spelling_create()
 	spelling.btn_pspell_path	= btn_pspell_path;
 	spelling.optmenu_dictionary     = optmenu_dictionary;
 	spelling.optmenu_sugmode        = sugmode_optmenu;
+	spelling.checkbtn_check_while_typing = checkbtn_check_while_typing;
 }
 
 #endif
@@ -2329,12 +2350,10 @@ static void prefs_interface_create(void)
         GtkWidget *vbox_addr;
 	GtkWidget *checkbtn_addaddrbyclick;
 
-	GtkWidget *frame_exit;
-	GtkWidget *vbox_exit;
-	GtkWidget *checkbtn_confonexit;
-	GtkWidget *checkbtn_cleanonexit;
-	GtkWidget *checkbtn_askonclean;
-	GtkWidget *checkbtn_warnqueued;
+	GtkWidget *keybind_frame;
+	GtkWidget *keybind_label;
+	GtkWidget *keybind_combo;
+	GtkWidget *keybind_btn;
 
  	GtkWidget *hbox2;
  	GtkWidget *optmenu_nextunreadmsgdialog;
@@ -2464,6 +2483,149 @@ static void prefs_interface_create(void)
 
 	gtk_option_menu_set_menu (GTK_OPTION_MENU (recvdialog_optmenu), recvdialog_optmenu_menu);     */
 
+PACK_FRAME(vbox1, keybind_frame, _("Shortcut key"));
+
+	vbox2 = gtk_vbox_new (FALSE, 8);
+	gtk_widget_show (vbox2);
+	gtk_container_add (GTK_CONTAINER (keybind_frame), vbox2);
+	gtk_container_set_border_width (GTK_CONTAINER (vbox2), 8);
+
+	hbox1 = gtk_hbox_new (FALSE, 8);
+	gtk_widget_show (hbox1);
+	gtk_box_pack_start (GTK_BOX (vbox2), hbox1, FALSE, FALSE, 0);
+
+	keybind_label = gtk_label_new
+		(_("Select the preset key bindings.\n"
+		   "You can also modify each menu's shortcuts by pressing\n"
+		   "any key(s) when placing the mouse pointer on the item."));
+	gtk_widget_show (keybind_label);
+	gtk_box_pack_start (GTK_BOX (hbox1), keybind_label, FALSE, FALSE, 0);
+	gtk_label_set_justify (GTK_LABEL (keybind_label), GTK_JUSTIFY_LEFT);
+
+	hbox1 = gtk_hbox_new (FALSE, 8);
+	gtk_widget_show (hbox1);
+	gtk_box_pack_start (GTK_BOX (vbox2), hbox1, FALSE, FALSE, 0);
+
+	keybind_combo = gtk_combo_new ();
+	gtk_widget_show (keybind_combo);
+	gtk_box_pack_start (GTK_BOX (hbox1), keybind_combo, TRUE, TRUE, 0);
+	gtkut_combo_set_items (GTK_COMBO (keybind_combo),
+			       _("Default"),
+			       "Mew / Wanderlust",
+			       "Mutt",
+			       _("Old Sylpheed"),
+			       NULL);
+	gtk_entry_set_editable (GTK_ENTRY (GTK_COMBO (keybind_combo)->entry),
+				FALSE);
+
+	keybind_btn = gtk_button_new_with_label(_(" Apply "));
+	gtk_widget_show (keybind_btn);
+	gtk_box_pack_end (GTK_BOX (hbox1), keybind_btn, FALSE, TRUE, 0);
+	gtk_signal_connect (GTK_OBJECT (keybind_btn), "clicked",
+			    GTK_SIGNAL_FUNC (prefs_keybind_apply_clicked),
+			    NULL);
+
+	/* interface.checkbtn_emacs          = checkbtn_emacs; */
+	interface.checkbtn_openunread         = checkbtn_openunread;
+	interface.checkbtn_openinbox          = checkbtn_openinbox;
+	interface.checkbtn_immedexec          = checkbtn_immedexec;
+	interface.optmenu_recvdialog	      = optmenu_recvdialog;
+	interface.checkbtn_addaddrbyclick     = checkbtn_addaddrbyclick;
+	interface.optmenu_nextunreadmsgdialog = optmenu_nextunreadmsgdialog;
+	interface.keybind_combo               = keybind_combo;
+}
+
+static void prefs_other_create(void)
+{
+	GtkWidget *vbox1;
+	GtkWidget *ext_frame;
+	GtkWidget *ext_table;
+	GtkWidget *hbox1;
+
+	GtkWidget *uri_label;
+	GtkWidget *uri_combo;
+	GtkWidget *uri_entry;
+
+	GtkWidget *printcmd_label;
+	GtkWidget *printcmd_entry;
+
+	GtkWidget *exteditor_label;
+	GtkWidget *exteditor_combo;
+	GtkWidget *exteditor_entry;
+
+	GtkWidget *frame_exit;
+	GtkWidget *vbox_exit;
+	GtkWidget *checkbtn_confonexit;
+	GtkWidget *checkbtn_cleanonexit;
+	GtkWidget *checkbtn_askonclean;
+	GtkWidget *checkbtn_warnqueued;
+
+	vbox1 = gtk_vbox_new (FALSE, VSPACING);
+	gtk_widget_show (vbox1);
+	gtk_container_add (GTK_CONTAINER (dialog.notebook), vbox1);
+	gtk_container_set_border_width (GTK_CONTAINER (vbox1), VBOX_BORDER);
+
+	PACK_FRAME(vbox1, ext_frame,
+		   _("External commands (%s will be replaced with file name / URI)"));
+
+	ext_table = gtk_table_new (3, 2, FALSE);
+	gtk_widget_show (ext_table);
+	gtk_container_add (GTK_CONTAINER (ext_frame), ext_table);
+	gtk_container_set_border_width (GTK_CONTAINER (ext_table), 8);
+	gtk_table_set_row_spacings (GTK_TABLE (ext_table), VSPACING_NARROW);
+	gtk_table_set_col_spacings (GTK_TABLE (ext_table), 8);
+
+	uri_label = gtk_label_new (_("Web browser"));
+	gtk_widget_show(uri_label);
+	gtk_table_attach (GTK_TABLE (ext_table), uri_label, 0, 1, 0, 1,
+			  GTK_FILL, GTK_EXPAND | GTK_FILL, 0, 0);
+	gtk_misc_set_alignment (GTK_MISC (uri_label), 1, 0.5);
+
+	uri_combo = gtk_combo_new ();
+	gtk_widget_show (uri_combo);
+	gtk_table_attach (GTK_TABLE (ext_table), uri_combo, 1, 2, 0, 1,
+			  GTK_EXPAND | GTK_FILL, 0, 0, 0);
+	gtkut_combo_set_items (GTK_COMBO (uri_combo),
+			       "netscape -remote 'openURL(%s,raise)'",
+			       "netscape '%s'",
+			       "gnome-moz-remote --raise --newwin '%s'",
+			       "kterm -e w3m '%s'",
+			       "kterm -e lynx '%s'",
+			       NULL);
+	uri_entry = GTK_COMBO (uri_combo)->entry;
+
+	printcmd_label = gtk_label_new (_("Print"));
+	gtk_widget_show (printcmd_label);
+	gtk_table_attach (GTK_TABLE (ext_table), printcmd_label, 0, 1, 1, 2,
+			  GTK_FILL, GTK_EXPAND | GTK_FILL, 0, 0);
+	gtk_misc_set_alignment (GTK_MISC (printcmd_label), 1, 0.5);
+
+	printcmd_entry = gtk_entry_new ();
+	gtk_widget_show (printcmd_entry);
+	gtk_table_attach (GTK_TABLE (ext_table), printcmd_entry, 1, 2, 1, 2,
+			  GTK_EXPAND | GTK_FILL, 0, 0, 0);
+
+	exteditor_label = gtk_label_new (_("Editor"));
+	gtk_widget_show (exteditor_label);
+	gtk_table_attach (GTK_TABLE (ext_table), exteditor_label, 0, 1, 2, 3,
+			  GTK_FILL, GTK_EXPAND | GTK_FILL, 0, 0);
+	gtk_misc_set_alignment (GTK_MISC (exteditor_label), 1, 0.5);
+
+	exteditor_combo = gtk_combo_new ();
+	gtk_widget_show (exteditor_combo);
+	gtk_table_attach (GTK_TABLE (ext_table), exteditor_combo, 1, 2, 2, 3,
+			  GTK_EXPAND | GTK_FILL, 0, 0, 0);
+	gtkut_combo_set_items (GTK_COMBO (exteditor_combo),
+			       "gedit %s",
+			       "kedit %s",
+			       "mgedit --no-fork %s",
+			       "emacs %s",
+			       "xemacs %s",
+			       "kterm -e jed %s",
+			       "kterm -e vi %s",
+			       NULL);
+	exteditor_entry = GTK_COMBO (exteditor_combo)->entry;
+
 	/* On Exit */
 	PACK_FRAME (vbox1, frame_exit, _("On exit"));
 
@@ -2488,116 +2650,17 @@ static void prefs_interface_create(void)
 	PACK_CHECK_BUTTON (vbox_exit, checkbtn_warnqueued,
 			   _("Warn if there are queued messages"));
 
-	/* interface.checkbtn_emacs          = checkbtn_emacs; */
-	interface.checkbtn_openunread         = checkbtn_openunread;
-	interface.checkbtn_openinbox          = checkbtn_openinbox;
-	interface.checkbtn_immedexec          = checkbtn_immedexec;
-	interface.optmenu_recvdialog	      = optmenu_recvdialog;
-	interface.checkbtn_addaddrbyclick     = checkbtn_addaddrbyclick;
-	interface.optmenu_nextunreadmsgdialog = optmenu_nextunreadmsgdialog;
-	interface.checkbtn_confonexit         = checkbtn_confonexit;
-	interface.checkbtn_cleanonexit        = checkbtn_cleanonexit;
-	interface.checkbtn_askonclean         = checkbtn_askonclean;
-	interface.checkbtn_warnqueued         = checkbtn_warnqueued;
-}
-
-static void prefs_other_create(void)
-{
-	GtkWidget *vbox1;
-	GtkWidget *hbox1;
-
-	GtkWidget *uri_frame;
-	GtkWidget *uri_label;
-	GtkWidget *uri_combo;
-	GtkWidget *uri_entry;
-
-	GtkWidget *print_frame;
-	GtkWidget *printcmd_label;
-	GtkWidget *printcmd_entry;
-
-	GtkWidget *exteditor_frame;
-	GtkWidget *exteditor_label;
-	GtkWidget *exteditor_combo;
-	GtkWidget *exteditor_entry;
-
-	vbox1 = gtk_vbox_new (FALSE, VSPACING);
-	gtk_widget_show (vbox1);
-	gtk_container_add (GTK_CONTAINER (dialog.notebook), vbox1);
-	gtk_container_set_border_width (GTK_CONTAINER (vbox1), VBOX_BORDER);
-
-	PACK_FRAME(vbox1, uri_frame,
-		   _("External Web browser (%s will be replaced with URI)"));
-
-	hbox1 = gtk_hbox_new (FALSE, 8);
-	gtk_widget_show (hbox1);
-	gtk_container_add (GTK_CONTAINER (uri_frame), hbox1);
-	gtk_container_set_border_width (GTK_CONTAINER (hbox1), 8);
-
-	uri_label = gtk_label_new (_("Command"));
-	gtk_widget_show(uri_label);
-	gtk_box_pack_start (GTK_BOX (hbox1), uri_label, FALSE, TRUE, 0);
-
-	uri_combo = gtk_combo_new ();
-	gtk_widget_show (uri_combo);
-	gtk_box_pack_start (GTK_BOX (hbox1), uri_combo, TRUE, TRUE, 0);
-	gtkut_combo_set_items (GTK_COMBO (uri_combo),
-			       "netscape -remote 'openURL(%s,raise)'",
-			       "netscape '%s'",
-			       "gnome-moz-remote --raise --newwin '%s'",
-			       "kterm -e w3m '%s'",
-			       "kterm -e lynx '%s'",
-			       NULL);
-
-	uri_entry = GTK_COMBO (uri_combo)->entry;
-
-	PACK_FRAME(vbox1, print_frame,
-		   _("Printing (%s will be replaced with file name)"));
-
-	hbox1 = gtk_hbox_new (FALSE, 8);
-	gtk_widget_show (hbox1);
-	gtk_container_add (GTK_CONTAINER (print_frame), hbox1);
-	gtk_container_set_border_width (GTK_CONTAINER (hbox1), 8);
-
-	printcmd_label = gtk_label_new (_("Command"));
-	gtk_widget_show (printcmd_label);
-	gtk_box_pack_start (GTK_BOX (hbox1), printcmd_label, FALSE, FALSE, 0);
-
-	printcmd_entry = gtk_entry_new ();
-	gtk_widget_show (printcmd_entry);
-	gtk_box_pack_start (GTK_BOX (hbox1), printcmd_entry, TRUE, TRUE, 0);
-
-	PACK_FRAME(vbox1, exteditor_frame,
-		   _("External editor (%s will be replaced with file name)"));
-
-	hbox1 = gtk_hbox_new (FALSE, 8);
-	gtk_widget_show (hbox1);
-	gtk_container_add (GTK_CONTAINER (exteditor_frame), hbox1);
-	gtk_container_set_border_width (GTK_CONTAINER (hbox1), 8);
-
-	exteditor_label = gtk_label_new (_("Command"));
-	gtk_widget_show (exteditor_label);
-	gtk_box_pack_start (GTK_BOX (hbox1), exteditor_label, FALSE, FALSE, 0);
-
-	exteditor_combo = gtk_combo_new ();
-	gtk_widget_show (exteditor_combo);
-	gtk_box_pack_start (GTK_BOX (hbox1), exteditor_combo, TRUE, TRUE, 0);
-	gtkut_combo_set_items (GTK_COMBO (exteditor_combo),
-			       "gedit %s",
-			       "kedit %s",
-			       "mgedit --no-fork %s",
-			       "emacs %s",
-			       "xemacs %s",
-			       "kterm -e jed %s",
-			       "kterm -e vi %s",
-			       NULL);
-	exteditor_entry = GTK_COMBO (exteditor_combo)->entry;
-
 	other.uri_combo = uri_combo;
 	other.uri_entry = uri_entry;
 	other.printcmd_entry = printcmd_entry;
 
 	other.exteditor_combo = exteditor_combo;
 	other.exteditor_entry = exteditor_entry;
+
+	other.checkbtn_confonexit  = checkbtn_confonexit;
+	other.checkbtn_cleanonexit = checkbtn_cleanonexit;
+	other.checkbtn_askonclean  = checkbtn_askonclean;
+	other.checkbtn_warnqueued  = checkbtn_warnqueued;
 }
 
 static void date_format_ok_btn_clicked(GtkButton *button, GtkWidget **widget)
@@ -3134,7 +3197,7 @@ static void quote_colors_set_dialog_ok(GtkWidget *widget, gpointer data)
 #if USE_PSPELL		
 	} else if (g_strcasecmp(type, "Misspelled word") == 0) {
 		prefs_common.misspelled_col = rgbvalue;
-		set_button_bg_color(color_buttons.misspelled_btn, rgbvalue);
+		set_button_bg_color(spelling.misspelled_btn, rgbvalue);
 #endif		
 	} else
 		fprintf( stderr, "Unrecognized datatype '%s' in quote_color_set_dialog_ok\n", type );
@@ -3391,6 +3454,293 @@ static void prefs_font_selection_ok(GtkButton *button, GtkEntry *entry)
 	}
 
 	gtk_widget_hide(font_sel_win);
+}
+
+static void prefs_keybind_apply_clicked(GtkWidget *widget)
+{
+	GtkEntry *entry = GTK_ENTRY(GTK_COMBO(interface.keybind_combo)->entry);
+	gchar *text;
+	gchar *rc_str;
+
+	static gchar *default_menurc =
+		"(menu-path \"<Main>/File/Empty trash\" \"<shift>D\")\n"
+		"(menu-path \"<Main>/File/Save as...\" \"<control>S\")\n"
+		"(menu-path \"<Main>/File/Print...\" \"\")\n"
+		"(menu-path \"<Main>/File/Exit\" \"<control>Q\")\n"
+
+		"(menu-path \"<Main>/Edit/Copy\" \"<control>C\")\n"
+		"(menu-path \"<Main>/Edit/Select all\" \"<control>A\")\n"
+		"(menu-path \"<Main>/Edit/Find in current message...\" \"<control>F\")\n"
+		"(menu-path \"<Main>/Edit/Search folder...\" \"<shift><control>F\")\n"
+
+		"(menu-path \"<Main>/View/Expand Summary View\" \"V\")\n"
+		"(menu-path \"<Main>/View/Expand Message View\" \"<shift>V\")\n"
+		"(menu-path \"<Main>/View/Thread view\" \"<control>T\")\n"
+		"(menu-path \"<Main>/View/Unthread view\" \"<shift><control>T\")\n"
+		"(menu-path \"<Main>/View/Go to/Prev message\" \"P\")\n"
+		"(menu-path \"<Main>/View/Go to/Next message\" \"N\")\n"
+		"(menu-path \"<Main>/View/Go to/Prev unread message\" \"<shift>P\")\n"
+		"(menu-path \"<Main>/View/Go to/Next unread message\" \"<shift>N\")\n"
+		"(menu-path \"<Main>/View/Go to/Other folder...\" \"G\")\n"
+		"(menu-path \"<Main>/View/Open in new window\" \"<control><alt>N\")\n"
+		"(menu-path \"<Main>/View/View source\" \"<control>U\")\n"
+		"(menu-path \"<Main>/View/Show all header\" \"<control>H\")\n"
+		"(menu-path \"<Main>/View/Update\" \"<control><alt>U\")\n"
+
+		"(menu-path \"<Main>/Message/Get new mail\" \"<control>I\")\n"
+		"(menu-path \"<Main>/Message/Get from all accounts\" \"<shift><control>I\")\n"
+		"(menu-path \"<Main>/Message/Compose an email message\" \"<control>M\")\n"
+		"(menu-path \"<Main>/Message/Reply\" \"<control>R\")\n"
+		"(menu-path \"<Main>/Message/Reply to sender\" \"\")\n"
+		"(menu-path \"<Main>/Message/Reply to all\" \"<shift><control>R\")\n"
+		"(menu-path \"<Main>/Message/Forward\" \"<control><alt>F\")\n"
+		/* "(menu-path \"<Main>/Message/Forward as attachment\" \"\")\n" */
+		"(menu-path \"<Main>/Message/Move...\" \"<control>O\")\n"
+		"(menu-path \"<Main>/Message/Copy...\" \"<shift><control>O\")\n"
+		"(menu-path \"<Main>/Message/Delete\" \"<control>D\")\n"
+		"(menu-path \"<Main>/Message/Mark/Mark\" \"<shift>asterisk\")\n"
+		"(menu-path \"<Main>/Message/Mark/Unmark\" \"U\")\n"
+		"(menu-path \"<Main>/Message/Mark/Mark as unread\" \"<shift>exclam\")\n"
+		"(menu-path \"<Main>/Message/Mark/Mark as read\" \"\")\n"
+
+		"(menu-path \"<Main>/Tool/Address book\" \"<shift><control>A\")\n"
+		"(menu-path \"<Main>/Tool/Execute\" \"X\")\n"
+		"(menu-path \"<Main>/Tool/Log window\" \"<control>L\")\n"
+
+		"(menu-path \"<Compose>/File/Close\" \"<control>W\")\n"
+		"(menu-path \"<Compose>/Edit/Select all\" \"<control>A\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Move a word backward\" \"\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Move a word forward\" \"\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Move to beginning of line\" \"\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Delete a word backward\" \"\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Delete a word forward\" \"\")";
+
+	static gchar *mew_wl_menurc =
+		"(menu-path \"<Main>/File/Empty trash\" \"<shift>D\")\n"
+		"(menu-path \"<Main>/File/Save as...\" \"Y\")\n"
+		"(menu-path \"<Main>/File/Print...\" \"<shift>numbersign\")\n"
+		"(menu-path \"<Main>/File/Exit\" \"<shift>Q\")\n"
+
+		"(menu-path \"<Main>/Edit/Copy\" \"<control>C\")\n"
+		"(menu-path \"<Main>/Edit/Select all\" \"<control>A\")\n"
+		"(menu-path \"<Main>/Edit/Find in current message...\" \"<control>F\")\n"
+		"(menu-path \"<Main>/Edit/Search folder...\" \"<control>S\")\n"
+
+		"(menu-path \"<Main>/View/Expand Summary View\" \"\")\n"
+		"(menu-path \"<Main>/View/Expand Message View\" \"\")\n"
+		"(menu-path \"<Main>/View/Thread view\" \"<shift>T\")\n"
+		"(menu-path \"<Main>/View/Unthread view\" \"<shift><control>T\")\n"
+		"(menu-path \"<Main>/View/Go to/Prev message\" \"P\")\n"
+		"(menu-path \"<Main>/View/Go to/Next message\" \"N\")\n"
+		"(menu-path \"<Main>/View/Go to/Prev unread message\" \"<shift>P\")\n"
+		"(menu-path \"<Main>/View/Go to/Next unread message\" \"<shift>N\")\n"
+		"(menu-path \"<Main>/View/Go to/Other folder...\" \"G\")\n"
+		"(menu-path \"<Main>/View/Open in new window\" \"<control><alt>N\")\n"
+		"(menu-path \"<Main>/View/View source\" \"<control>U\")\n"
+		"(menu-path \"<Main>/View/Show all header\" \"<shift>H\")\n"
+		"(menu-path \"<Main>/View/Update\" \"<shift>S\")\n"
+
+		"(menu-path \"<Main>/Message/Get new mail\" \"<control>I\")\n"
+		"(menu-path \"<Main>/Message/Get from all accounts\" \"<shift><control>I\")\n"
+		"(menu-path \"<Main>/Message/Compose an email message\" \"W\")\n"
+		"(menu-path \"<Main>/Message/Reply\" \"<control>R\")\n"
+		"(menu-path \"<Main>/Message/Reply to sender\" \"\")\n"
+		"(menu-path \"<Main>/Message/Reply to all\" \"<shift>A\")\n"
+		"(menu-path \"<Main>/Message/Forward\" \"F\")\n"
+		/* "(menu-path \"<Main>/Message/Forward as attachment\" \"<shift>F\")\n" */
+		"(menu-path \"<Main>/Message/Move...\" \"O\")\n"
+		"(menu-path \"<Main>/Message/Copy...\" \"<shift>O\")\n"
+		"(menu-path \"<Main>/Message/Delete\" \"D\")\n"
+		"(menu-path \"<Main>/Message/Mark/Mark\" \"<shift>asterisk\")\n"
+		"(menu-path \"<Main>/Message/Mark/Unmark\" \"U\")\n"
+		"(menu-path \"<Main>/Message/Mark/Mark as unread\" \"<shift>exclam\")\n"
+		"(menu-path \"<Main>/Message/Mark/Mark as read\" \"<shift>R\")\n"
+
+		"(menu-path \"<Main>/Tool/Address book\" \"<shift><control>A\")\n"
+		"(menu-path \"<Main>/Tool/Execute\" \"X\")\n"
+		"(menu-path \"<Main>/Tool/Log window\" \"<control>L\")\n"
+
+		"(menu-path \"<Compose>/File/Close\" \"<alt>W\")\n"
+		"(menu-path \"<Compose>/Edit/Select all\" \"\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Move a word backward\" \"<alt>B\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Move a word forward\" \"<alt>F\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Move to beginning of line\" \"<control>A\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Delete a word backward\" \"<control>W\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Delete a word forward\" \"<alt>D\")";
+
+	static gchar *mutt_menurc =
+		"(menu-path \"<Main>/File/Empty trash\" \"\")\n"
+		"(menu-path \"<Main>/File/Save as...\" \"S\")\n"
+		"(menu-path \"<Main>/File/Print...\" \"P\")\n"
+		"(menu-path \"<Main>/File/Exit\" \"Q\")\n"
+
+		"(menu-path \"<Main>/Edit/Copy\" \"<control>C\")\n"
+		"(menu-path \"<Main>/Edit/Select all\" \"<control>A\")\n"
+		"(menu-path \"<Main>/Edit/Find in current message...\" \"<control>F\")\n"
+		"(menu-path \"<Main>/Edit/Search messages...\" \"slash\")\n"
+
+		"(menu-path \"<Main>/View/Toggle summary view\" \"V\")\n"
+		"(menu-path \"<Main>/View/Thread view\" \"<control>T\")\n"
+		"(menu-path \"<Main>/View/Unthread view\" \"<shift><control>T\")\n"
+		"(menu-path \"<Main>/View/Go to/Prev message\" \"\")\n"
+		"(menu-path \"<Main>/View/Go to/Next message\" \"\")\n"
+		"(menu-path \"<Main>/View/Go to/Prev unread message\" \"\")\n"
+		"(menu-path \"<Main>/View/Go to/Next unread message\" \"\")\n"
+		"(menu-path \"<Main>/View/Go to/Other folder...\" \"C\")\n"
+		"(menu-path \"<Main>/View/Open in new window\" \"<control><alt>N\")\n"
+		"(menu-path \"<Main>/View/View source\" \"<control>U\")\n"
+		"(menu-path \"<Main>/View/Show all header\" \"<control>H\")\n"
+		"(menu-path \"<Main>/View/Update\" \"<control><alt>U\")\n"
+
+		"(menu-path \"<Main>/Message/Get new mail\" \"<control>I\")\n"
+		"(menu-path \"<Main>/Message/Get from all accounts\" \"<shift><control>I\")\n"
+		"(menu-path \"<Main>/Message/Compose new message\" \"M\")\n"
+		"(menu-path \"<Main>/Message/Reply\" \"R\")\n"
+		"(menu-path \"<Main>/Message/Reply to all\" \"G\")\n"
+		"(menu-path \"<Main>/Message/Reply to sender\" \"\")\n"
+		"(menu-path \"<Main>/Message/Forward\" \"F\")\n"
+		"(menu-path \"<Main>/Message/Forward as attachment\" \"\")\n"
+		"(menu-path \"<Main>/Message/Move...\" \"<control>O\")\n"
+		"(menu-path \"<Main>/Message/Copy...\" \"<shift>C\")\n"
+		"(menu-path \"<Main>/Message/Delete\" \"D\")\n"
+		"(menu-path \"<Main>/Message/Mark/Mark\" \"<shift>F\")\n"
+		"(menu-path \"<Main>/Message/Mark/Unmark\" \"U\")\n"
+		"(menu-path \"<Main>/Message/Mark/Mark as unread\" \"<shift>N\")\n"
+		"(menu-path \"<Main>/Message/Mark/Mark as read\" \"\")\n"
+
+		"(menu-path \"<Main>/Tool/Address book\" \"<shift><control>A\")\n"
+		"(menu-path \"<Main>/Tool/Execute\" \"X\")\n"
+		"(menu-path \"<Main>/Tool/Log window\" \"<control>L\")\n"
+
+		"(menu-path \"<Compose>/File/Close\" \"<alt>W\")\n"
+		"(menu-path \"<Compose>/Edit/Select all\" \"\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Move a word backward\" \"<alt>B\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Move a word forward\" \"<alt>F\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Move to beginning of line\" \"<control>A\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Delete a word backward\" \"<control>W\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Delete a word forward\" \"<alt>D\")";
+
+	static gchar *old_sylpheed_menurc =
+		"(menu-path \"<Main>/File/Empty trash\" \"\")\n"
+		"(menu-path \"<Main>/File/Save as...\" \"\")\n"
+		"(menu-path \"<Main>/File/Print...\" \"<alt>P\")\n"
+		"(menu-path \"<Main>/File/Exit\" \"<alt>Q\")\n"
+
+		"(menu-path \"<Main>/Edit/Copy\" \"<control>C\")\n"
+		"(menu-path \"<Main>/Edit/Select all\" \"<control>A\")\n"
+		"(menu-path \"<Main>/Edit/Find in current message...\" \"<control>F\")\n"
+		"(menu-path \"<Main>/Edit/Search folder...\" \"<control>S\")\n"
+
+		"(menu-path \"<Main>/View/Expand Summary View\" \"\")\n"
+		"(menu-path \"<Main>/View/Expand Message View\" \"\")\n"
+		"(menu-path \"<Main>/View/Thread view\" \"<control>T\")\n"
+		"(menu-path \"<Main>/View/Unthread view\" \"<shift><control>T\")\n"
+		"(menu-path \"<Main>/View/Go to/Prev message\" \"P\")\n"
+		"(menu-path \"<Main>/View/Go to/Next message\" \"N\")\n"
+		"(menu-path \"<Main>/View/Go to/Prev unread message\" \"<shift>P\")\n"
+		"(menu-path \"<Main>/View/Go to/Next unread message\" \"<shift>N\")\n"
+		"(menu-path \"<Main>/View/Go to/Other folder...\" \"<alt>G\")\n"
+		"(menu-path \"<Main>/View/Open in new window\" \"<shift><control>N\")\n"
+		"(menu-path \"<Main>/View/View source\" \"<control>U\")\n"
+		"(menu-path \"<Main>/View/Show all header\" \"<control>H\")\n"
+		"(menu-path \"<Main>/View/Update\" \"<alt>U\")\n"
+
+		"(menu-path \"<Main>/Message/Get new mail\" \"<alt>I\")\n"
+		"(menu-path \"<Main>/Message/Get from all accounts\" \"<shift><alt>I\")\n"
+		"(menu-path \"<Main>/Message/Compose an email message\" \"<alt>N\")\n"
+		"(menu-path \"<Main>/Message/Reply\" \"<alt>R\")\n"
+		"(menu-path \"<Main>/Message/Reply to sender\" \"<control><alt>R\")\n"
+		"(menu-path \"<Main>/Message/Reply to all\" \"<shift><alt>R\")\n"
+		"(menu-path \"<Main>/Message/Forward\" \"<shift><alt>F\")\n"
+		/* "(menu-path \"<Main>/Message/Forward as attachment\" \"<shift><control>F\")\n" */
+		"(menu-path \"<Main>/Message/Move...\" \"<alt>O\")\n"
+		"(menu-path \"<Main>/Message/Copy...\" \"\")\n"
+		"(menu-path \"<Main>/Message/Delete\" \"<alt>D\")\n"
+		"(menu-path \"<Main>/Message/Mark/Mark\" \"<shift>asterisk\")\n"
+		"(menu-path \"<Main>/Message/Mark/Unmark\" \"U\")\n"
+		"(menu-path \"<Main>/Message/Mark/Mark as unread\" \"<shift>exclam\")\n"
+		"(menu-path \"<Main>/Message/Mark/Mark as read\" \"\")\n"
+
+		"(menu-path \"<Main>/Tool/Address book\" \"<alt>A\")\n"
+		"(menu-path \"<Main>/Tool/Execute\" \"<alt>X\")\n"
+		"(menu-path \"<Main>/Tool/Log window\" \"<alt>L\")\n"
+
+		"(menu-path \"<Compose>/File/Close\" \"<alt>W\")\n"
+		"(menu-path \"<Compose>/Edit/Select all\" \"\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Move a word backward\" \"<alt>B\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Move a word forward\" \"<alt>F\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Move to beginning of line\" \"<control>A\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Delete a word backward\" \"<control>W\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Delete a word forward\" \"<alt>D\")";
+
+	static gchar *empty_menurc =
+		"(menu-path \"<Main>/File/Empty trash\" \"\")\n"
+		"(menu-path \"<Main>/File/Save as...\" \"\")\n"
+		"(menu-path \"<Main>/File/Print...\" \"\")\n"
+		"(menu-path \"<Main>/File/Exit\" \"\")\n"
+
+		"(menu-path \"<Main>/Edit/Copy\" \"\")\n"
+		"(menu-path \"<Main>/Edit/Select all\" \"\")\n"
+		"(menu-path \"<Main>/Edit/Find in current message...\" \"\")\n"
+		"(menu-path \"<Main>/Edit/Search folder...\" \"\")\n"
+
+		"(menu-path \"<Main>/View/Expand Summary View\" \"\")\n"
+		"(menu-path \"<Main>/View/Expand Message View\" \"\")\n"
+		"(menu-path \"<Main>/View/Thread view\" \"\")\n"
+		"(menu-path \"<Main>/View/Unthread view\" \"\")\n"
+		"(menu-path \"<Main>/View/Go to/Prev message\" \"\")\n"
+		"(menu-path \"<Main>/View/Go to/Next message\" \"\")\n"
+		"(menu-path \"<Main>/View/Go to/Prev unread message\" \"\")\n"
+		"(menu-path \"<Main>/View/Go to/Next unread message\" \"\")\n"
+		"(menu-path \"<Main>/View/Go to/Other folder...\" \"\")\n"
+		"(menu-path \"<Main>/View/Open in new window\" \"\")\n"
+		"(menu-path \"<Main>/View/View source\" \"\")\n"
+		"(menu-path \"<Main>/View/Show all header\" \"\")\n"
+		"(menu-path \"<Main>/View/Update\" \"\")\n"
+
+		"(menu-path \"<Main>/Message/Get new mail\" \"\")\n"
+		"(menu-path \"<Main>/Message/Get from all accounts\" \"\")\n"
+		"(menu-path \"<Main>/Message/Compose an email message\" \"\")\n"
+		"(menu-path \"<Main>/Message/Reply\" \"\")\n"
+		"(menu-path \"<Main>/Message/Reply to sender\" \"\")\n"
+		"(menu-path \"<Main>/Message/Reply to all\" \"\")\n"
+		"(menu-path \"<Main>/Message/Forward\" \"\")\n"
+		/* "(menu-path \"<Main>/Message/Forward as attachment\" \"\")\n" */
+		"(menu-path \"<Main>/Message/Move...\" \"\")\n"
+		"(menu-path \"<Main>/Message/Copy...\" \"\")\n"
+		"(menu-path \"<Main>/Message/Delete\" \"\")\n"
+		"(menu-path \"<Main>/Message/Mark/Mark\" \"\")\n"
+		"(menu-path \"<Main>/Message/Mark/Unmark\" \"\")\n"
+		"(menu-path \"<Main>/Message/Mark/Mark as unread\" \"\")\n"
+		"(menu-path \"<Main>/Message/Mark/Mark as read\" \"\")\n"
+
+		"(menu-path \"<Main>/Tool/Address book\" \"\")\n"
+		"(menu-path \"<Main>/Tool/Execute\" \"\")\n"
+		"(menu-path \"<Main>/Tool/Log window\" \"\")\n"
+
+		"(menu-path \"<Compose>/File/Close\" \"\")\n"
+		"(menu-path \"<Compose>/Edit/Select all\" \"\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Move a word backward\" \"\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Move a word forward\" \"\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Move to beginning of line\" \"\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Delete a word backward\" \"\")\n"
+		"(menu-path \"<Compose>/Edit/Advanced/Delete a word forward\" \"\")";
+
+	text = gtk_entry_get_text(entry);
+
+	if (!strcmp(text, _("Default")))
+		rc_str = default_menurc;
+	else if (!strcmp(text, "Mew / Wanderlust"))
+		rc_str = mew_wl_menurc;
+	else if (!strcmp(text, "Mutt"))
+		rc_str = mutt_menurc;
+	else if (!strcmp(text, _("Old Sylpheed")))
+		rc_str = old_sylpheed_menurc;
+	else
+		return;
+
+	gtk_item_factory_parse_rc_string(empty_menurc);
+	gtk_item_factory_parse_rc_string(rc_str);
 }
 
 static void prefs_common_charset_set_data_from_optmenu(PrefParam *pparam)

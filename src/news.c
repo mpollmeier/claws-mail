@@ -85,6 +85,9 @@ static GSList *news_delete_old_articles	 (GSList	*alist,
 					  gint		 first);
 static void news_delete_all_articles	 (FolderItem	*item);
 
+static gint news_remove_msg		 (Folder	*folder, 
+					  FolderItem	*item, 
+					  gint		 num);
 
 Folder *news_folder_new(const gchar *name, const gchar *path)
 {
@@ -108,9 +111,14 @@ static void news_folder_init(Folder *folder, const gchar *name,
 
 	folder->type = F_NEWS;
 
+/*
 	folder->get_msg_list = news_get_article_list;
+*/
 	folder->fetch_msg    = news_fetch_msg;
+/*
 	folder->scan         = news_scan_group;
+*/
+	folder->remove_msg   = news_remove_msg;
 }
 
 static Session *news_session_new(const gchar *server, gushort port,
@@ -500,6 +508,11 @@ static gint news_get_article_cmd(NNTPSession *session, const gchar *cmd,
 		return -1;
 	}
 
+	return 0;
+}
+
+static gint news_remove_msg(Folder *folder, FolderItem *item, gint num)
+{
 	return 0;
 }
 

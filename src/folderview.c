@@ -1476,9 +1476,6 @@ static void folderview_button_released(GtkWidget *ctree, GdkEventButton *event,
 	}
 }
 
-#define BREAK_ON_MODIFIER_KEY() \
-	if ((event->state & (GDK_MOD1_MASK|GDK_CONTROL_MASK)) != 0) break
-
 static void folderview_key_pressed(GtkWidget *widget, GdkEventKey *event,
 				   FolderView *folderview)
 {
@@ -1501,18 +1498,8 @@ static void folderview_key_pressed(GtkWidget *widget, GdkEventKey *event,
 						       folderview->selected);
 		}
 		break;
-	case GDK_v:
-	case GDK_V:
-	case GDK_g:
-	case GDK_G:
-	case GDK_x:
-	case GDK_X:
-	case GDK_w:
-	case GDK_D:
-	case GDK_Q:
-		BREAK_ON_MODIFIER_KEY();
-		summary_pass_key_press_event(folderview->summaryview, event);
 	default:
+		break;
 	}
 }
 
@@ -2310,29 +2297,24 @@ static gboolean folderview_drag_motion_cb(GtkWidget      *widget,
 					  FolderView     *folderview)
 {
 	gint row, column;
-	FolderItem *item, *current_item;
+	FolderItem *item, *src_item;
 	GtkCTreeNode *node = NULL;
 	gboolean acceptable = FALSE;
 
-	if (gtk_clist_get_selection_info(GTK_CLIST(widget),
-					 x - 24, y - 24, &row, &column)) {
+	if (gtk_clist_get_selection_info
+		(GTK_CLIST(widget), x - 24, y - 24, &row, &column)) {
 		node = gtk_ctree_node_nth(GTK_CTREE(widget), row);
 		item = gtk_ctree_node_get_row_data(GTK_CTREE(widget), node);
-		current_item = folderview->summaryview->folder_item;
-		if (item != NULL &&
-		    item->path != NULL &&
-		    current_item != NULL &&
-		    current_item != item) {
-			switch (item->folder->type){
+		src_item = folderview->summaryview->folder_item;
+		if (item && item->folder && item->path &&
+		    src_item && src_item != item) {
+			switch (item->folder->type) {
 			case F_MH:
-				if (current_item->folder->type == F_MH)
-				    acceptable = TRUE;
-				break;
 			case F_IMAP:
-				if (current_item->folder->account == item->folder->account)
-				    acceptable = TRUE;
+				acceptable = TRUE;
 				break;
 			default:
+				break;
 			}
 		}
 	}
@@ -2370,16 +2352,17 @@ static void folderview_drag_received_cb(GtkWidget        *widget,
 					FolderView       *folderview)
 {
 	gint row, column;
-	FolderItem *item;
+	FolderItem *item, *src_item;
 	GtkCTreeNode *node;
 
-	if (gtk_clist_get_selection_info(GTK_CLIST(widget),
-					 x - 24, y - 24, &row, &column) == 0)
+	if (gtk_clist_get_selection_info
+		(GTK_CLIST(widget), x - 24, y - 24, &row, &column) == 0)
 		return;
 
 	node = gtk_ctree_node_nth(GTK_CTREE(widget), row);
 	item = gtk_ctree_node_get_row_data(GTK_CTREE(widget), node);
-	if (item != NULL) {
+	src_item = folderview->summaryview->folder_item;
+	if (item && src_item) {
 		switch (drag_context->action) {
 			case GDK_ACTION_COPY:
 				summary_copy_selected_to(folderview->summaryview, item);
@@ -2388,9 +2371,13 @@ static void folderview_drag_received_cb(GtkWidget        *widget,
 			case GDK_ACTION_MOVE:
 			case GDK_ACTION_DEFAULT:
 			default:
-				summary_move_selected_to(folderview->summaryview, item);
-				gtk_drag_finish(drag_context, TRUE, TRUE, time);
-				break;
+		if (src_item->folder->type != item->folder->type ||
+		    (src_item->folder->type == F_IMAP &&
+		     src_item->folder != item->folder))
+			summary_copy_selected_to(folderview->summaryview, item);
+		else
+			summary_move_selected_to(folderview->summaryview, item);
+		gtk_drag_finish(drag_context, TRUE, TRUE, time);
 		}
 	} else
 		gtk_drag_finish(drag_context, FALSE, FALSE, time);

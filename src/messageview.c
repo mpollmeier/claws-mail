@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2001 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2002 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -345,7 +345,8 @@ static gint disposition_notification_send(MsgInfo * msginfo)
 	return ok;
 }
 
-void messageview_show(MessageView *messageview, MsgInfo *msginfo)
+void messageview_show(MessageView *messageview, MsgInfo *msginfo,
+		      gboolean all_headers)
 {
 	FILE *fp;
 	gchar *file;
@@ -422,7 +423,7 @@ void messageview_show(MessageView *messageview, MsgInfo *msginfo)
 	if (prefs_common.return_receipt
 	    && (tmpmsginfo->dispositionnotificationto
 		|| tmpmsginfo->returnreceiptto)
-	    && (MSG_IS_UNREAD(msginfo->flags))) {
+	    && (MSG_IS_RETRCPT_PENDING(msginfo->flags))) {
 		gint ok;
 		
 		if (alertpanel(_("Return Receipt"), _("Send return receipt ?"),
@@ -431,10 +432,13 @@ void messageview_show(MessageView *messageview, MsgInfo *msginfo)
 			if (ok < 0)
 				alertpanel_error(_("Error occurred while sending notification."));
 		}
+		MSG_UNSET_PERM_FLAGS(msginfo->flags, MSG_RETRCPT_PENDING);	
 	}
 
 	headerview_show(messageview->headerview, tmpmsginfo);
 	procmsg_msginfo_free(tmpmsginfo);
+
+	textview_set_all_headers(messageview->textview, all_headers);
 
 	if (mimeinfo->mime_type != MIME_TEXT) {
 		messageview_change_view_type(messageview, MVIEW_MIME);

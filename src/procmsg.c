@@ -768,7 +768,6 @@ gint procmsg_send_queue(void)
 
 	queue = folder_get_default_queue();
 	g_return_val_if_fail(queue != NULL, -1);
-	folder_item_scan(queue);
 	if (queue->last_num < 0) return -1;
 	else if (queue->last_num == 0) return 0;
 
@@ -785,6 +784,8 @@ gint procmsg_send_queue(void)
 			g_free(file);
 		}
 	}
+
+	folderview_update_item(queue, FALSE);
 
 	return ret;
 }
@@ -1143,6 +1144,7 @@ gint procmsg_send_message_queue(const gchar *file)
 			msginfo->flags.tmp_flags = 0;
 			procmsg_msginfo_free(msginfo);
 		}
+		folderview_update_item(folder, FALSE);
 	}
 
 	slist_free_strings(to_list);

@@ -917,7 +917,6 @@ gint inc_drop_message(const gchar *file, Pop3State *state)
 	val = GPOINTER_TO_INT(g_hash_table_lookup
 			      (state->folder_table, dropfolder));
 	if (val == 0) {
-		folder_item_scan(dropfolder);
 		g_hash_table_insert(state->folder_table, dropfolder,
 				    GINT_TO_POINTER(1));
 	}
@@ -1063,7 +1062,6 @@ static gint get_spool(FolderItem *dest, const gchar *mbox)
 		if (!prefs_common.scan_all_after_inc) {
 		g_hash_table_insert(folder_table, dest,
 				    GINT_TO_POINTER(1));
-			folder_item_scan_foreach(folder_table);
 			folderview_update_item_foreach(folder_table);
 		}
 		g_hash_table_destroy(folder_table);

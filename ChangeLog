@@ -1,3 +1,131 @@
+2002-02-05
+
+	* src/compose.c: compose_exec_ext_editor_real(): replaced
+	  g_strsplit() with strsplit_with_quote().
+	* src/foldersel.c
+	  src/folderview.c: folderview_drag_motion_cb(): minor code cleanups.
+	* src/folderview.c:
+	  folderview_drag_motion_cb()
+	  folderview_drag_received_cb(): allow dropping into IMAP4 folder.
+	* src/utils.c: get_file_size_as_crlf(): use fgets() instead of
+	  fread().
+	* src/imap.c
+	  imap_copy_msg()
+	  imap_copy_msgs_with_dest(): use imap_add_msg() if the source
+	  of the message is different from the current mailbox.
+	  Return the correct value.
+	  imap_cmd_append(): properly implemented the APPEND command.
+
+2002-02-04
+
+	* src/mainwindow.c
+	  src/messageview.[ch]
+	  src/summaryview.[ch]
+	  src/textview.[ch]: show all headers in the message view, and don't
+	  use the header window anymore.
+	* src/mainwindow.c
+	  src/prefs_common.c: changed the default shortcut of 'compose new
+	  message'.
+	* src/mainwindow.c
+	  src/summaryview.[ch]: summary_display_msg_selected(): new.
+	  Show the selected message if 'Show all header' is selected.
+	* src/mh.c
+	  src/sourcewindow.c: changed some procmsg_get_message_file_path()
+	  to procmsg_get_message_file() to be sure the message is
+	  retrieved.
+	* src/folderview.c: folderview_drag_motion_cb(): allow DnD from
+	  any folder to MH folder.
+	  folderview_drag_received_cb(): copy messages instead of moving
+	  if the source folder is news or IMAP.
+	* src/mainwindow.c
+	  src/summaryview.c: allow copy from news folder.
+
+2002-02-03
+
+	* src/prefs_common.c: prefs_other_create(): modified the design
+	  of the external command settings.
+	  prefs_keybind_apply_clicked(): made the Mew / Wanderlust keybind
+	  preset closer to the original.
+	  Added Mutt keybind preset.
+	  Also change the compose keybinds.
+	* src/compose.c: modified some menu shortcuts.
+	* src/codeconv.c: modified the locale_table for Thai encoding.
+
+2002-02-01
+
+	* src/Makefile.am: added $(GPGME_CFLAGS) to INCLUDES.
+	* src/prefs_common.c: prefs_interface_create(): modified the
+	  description for menu shortcut.
+
+2002-01-31
+
+	* src/gtkutils.[ch]: added gtk_stext_clear().
+	* src/compose.[ch]
+	  src/mainwindow.c
+	  src/summaryview.[ch]: enabled multiple forwarding.
+	* src/summaryview.c:
+	  summary_set_marks_selected(): set marks for all selected row.
+	  summary_reply(): moved from summary_reply_cb().
+	* compose.[ch]: compose_forward(): modified so that it receives
+	  the message list.
+	* src/mainwindow.c: cleanup for reply processing.
+	* src/summaryview.c: summary_reply(): fixed a memory leak.
+	  summary_key_pressed(): removed hardcoded mark / mark as unread
+	  shortcuts.
+	* src/mainwindow.c
+	  src/prefs_common.c: added mark / mark as unread shortcuts to
+	  the menu.
+
+2002-01-30
+
+	* src/compose.c: compose_wrap_line_all(): wrap quoted part even
+	  if prefs_common.linewrap_quote is not set (it is only for
+	  auto-wrapping on reply).
+	* src/prefs_account.c: prefs_account_open(): initialize tmp_ac_prefs
+	  when creating a new account.
+	* src/mh.c: mh_get_msg_list(): use also st_ctime to detect
+	  directory change.
+	* src/prefs_common.c: prefs_interface_create(): modified the
+	  description of key binds selector.
+
+2002-01-29
+
+	* src/mimeview.c: fixed multiple dialog / moving by correcting
+	  button / key event processing.
+	* src/mimeview.[ch]
+	  src/textview.c: pass some key press events to MimeView in MIME
+	  mode.
+	* src/prefs_filter.c: fixed a bug that didn't set the order of
+	  rules correctly.
+	* src/prefs_common.c: prefs_keybind_apply_clicked(): fixed
+	  empty_menurc string.
+
+2002-01-28
+
+	* src/mainwindow.c
+	  src/prefs_common.c: reorganized the menu shortcuts.
+	  Added 'View - Toggle summary view'.
+	* src/summaryview.[ch]: summary_toggle_view(): made it public
+	  function.
+	* src/prefs_common.[ch]: swapped the position of 'Shortcut key'
+	  and 'On exit'.
+	* src/importldif.c: imp_ldif_delete_event(): fixed segfault when
+	  closing the dialog with window manager (in more appropriate way).
+	* src/imageview.[ch]
+	  src/messageview.c
+	  src/mimeview.c: fixed wrong scrolling position when switching
+	  between text and image parts. Also free the unrequired image
+	  (thanks to Sergey Vlasov).
+	* src/prefs_common.c: disabled 'Go to inbox after receiving new mail'
+	  by default.
+
+2002-01-28
+
+	* src/prefs_common.c: implemented shortcut quick changer.
+	* src/folderview.c: folderview_key_pressed()
+	  src/summaryview.c: summary_key_pressed(): removed some hardcoded
+	  key binds.
+
 2002-01-25
 
 	* src/procmime.c:
