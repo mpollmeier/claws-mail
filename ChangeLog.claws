@@ -1,9 +1,45 @@
+2002-01-26 [alfons]	0.7.0claws31
+
+	* src/import.c
+		let import dialog show the destination folder identifier
+
+2002-01-26 [melvin]	0.7.0claws30
+
+	* src/folderview.c
+	* src/summaryview.c
+		Readded 'Mark all read' into summary view popup menu
+		Added 'Mark all read' in folder view popup menu for IMAP
+		and NNTP.
+		Made it insensitive if the selected folder is not the shown
+		one to avoid 'Mark all read' on the wrong folder.
+		
+2002-01-26 [paul]	0.7.0claws29
+
+	* src/folderview.c
+	  src/summaryview.c
+		move 'Mark all read' from summary view to folder view
+		menu. (adapted from) patch submitted by Jeremy Andrews,
+		<lists@kerneltrap.com>
+
+2002-01-25 [alfons]	0.7.0claws28
+
+	* src/gtkstext.c
+		put the gtk class name back so GtkSText adapts the 
+		settings of GtkText
+
+2002-01-25 [alfons]	0.7.0claws27
+
+	* src/folderview.c 
+		assimilate Ricardo's patch that shows pixmaps instead of
+		plain "new" and "unread" texts in the folder view column
+		headers 
+
 2002-01-25 [paul]	0.7.0claws26
 
 	* src/Makefile.am
 		add $(GPGME_CFLAGS) to INCLUDES so that gpgme can 
 		be found in non-standard locations. 
-		Closes Patch #507976, submitted by Stoyen Genov.
+		Closes Patch #507976, submitted by Stoyan Genov, <sdg@rila.bg>
 
 2002-01-25 [paul]	0.7.0claws25
 

@@ -704,7 +704,14 @@ gint folder_item_add_msg(FolderItem *dest, const gchar *file,
 	if (!dest->cache)
 		folder_item_read_cache(dest);
 
-	default_flags.perm_flags = MSG_NEW|MSG_UNREAD;
+	if (!(dest->stype == F_OUTBOX ||
+	      dest->stype == F_QUEUE  ||
+	      dest->stype == F_DRAFT  ||
+	      dest->stype == F_TRASH)) {
+		default_flags.perm_flags = MSG_NEW|MSG_UNREAD;
+	} else {
+		default_flags.perm_flags = 0;
+	}
 	default_flags.tmp_flags = MSG_CACHED;
 	if (dest->folder->type == F_MH) {
 		if (dest->stype == F_QUEUE) {
@@ -722,8 +729,10 @@ gint folder_item_add_msg(FolderItem *dest, const gchar *file,
 	num = folder->add_msg(folder, dest, file, remove_source);
 
         if (num > 0) {
-		dest->new++;
-		dest->unread++;
+		if(MSG_IS_NEW(default_flags))
+			dest->new++;
+		if(MSG_IS_UNREAD(default_flags))
+			dest->unread++;
 		dest->total++;
 
 		msginfo->msgnum = num;
@@ -786,26 +795,30 @@ gint folder_item_move_msg(FolderItem *dest, MsgInfo *msginfo)
 		    dest->stype == F_TRASH)
 			MSG_UNSET_PERM_FLAGS(newmsginfo->flags,
 					     MSG_NEW|MSG_UNREAD|MSG_DELETED);
+		MSG_UNSET_TMP_FLAGS(newmsginfo->flags,
+				     MSG_MOVE);
+		newmsginfo->to_folder = NULL;
 		newmsginfo->msgnum = num;
 		newmsginfo->folder = dest;
     		msgcache_add_msg(dest->cache, newmsginfo);
-		procmsg_msginfo_free(newmsginfo);
 
 		src_folder->remove_msg(src_folder,
 				       msginfo->folder,
 				       msginfo->msgnum);
                 msgcache_remove_msg(msginfo->folder->cache, msginfo->msgnum);
 
-		if (MSG_IS_NEW(msginfo->flags)) {
+		if (MSG_IS_NEW(msginfo->flags))
 			msginfo->folder->new--;
+		if (MSG_IS_NEW(newmsginfo->flags))
 			dest->new++;
-		}
-		if (MSG_IS_UNREAD(msginfo->flags)) {
+		if (MSG_IS_UNREAD(msginfo->flags))
 			msginfo->folder->unread--;
+		if (MSG_IS_UNREAD(newmsginfo->flags))
 			dest->unread++;
-		}
 		msginfo->folder->total--;
 		dest->total++;
+
+		procmsg_msginfo_free(newmsginfo);
 	}
 	
 	if (folder->finished_copy)
@@ -866,26 +879,36 @@ gint folder_item_move_msgs_with_dest(FolderItem *dest, GSList *msglist)
 			MsgInfo *newmsginfo;
 
 			newmsginfo = procmsg_msginfo_copy(msginfo);
+			if (dest->stype == F_OUTBOX ||
+			    dest->stype == F_QUEUE  ||
+			    dest->stype == F_DRAFT  ||
+			    dest->stype == F_TRASH)
+				MSG_UNSET_PERM_FLAGS(newmsginfo->flags,
+						     MSG_NEW|MSG_UNREAD|MSG_DELETED);
+			MSG_UNSET_TMP_FLAGS(newmsginfo->flags,
+					     MSG_MOVE);
+			newmsginfo->to_folder = NULL;
 			newmsginfo->msgnum = num;
 			newmsginfo->folder = dest;
     			msgcache_add_msg(dest->cache, newmsginfo);
-			procmsg_msginfo_free(newmsginfo);
 
 			item->folder->remove_msg(item->folder,
 						 msginfo->folder,
 						 msginfo->msgnum);
 			msgcache_remove_msg(item->cache, msginfo->msgnum);
 
-			if (MSG_IS_NEW(msginfo->flags)) {
+			if (MSG_IS_NEW(msginfo->flags))
 				msginfo->folder->new--;
+			if (MSG_IS_NEW(newmsginfo->flags))
 				dest->new++;
-			}
-			if (MSG_IS_UNREAD(msginfo->flags)) {
+			if (MSG_IS_UNREAD(msginfo->flags))
 				msginfo->folder->unread--;
+			if (MSG_IS_UNREAD(newmsginfo->flags))
 				dest->unread++;
-			}
 			msginfo->folder->total--;
 			dest->total++;
+
+			procmsg_msginfo_free(newmsginfo);
 		}
     	}
 
@@ -935,18 +958,26 @@ gint folder_item_copy_msg(FolderItem *dest, MsgInfo *msginfo)
 		MsgInfo *newmsginfo;
 
 		newmsginfo = procmsg_msginfo_copy(msginfo);
+		if (dest->stype == F_OUTBOX ||
+		    dest->stype == F_QUEUE  ||
+		    dest->stype == F_DRAFT  ||
+		    dest->stype == F_TRASH)
+			MSG_UNSET_PERM_FLAGS(newmsginfo->flags,
+					     MSG_NEW|MSG_UNREAD|MSG_DELETED);
+		MSG_UNSET_TMP_FLAGS(newmsginfo->flags,
+				     MSG_COPY);
+		newmsginfo->to_folder = NULL;
 		newmsginfo->msgnum = num;
 		newmsginfo->folder = dest;
     		msgcache_add_msg(dest->cache, newmsginfo);
-		procmsg_msginfo_free(newmsginfo);
 
-		if (MSG_IS_NEW(msginfo->flags)) {
+		if (MSG_IS_NEW(newmsginfo->flags))
 			dest->new++;
-		}
-		if (MSG_IS_UNREAD(msginfo->flags)) {
+		if (MSG_IS_UNREAD(newmsginfo->flags))
 			dest->unread++;
-		}
 		dest->total++;
+
+		procmsg_msginfo_free(newmsginfo);
 	}
 
 	if (folder->finished_copy)
@@ -999,18 +1030,26 @@ gint folder_item_copy_msgs_with_dest(FolderItem *dest, GSList *msglist)
 			MsgInfo *newmsginfo;
 
 			newmsginfo = procmsg_msginfo_copy(msginfo);
+			if (dest->stype == F_OUTBOX ||
+			    dest->stype == F_QUEUE  ||
+			    dest->stype == F_DRAFT  ||
+			    dest->stype == F_TRASH)
+				MSG_UNSET_PERM_FLAGS(newmsginfo->flags,
+						     MSG_NEW|MSG_UNREAD|MSG_DELETED);
+			MSG_UNSET_TMP_FLAGS(newmsginfo->flags,
+					     MSG_COPY);
+			newmsginfo->to_folder = NULL;
 			newmsginfo->msgnum = num;
 			newmsginfo->folder = dest;
     			msgcache_add_msg(dest->cache, newmsginfo);
-			procmsg_msginfo_free(newmsginfo);
 
-			if (MSG_IS_NEW(msginfo->flags)) {
+			if (MSG_IS_NEW(newmsginfo->flags))
 				dest->new++;
-			}
-			if (MSG_IS_UNREAD(msginfo->flags)) {
+			if (MSG_IS_UNREAD(newmsginfo->flags))
 				dest->unread++;
-			}
 			dest->total++;
+
+			procmsg_msginfo_free(newmsginfo);
 		}
 	}
 

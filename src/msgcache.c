@@ -24,6 +24,7 @@
 #include "intl.h"
 #include "msgcache.h"
 #include "utils.h"
+#include "procmsg.h"
 
 MsgCache *msgcache_new()
 {
@@ -235,11 +236,13 @@ MsgCache *msgcache_read(const gchar *cache_file, const gchar *mark_file, FolderI
 
 void msgcache_write_cache(MsgInfo *msginfo, FILE *fp)
 {
+	MsgTmpFlags flags = msginfo->flags.tmp_flags & MSG_CACHED_FLAG_MASK;
+
 	WRITE_CACHE_DATA_INT(msginfo->msgnum, fp);
 	WRITE_CACHE_DATA_INT(msginfo->size, fp);
 	WRITE_CACHE_DATA_INT(msginfo->mtime, fp);
 	WRITE_CACHE_DATA_INT(msginfo->date_t, fp);
-	WRITE_CACHE_DATA_INT(msginfo->flags.tmp_flags, fp);
+	WRITE_CACHE_DATA_INT(flags, fp);
 
 	WRITE_CACHE_DATA(msginfo->fromname, fp);
 

@@ -3272,7 +3272,7 @@ static gint compose_remove_reedit_target(Compose *compose)
 static gint compose_queue(Compose *compose, gint *msgnum, FolderItem **item)
 {
 	FolderItem *queue;
-	gchar *tmp, *tmp2, *queue_path;
+	gchar *tmp, *tmp2;
 	FILE *fp, *src_fp;
 	GSList *cur;
 	gchar buf[BUFFSIZE];
@@ -3448,15 +3448,10 @@ static gint compose_queue(Compose *compose, gint *msgnum, FolderItem **item)
 	/* queue message */
 	queue = folder_get_default_queue();
 
-	folder_item_scan(queue);
-	queue_path = folder_item_get_path(queue);
-	if (!is_dir_exist(queue_path))
-		make_dir_hier(queue_path);
 	if ((num = folder_item_add_msg(queue, tmp, TRUE)) < 0) {
 		g_warning(_("can't queue the message\n"));
 		unlink(tmp);
 		g_free(tmp);
-		g_free(queue_path);
 		return -1;
 	}
 	unlink(tmp);
@@ -3472,20 +3467,6 @@ static gint compose_queue(Compose *compose, gint *msgnum, FolderItem **item)
 				(compose->targetinfo->folder, TRUE);
 	}
 
-	if ((fp = procmsg_open_mark_file(queue_path, TRUE)) == NULL)
-		g_warning(_("can't open mark file\n"));
-	else {
-		MsgInfo newmsginfo;
-
-		newmsginfo.msgnum = num;
-		newmsginfo.flags.perm_flags = 0;
-		newmsginfo.flags.tmp_flags = 0;
-		procmsg_write_flags(&newmsginfo, fp);
-		fclose(fp);
-	}
-	g_free(queue_path);
-
-	folder_item_scan(queue);
 	folderview_update_item(queue, TRUE);
 
 	if((msgnum != NULL) && (item != NULL)) {
