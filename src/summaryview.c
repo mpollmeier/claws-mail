@@ -356,6 +356,9 @@ static gint summary_cmp_by_date		(GtkCList		*clist,
 static gint summary_cmp_by_from		(GtkCList		*clist,
 					 gconstpointer		 ptr1,
 					 gconstpointer		 ptr2);
+static gint summary_cmp_by_to		(GtkCList		*clist,
+					 gconstpointer		 ptr1, 
+					 gconstpointer		 ptr2);
 static gint summary_cmp_by_subject	(GtkCList		*clist,
 					 gconstpointer		 ptr1,
 					 gconstpointer		 ptr2);
@@ -1970,7 +1973,9 @@ void summary_sort(SummaryView *summaryview,
 		cmp_func = (GtkCListCompareFunc)summary_cmp_by_date;
 		break;
 	case SORT_BY_FROM:
-		cmp_func = (GtkCListCompareFunc)summary_cmp_by_from;
+		cmp_func = summaryview->folder_item->stype != F_OUTBOX ? 
+			(GtkCListCompareFunc) summary_cmp_by_from :
+			(GtkCListCompareFunc) summary_cmp_by_to;
 		break;
 	case SORT_BY_SUBJECT:
 		if (summaryview->simplify_subject_preg)
@@ -2187,7 +2192,6 @@ static void summary_set_header(SummaryView *summaryview, gchar *text[],
 {
 	static gchar date_modified[80];
 	static gchar *to = NULL;
-	static gchar *from = NULL;
 	static gchar col_score[11];
 	static gchar buf[BUFFSIZE];
 	gint *col_pos = summaryview->col_pos;
@@ -2225,6 +2229,7 @@ static void summary_set_header(SummaryView *summaryview, gchar *text[],
 				g_free(to);
 				to   = g_strconcat("-->", addr == NULL ? msginfo->to : addr, NULL);
 				text[col_pos[S_COL_FROM]] = to;
+				g_free(addr);
 			}
 		} else {
 			if (cur_account && cur_account->address && !strcmp( addr, cur_account->address)) {
@@ -2241,10 +2246,12 @@ static void summary_set_header(SummaryView *summaryview, gchar *text[],
 	 * the --> in sent boxes) was executed.
 	 */
 	if (text[col_pos[S_COL_FROM]] != to && prefs_common.use_addr_book && msginfo->from) {
-		g_free(from);
-		from = summary_complete_address(msginfo->from);
-		if (from)
-			text[col_pos[S_COL_FROM]] = from;
+		gchar *from = summary_complete_address(msginfo->from);
+		if (from) {
+			g_free(to);
+			to = from;
+			text[col_pos[S_COL_FROM]] = to;
+		}			
 	}
 
 	if (summaryview->simplify_subject_preg != NULL)
@@ -4820,6 +4827,33 @@ static gint summary_cmp_by_from(GtkCList *clist,
 		return -1;
 
 	return strcasecmp(msginfo1->fromname, msginfo2->fromname);
+}
+
+static gint summary_cmp_by_to(GtkCList *clist,
+			      gconstpointer ptr1, gconstpointer ptr2)
+{
+	const gchar *str1, *str2;
+	const GtkCListRow *r1 = (const GtkCListRow *) ptr1;
+	const GtkCListRow *r2 = (const GtkCListRow *) ptr2;
+	const SummaryView *sv = gtk_object_get_data(GTK_OBJECT(clist), "summaryview");
+	
+	g_return_val_if_fail(sv, -1);
+	
+	str1 = GTK_CELL_TEXT(r1->cell[sv->col_pos[S_COL_FROM]])->text;
+	str2 = GTK_CELL_TEXT(r2->cell[sv->col_pos[S_COL_FROM]])->text;
+
+	if (!str1)
+		return str2 != NULL;
+
+	if (!str2)
+		return -1;
+
+	if (g_strncasecmp(str1, "-->", 3) == 0)
+		str1 += 3;
+	if (g_strncasecmp(str2, "-->", 3) == 0)
+		str2 += 3;
+
+	return strcasecmp(str1, str2);
 }
 
 static gint summary_cmp_by_subject(GtkCList *clist,
