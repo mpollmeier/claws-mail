@@ -1321,6 +1321,7 @@ gint folder_item_move_msgs_with_dest(FolderItem *dest, GSList *msglist)
 
 		if (!item && msginfo->folder != NULL)
 			item = msginfo->folder;
+		if (!item->cache) folder_item_read_cache(dest);
 
 		num = folder->copy_msg(folder, dest, msginfo);
 		if (num != -1) {
