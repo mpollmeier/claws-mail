@@ -1918,7 +1918,7 @@ int main ()
 ])
 
 dnl Autoconf macros for libgpgme
-dnl $Id: aclocal.m4,v 1.1 2001-04-19 11:59:43 sylpheed-claws Exp $
+dnl $Id: aclocal.m4,v 1.1.1.1 2001-04-19 11:59:43 sylpheed-claws Exp $
 
 # Configure paths for GPGME
 # Shamelessly stolen from the one of XDELTA by Owen Taylor

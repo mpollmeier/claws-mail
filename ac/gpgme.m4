@@ -1,5 +1,5 @@
 dnl Autoconf macros for libgpgme
-dnl $Id: gpgme.m4,v 1.1 2001-04-19 12:02:30 sylpheed-claws Exp $
+dnl $Id: gpgme.m4,v 1.1.1.1 2001-04-19 12:02:30 sylpheed-claws Exp $
 
 # Configure paths for GPGME
 # Shamelessly stolen from the one of XDELTA by Owen Taylor

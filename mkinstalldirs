@@ -4,7 +4,7 @@
 # Created: 1993-05-16
 # Public domain
 
-# $Id: mkinstalldirs,v 1.1 2001-04-19 12:02:24 sylpheed-claws Exp $
+# $Id: mkinstalldirs,v 1.1.1.1 2001-04-19 12:02:24 sylpheed-claws Exp $
 
 errstatus=0
 
