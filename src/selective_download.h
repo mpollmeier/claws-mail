@@ -38,7 +38,7 @@ struct _HeaderItems {
 	SD_State    state;
 	gchar       *from;
 	gchar       *subject;
-	gchar       date[80];
+	gchar       *date;
 	gint        size;
 	guint       received : 1;
 	guint       del_by_old_session : 1;
