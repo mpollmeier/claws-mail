@@ -1,3 +1,35 @@
+2003-12-05 Colin Leroy <colin@colino.net>
+	* src/summaryview.c
+		Fix going to next unread folder
+
+2003-12-05 Colin Leroy <colin@colino.net>
+	* src/crash.c
+		Fix gtk2 compilation
+	* src/session.c
+		Remove iotag source handler at disconnection
+	* src/socket.[ch] 
+		Remove source handler when closing socket 
+		(fixes another seg)
+
+2003-12-04 Colin Leroy <colin@colino.net>
+	* src/compose.c
+	  src/prefs_account.c
+	  src/prefs_common.c
+	  	Fix some dropdown menus
+
+2003-12-04 Colin Leroy <colin@colino.net>
+	* src/compose.c
+		Fix event handlers on header fields
+	* src/common/socket.c
+	  src/common/session.c
+		Fix segfault with callback (SSL)
+		Fix end of session 
+
+2003-10-06 Thorsten Maerz <torte@netztorte.de>
+
+	* Fix compile bug in src/compose.c
+	* removed src/gtk/gtkstext.[ch]
+
 2003-09-17 Takuro Ashie <ashie@homa.ne.jp>
 
 	* Convert character set and escape "text" attributes in toolbar setting

@@ -415,10 +415,7 @@ EXPORTS
 	compose_reply_mode 
 	compose_send 
 	compose_toolbar_cb 
-;	conv_X_any_to_disp 
 	conv_X_get_current_iso_charset_str 
-;	conv_X_locale_from_utf8 
-;	conv_X_locale_to_utf8 
 	conv_anytodisp 
 	conv_anytoeuc 
 	conv_anytojis 
@@ -430,7 +427,6 @@ EXPORTS
 	conv_encode_header 
 	conv_euctodisp 
 	conv_euctojis 
-;	conv_euctosjis 
 	conv_get_charset_from_str 
 	conv_get_charset_str 
 	conv_get_code_conv_func 
@@ -450,7 +446,6 @@ EXPORTS
 	conv_noconv 
 	conv_sjistodisp 
 	conv_sjistoeuc 
-;	conv_sjistojis 
 	conv_unmime_header 
 	conv_unmime_header_overwrite 
 	conv_unreadable_8bit 
@@ -458,9 +453,6 @@ EXPORTS
 	conv_unreadable_latin 
 	conv_unreadable_locale 
 	conv_ustodisp 
-	convert_kanji 
-	convert_kanji_auto 
-	convert_kanji_strict 
 	copy_file 
 	copy_file_part 
 	copy_flags_data 
@@ -779,7 +771,6 @@ EXPORTS
 	gtkut_widget_set_composer_icon 
 	gtkut_widget_wait_for_draw 
 	gtkut_window_popup 
-;;	gtkwcs2winwcs 
 	hash_free_strings 
 	hash_free_value_mem 
 	headerview_clear 
@@ -825,16 +816,6 @@ EXPORTS
 	is_next_nonascii 
 	itos 
 	itos_buf 
-	jconv_alloc_apply_iconv 
-	jconv_alloc_conv 
-	jconv_alloc_conv_autodetect 
-	jconv_info_get_current_codeset 
-	jconv_info_get_pref_codesets 
-	jconv_info_init 
-	jconv_info_maybe_init 
-	jconv_info_set_locale 
-	jconv_strdup_conv_autodetect 
-	jconv_strdup_conv_fullauto 
 	ldif_create 
 	ldif_field_set_name 
 	ldif_field_set_selected 
@@ -853,8 +834,6 @@ EXPORTS
 	line_has_quote_char 
 	line_has_quote_char_last 
 	list_free_strings 
-;;	locale_from_utf8 
-;;	locale_to_utf8 
 	lock_mbox 
 	log_error 
 	log_message 
@@ -1584,6 +1563,7 @@ EXPORTS
 	sylpheed_get_startup_dir 
 	sylpheed_get_version 
 	sylpheed_init 
+	sylpheed_marshal_VOID__INT_POINTER 
 	template_clear_config 
 	template_free 
 	template_get_config 

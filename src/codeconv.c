@@ -1428,8 +1428,10 @@ const gchar *conv_get_current_locale(void)
 #endif
 	if (!cur_locale) cur_locale = setlocale(LC_CTYPE, NULL);
 
+#ifndef WIN32
 	debug_print("current locale: %s\n",
 		    cur_locale ? cur_locale : "(none)");
+#endif
 
 	return cur_locale;
 }
