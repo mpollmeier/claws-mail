@@ -795,6 +795,17 @@ gint folder_item_move_msg(FolderItem *dest, MsgInfo *msginfo)
 				       msginfo->folder,
 				       msginfo->msgnum);
                 msgcache_remove_msg(msginfo->folder->cache, msginfo->msgnum);
+
+		if (MSG_IS_NEW(msginfo->flags)) {
+			msginfo->folder->new--;
+			dest->new++;
+		}
+		if (MSG_IS_UNREAD(msginfo->flags)) {
+			msginfo->folder->unread--;
+			dest->unread++;
+		}
+		msginfo->folder->total--;
+		dest->total++;
 	}
 	
 	if (folder->finished_copy)
@@ -870,6 +881,17 @@ gint folder_item_move_msgs_with_dest(FolderItem *dest, GSList *msglist)
 						 msginfo->folder,
 						 msginfo->msgnum);
 			msgcache_remove_msg(item->cache, msginfo->msgnum);
+
+			if (MSG_IS_NEW(msginfo->flags)) {
+				msginfo->folder->new--;
+				dest->new++;
+			}
+			if (MSG_IS_UNREAD(msginfo->flags)) {
+				msginfo->folder->unread--;
+				dest->unread++;
+			}
+			msginfo->folder->total--;
+			dest->total++;
 		}
     	}
 
@@ -929,6 +951,14 @@ gint folder_item_copy_msg(FolderItem *dest, MsgInfo *msginfo)
 		newmsginfo->folder = dest;
     		msgcache_add_msg(dest->cache, newmsginfo);
 		procmsg_msginfo_free(newmsginfo);
+
+		if (MSG_IS_NEW(msginfo->flags)) {
+			dest->new++;
+		}
+		if (MSG_IS_UNREAD(msginfo->flags)) {
+			dest->unread++;
+		}
+		dest->total++;
 	}
 
 	if (folder->finished_copy)
@@ -989,6 +1019,14 @@ gint folder_item_copy_msgs_with_dest(FolderItem *dest, GSList *msglist)
 			newmsginfo->folder = dest;
     			msgcache_add_msg(dest->cache, newmsginfo);
 			procmsg_msginfo_free(newmsginfo);
+
+			if (MSG_IS_NEW(msginfo->flags)) {
+				dest->new++;
+			}
+			if (MSG_IS_UNREAD(msginfo->flags)) {
+				dest->unread++;
+			}
+			dest->total++;
 		}
 	}
 
