@@ -1226,7 +1226,7 @@ gint news_fetch_msgnum_sort(gconstpointer a, gconstpointer b)
 GSList *news_fetch_msginfos(Folder *folder, FolderItem *item, GSList *msgnum_list)
 {
 	NNTPSession *session;
-	GSList *elem, *msginfo_list = NULL, *tmp_msginfo_list;
+	GSList *elem, *msginfo_list = NULL, *tmp_msgnum_list, *tmp_msginfo_list;
 	guint first, last, next;
 	
 	g_return_val_if_fail(folder != NULL, NULL);
@@ -1237,11 +1237,12 @@ GSList *news_fetch_msginfos(Folder *folder, FolderItem *item, GSList *msgnum_lis
 	session = news_session_get(folder);
 	g_return_val_if_fail(session != NULL, NULL);
 
-	msgnum_list = g_slist_sort(msgnum_list, news_fetch_msgnum_sort);
+	tmp_msgnum_list = g_slist_copy(msgnum_list);
+	tmp_msgnum_list = g_slist_sort(tmp_msgnum_list, news_fetch_msgnum_sort);
 
-	first = GPOINTER_TO_INT(msgnum_list->data);
+	first = GPOINTER_TO_INT(tmp_msgnum_list->data);
 	last = first;
-	for(elem = g_slist_next(msgnum_list); elem != NULL; elem = g_slist_next(elem)) {
+	for(elem = g_slist_next(tmp_msgnum_list); elem != NULL; elem = g_slist_next(elem)) {
 		next = GPOINTER_TO_INT(elem->data);
 		if(next != (last + 1)) {
 			tmp_msginfo_list = news_fetch_msginfo_from_to(session, item, first, last);
@@ -1253,5 +1254,7 @@ GSList *news_fetch_msginfos(Folder *folder, FolderItem *item, GSList *msgnum_lis
 	tmp_msginfo_list = news_fetch_msginfo_from_to(session, item, first, last);
 	msginfo_list = g_slist_concat(msginfo_list, tmp_msginfo_list);
 
+	g_slist_free(tmp_msgnum_list);
+	
 	return msginfo_list;
 }
