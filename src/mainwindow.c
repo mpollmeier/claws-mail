@@ -175,9 +175,6 @@ static void toggle_toolbar_cb	 (MainWindow	*mainwin,
 static void toggle_statusbar_cb	 (MainWindow	*mainwin,
 				  guint		 action,
 				  GtkWidget	*widget);
-static void toggle_searchbar_cb	 (MainWindow 	*mainwin,
-				  guint		 action,
-				  GtkWidget	*widget);
 static void separate_widget_cb	 (MainWindow	*mainwin,
 				  guint		 action,
 				  GtkWidget	*widget);
@@ -447,8 +444,6 @@ static GtkItemFactoryEntry mainwin_entries[] =
 						NULL, toggle_toolbar_cb, TOOLBAR_NONE, "/View/Show or hide/Toolbar/Icon and text"},
 	{N_("/_View/Show or hi_de/Status _bar"),
 						NULL, toggle_statusbar_cb, 0, "<ToggleItem>"},
-	{N_("/_View/Show or hi_de/Quick _search"),
-						NULL, toggle_searchbar_cb, 0, "<ToggleItem>"},
 	{N_("/_View/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_View/Separate f_older tree"),	NULL, separate_widget_cb, SEPARATE_FOLDER, "<ToggleItem>"},
 	{N_("/_View/Separate m_essage view"),	NULL, separate_widget_cb, SEPARATE_MESSAGE, "<ToggleItem>"},
@@ -774,6 +769,9 @@ MainWindow *main_window_create(SeparateType type)
 	gtk_widget_show(handlebox);
 	gtk_box_pack_start(GTK_BOX(vbox), handlebox, FALSE, FALSE, 0);
 
+	/* link window to mainwin->window to avoid gdk warnings */
+	mainwin->window       = window;
+	
 	/* create toolbar */
 	toolbar_create(mainwin, handlebox);
 
@@ -826,7 +824,7 @@ MainWindow *main_window_create(SeparateType type)
 	/* create views */
 	mainwin->folderview  = folderview  = folderview_create();
 	mainwin->summaryview = summaryview = summary_create();
-	mainwin->messageview = messageview = messageview_create();
+	mainwin->messageview = messageview = messageview_create(mainwin);
 	mainwin->logwin      = log_window_create();
 
 	folderview->mainwin      = mainwin;
@@ -839,7 +837,6 @@ MainWindow *main_window_create(SeparateType type)
 
 	messageview->mainwin     = mainwin;
 
-	mainwin->window       = window;
 	mainwin->vbox         = vbox;
 	mainwin->menubar      = menubar;
 	mainwin->menu_factory = ifactory;
@@ -927,12 +924,12 @@ MainWindow *main_window_create(SeparateType type)
 		(ifactory, "/View/Show or hide/Status bar");
 	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem),
 				       prefs_common.show_statusbar);
+	
+	gtk_widget_hide(GTK_WIDGET(mainwin->summaryview->hbox_search));
+	
+	if (prefs_common.show_searchbar)
+		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mainwin->summaryview->toggle_search), TRUE);
 
-	gtk_widget_hide(mainwin->summaryview->hbox_search);
-	menuitem = gtk_item_factory_get_item
-		(ifactory, "/View/Show or hide/Quick search");
-	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem),
-				       prefs_common.show_searchbar);
 
 	/* set account selection menu */
 	ac_menu = gtk_item_factory_get_widget
@@ -1058,11 +1055,6 @@ void main_window_reflect_prefs_all_real(gboolean pixmap_theme_changed)
 			summary_reflect_prefs_pixmap_theme(mainwin->summaryview);
 		}
 		
-		if (prefs_common.immediate_exec)
-			gtk_widget_hide(mainwin->toolbar->exec_btn);
-		else
-			gtk_widget_show(mainwin->toolbar->exec_btn);
-
 		summary_redisplay_msg(mainwin->summaryview);
 		headerview_set_visibility(mainwin->messageview->headerview,
 					  prefs_common.display_header_pane);
@@ -1420,17 +1412,21 @@ SensitiveCond main_window_get_current_state(MainWindow *mainwin)
 		state |= M_MSG_EXIST;
 	if (item && item->path && item->parent && !item->no_select) {
 		state |= M_EXEC;
-		if (item->threaded)
-			state |= M_THREADED;
-		else
-			state |= M_UNTHREADED;	
 		/*		if (item->folder->type != F_NEWS) */
 		state |= M_ALLOW_DELETE;
+
+		if (prefs_common.immediate_exec == 0
+		    && mainwin->lock_count == 0)
+			state |= M_DELAY_EXEC;
 
 		if ((selection == SUMMARY_NONE && item->hide_read_msgs)
 		    || selection != SUMMARY_NONE)
 			state |= M_HIDE_READ_MSG;	
 	}		
+	if (mainwin->summaryview->threaded)
+		state |= M_THREADED;
+	else
+		state |= M_UNTHREADED;	
 	if (selection == SUMMARY_SELECTED_SINGLE ||
 	    selection == SUMMARY_SELECTED_MULTIPLE)
 		state |= M_TARGET_EXIST;
@@ -1468,7 +1464,7 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 	SensitiveCond state;
 	gboolean sensitive;
 	GtkWidget *menuitem;
-	FolderItem *item;
+	SummaryView *summaryview;
 	gchar *menu_path;
 	gint i;
 
@@ -1532,7 +1528,7 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 		{"/Tools/Filter messages"           , M_MSG_EXIST|M_EXEC|M_UNLOCKED},
 		{"/Tools/Create filter rule"        , M_SINGLE_TARGET_EXIST|M_UNLOCKED},
 		{"/Tools/Actions"                   , M_TARGET_EXIST|M_UNLOCKED},
-		{"/Tools/Execute"                   , M_MSG_EXIST|M_EXEC|M_UNLOCKED},
+		{"/Tools/Execute"                   , M_DELAY_EXEC},
 		{"/Tools/Delete duplicated messages", M_MSG_EXIST|M_ALLOW_DELETE|M_UNLOCKED},
 
 		{"/Configuration", M_UNLOCKED},
@@ -1558,46 +1554,45 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 	SET_CHECK_MENU_ACTIVE("/View/Show or hide/Message view",
 			      messageview_is_visible(mainwin->messageview));
 
-	item = mainwin->summaryview->folder_item;
+	summaryview = mainwin->summaryview;
 	menu_path = "/View/Sort/Don't sort";
-	if (item) {
-		switch (item->sort_key) {
-		case SORT_BY_NUMBER:
-			menu_path = "/View/Sort/by number"; break;
-		case SORT_BY_SIZE:
-			menu_path = "/View/Sort/by size"; break;
-		case SORT_BY_DATE:
-			menu_path = "/View/Sort/by date"; break;
-		case SORT_BY_FROM:
-			menu_path = "/View/Sort/by from"; break;
-		case SORT_BY_SUBJECT:
-			menu_path = "/View/Sort/by subject"; break;
-		case SORT_BY_LABEL:
-			menu_path = "/View/Sort/by color label"; break;
-		case SORT_BY_MARK:
-			menu_path = "/View/Sort/by mark"; break;
-		case SORT_BY_UNREAD:
-			menu_path = "/View/Sort/by unread"; break;
-		case SORT_BY_MIME:
-			menu_path = "/View/Sort/by attachment"; break;
-		case SORT_BY_SCORE:
-			menu_path = "/View/Sort/by score"; break;
-		case SORT_BY_LOCKED:
-			menu_path = "/View/Sort/by locked"; break;
-		case SORT_BY_NONE:
-		default:
-			menu_path = "/View/Sort/Don't sort"; break;
-		}
+
+	switch (summaryview->sort_key) {
+	case SORT_BY_NUMBER:
+		menu_path = "/View/Sort/by number"; break;
+	case SORT_BY_SIZE:
+		menu_path = "/View/Sort/by size"; break;
+	case SORT_BY_DATE:
+		menu_path = "/View/Sort/by date"; break;
+	case SORT_BY_FROM:
+		menu_path = "/View/Sort/by from"; break;
+	case SORT_BY_SUBJECT:
+		menu_path = "/View/Sort/by subject"; break;
+	case SORT_BY_LABEL:
+		menu_path = "/View/Sort/by color label"; break;
+	case SORT_BY_MARK:
+		menu_path = "/View/Sort/by mark"; break;
+	case SORT_BY_UNREAD:
+		menu_path = "/View/Sort/by unread"; break;
+	case SORT_BY_MIME:
+		menu_path = "/View/Sort/by attachment"; break;
+	case SORT_BY_SCORE:
+		menu_path = "/View/Sort/by score"; break;
+	case SORT_BY_LOCKED:
+		menu_path = "/View/Sort/by locked"; break;
+	case SORT_BY_NONE:
+	default:
+		menu_path = "/View/Sort/Don't sort"; break;
 	}
 	SET_CHECK_MENU_ACTIVE(menu_path, TRUE);
 
-	if (!item || item->sort_type == SORT_ASCENDING) {
+	if (summaryview->sort_type == SORT_ASCENDING) {
 		SET_CHECK_MENU_ACTIVE("/View/Sort/Ascending", TRUE);
 	} else {
 		SET_CHECK_MENU_ACTIVE("/View/Sort/Descending", TRUE);
 	}
 
-	if (item && item->sort_key != SORT_BY_NONE) {
+	if (summaryview->sort_key != SORT_BY_NONE) {
 		menu_set_sensitive(ifactory, "/View/Sort/Ascending", TRUE);
 		menu_set_sensitive(ifactory, "/View/Sort/Descending", TRUE);
 	} else {
@@ -2129,18 +2124,6 @@ static void toggle_statusbar_cb(MainWindow *mainwin, guint action,
 	}
 }
 
-static void toggle_searchbar_cb(MainWindow *mainwin, guint action,
-				GtkWidget *widget)
-{
-	if (GTK_CHECK_MENU_ITEM(widget)->active) {
-		gtk_widget_show(mainwin->summaryview->hbox_search);
-		prefs_common.show_searchbar = TRUE;
-	} else {
-		gtk_widget_hide(mainwin->summaryview->hbox_search);
-		prefs_common.show_searchbar = FALSE;
-	}
-}
-
 static void separate_widget_cb(MainWindow *mainwin, guint action,
 			       GtkWidget *widget)
 {
@@ -2427,10 +2410,10 @@ static void thread_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
 
 	if (GTK_CHECK_MENU_ITEM(widget)->active) {
 		summary_thread_build(mainwin->summaryview);
-		mainwin->summaryview->folder_item->threaded = TRUE;
+/*		mainwin->summaryview->folder_item->threaded = TRUE; */
 	} else {
 		summary_unthread(mainwin->summaryview);
-		mainwin->summaryview->folder_item->threaded = FALSE;
+/*		mainwin->summaryview->folder_item->threaded = FALSE; */
 	}
 }
 

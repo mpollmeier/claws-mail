@@ -264,9 +264,8 @@ static void summary_key_pressed		(GtkWidget		*ctree,
 static void summary_searchbar_pressed	(GtkWidget		*ctree,
 					 GdkEventKey		*event,
 					 SummaryView		*summaryview);
-static void summary_searchtype_changed	(GtkWidget		*ctree,
-					 GdkEventAny		*event,
-					 SummaryView		*summaryview);
+static void summary_searchtype_changed	(GtkMenuItem 		*widget, 
+					 gpointer 		 data);
 static void summary_open_row		(GtkSCTree		*sctree,
 					 SummaryView		*summaryview);
 static void summary_tree_expanded	(GtkCTree		*ctree,
@@ -373,6 +372,10 @@ static gint summary_cmp_by_label	(GtkCList		*clist,
 
 static void news_flag_crosspost		(MsgInfo *msginfo);
 
+static void tog_searchbar_cb		(GtkWidget	*w,
+					 gpointer	 data);
+
+
 GtkTargetEntry summary_drag_types[1] =
 {
 	{"text/plain", GTK_TARGET_SAME_APP, TARGET_DUMMY}
@@ -464,6 +467,8 @@ SummaryView *summary_create(void)
 	GtkWidget *search_type;
 	GtkWidget *search_string;
 	GtkWidget *menuitem;
+	GtkWidget *toggle_search;
+	GtkTooltips *search_tip;
 	GtkItemFactory *popupfactory;
 	gint n_entries;
 
@@ -474,15 +479,24 @@ SummaryView *summary_create(void)
 	
 	/* create status label */
 	hbox = gtk_hbox_new(FALSE, 0);
+	
+	search_tip = gtk_tooltips_new();
+	toggle_search = gtk_toggle_button_new();
+
+	gtk_tooltips_set_tip(GTK_TOOLTIPS(search_tip),
+			     toggle_search,
+			     _("Toggle quick-search bar"), NULL);
+	
+	gtk_box_pack_start(GTK_BOX(hbox), toggle_search, FALSE, FALSE, 2);	
 
 	hbox_l = gtk_hbox_new(FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(hbox), hbox_l, TRUE, TRUE, 0);
-
+ 
 	statlabel_folder = gtk_label_new("");
 	gtk_box_pack_start(GTK_BOX(hbox_l), statlabel_folder, FALSE, FALSE, 2);
 	statlabel_select = gtk_label_new("");
 	gtk_box_pack_start(GTK_BOX(hbox_l), statlabel_select, FALSE, FALSE, 12);
-
+ 
 	/* toggle view button */
 	toggle_eventbox = gtk_event_box_new();
 	gtk_box_pack_end(GTK_BOX(hbox), toggle_eventbox, FALSE, FALSE, 4);
@@ -491,7 +505,8 @@ SummaryView *summary_create(void)
 	gtk_signal_connect(GTK_OBJECT(toggle_eventbox), "button_press_event",
 			   GTK_SIGNAL_FUNC(summary_toggle_pressed),
 			   summaryview);
-
+	
+	
 	statlabel_msgs = gtk_label_new("");
 	gtk_box_pack_end(GTK_BOX(hbox), statlabel_msgs, FALSE, FALSE, 4);
 
@@ -554,6 +569,9 @@ SummaryView *summary_create(void)
 			   GTK_SIGNAL_FUNC(summary_searchbar_pressed),
 			   summaryview);
 
+  	gtk_signal_connect (GTK_OBJECT(toggle_search), "toggled",
+                        GTK_SIGNAL_FUNC(tog_searchbar_cb), hbox_search);
+
 	/* create popup menu */
 	n_entries = sizeof(summary_popup_entries) /
 		sizeof(summary_popup_entries[0]);
@@ -572,6 +590,7 @@ SummaryView *summary_create(void)
 	summaryview->statlabel_msgs = statlabel_msgs;
 	summaryview->toggle_eventbox = toggle_eventbox;
 	summaryview->toggle_arrow = toggle_arrow;
+	summaryview->toggle_search = toggle_search;
 	summaryview->popupmenu = popupmenu;
 	summaryview->popupfactory = popupfactory;
 	summaryview->lock_count = 0;
@@ -656,6 +675,10 @@ void summary_init(SummaryView *summaryview)
 	gtk_widget_show(pixmap);
 	summaryview->folder_pixmap = pixmap;
 
+	pixmap = stock_pixmap_widget(summaryview->hbox, STOCK_PIXMAP_QUICKSEARCH);
+	gtk_container_add (GTK_CONTAINER(summaryview->toggle_search), pixmap);
+	gtk_widget_show(pixmap);
+	
 	/* Init summaryview prefs */
 	summaryview->sort_key = SORT_BY_NONE;
 	summaryview->sort_type = SORT_ASCENDING;
@@ -878,7 +901,8 @@ gboolean summary_show(SummaryView *summaryview, FolderItem *item)
 		gchar *searched_header = NULL;
 		
 		not_killed = NULL;
-		g_strdown(search_string);
+		if(search_string)
+			g_strdown(search_string);
 
 		for(cur = mlist ; cur != NULL ; cur = g_slist_next(cur)) {
 			MsgInfo * msginfo = (MsgInfo *) cur->data;
@@ -895,9 +919,9 @@ gboolean summary_show(SummaryView *summaryview, FolderItem *item)
 				default:
 					printf("bug in search_type (=%d)\n",search_type);
 			}
-			
-			g_strdown(searched_header);
-			if (searched_header != NULL
+			if (searched_header) 
+				g_strdown(searched_header);
+			if (searched_header 
 			    && strstr(searched_header, search_string) != NULL)
 				not_killed = g_slist_append(not_killed, msginfo);
 			else
@@ -2078,7 +2102,7 @@ static void summary_set_ctree_from_list(SummaryView *summaryview,
 				summaryview->folder_item->prefs->important_score;
 	}
 
-	if (summaryview->folder_item->threaded) {
+	if (summaryview->threaded) {
 		GNode *root, *gnode;
 
 		root = procmsg_get_thread_tree(mlist);
@@ -2295,7 +2319,7 @@ static void summary_display_msg_full(SummaryView *summaryview,
 	if (new_window) {
 		MessageView *msgview;
 
-		msgview = messageview_create_with_new_window();
+		msgview = messageview_create_with_new_window(summaryview->mainwin);
 		messageview_show(msgview, msginfo, all_headers);
 	} else {
 		MessageView *msgview;
@@ -3261,7 +3285,7 @@ gboolean summary_execute(SummaryView *summaryview)
 
 	gtk_clist_freeze(clist);
 
-	if (summaryview->folder_item->threaded)
+	if (summaryview->threaded)
 		summary_unthread_for_exec(summaryview);
 
 	summary_execute_move(summaryview);
@@ -3284,7 +3308,7 @@ gboolean summary_execute(SummaryView *summaryview)
 		node = next;
 	}
 
-	if (summaryview->folder_item->threaded)
+	if (summaryview->threaded)
 		summary_thread_build(summaryview);
 
 	summaryview->selected = clist->selection ?
@@ -3537,6 +3561,8 @@ void summary_thread_build(SummaryView *summaryview)
 	STATUSBAR_POP(summaryview->mainwin);
 	main_window_cursor_normal(summaryview->mainwin);
 
+	summaryview->threaded = TRUE;
+
 	summary_unlock(summaryview);
 }
 
@@ -3603,6 +3629,8 @@ void summary_unthread(SummaryView *summaryview)
 	debug_print("done.\n");
 	STATUSBAR_POP(summaryview->mainwin);
 	main_window_cursor_normal(summaryview->mainwin);
+
+	summaryview->threaded = FALSE;
 
 	summary_unlock(summaryview);
 }
@@ -4461,11 +4489,22 @@ static void summary_searchbar_pressed(GtkWidget *widget, GdkEventKey *event,
 	 	summary_show(summaryview, summaryview->folder_item);
 }
 
-static void summary_searchtype_changed(GtkWidget *widget, GdkEventAny *event,
-				SummaryView *summaryview)
+static void summary_searchtype_changed(GtkMenuItem *widget, gpointer data)
 {
-	if (gtk_entry_get_text(GTK_ENTRY(summaryview->search_string)))
-	 	summary_show(summaryview, summaryview->folder_item);
+	SummaryView *sw = (SummaryView *)data;
+	if (gtk_entry_get_text(GTK_ENTRY(sw->search_string)))
+	 	summary_show(sw, sw->folder_item);
+}
+
+static void tog_searchbar_cb(GtkWidget *w, gpointer data)
+{
+	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(w))) {
+		prefs_common.show_searchbar = TRUE;
+ 		gtk_widget_show(GTK_WIDGET(data));
+	} else {
+		prefs_common.show_searchbar = FALSE;
+		gtk_widget_hide(GTK_WIDGET(data));
+	}
 }
 
 static void summary_open_row(GtkSCTree *sctree, SummaryView *summaryview)
@@ -5095,7 +5134,7 @@ void summary_reflect_prefs_pixmap_theme(SummaryView *summaryview)
 
 	pixmap = stock_pixmap_widget(summaryview->hbox, STOCK_PIXMAP_DIR_OPEN);
 	gtk_box_pack_start(GTK_BOX(summaryview->hbox), pixmap, FALSE, FALSE, 4);
-	gtk_box_reorder_child(GTK_BOX(summaryview->hbox), pixmap, 0);
+	gtk_box_reorder_child(GTK_BOX(summaryview->hbox), pixmap, 1); /* search_toggle before */
 	gtk_widget_show(pixmap);
 	summaryview->folder_pixmap = pixmap; 
 
@@ -5160,12 +5199,19 @@ void summary_set_prefs_from_folderitem(SummaryView *summaryview, FolderItem *ite
 	/* Sorting */
 	summaryview->sort_key = item->sort_key;
 	summaryview->sort_type = item->sort_type;
+
+	/* Threading */
+	summaryview->threaded = item->threaded;
 }
 
 void summary_save_prefs_to_folderitem(SummaryView *summaryview, FolderItem *item)
 {
+	/* Sorting */
 	item->sort_key = summaryview->sort_key;
 	item->sort_type = summaryview->sort_type;
+
+	/* Threading */
+	item->threaded = summaryview->threaded;
 }
 
 /*

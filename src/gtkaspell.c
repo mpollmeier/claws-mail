@@ -73,7 +73,7 @@
 }
 
 #define CONFIG_REPLACE_RETURN_FALSE_IF_FAIL(option, value) { \
-	printf("HH:%s %d\n", option, aspell_config_replace(config, option, value));       \
+	aspell_config_replace(config, option, value);        \
 	RETURN_FALSE_IF_CONFIG_ERROR();                      \
 	}
 
@@ -1449,7 +1449,6 @@ GSList *gtkaspell_get_dictionary_list(const gchar *aspell_path, gint refresh)
 	else
 		gtkaspell_free_dictionary_list(gtkaspellcheckers->dictionary_list);
 	list = NULL;
-	printf("%s\n", aspell_path);
 
 	config = new_aspell_config();
 #if 0 
@@ -1478,13 +1477,8 @@ GSList *gtkaspell_get_dictionary_list(const gchar *aspell_path, gint refresh)
 
 	debug_print("Aspell: checking for dictionaries in %s\n", aspell_path);
 	dels = aspell_dict_info_list_elements(dlist);
-	printf("%-30s%-8s%-20s%-6s%-10s\n", "NAME", "CODE", "JARGON", "SIZE", "MODULE");
 	while ( (entry = aspell_dict_info_enumeration_next(dels)) != 0) 
 	{
-		printf("%-30s%-8s%-20s%-6s%-10s\n",
-				entry->name,
-				entry->code, entry->jargon, 
-				entry->size_str, entry->module->name);
 		dict = g_new0(Dictionary, 1);
 		dict->fullname = g_strdup_printf("%s%s", aspell_path, 
 				entry->name);
@@ -1529,7 +1523,6 @@ GtkWidget *gtkaspell_dictionary_option_menu_new(const gchar *aspell_path)
 	GtkWidget *menu;
 	Dictionary *dict;
 
-	printf("%s\n", aspell_path);
 	dict_list = gtkaspell_get_dictionary_list(aspell_path, TRUE);
 	g_return_val_if_fail(dict_list, NULL);
 

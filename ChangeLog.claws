@@ -1,3 +1,111 @@
+2002-08-23 [paul]	0.8.1claws107
+
+	* src/mainwindow.[ch]
+	  src/toolbar.c
+		give full control of display or non-display 
+		of the Execute icon to Custom toolbar settings.
+		add new sensitivity condition to maninwindow.h: 
+		M_DELAY_EXEC
+
+	* ChangeLog
+	  ChangeLog.jp
+	  NEWS
+		more sync with 0.8.1cvs29
+
+2002-08-23 [melvin]	0.8.1claws106
+
+	* src/alertpanel.c
+		Readded support for custom widget in alertpanel lost in last
+		sync.
+
+2002-08-23 [paul]	0.8.1claws105
+
+	* sync with 0.8.1cvs29
+		see ChangeLog 2002-08-23
+
+2002-08-23 [colin]	0.8.1claws104
+
+	* src/summaryview.c
+		Fix folder and search pixmaps exchanging positions
+		after theme or toolbar changes. Thank to Oliver for 
+		reporting this.
+
+2002-08-23 [colin]	0.8.1claws103
+
+	* src/mainwindow.c
+	  src/messageview.[ch]
+	  src/noticeview.[ch]
+	  src/summaryview.c
+		Changed messageview_create() and noticeview_create()
+		to avoid the last gdk_warning
+
+2002-08-22 [colin]	0.8.1claws102
+
+	* src/summaryview.c
+		Fix my new `Creating pixmap from xpm' warning
+
+2002-08-22 [colin]	0.8.1claws101
+
+	* src/mainwindow.c
+		Fix some of the gdk warnings
+
+2002-08-22 [colin]	0.8.1claws100
+
+	* src/Makefile.am
+	* src/stock_pixmap.c
+	* src/stock_pixmap.h
+	* src/pixmaps/quicksearch.xpm *ADDED*
+		Add the quicksearch pixmap
+	* src/mainwindow.c
+	* src/summaryview.c
+	* src/summaryview.h
+		Make quicksearch bar visible/hidden via a button
+
+2002-08-22 [christoph]	0.8.1claws99
+
+	* src/folder.c
+		fix folder update for newsgroups with message
+		numbers below minimum number of articles to fetch
+		(closes bug #598445)
+
+2002-08-22 [paul]	0.8.1claws98
+
+	* sync with 0.8.1cvs28
+		see ChangeLog 2002-08-22
+
+2002-08-21 [alfons]	0.8.1claws97
+
+	* src/crash.c
+		use bt instead of bt full which seems to work 
+		better, and bt full doesn't give a great deal 
+		of information anyway
+
+2002-08-21 [colin]	0.8.1claws96
+
+	*src/summaryview.c
+		fix summaryview_searchtype_changed prototype
+
+2002-08-21 [christoph]	0.8.1claws95
+
+	* src/mainwindow.c
+		o fix broken menu update for sorting type, we have to
+		  get this info from the summaryview now
+		o removed setting of threaded state in menu callback
+	* src/summaryview.[ch]
+		more summaryview/folderitem seperation for
+		threading option
+	* configure.in
+		removed not required --with-compiler-flags option
+
+2002-08-21 [oliver]	0.8.1claws94
+	
+	* src/toolbar.h 
+		o rename toolbar.xml to toolbar_main.xml
+		  since toolbar_compose.xml might come up 
+		  any time soon
+	* README.claws
+		add custom toolbar		
+
 2002-08-21 [darko]	0.8.1claws93
 
 	* src/procmsg.c
