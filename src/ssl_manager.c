@@ -123,8 +123,6 @@ void ssl_manager_create(void)
 	gtk_box_pack_start(GTK_BOX(vbox1), delete_btn, FALSE, FALSE, 0);
 	gtk_box_pack_end(GTK_BOX(vbox1), ok_btn, FALSE, FALSE, 0);
 	
-//XXX:tm-gtk2
-if (certlist)
 	gtk_widget_show(certlist);
 	gtk_widget_show(hbox1);
 	gtk_widget_show(vbox1);
