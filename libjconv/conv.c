@@ -1,11 +1,13 @@
 
-/* $Id: conv.c,v 1.1.2.1 2002-05-11 00:47:52 netztorte Exp $ */
+/* $Id: conv.c,v 1.1.2.2 2002-07-23 00:36:48 netztorte Exp $ */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#include <errno.h>
+#ifndef WIN32
+# include <errno.h>
+#endif
 #include "jconv.h"
 
 #define DEBUG_DO(x)
