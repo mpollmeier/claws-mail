@@ -267,11 +267,10 @@ static void summary_colorlabel_menu_create(SummaryView	*summaryview);
 
 static GtkWidget *summary_ctree_create	(SummaryView	*summaryview);
 
-static void summary_toggle_view(SummaryView *summarview);
-
 /* callback functions */
-static void summary_toggle_view_cb	(GtkWidget	*widget,
-					 gpointer	data);					 
+static void summary_toggle_pressed	(GtkWidget		*eventbox,
+					 GdkEventButton		*event,
+					 SummaryView		*summaryview);
 static void summary_button_pressed	(GtkWidget		*ctree,
 					 GdkEventButton		*event,
 					 SummaryView		*summaryview);
@@ -469,8 +468,8 @@ SummaryView *summary_create(void)
 	GtkWidget *statlabel_select;
 	GtkWidget *statlabel_msgs;
 	GtkWidget *hbox_spc;
-	GtkWidget *toggle_view_btn;
-	GtkWidget *toggle_view_arrow;
+	GtkWidget *toggle_eventbox;
+	GtkWidget *toggle_arrow;
 	GtkWidget *popupmenu;
 	GtkItemFactory *popupfactory;
 	gint n_entries;
@@ -509,14 +508,14 @@ SummaryView *summary_create(void)
 	statlabel_select = gtk_label_new("");
 	gtk_box_pack_start(GTK_BOX(hbox_l), statlabel_select, FALSE, FALSE, 12);
 
-	/* toggle view buttons */
-	toggle_view_btn = gtk_button_new();
-	gtk_box_pack_end(GTK_BOX(hbox), toggle_view_btn, FALSE, FALSE, 0);
-	gtk_button_set_relief(GTK_BUTTON(toggle_view_btn), GTK_RELIEF_NONE);
-	toggle_view_arrow=gtk_arrow_new(GTK_ARROW_DOWN, GTK_SHADOW_OUT);
-	gtk_container_add(GTK_CONTAINER(toggle_view_btn), toggle_view_arrow);
-	gtk_signal_connect(GTK_OBJECT(toggle_view_btn), "clicked",
-				GTK_SIGNAL_FUNC(summary_toggle_view_cb), summaryview);
+	/* toggle view button */
+	toggle_eventbox = gtk_event_box_new();
+	gtk_box_pack_end(GTK_BOX(hbox), toggle_eventbox, FALSE, FALSE, 4);
+	toggle_arrow = gtk_arrow_new(GTK_ARROW_DOWN, GTK_SHADOW_OUT);
+	gtk_container_add(GTK_CONTAINER(toggle_eventbox), toggle_arrow);
+	gtk_signal_connect(GTK_OBJECT(toggle_eventbox), "button_press_event",
+			   GTK_SIGNAL_FUNC(summary_toggle_pressed),
+			   summaryview);
 
 	statlabel_msgs = gtk_label_new("");
 	gtk_box_pack_end(GTK_BOX(hbox), statlabel_msgs, FALSE, FALSE, 4);
@@ -539,11 +538,10 @@ SummaryView *summary_create(void)
 	summaryview->statlabel_folder = statlabel_folder;
 	summaryview->statlabel_select = statlabel_select;
 	summaryview->statlabel_msgs = statlabel_msgs;
-	summaryview->toggle_view_btn = toggle_view_btn;
-	summaryview->toggle_view_arrow = toggle_view_arrow;
+	summaryview->toggle_eventbox = toggle_eventbox;
+	summaryview->toggle_arrow = toggle_arrow;
 	summaryview->popupmenu = popupmenu;
 	summaryview->popupfactory = popupfactory;
-	summaryview->msg_is_toggled_on = TRUE;
 	summaryview->lock_count = 0;
 
 	gtk_widget_show_all(vbox);
@@ -1168,43 +1166,48 @@ void summary_select_next_unread(SummaryView *summaryview)
 	GtkCTreeNode *node = summaryview->selected;
 	GtkCTree *ctree = GTK_CTREE(summaryview->ctree);
 
-	while ((node = summary_find_next_unread_msg(summaryview, node)) == NULL) {
-		AlertValue val;
-
- 		switch (prefs_common.next_unread_msg_dialog) {
- 			case NEXTUNREADMSGDIALOG_ALWAYS:
-				val = alertpanel(_("No more unread messages"),
-						 _("No unread message found. "
-						   "Go to next folder?"),
-						 _("Yes"), _("Search again"), _("No"));
- 				break;
- 			case NEXTUNREADMSGDIALOG_ASSUME_YES:
- 				val = G_ALERTDEFAULT;
- 				break;
- 			case NEXTUNREADMSGDIALOG_ASSUME_NO:
- 				val = G_ALERTOTHER;
- 				break;
- 			default:
- 				debug_print(
- 					_("Internal error: unexpected value for prefs_common.next_unread_msg_dialog\n"));
- 		}
-
-		if (val == G_ALERTDEFAULT) {
-			if (gtk_signal_n_emissions_by_name
-				(GTK_OBJECT(ctree), "key_press_event") > 0)
-					gtk_signal_emit_stop_by_name
-						(GTK_OBJECT(ctree),
-						 "key_press_event");
-			folderview_select_next_unread(summaryview->folderview);
-			return;
-		} else if (val == G_ALERTALTERNATE)
-			node = NULL;
-		else
-			return;
-	}
-
+	node = summary_find_next_unread_msg(summaryview, node);
+	
 	if (node)
 		summary_select_node(summaryview, node, TRUE, FALSE);
+	else {
+		node = summary_find_next_unread_msg(summaryview, NULL);
+		if (node == NULL) {
+			AlertValue val;
+
+ 			switch (prefs_common.next_unread_msg_dialog) {
+ 				case NEXTUNREADMSGDIALOG_ALWAYS:
+					val = alertpanel(_("No more unread messages"),
+							 _("No unread message found. "
+							   "Go to next folder?"),
+							 _("Yes"), _("No"), NULL);
+ 					break;
+ 				case NEXTUNREADMSGDIALOG_ASSUME_YES:
+ 					val = G_ALERTDEFAULT;
+ 					break;
+ 				case NEXTUNREADMSGDIALOG_ASSUME_NO:
+ 					val = G_ALERTOTHER;
+ 					break;
+ 				default:
+ 					debug_print(
+ 						_("Internal error: unexpected value for prefs_common.next_unread_msg_dialog\n"));
+ 			}
+
+			if (val == G_ALERTDEFAULT) {
+				if (gtk_signal_n_emissions_by_name
+					(GTK_OBJECT(ctree), "key_press_event") > 0)
+						gtk_signal_emit_stop_by_name
+							(GTK_OBJECT(ctree),
+							 "key_press_event");
+				folderview_select_next_unread(summaryview->folderview);
+				return;
+			} 
+			else
+				return;
+		} else
+			summary_select_node(summaryview, node, TRUE, FALSE);
+
+	}
 }
 
 void summary_select_prev_marked(SummaryView *summaryview)
@@ -1364,8 +1367,7 @@ static GtkCTreeNode *summary_find_prev_msg(SummaryView *summaryview,
 
 	for (; node != NULL; node = GTK_CTREE_NODE_PREV(node)) {
 		msginfo = gtk_ctree_node_get_row_data(ctree, node);
-		if (!MSG_IS_DELETED(msginfo->flags))
-			break;
+		if (!MSG_IS_DELETED(msginfo->flags)) break;
 	}
 
 	return node;
@@ -1385,8 +1387,7 @@ static GtkCTreeNode *summary_find_next_msg(SummaryView *summaryview,
 
 	for (; node != NULL; node = gtkut_ctree_node_next(ctree, node)) {
 		msginfo = gtk_ctree_node_get_row_data(ctree, node);
-		if (!MSG_IS_DELETED(msginfo->flags))
-			break;
+		if (!MSG_IS_DELETED(msginfo->flags)) break;
 	}
 
 	return node;
@@ -2259,12 +2260,7 @@ static void summary_set_header(SummaryView *summaryview, gchar *text[],
 	text[col_pos[S_COL_LOCKED]] = NULL;
 	text[col_pos[S_COL_NUMBER]] = itos(msginfo->msgnum);
 	text[col_pos[S_COL_SIZE]]   = to_human_readable(msginfo->size);
-
-#if 0
-	text[col_pos[S_COL_SCORE]]  = itos_buf(col_score, msginfo->threadscore);
-#else
 	text[col_pos[S_COL_SCORE]]  = itos_buf(col_score, msginfo->score);
-#endif	
 
 	if (msginfo->date_t) {
 		procheader_date_get_localtime(date_modified,
@@ -2389,8 +2385,8 @@ static void summary_display_msg_full(SummaryView *summaryview,
 		msgview = summaryview->messageview;
 
 		summaryview->displayed = row;
-		if (!summaryview->msg_is_toggled_on)
-			summary_toggle_view(summaryview);
+		if (!messageview_is_visible(msgview))
+			main_window_toggle_message_view(summaryview->mainwin);
 		messageview_show(msgview, msginfo, all_headers);
 		if (msgview->type == MVIEW_TEXT ||
 		    (msgview->type == MVIEW_MIME &&
@@ -2487,93 +2483,21 @@ void summary_step(SummaryView *summaryview, GtkScrollType type)
 		}
 	}
 
-	if (summaryview->msg_is_toggled_on)
+	if (messageview_is_visible(summaryview->messageview))
 		summaryview->display_msg = TRUE;
 
 	gtk_signal_emit_by_name(GTK_OBJECT(ctree), "scroll_vertical",
 				type, 0.0);
 }
 
-static void summary_toggle_view(SummaryView *summaryview)
+void summary_toggle_view(SummaryView *summaryview)
 {
-	MainWindow *mainwin = summaryview->mainwin;
-	GtkItemFactory *ifactory;
-	
-	if (!mainwin) return;
-	
-	ifactory = gtk_item_factory_from_widget(mainwin->menubar);
-	menu_toggle_toggle(ifactory, "/View/Expand Summary View");
-}
-
-void summary_toggle_view_real(SummaryView *summaryview)
-{
-	MainWindow *mainwin = summaryview->mainwin;
-	union CompositeWin *cwin = &mainwin->win;
-	GtkWidget *vpaned = NULL;
-	GtkWidget *container = NULL;
-	GtkWidget *toggle_view_btn;
-	GtkWidget *toggle_view_arrow;
-	GtkItemFactory *ifactory = gtk_item_factory_from_widget(mainwin->menubar);
-	
-	switch (mainwin->type) {
-	case SEPARATE_NONE:
-		vpaned = cwin->sep_none.vpaned;
-		container = cwin->sep_none.hpaned;
-		break;
-	case SEPARATE_FOLDER:
-		vpaned = cwin->sep_folder.vpaned;
-		container = mainwin->vbox_body;
-		break;
-	case SEPARATE_MESSAGE:
-	case SEPARATE_BOTH:
-		return;
-	}
-
-	if (vpaned->parent != NULL) {
-		summaryview->msg_is_toggled_on = FALSE;
-		summaryview->displayed = NULL;
-		gtk_widget_ref(vpaned);
-		gtkut_container_remove(GTK_CONTAINER(container), vpaned);
-		gtk_widget_reparent(GTK_WIDGET_PTR(summaryview), container);
-		
-		gtk_widget_destroy(summaryview->toggle_view_arrow);
-		gtk_widget_destroy(summaryview->toggle_view_btn);
-		
-		toggle_view_btn = gtk_button_new();
-		gtk_box_pack_end(GTK_BOX(summaryview->hbox), toggle_view_btn, FALSE, FALSE, 0);
-		gtk_box_reorder_child(GTK_BOX(summaryview->hbox), toggle_view_btn, 0);
-		gtk_button_set_relief(GTK_BUTTON(toggle_view_btn), GTK_RELIEF_NONE);
-		toggle_view_arrow=gtk_arrow_new(GTK_ARROW_UP, GTK_SHADOW_OUT);
-		gtk_container_add(GTK_CONTAINER(toggle_view_btn), toggle_view_arrow);
-		gtk_signal_connect(GTK_OBJECT(toggle_view_btn), "clicked",
-					GTK_SIGNAL_FUNC(summary_toggle_view_cb), summaryview);
-		gtk_widget_show_all(toggle_view_btn);
-		menu_set_sensitive(ifactory, "/View/Expand Message View", FALSE);
-	} else {
-		summaryview->msg_is_toggled_on = TRUE;
-		gtk_widget_reparent(GTK_WIDGET_PTR(summaryview), vpaned);
-		gtk_container_add(GTK_CONTAINER(container), vpaned);
-		gtk_widget_unref(vpaned);
-		
-		gtk_widget_destroy(summaryview->toggle_view_arrow);
-		gtk_widget_destroy(summaryview->toggle_view_btn);
-		
-		toggle_view_btn = gtk_button_new();
-		gtk_box_pack_end(GTK_BOX(summaryview->hbox), toggle_view_btn, FALSE, FALSE, 0);
-		gtk_box_reorder_child(GTK_BOX(summaryview->hbox), toggle_view_btn, 0);
-		gtk_button_set_relief(GTK_BUTTON(toggle_view_btn), GTK_RELIEF_NONE);
-		toggle_view_arrow=gtk_arrow_new(GTK_ARROW_DOWN, GTK_SHADOW_OUT);
-		gtk_container_add(GTK_CONTAINER(toggle_view_btn), toggle_view_arrow);
-		gtk_signal_connect(GTK_OBJECT(toggle_view_btn), "clicked",
-					GTK_SIGNAL_FUNC(summary_toggle_view_cb), summaryview);
-		gtk_widget_show_all(toggle_view_btn);
-		menu_set_sensitive(ifactory, "/View/Expand Message View", TRUE);
-	}
-
-	gtk_widget_grab_focus(summaryview->ctree);
-	
-	summaryview->toggle_view_btn = toggle_view_btn;
-	summaryview->toggle_view_arrow = toggle_view_arrow;
+	if (!messageview_is_visible(summaryview->messageview) &&
+	    summaryview->selected)
+		summary_display_msg(summaryview,
+				    summaryview->selected);
+	else
+		main_window_toggle_message_view(summaryview->mainwin);
 }
 
 static gboolean summary_search_unread_recursive(GtkCTree *ctree,
@@ -3032,9 +2956,10 @@ void summary_delete(SummaryView *summaryview)
 		else if (sel_last && node == GTK_CTREE_NODE_PREV(sel_last))
 			summary_step(summaryview, GTK_SCROLL_STEP_BACKWARD);
 		else
-			summary_select_node(summaryview, node,
-					    summaryview->msg_is_toggled_on,
-					    FALSE);
+			summary_select_node
+				(summaryview, node,
+				 messageview_is_visible(summaryview->messageview),
+				 FALSE);
 	}
 
 	if (prefs_common.immediate_exec || item->stype == F_TRASH)
@@ -3107,6 +3032,7 @@ static void summary_unmark_row(SummaryView *summaryview, GtkCTreeNode *row)
 	msginfo->to_folder = NULL;
 	procmsg_msginfo_unset_flags(msginfo, MSG_MARKED | MSG_DELETED, MSG_MOVE | MSG_COPY);
 	summary_set_row_marks(summaryview, row);
+
 	debug_print(_("Message %s/%d is unmarked\n"),
 		    msginfo->folder->path, msginfo->msgnum);
 }
@@ -3574,7 +3500,6 @@ static void summary_execute_delete(SummaryView *summaryview)
 	GSList *cur;
 
 	trash = summaryview->folder_item->folder->trash;
-
 	if (summaryview->folder_item->folder->type == F_MH) {
 		g_return_if_fail(trash != NULL);
 	}
@@ -4520,7 +4445,6 @@ void summary_set_column_order(SummaryView *summaryview)
 	guint selected_msgnum = summary_get_msgnum(summaryview, summaryview->selected);
 	guint displayed_msgnum = summary_get_msgnum(summaryview, summaryview->displayed);
 
-	
 	item = summaryview->folder_item;
 
 	summary_lock(summaryview);
@@ -4553,18 +4477,14 @@ void summary_set_column_order(SummaryView *summaryview)
 }
 
 
-
 /* callback functions */
 
-static void summary_toggle_view_cb(GtkWidget *button,
-				   gpointer data)
+static void summary_toggle_pressed(GtkWidget *eventbox, GdkEventButton *event,
+				   SummaryView *summaryview)
 {
-	SummaryView *summaryview = (SummaryView *) data;
-	
-	if (!summaryview->msg_is_toggled_on && summaryview->selected)
-		summary_display_msg(summaryview, summaryview->selected);
-	else
-		summary_toggle_view(summaryview);
+	if (!event) return;
+
+	summary_toggle_view(summaryview);
 }
 
 static void summary_button_pressed(GtkWidget *ctree, GdkEventButton *event,
@@ -4580,7 +4500,7 @@ static void summary_button_pressed(GtkWidget *ctree, GdkEventButton *event,
 		summaryview->display_msg = TRUE;
 	} else if (event->button == 1) {
 		if (!prefs_common.emulate_emacs &&
-		    summaryview->msg_is_toggled_on)
+		    messageview_is_visible(summaryview->messageview))
 			summaryview->display_msg = TRUE;
 	}
 }

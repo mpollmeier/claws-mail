@@ -1,3 +1,160 @@
+2002-06-15 [paul]	0.7.8claws
+
+	* release of 0.7.8claws
+
+2002-06-15 [paul]	0.7.7claws
+
+	* po/pt_BR.po
+		updated by Fabio Junior Beneditto
+
+2002-06-14 [paul]	0.7.6claws49
+
+	* po/es.po
+		updated by Ricardo Mones Lastra
+
+2002-06-14 [paul]	0.7.6claws48
+
+	* po/nl.po
+		updated translation by Wilbert Berendsen
+
+2002-06-14 [melvin]	0.7.6claws47
+
+	* po/fr.po
+		Updated French translation
+
+2002-06-13 [paul]	0.7.6claws46
+
+	* src/filesel.c
+		allow filename to be typed in, rather than just
+		selected by the mouse. Patch by Gustavo Noronha Silva.
+
+2002-06-13 [alfons]	0.7.6claws45
+
+	* src/mainwindow.[ch]
+		more cleanups (removing unnecessary menu items Expand 
+		summary / message view)
+	
+2002-06-13 [melvin]	0.7.6claws44
+
+	* po/POTFILES.in
+		Added src/string_match.c
+	* src/string_match.c
+		Fixed possible buffer overflow.
+		Corrected typo.
+		Added missing config.h header.
+	* src/prefs_common.c
+	  src/prefs_matcher.c
+	  src/prefs_scoring.c
+	  	Made some strings translatable (missing _(..)).
+
+2002-06-13 [melvin]	0.7.6claws43
+
+	* README.claws
+		Corrected action example (verifying clearsigned mail).
+	* src/prefs_account.c
+		Corrected typo.
+	* src/prefs_common.c
+		Removed incorrect line that generated a Gtk-CRITICAL msg.
+
+2002-06-12 [alfons]	0.7.6claws42
+
+	* src/summaryview.c
+		add init of score column lost in 0.7.6claws42
+
+2002-06-12 [paul]	0.7.6claws41
+
+	* src/prefs_account.c
+		CREATE_RADIO_BUTTONS(): fixed a typo and corrected the 
+		behavior of the radio buttons, (from 0.7.7cvs2)
+
+2002-06-11 [alfons]	0.7.6claws40
+
+	* src/messageview.[ch]
+	* src/summaryview.[ch]
+	* src/summary_search.c
+	* src/mainwindow.c
+		perform a sync to bring in Hiro's separate view implementation 
+
+		(NOTE: may still be buggy; 0.7.6claws39 marked as LAST_STABLE)
+
+2002-06-11 [paul]	0.7.6claws39
+	
+	* src/prefs_account.c
+		correct a typo on the Receive tab
+
+2002-06-10 [match]	0.7.6claws38
+
+	* src/addressbook.c
+		Included address completion patch from Gustavo Noronha.
+
+2002-06-10 [paul]	0.7.6claws37
+
+	* src/inc.[ch]
+	  src/pop.c
+	  src/prefs_account.[ch]
+	  src/selective_download.[ch]
+		apply PATCH #561712
+		 NEW:
+		- check if POP Account
+		- Receive Button renamed to Preview
+		- Preview Button Popup: preview new/all messages
+		- Download Button
+		- Account Preferences-->Receive tab checkbutton if you
+		  want to remove Mail after Download
+		-: default YES
+		- Account Preferences-->Receive tab checkbutton use
+		  filtering rules on preview
+		  (think of delete_on_server)
+		-: default YES
+		- Account selectable from SD dialog
+		- checkbutton to show already downloaded messages if
+		  all messages are previewed
+		- new clist column showing Date
+		- ESC KEY close
+		FIXES:
+		- play ball with UIDL
+		- fault tolerant (?) 
+		Patch submitted by Oliver Haertel <oha@users.sourceforge.net>
+
+2002-06-10 [melvin]	0.7.6claws36
+
+	* README.claws
+		Added a hint to ac/README in cvs instructions.
+
+	* src/prefs_actions.c
+		Made it possible to use a more elaborate command line
+		for asynchronous actions, too.
+
+2002-06-10 [melvin]	0.7.6claws35
+	
+	* src/prefs_actions.c
+		Make it possible to use a more elaborate command line
+		(e.g. |foo|bar|cat>there;echo Done|)
+		Corrected error message when calling %f, %F and %p commands
+		from the compose window.
+
+2002-06-09 [colin]	0.7.6claws34
+
+	* src/summaryview.c
+		Automatically find unread messages in current folder
+		before annoying the user.
+
+2002-06-08 [alfons]	0.7.6claws33
+
+	* po/it.po
+		remove bad formatting string in it.po translation
+		(close "[ 548336 ] --debug segfaults!!! with it_IT@euro")
+
+2002-06-08 [paul]	0.7.6claws32
+
+	* sync with 0.7.6cvs25
+		see ChangeLog 2002-06-07
+
+2002-06-05 [paul]	0.7.6claws31
+
+	* src/mainwindow.c
+		add 'Sort by locked' and 'Sort by score'
+
 2002-06-05 [paul]	0.7.6claws30
 
 	* sync with 0.7.6cvs24

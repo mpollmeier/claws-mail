@@ -255,7 +255,7 @@ are hardly noticeable, but deserve mentioning:
 		asking the passphrase and for running gnupg. 
 
   Purpose:	Verify Clear Signed
-  Definition:	GnuPG/Verify: |gpg --no-tty --verify &
+  Definition:	GnuPG/Verify: |gpg --no-tty --verify
   Details:	Verify clear signed messages. The result is displayed in the
 	 	actions output dialog.
 
@@ -508,7 +508,7 @@ sourceforge project page.
   make install		[as root]
 
   You will need a full set of development tools installed to be able to run
-  autogen.sh.
+  autogen.sh. See also ac/README.
 
 7. History
 ----------
