@@ -743,6 +743,8 @@ Compose *compose_generic_new(PrefsAccount *account, const gchar *mailto, FolderI
 {
 	Compose *compose;
 	GtkSText *text;
+	GtkItemFactory *ifactory;
+	gboolean grab_focus_on_last = TRUE;
 
 	if (item && item->prefs && item->prefs->enable_default_account)
 		account = account_find_from_id(item->prefs->default_account);
@@ -751,6 +753,8 @@ Compose *compose_generic_new(PrefsAccount *account, const gchar *mailto, FolderI
 	g_return_val_if_fail(account != NULL, NULL);
 
 	compose = compose_create(account, COMPOSE_NEW);
+	ifactory = gtk_item_factory_from_widget(compose->menubar);
+
 	compose->replyinfo = NULL;
 
 	text = GTK_STEXT(compose->text);
@@ -767,23 +771,28 @@ Compose *compose_generic_new(PrefsAccount *account, const gchar *mailto, FolderI
 	gtk_widget_grab_focus(compose->text);
 	gtkut_widget_wait_for_draw(compose->text);
 
+
 	if (account->protocol != A_NNTP) {
 		if (mailto) {
 			compose_entries_set(compose, mailto);
 
 		} else if(item && item->prefs->enable_default_to) {
 			compose_entry_append(compose, item->prefs->default_to, COMPOSE_TO);
+			compose_entry_select(compose, item->prefs->default_to);
+			grab_focus_on_last = FALSE;
 		}
 		if (item && item->ret_rcpt) {
-			GtkItemFactory *ifactory;
-		
-			ifactory = gtk_item_factory_from_widget(compose->menubar);
 			menu_set_toggle(ifactory, "/Message/Request Return Receipt", TRUE);
 		}
 	} else {
 		if (mailto) {
 			compose_entry_append(compose, mailto, COMPOSE_NEWSGROUPS);
 		}
+		/*
+		 * CLAWS: just don't allow return receipt request, even if the user
+		 * may want to send an email. simple but foolproof.
+		 */
+		menu_set_sensitive(ifactory, "/Message/Request Return Receipt", FALSE); 
 	}
 	compose_show_first_last_header(compose, TRUE);
 
@@ -796,8 +805,10 @@ Compose *compose_generic_new(PrefsAccount *account, const gchar *mailto, FolderI
 		gtk_entry_set_text(GTK_ENTRY(compose->savemsg_entry), folderidentifier);
 		g_free(folderidentifier);
 	}
-
-	gtk_widget_grab_focus(compose->header_last->entry);
+	
+	/* Grab focus on last header only if no default_to was set */
+	if(grab_focus_on_last)
+		gtk_widget_grab_focus(compose->header_last->entry);
 
 	if (prefs_common.auto_exteditor)
 		compose_exec_ext_editor(compose);
@@ -1357,6 +1368,20 @@ void compose_entry_append(Compose *compose, const gchar *address,
 	header = prefs_common.trans_hdr ? gettext(header) : header;
 
 	compose_add_header_entry(compose, header, (gchar *)address);
+}
+
+void compose_entry_select (Compose *compose, const gchar *mailto)
+{
+	GSList *header_list;
+		
+	for (header_list = compose->header_list; header_list != NULL; header_list = header_list->next) {
+		GtkEntry * entry = GTK_ENTRY(((ComposeHeaderEntry *)header_list->data)->entry);
+
+		if (gtk_entry_get_text(entry) && !g_strcasecmp(gtk_entry_get_text(entry), mailto)) {
+			gtk_entry_select_region(entry, 0, -1);
+			gtk_widget_grab_focus(GTK_WIDGET(entry));
+		}
+	}
 }
 
 static void compose_entries_set(Compose *compose, const gchar *mailto)
@@ -3842,14 +3867,14 @@ static gint compose_write_headers(Compose *compose, FILE *fp,
 		fprintf(fp, "X-Mailer: %s (GTK+ %d.%d.%d; %s)\n",
 			prog_version,
 			gtk_major_version, gtk_minor_version, gtk_micro_version,
-			HOST_ALIAS);
+			TARGET_ALIAS);
 			/* utsbuf.sysname, utsbuf.release, utsbuf.machine); */
 	}
 	if (g_slist_length(compose->newsgroup_list) && !IS_IN_CUSTOM_HEADER("X-Newsreader")) {
 		fprintf(fp, "X-Newsreader: %s (GTK+ %d.%d.%d; %s)\n",
 			prog_version,
 			gtk_major_version, gtk_minor_version, gtk_micro_version,
-			HOST_ALIAS);
+			TARGET_ALIAS);
 			/* utsbuf.sysname, utsbuf.release, utsbuf.machine); */
 	}
 
@@ -6842,6 +6867,10 @@ static void text_inserted(GtkWidget *widget, const gchar *text,
 		g_free(new_text);
 	} else
 		gtk_editable_insert_text(editable, text, length, position);
+
+	if (prefs_common.autowrap)
+		compose_wrap_line_all(compose);
+
 	gtk_signal_handler_unblock_by_func(GTK_OBJECT(widget),
 					   GTK_SIGNAL_FUNC(text_inserted),
 					   compose);

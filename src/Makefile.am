@@ -229,13 +229,14 @@ sylpheed_LDADD = \
 	$(GDK_IMLIB_LIBS) \
 	$(GDK_PIXBUF_LIBS) \
 	$(GPGME_LIBS) \
-        $(PSPELL_LIBS)
+        $(PSPELL_LIBS) \
+	$(LDAP_LIBS)
 
 CPPFLAGS = \
 	-DLOCALEDIR=\""$(localedir)"\" \
 	-DMANUALDIR=\""$(manualdir)"\" \
 	-DFAQDIR=\""$(faqdir)"\" \
-	-DHOST_ALIAS=\""$(host_alias)"\" \
+	-DTARGET_ALIAS=\""$(target_alias)"\" \
 	-DSYSCONFDIR=\""$(sysconfdir)"\"
 
 YFLAGS = -d
