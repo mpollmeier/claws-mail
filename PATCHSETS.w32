@@ -1,0 +1,1 @@
+( cvs diff -u -r -1.1.2.2 -r -1.1.2.3 ChangeLog-gtk2.win32; cvs diff -u -r 1.1.4.1 -r 1.1.4.2 ChangeLog.claws.w32; cvs diff -u -r 1.17.4.1 -r 1.17.4.2 commitHelper; cvs diff -u -r 1.36.2.1.2.4 -r 1.36.2.1.2.5 src/common/utils.c; ) > 0.9.13cvs29.2.2.patchset
