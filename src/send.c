@@ -86,21 +86,30 @@ gint send_message(const gchar *file, PrefsAccount *ac_prefs, GSList *to_list)
 	g_return_val_if_fail(ac_prefs != NULL, -1);
 	g_return_val_if_fail(to_list != NULL, -1);
 
-	if ((fp = fopen(file, "r")) == NULL) {
+	if ((fp = fopen(file, "rb")) == NULL) {
 		FILE_OP_ERROR(file, "fopen");
 		return -1;
 	}
 
-	if (prefs_common.use_extsend && prefs_common.extsend_cmd) {
+	printf("account: %p\n", ac_prefs);
+
+	if (ac_prefs->use_mail_command && ac_prefs->mail_command &&
+	    (*ac_prefs->mail_command)) {
+		val = send_message_local(ac_prefs->mail_command, fp);
+		fclose(fp);
+		return val;
+	}
+	else if (prefs_common.use_extsend && prefs_common.extsend_cmd) {
 		val = send_message_local(prefs_common.extsend_cmd, fp);
 		fclose(fp);
 		return val;
 	}
-
-	val = send_message_smtp(ac_prefs, to_list, fp);
-
-	fclose(fp);
-	return val;
+	else {
+		val = send_message_smtp(ac_prefs, to_list, fp);
+		
+		fclose(fp);
+		return val;
+	}
 }
 
 enum
@@ -111,6 +120,7 @@ enum
 	Q_ACCOUNT_ID = 3
 };
 
+#if 0
 gint send_message_queue(const gchar *file)
 {
 	static HeaderEntry qentry[] = {{"S:",   NULL, FALSE},
@@ -129,7 +139,7 @@ gint send_message_queue(const gchar *file)
 
 	g_return_val_if_fail(file != NULL, -1);
 
-	if ((fp = fopen(file, "r")) == NULL) {
+	if ((fp = fopen(file, "rb")) == NULL) {
 		FILE_OP_ERROR(file, "fopen");
 		return -1;
 	}
@@ -159,6 +169,9 @@ gint send_message_queue(const gchar *file)
 	if (!to_list || !from) {
 		g_warning(_("Queued message header is broken.\n"));
 		val = -1;
+	} else if (ac && ac->use_mail_command && ac->mail_command &&
+		   (*ac->mail_command)) {
+		val = send_message_local(ac->mail_command, fp);
 	} else if (prefs_common.use_extsend && prefs_common.extsend_cmd) {
 		val = send_message_local(prefs_common.extsend_cmd, fp);
 	} else {
@@ -194,11 +207,13 @@ gint send_message_queue(const gchar *file)
 
 	return val;
 }
+#endif
 
 gint send_message_local(const gchar *command, FILE *fp)
 {
 	FILE *pipefp;
 	gchar buf[BUFFSIZE];
+	int r;
 
 	g_return_val_if_fail(command != NULL, -1);
 	g_return_val_if_fail(fp != NULL, -1);
@@ -218,7 +233,11 @@ gint send_message_local(const gchar *command, FILE *fp)
 		fputc('\n', pipefp);
 	}
 
-	pclose(pipefp);
+	r = pclose(pipefp);
+	if (r != 0) {
+		g_warning(_("external command failed: %s\n"), command);
+		return -1;
+	}
 
 	return 0;
 }

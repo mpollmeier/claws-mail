@@ -204,7 +204,7 @@ GSList *procmsg_read_cache(FolderItem *item, gboolean scan_file)
 		g_free(path);
 	}
 	cache_file = folder_item_get_cache_file(item);
-	if ((fp = fopen(cache_file, "r")) == NULL) {
+	if ((fp = fopen(cache_file, "rb")) == NULL) {
 		debug_print(_("\tNo cache file\n"));
 		g_free(cache_file);
 		return NULL;
@@ -481,7 +481,7 @@ FILE *procmsg_open_mark_file(const gchar *folder, gboolean append)
 
 	markfile = g_strconcat(folder, G_DIR_SEPARATOR_S, MARK_FILE, NULL);
 
-	if ((fp = fopen(markfile, "r")) == NULL)
+	if ((fp = fopen(markfile, "rb")) == NULL)
 		debug_print(_("Mark file not found.\n"));
 	else if (fread(&ver, sizeof(ver), 1, fp) != 1 || MARK_VERSION != ver) {
 		debug_print(_("Mark version is different (%d != %d). "
@@ -499,12 +499,12 @@ FILE *procmsg_open_mark_file(const gchar *folder, gboolean append)
 	if (fp) {
 		/* reopen with append mode */
 		fclose(fp);
-		if ((fp = fopen(markfile, "a")) == NULL)
+		if ((fp = fopen(markfile, "ab")) == NULL)
 			g_warning(_("Can't open mark file with append mode.\n"));
 	} else {
 		/* open with overwrite mode if mark file doesn't exist or
 		   version is different */
-		if ((fp = fopen(markfile, "w")) == NULL)
+		if ((fp = fopen(markfile, "wb")) == NULL)
 			g_warning(_("Can't open mark file with write mode.\n"));
 		else {
 			ver = MARK_VERSION;
@@ -733,7 +733,7 @@ FILE *procmsg_open_message(MsgInfo *msginfo)
 		g_return_val_if_fail(file != NULL, NULL);
 	}
 
-	if ((fp = fopen(file, "r")) == NULL) {
+	if ((fp = fopen(file, "rb")) == NULL) {
 		FILE_OP_ERROR(file, "fopen");
 		g_free(file);
 		return NULL;
@@ -877,7 +877,7 @@ void procmsg_print_message(MsgInfo *msginfo, const gchar *cmdline)
 	prtmp = g_strdup_printf("%s%cprinttmp.%08x",
 				get_mime_tmp_dir(), G_DIR_SEPARATOR, id++);
 
-	if ((prfp = fopen(prtmp, "w")) == NULL) {
+	if ((prfp = fopen(prtmp, "wb")) == NULL) {
 		FILE_OP_ERROR(prtmp, "fopen");
 		g_free(prtmp);
 		fclose(tmpfp);
@@ -1114,7 +1114,7 @@ gint procmsg_send_message_queue(const gchar *file)
 
 	g_return_val_if_fail(file != NULL, -1);
 
-	if ((fp = fopen(file, "r")) == NULL) {
+	if ((fp = fopen(file, "rb")) == NULL) {
 		FILE_OP_ERROR(file, "fopen");
 		return -1;
 	}
@@ -1145,7 +1145,6 @@ gint procmsg_send_message_queue(const gchar *file)
 		case Q_SAVE_COPY_FOLDER:
 			if (!savecopyfolder) savecopyfolder = g_strdup(p);
 			break;
-		default:
 		}
 	}
 	filepos = ftell(fp);
@@ -1156,7 +1155,7 @@ gint procmsg_send_message_queue(const gchar *file)
     		/* write to temporary file */
     		tmp = g_strdup_printf("%s%ctmp%d", g_get_tmp_dir(),
                     	    G_DIR_SEPARATOR, (gint)file);
-    		if ((tmpfp = fopen(tmp, "w")) == NULL) {
+    		if ((tmpfp = fopen(tmp, "wb")) == NULL) {
             		FILE_OP_ERROR(tmp, "fopen");
             		newsval = -1;
     		}
@@ -1180,6 +1179,9 @@ gint procmsg_send_message_queue(const gchar *file)
 		if(!from) {
 			g_warning(_("Queued message header is broken.\n"));
 			mailval = -1;
+		} else if (mailac && mailac->use_mail_command &&
+			   mailac->mail_command && (* mailac->mail_command)) {
+			mailval = send_message_local(mailac->mail_command, fp);
 		} else if (prefs_common.use_extsend && prefs_common.extsend_cmd) {
 			mailval = send_message_local(prefs_common.extsend_cmd, fp);
 		} else {

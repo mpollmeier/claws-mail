@@ -113,6 +113,7 @@ static gint inc_spool			(void);
 static gint get_spool			(FolderItem	*dest,
 					 const gchar	*mbox);
 
+static void inc_spool_account(PrefsAccount *account);
 static void inc_all_spool(void);
 static void inc_autocheck_timer_set_interval	(guint		 interval);
 static gint inc_autocheck_func			(gpointer	 data);
@@ -210,28 +211,37 @@ static gint inc_account_mail(PrefsAccount *account, MainWindow *mainwin)
 	IncSession *session;
 	gchar *text[3];
 
-	if (account->protocol == A_IMAP4 || account->protocol == A_NNTP) {
+	switch (account->protocol) {
+	case A_IMAP4:
+	case A_NNTP:
 		folderview_check_new(FOLDER(account->folder));
 		return 1;
+
+	case A_POP3:
+	case A_APOP:
+		session = inc_session_new(account);
+		if (!session) return 0;
+		
+		inc_dialog = inc_progress_dialog_create();
+		inc_dialog->queue_list = g_list_append(inc_dialog->queue_list,
+						       session);
+		inc_dialog->mainwin = mainwin;
+		session->data = inc_dialog;
+	
+		text[0] = NULL;
+		text[1] = account->account_name;
+		text[2] = _("Standby");
+		gtk_clist_append(GTK_CLIST(inc_dialog->dialog->clist), text);
+		
+		main_window_set_toolbar_sensitive(mainwin);
+		main_window_set_menu_sensitive(mainwin);
+		
+		return inc_start(inc_dialog);
+
+	case A_LOCAL:
+		inc_spool_account(account);
+		return 1;
 	}
-
-	session = inc_session_new(account);
-	if (!session) return 0;
-
-	inc_dialog = inc_progress_dialog_create();
-	inc_dialog->queue_list = g_list_append(inc_dialog->queue_list, session);
-	inc_dialog->mainwin = mainwin;
-	session->data = inc_dialog;
-
-	text[0] = NULL;
-	text[1] = account->account_name;
-	text[2] = _("Standby");
-	gtk_clist_append(GTK_CLIST(inc_dialog->dialog->clist), text);
-
-	main_window_set_toolbar_sensitive(mainwin);
-	main_window_set_menu_sensitive(mainwin);
-
-	return inc_start(inc_dialog);
 }
 
 void inc_all_account_mail(MainWindow *mainwin, gboolean notify)
@@ -257,6 +267,9 @@ void inc_all_account_mail(MainWindow *mainwin, gboolean notify)
 		inc_autocheck_timer_set();
 		return;
 	}
+
+	/* check local folders */
+	inc_all_spool();
 
 	/* check IMAP4 folders */
 	for (; list != NULL; list = list->next) {
@@ -757,7 +770,7 @@ static GHashTable *inc_get_uidl_table(PrefsAccount *ac_prefs)
 	path = g_strconcat(get_rc_dir(), G_DIR_SEPARATOR_S,
 			   "uidl-", ac_prefs->recv_server,
 			   "-", ac_prefs->userid, NULL);
-	if ((fp = fopen(path, "r")) == NULL) {
+	if ((fp = fopen(path, "rb")) == NULL) {
 		if (ENOENT != errno) FILE_OP_ERROR(path, "fopen");
 		g_free(path);
 		return NULL;
@@ -787,7 +800,7 @@ static void inc_write_uidl_list(Pop3State *state)
 	path = g_strconcat(get_rc_dir(), G_DIR_SEPARATOR_S,
 			   "uidl-", state->ac_prefs->recv_server,
 			   "-", state->user, NULL);
-	if ((fp = fopen(path, "w")) == NULL) {
+	if ((fp = fopen(path, "wb")) == NULL) {
 		FILE_OP_ERROR(path, "fopen");
 		g_free(path);
 		return;
@@ -1076,7 +1089,8 @@ static void inc_all_spool(void)
 		IncSession *session;
 		PrefsAccount *account = list->data;
 
-		if (account->protocol == A_LOCAL)
+		if ((account->protocol == A_LOCAL) &&
+		    (account->recv_at_getall))
 			inc_spool_account(account);
 	}
 }

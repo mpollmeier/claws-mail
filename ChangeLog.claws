@@ -1,3 +1,67 @@
+2002-03-14 [paul]	0.7.4claws2
+
+	* sync with sylpheed 0.7.4cvs2
+		see ChangeLog entry 2002-03-13
+
+2002-03-12 [darko]	0.7.4claws1
+
+	* src/mainwindow.c
+		fix what seems to be a copy and paste error
+		when setting color for important messages
+		(reported by wwp)
+
+2002-03-11 [paul]	version 0.7.4claws released
+
+2002-03-11 [paul]	0.7.4claws
+
+	* po/es.po
+	  po/it.po
+   	  po/nl.po
+	  po/pt_BR.po
+		update message catalogs. Submitted by Ricardo Mones 
+		Lastra, Alessandro Maestri, Wilbert Berendsen, and 
+		Fabio Junior Beneditto
+
+	* configure.in
+	  faq/Makefile.am
+	  faq/it/Makefile
+	  faq/it/sylpheed-faq*
+	  src/mainwindow.c
+	  src/manual.[ch]
+		add FAQ in Italian
+	
+
+2002-03-11 [jens]	0.7.3claws7
+
+	* po/de.po
+		updated German translation
+
+2002-03-11 [melvin]	0.7.3claws6
+
+	* po/fr.po
+		updated and corrected French translation
+
+2002-03-10 [hoa]	0.7.3claws5
+
+	* src/account.c
+	* src/inc.c
+	* src/prefs_account.c
+	* src/procmsg.c
+	* src/send.[ch]
+		fixed the local account.
+		you have to change the default "/usr/sbin/sendmail"
+		to "/usr/sbin/sendmail -t" in the preferences of
+		the local account.
+
+	* src/procmime.c
+		removed some debug display for renderer
+
+2002-03-10 [paul]	0.7.3claws4
+
+	* faq/en/sylpheed-faq-1.html
+	  faq/en/sylpheed-faq-2.html
+		update
+
 2002-03-09 [paul]	0.7.3claws3
 
 	* sync with sylpheed 0.7.4
