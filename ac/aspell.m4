@@ -1,5 +1,5 @@
 dnl Autoconf macros for libaspell
-dnl $Id: aspell.m4,v 1.5 2002-09-27 14:27:45 mhadasht Exp $
+dnl $Id: aspell.m4,v 1.6 2002-09-29 14:31:20 reboot Exp $
 
 # Configure paths for ASPELL
 # Shamelessly stolen from the one of GPGME by Werner Koch 
@@ -84,7 +84,7 @@ main ()
            AC_MSG_RESULT(yes)
            AC_MSG_CHECKING(for GNU/aspell dictionaries location)
            aspell_path="`$ASPELL config dict-dir`"
-           AC_DEFINE_UNQUOTED(ASPELL_PATH, "${aspell_path}/")
+           AC_DEFINE_UNQUOTED(ASPELL_PATH, "${aspell_path}/", Define ASPELL's default directory)
            AC_MSG_RESULT($aspell_path)
            AC_MSG_CHECKING(if GNU/aspell is correctly installed)
            ac_save_CFLAGS="$CFLAGS"
