@@ -69,8 +69,7 @@ void imageview_init(ImageView *imageview)
 }
 
 #if HAVE_GDK_PIXBUF
-void imageview_show_image(ImageView *imageview, MimeInfo *mimeinfo,
-			  const gchar *file)
+void imageview_show_image(ImageView *imageview, const gchar *file)
 {
 	GdkPixbuf *pixbuf;
 	GdkPixbuf *pixbuf_scaled;
@@ -119,8 +118,7 @@ void imageview_show_image(ImageView *imageview, MimeInfo *mimeinfo,
 }
 #else
 #if HAVE_GDK_IMLIB
-void imageview_show_image(ImageView *imageview, MimeInfo *mimeinfo,
-			  const gchar *file)
+void imageview_show_image(ImageView *imageview, const gchar *file)
 {
 	GdkImlibImage *im;
 	int avail_height = imageview->scrolledwin->parent->allocation.height - 10;

@@ -671,22 +671,8 @@ static gboolean parse_append_msgpart(GString **cmd, MsgInfo *msginfo,
 	FILE     *fp;
 
 	if (!mimeview) {
-#if USE_GPGME
-		if ((fp = procmsg_open_message_decrypted(msginfo, &partinfo))
-		    == NULL) {
-			alertpanel_error(_("Could not get message file."));
-			return FALSE;
-		}
-#else
-		if ((fp = procmsg_open_message(msginfo)) == NULL) {
-			alertpanel_error(_("Could not get message file."));
-			return FALSE;
-		}
-		partinfo = procmime_scan_mime_header(fp);
-#endif
-		fclose(fp);
+		partinfo = procmime_scan_message(msginfo);
 		if (!partinfo) {
-			procmime_mimeinfo_free_all(partinfo);
 			alertpanel_error(_("Could not get message part."));
 			return FALSE;
 		}
@@ -708,7 +694,7 @@ static gboolean parse_append_msgpart(GString **cmd, MsgInfo *msginfo,
 	}
 	partname = procmime_get_tmp_file_name(partinfo);
 
-	ret = procmime_get_part(partname, filename, partinfo); 
+	ret = procmime_get_part(partname, partinfo); 
 
 	if (!mimeview) {
 		procmime_mimeinfo_free_all(partinfo);

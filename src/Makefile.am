@@ -137,6 +137,7 @@ sylpheed_SOURCES = \
 	noticeview.h noticeview.c \
 	toolbar.c toolbar.h \
 	prefs_toolbar.c prefs_toolbar.h \
+	privacy.c privacy.h \
 	crash.c crash.h
 
 BUILT_SOURCES = \

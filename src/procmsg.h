@@ -247,10 +247,6 @@ void	procmsg_copy_messages		(GSList		*mlist);
 gchar  *procmsg_get_message_file_path	(MsgInfo	*msginfo);
 gchar  *procmsg_get_message_file	(MsgInfo	*msginfo);
 FILE   *procmsg_open_message		(MsgInfo	*msginfo);
-#if USE_GPGME
-FILE   *procmsg_open_message_decrypted	(MsgInfo	*msginfo,
-					 MimeInfo      **mimeinfo);
-#endif
 gboolean procmsg_msg_exist		(MsgInfo	*msginfo);
 
 void	procmsg_empty_trash		(void);

@@ -88,7 +88,7 @@ pgptext_decrypt (MimeInfo *partinfo, FILE *fp)
     }
 
     err = gpgme_data_new_from_filepart (&cipher, NULL, fp,
-					partinfo->fpos, partinfo->size);
+					partinfo->offset, partinfo->length);
     if (err) {
         debug_print ("gpgme_data_new_from_filepart failed: %s\n",
                      gpgme_strerror (err));
@@ -175,87 +175,7 @@ void pgptext_check_signature (MimeInfo *mimeinfo, FILE *fp)
 
 int pgptext_is_encrypted (MimeInfo *mimeinfo, MsgInfo *msginfo)
 {
-	FILE *fp;
-	gchar *file, *tmpchk;
-	gchar buf[BUFFSIZE];
-	gboolean has_begin_pgp_msg = FALSE;
-	gboolean has_end_pgp_msg = FALSE;
-	gchar *check_begin_pgp_msg = "-----BEGIN PGP MESSAGE-----\n";
-	gchar *check_end_pgp_msg = "-----END PGP MESSAGE-----\n";
-	
-	g_return_val_if_fail(msginfo != NULL, 0);
-	
-	if (!mimeinfo)
-		return 0;
-	
-	if ((fp = procmsg_open_message(msginfo)) == NULL) return 0;
-	mimeinfo = procmime_scan_mime_header(fp);
-	fclose(fp);
-	if (!mimeinfo) return 0;
-
-	file = procmsg_get_message_file_path(msginfo);
-	g_return_val_if_fail(file != NULL, 0);
-
-	if (mimeinfo->mime_type != MIME_TEXT) {
-		if ((fp = fopen(file, "rb")) == NULL) {
-			FILE_OP_ERROR(file, "fopen");
-			g_free(file);
-			return 0;
-		}
-		/* skip headers */
-		if (mimeinfo->mime_type == MIME_MULTIPART) {
-			if (fseek(fp, mimeinfo->fpos, SEEK_SET) < 0)
-			perror("fseek");
-			while (fgets(buf, sizeof(buf), fp) != NULL)
-				if (buf[0] == '\r' || buf[0] == '\n') break;
-		}
-		/* now check for a pgptext encrypted message */
-		while (fgets(buf, sizeof(buf), fp) != NULL) {
-			tmpchk = g_strnfill(sizeof(buf), '\n');
-			memmove(tmpchk, &buf, sizeof(buf));
-			
-			if (strstr(tmpchk, check_begin_pgp_msg) != NULL)
-				has_begin_pgp_msg = TRUE;
-			if (strstr(tmpchk, check_end_pgp_msg) != NULL)
-				has_end_pgp_msg = TRUE;
-			
-			g_free(tmpchk);
-		}
-		fclose(fp);
-	} else {
-		if ((fp = fopen(file, "rb")) == NULL) {
-			FILE_OP_ERROR(file, "fopen");
-			g_free(file);
-			return 0;
-		}
-		/* skip headers */
-		if (fseek(fp, mimeinfo->fpos, SEEK_SET) < 0)
-		perror("fseek");
-		while (fgets(buf, sizeof(buf), fp) != NULL)
-			if (buf[0] == '\r' || buf[0] == '\n') break;
-		
-		/* now check for a pgptext encrypted message */
-		while (fgets(buf, sizeof(buf), fp) != NULL) {
-			tmpchk = g_strnfill(sizeof(buf), '\n');
-			memmove(tmpchk, &buf, sizeof(buf));
-			
-			if (strstr(tmpchk, check_begin_pgp_msg) != NULL)
-				has_begin_pgp_msg = TRUE;
-			if (strstr(tmpchk, check_end_pgp_msg) != NULL)
-				has_end_pgp_msg = TRUE;
-			
-			g_free(tmpchk);
-		}
-		fclose(fp);
-	}
-	
-	g_free(file);	
-	
-	/* do we have a proper message? */
-	if (has_begin_pgp_msg && has_end_pgp_msg)
-		return 1;
-	else
-		return 0;
+	return FALSE;
 }
 
 void pgptext_decrypt_message (MsgInfo *msginfo, MimeInfo *mimeinfo, FILE *fp)
@@ -269,22 +189,22 @@ void pgptext_decrypt_message (MsgInfo *msginfo, MimeInfo *mimeinfo, FILE *fp)
     char buf[BUFFSIZE];
     GpgmeError err;
 
-    g_return_if_fail (mimeinfo->mime_type == MIME_TEXT);
+    g_return_if_fail (mimeinfo->type == MIME_TEXT);
 
     debug_print ("text/plain with pgptext encountered\n");
 
     partinfo = procmime_scan_message(msginfo);
 		
     /* skip headers */
-    if (fseek(fp, partinfo->fpos, SEEK_SET) < 0)
+    if (fseek(fp, partinfo->offset, SEEK_SET) < 0)
         perror("fseek");
     while (fgets(buf, sizeof(buf), fp) != NULL) {
-				partinfo->fpos = partinfo->fpos + strlen(buf);
+				partinfo->offset = partinfo->offset + strlen(buf);
         if (buf[0] == '\r' || buf[0] == '\n') break;
 		}
     /* get size */
     while (fgets(buf, sizeof(buf), fp) != NULL)
-				partinfo->size = partinfo->size + strlen(buf);
+				partinfo->length = partinfo->length + strlen(buf);
 		
     plain = pgptext_decrypt (partinfo, fp);
     if (!plain) {
@@ -303,7 +223,7 @@ void pgptext_decrypt_message (MsgInfo *msginfo, MimeInfo *mimeinfo, FILE *fp)
     }
 
     /* write the orginal header to the new file */
-    if (fseek(fp, mimeinfo->fpos, SEEK_SET) < 0)
+    if (fseek(fp, mimeinfo->offset, SEEK_SET) < 0)
         perror("fseek");
 
     while (fgets(buf, sizeof(buf), fp)) {

@@ -76,7 +76,7 @@ static void dump_mimeinfo (const char *text, MimeInfo *x)
     debug_print ("      cont_type=`%s' cs=`%s' name=`%s' bnd=`%s'\n",
                x->content_type, x->charset, x->name, x->boundary );
     debug_print ("      cont_disp=`%s' fname=`%s' fpos=%ld size=%u, lvl=%d\n",
-               x->content_disposition, x->filename, x->fpos, x->size,
+               x->content_disposition, x->filename, x->offset, x->length,
                x->level );
     dump_mimeinfo (".main", x->main );
     dump_mimeinfo (".sub", x->sub );
@@ -88,10 +88,10 @@ static void dump_mimeinfo (const char *text, MimeInfo *x)
 
 static void dump_part ( MimeInfo *mimeinfo, FILE *fp )
 {
-    unsigned int size = mimeinfo->size;
+    unsigned int size = mimeinfo->length;
     int c;
 
-    if (fseek (fp, mimeinfo->fpos, SEEK_SET)) {
+    if (fseek (fp, mimeinfo->offset, SEEK_SET)) {
         debug_print ("dump_part: fseek error\n");
         return;
     }
@@ -292,16 +292,16 @@ static void check_signature (MimeInfo *mimeinfo, MimeInfo *partinfo, FILE *fp)
 
     /* don't include the last empty line.
        It does not belong to the signed text */
-    if (mimeinfo->children->size > 0) {
-	if (fseek(fp, mimeinfo->children->fpos + mimeinfo->children->size - 1,
+    if (mimeinfo->children->length > 0) {
+	if (fseek(fp, mimeinfo->children->offset + mimeinfo->children->length - 1,
 		  SEEK_SET) < 0) {
 	    perror("fseek");
 	    goto leave;
 	}
 	if (fgetc(fp) == '\n') {
 	    n_exclude_chars++;
-	    if (mimeinfo->children->size > 1) {
-		if (fseek(fp, mimeinfo->children->fpos + mimeinfo->children->size - 2,
+	    if (mimeinfo->children->length > 1) {
+		if (fseek(fp, mimeinfo->children->offset + mimeinfo->children->length - 2,
 			  SEEK_SET) < 0) {
 		    perror("fseek");
 		    goto leave;
@@ -314,8 +314,8 @@ static void check_signature (MimeInfo *mimeinfo, MimeInfo *partinfo, FILE *fp)
 
     /* canonicalize the file part. */
     tmp_file = get_tmp_file();
-    if (copy_file_part(fp, mimeinfo->children->fpos,
-		       mimeinfo->children->size - n_exclude_chars,
+    if (copy_file_part(fp, mimeinfo->children->offset,
+		       mimeinfo->children->length - n_exclude_chars,
 		       tmp_file) < 0) {
 	g_free(tmp_file);
 	goto leave;
@@ -333,7 +333,7 @@ static void check_signature (MimeInfo *mimeinfo, MimeInfo *partinfo, FILE *fp)
 
     if (!err)
 	err = gpgme_data_new_from_filepart (&sig, NULL, fp,
-					    partinfo->fpos, partinfo->size);
+					    partinfo->offset, partinfo->length);
     if (err) {
         debug_print ("gpgme_data_new_from_filepart failed: %s\n",
 		   gpgme_strerror (err));
@@ -346,19 +346,11 @@ static void check_signature (MimeInfo *mimeinfo, MimeInfo *partinfo, FILE *fp)
         goto leave;
     }
 
-    /* FIXME: check what the heck this sig_status_full stuff is.
-     * it should better go into sigstatus.c */
-    g_free (partinfo->sigstatus_full);
-    partinfo->sigstatus_full = sig_status_full (ctx);
-
 leave:
     result = gpgmegtk_sig_status_to_string(status);
     debug_print("verification status: %s\n", result);
     if (prefs_common.gpg_signature_popup)
 	gpgmegtk_sig_status_update (statuswindow, ctx);
-
-    g_free (partinfo->sigstatus);
-    partinfo->sigstatus = g_strdup (result);
 
     gpgme_data_release (sig);
     gpgme_data_release (text);
@@ -426,7 +418,7 @@ pgp_decrypt (MimeInfo *partinfo, FILE *fp)
     }
 
     err = gpgme_data_new_from_filepart (&cipher, NULL, fp,
-					partinfo->fpos, partinfo->size);
+					partinfo->offset, partinfo->length);
     if (err) {
         debug_print ("gpgme_data_new_from_filepart failed: %s\n",
                      gpgme_strerror (err));
@@ -468,7 +460,7 @@ MimeInfo * rfc2015_find_signature (MimeInfo *mimeinfo)
 
     if (!mimeinfo)
         return NULL;
-    if (g_strcasecmp (mimeinfo->content_type, "multipart/signed"))
+    if (!(mimeinfo->type == MIMETYPE_MULTIPART && !g_strcasecmp(mimeinfo->subtype, "signed")))
         return NULL;
 
     debug_print ("** multipart/signed encountered\n");
@@ -476,8 +468,8 @@ MimeInfo * rfc2015_find_signature (MimeInfo *mimeinfo)
     /* check that we have at least 2 parts of the correct type */
     for (partinfo = mimeinfo->children;
          partinfo != NULL; partinfo = partinfo->next) {
-        if (++n > 1  && !g_strcasecmp (partinfo->content_type,
-				       "application/pgp-signature"))
+        if (++n > 1  && (partinfo->type == MIMETYPE_APPLICATION && !g_strcasecmp (partinfo->subtype,
+				       "pgp-signature")))
             break;
     }
 
@@ -512,7 +504,7 @@ int rfc2015_is_encrypted (MimeInfo *mimeinfo)
 {
     if (!mimeinfo)
         return 0;
-    if (g_strcasecmp (mimeinfo->content_type, "multipart/encrypted"))
+    if (!(mimeinfo->type == MIMETYPE_MULTIPART && !g_strcasecmp (mimeinfo->subtype, "encrypted")))
         return 0;
     /* fixme: we should check the protocol parameter */
     return 1;
@@ -520,22 +512,7 @@ int rfc2015_is_encrypted (MimeInfo *mimeinfo)
 
 gboolean rfc2015_msg_is_encrypted (const gchar *file)
 {
-	FILE *fp;
-	MimeInfo *mimeinfo;
-	int ret;
-
-	if ((fp = fopen(file, "rb")) == NULL)
-		return FALSE;
-
-	mimeinfo = procmime_scan_mime_header(fp);
-	if(!mimeinfo) {
-		fclose(fp);
-		return FALSE;
-	}
-
-	ret = rfc2015_is_encrypted(mimeinfo);
-	procmime_mimeinfo_free_all(mimeinfo);
-	return ret != 0 ? TRUE : FALSE;
+	return FALSE;
 }
 
 static int
@@ -588,97 +565,6 @@ headerp(char *p, char **names)
 
 void rfc2015_decrypt_message (MsgInfo *msginfo, MimeInfo *mimeinfo, FILE *fp)
 {
-    static int id;
-    MimeInfo *tmpinfo, *partinfo;
-    int ver_ok = 0;
-    char *fname;
-    GpgmeData plain;
-    FILE *dstfp;
-    size_t nread;
-    char buf[BUFFSIZE];
-    GpgmeError err;
-
-    g_return_if_fail (msginfo != NULL);
-    g_return_if_fail (mimeinfo != NULL);
-    g_return_if_fail (fp != NULL);
-    g_return_if_fail (mimeinfo->mime_type == MIME_MULTIPART);
-
-    debug_print ("** decrypting multipart/encrypted message\n");
-
-    /* skip headers */
-    if (fseek(fp, mimeinfo->fpos, SEEK_SET) < 0)
-        perror("fseek");
-    tmpinfo = procmime_scan_mime_header(fp);
-    if (!tmpinfo || tmpinfo->mime_type != MIME_MULTIPART) {
-        DECRYPTION_ABORT();
-    }
-
-    procmime_scan_multipart_message(tmpinfo, fp);
-
-    /* check that we have the 2 parts */
-    partinfo = tmpinfo->children;
-    if (!partinfo || !partinfo->next) {
-        DECRYPTION_ABORT();
-    }
-    if (!g_strcasecmp (partinfo->content_type, "application/pgp-encrypted")) {
-        /* Fixme: check that the version is 1 */
-        ver_ok = 1;
-    }
-    partinfo = partinfo->next;
-    if (ver_ok &&
-        !g_strcasecmp (partinfo->content_type, "application/octet-stream")) {
-        if (partinfo->next)
-            g_warning ("oops: pgp_encrypted with more than 2 parts");
-    }
-    else {
-        DECRYPTION_ABORT();
-    }
-
-    debug_print ("** yep, it is pgp encrypted\n");
-
-    plain = pgp_decrypt (partinfo, fp);
-    if (!plain) {
-        DECRYPTION_ABORT();
-    }
-
-    fname = g_strdup_printf("%s%cplaintext.%08x",
-			    get_mime_tmp_dir(), G_DIR_SEPARATOR, ++id);
-
-    if ((dstfp = fopen(fname, "wb")) == NULL) {
-        FILE_OP_ERROR(fname, "fopen");
-        g_free(fname);
-        DECRYPTION_ABORT();
-    }
-
-    /* write the orginal header to the new file */
-    if (fseek(fp, tmpinfo->fpos, SEEK_SET) < 0)
-        perror("fseek");
-
-    while (fgets(buf, sizeof(buf), fp)) {
-        if (headerp (buf, content_names))
-            continue;
-        if (buf[0] == '\r' || buf[0] == '\n')
-            break;
-        fputs (buf, dstfp);
-    }
-
-    err = gpgme_data_rewind (plain);
-    if (err)
-        debug_print ("gpgme_data_rewind failed: %s\n", gpgme_strerror (err));
-
-    while (!(err = gpgme_data_read (plain, buf, sizeof(buf), &nread))) {
-        fwrite (buf, nread, 1, dstfp);
-    }
-
-    if (err != GPGME_EOF) {
-        debug_print ("gpgme_data_read failed: %s\n", gpgme_strerror (err));
-    }
-
-    fclose (dstfp);
-    procmime_mimeinfo_free_all(tmpinfo);
-
-    msginfo->plaintext_file = fname;
-    msginfo->decryption_failed = 0;
 }
 
 #undef DECRYPTION_ABORT

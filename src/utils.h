@@ -359,6 +359,8 @@ gint canonicalize_file_replace	(const gchar	*file);
 gint change_file_mode_rw	(FILE		*fp,
 				 const gchar	*file);
 FILE *my_tmpfile		(void);
+FILE *get_tmpfile_in_dir	(const gchar 	*dir,
+				 gchar	       **filename);
 FILE *str_open_as_stream	(const gchar	*str);
 gint str_write_to_file		(const gchar	*str,
 				 const gchar	*file);

@@ -117,10 +117,6 @@ static GtkItemFactoryEntry mimeview_popup_entries[] =
 	{N_("/_Display image"),   NULL, mimeview_show_image,      0, NULL},
 	{N_("/_Save as..."),	  NULL, mimeview_save_as,	  0, NULL},
 	{N_("/Save _all..."),	  NULL, mimeview_save_all,	  0, NULL}
-#if USE_GPGME
-        ,
-        {N_("/_Check signature"), NULL, mimeview_check_signature, 0, NULL}
-#endif
 };
 
 static GtkTargetEntry mimeview_mime_types[] =
@@ -223,56 +219,6 @@ void mimeview_init(MimeView *mimeview)
 {
 }
 
-/* 
- * Check whether the message is OpenPGP signed
- */
-#if USE_GPGME
-static gboolean mimeview_is_signed(MimeView *mimeview)
-{
-	MimeInfo *partinfo = NULL;
-
-        debug_print("mimeview_is signed of %p\n", mimeview);
-
-        if (!mimeview) return FALSE;
-	if (!mimeview->opened) return FALSE;
-
-        debug_print("mimeview_is_signed: open\n" );
-
-	if (!mimeview->file) return FALSE;
-
-        debug_print("mimeview_is_signed: file\n" );
-
-	partinfo = gtk_ctree_node_get_row_data
-		(GTK_CTREE(mimeview->ctree), mimeview->opened);
-	g_return_val_if_fail(partinfo != NULL, FALSE);
-
-	/* walk the tree and see whether there is a signature somewhere */
-	do {
-		if (rfc2015_has_signature(partinfo))
-			return TRUE;
-        } while ((partinfo = partinfo->parent) != NULL);
-
-	debug_print("mimeview_is_signed: FALSE\n" );
-
-	return FALSE;
-}
-
-static void set_unchecked_signature(MimeInfo *mimeinfo)
-{
-	MimeInfo *sig_partinfo;
-
-	sig_partinfo = rfc2015_find_signature(mimeinfo);
-	if (sig_partinfo == NULL) return;
-
-	g_free(sig_partinfo->sigstatus);
-	sig_partinfo->sigstatus =
-		g_strdup(_("Select \"Check signature\" to check"));
-
-	g_free(sig_partinfo->sigstatus_full);
-	sig_partinfo->sigstatus_full = NULL;
-}
-#endif /* USE_GPGME */
-
 void mimeview_show_message(MimeView *mimeview, MimeInfo *mimeinfo,
 			   const gchar *file)
 {
@@ -296,21 +242,12 @@ void mimeview_show_message(MimeView *mimeview, MimeInfo *mimeinfo,
 	mimeview->file = g_strdup(file);
 
 	/* skip MIME part headers */
-	if (mimeinfo->mime_type == MIME_MULTIPART) {
-		if (fseek(fp, mimeinfo->fpos, SEEK_SET) < 0)
+	if (mimeinfo->type == MIMETYPE_MULTIPART) {
+		if (fseek(fp, mimeinfo->offset, SEEK_SET) < 0)
 			perror("fseek");
 		while (fgets(buf, sizeof(buf), fp) != NULL)
 			if (buf[0] == '\r' || buf[0] == '\n') break;
 	}
-
-	procmime_scan_multipart_message(mimeinfo, fp);
-#if USE_GPGME
-	if ((prefs_common.auto_check_signatures)
-	    && (gpg_started))
-		rfc2015_check_signature(mimeinfo, fp);
-	else
-		set_unchecked_signature(mimeinfo);
-#endif
 
 	gtk_signal_handler_block_by_func(GTK_OBJECT(ctree), mimeview_selected,
 					 mimeview);
@@ -327,8 +264,7 @@ void mimeview_show_message(MimeView *mimeview, MimeInfo *mimeinfo,
 
 		partinfo = gtk_ctree_node_get_row_data(ctree, node);
 		if (partinfo &&
-		    (partinfo->mime_type == MIME_TEXT ||
-		     partinfo->mime_type == MIME_TEXT_HTML))
+		    (partinfo->type == MIMETYPE_TEXT))
 			break;
 	}
 	fclose(fp);
@@ -359,17 +295,19 @@ static void mimeview_set_multipart_tree(MimeView *mimeview,
 
 	g_return_if_fail(mimeinfo != NULL);
 
+	current = mimeview_append_part(mimeview, mimeinfo, parent);
+#if 0 /* OLD MESSAGE PARSER */
 	if (!mimeinfo->sub && mimeinfo->parent)
 		current = mimeview_append_part(mimeview, mimeinfo, parent);
 	if (mimeinfo->sub && !mimeinfo->sub->children &&
-	    mimeinfo->sub->mime_type != MIME_TEXT &&
-	    mimeinfo->sub->mime_type != MIME_TEXT_HTML) {
+	    mimeinfo->sub->mime_type != MIMETYPE_TEXT) {
 		mimeview_append_part(mimeview, mimeinfo->sub, parent);
 		return;
 	}
 
 	if (mimeinfo->sub)
 		mimeview_set_multipart_tree(mimeview, mimeinfo->sub, current);
+#endif
 
 	if (mimeinfo->children)
 		mimeview_set_multipart_tree(mimeview, mimeinfo->children, current);
@@ -378,19 +316,15 @@ static void mimeview_set_multipart_tree(MimeView *mimeview,
 		mimeview_set_multipart_tree(mimeview, mimeinfo->next, parent);
 }
 
-static gchar *get_part_name(MimeInfo *partinfo)
+static const gchar *get_part_name(MimeInfo *partinfo)
 {
-#if USE_GPGME
-	if (partinfo->sigstatus)
-		return partinfo->sigstatus;
-	else
-#endif
-	if (partinfo->name)
-		return partinfo->name;
-	else if (partinfo->filename)
-		return partinfo->filename;
-	else
-		return "";
+	gchar *name;
+
+	name = g_hash_table_lookup(partinfo->parameters, "name");
+	if(name == NULL)
+		name = "";
+
+	return name;
 }
 
 static GtkCTreeNode *mimeview_append_part(MimeView *mimeview,
@@ -399,11 +333,17 @@ static GtkCTreeNode *mimeview_append_part(MimeView *mimeview,
 {
 	GtkCTree *ctree = GTK_CTREE(mimeview->ctree);
 	GtkCTreeNode *node;
+	static gchar content_type[64];
 	gchar *str[N_MIMEVIEW_COLS];
 
-	str[COL_MIMETYPE] =
-		partinfo->content_type ? partinfo->content_type : "";
-	str[COL_SIZE] = to_human_readable(partinfo->size);
+	if (partinfo->type != MIMETYPE_UNKNOWN && partinfo->subtype) {
+		snprintf(content_type, 64, "%s/%s", procmime_get_type_str(partinfo->type), partinfo->subtype);
+	} else {
+		snprintf(content_type, 64, "UNKNOWN");
+	}
+
+	str[COL_MIMETYPE] = content_type;
+	str[COL_SIZE] = to_human_readable(partinfo->length);
 	str[COL_NAME] = get_part_name(partinfo);
 
 	node = gtk_ctree_insert_node(ctree, parent, NULL, str, 0,
@@ -418,19 +358,10 @@ static void mimeview_show_message_part(MimeView *mimeview, MimeInfo *partinfo)
 {
 	FILE *fp;
 	const gchar *fname;
-#if USE_GPGME
-	MimeInfo *pi;
-#endif
 
 	if (!partinfo) return;
 
-#if USE_GPGME
-	for (pi = partinfo; pi && !pi->plaintextfile ; pi = pi->parent)
-		;
-	fname = pi ? pi->plaintextfile : mimeview->file;
-#else
-	fname = mimeview->file;
-#endif /* USE_GPGME */
+	fname = partinfo->filename;
 	if (!fname) return;
 
 	if ((fp = fopen(fname, "rb")) == NULL) {
@@ -438,7 +369,7 @@ static void mimeview_show_message_part(MimeView *mimeview, MimeInfo *partinfo)
 		return;
 	}
 
-	if (fseek(fp, partinfo->fpos, SEEK_SET) < 0) {
+	if (fseek(fp, partinfo->offset, SEEK_SET) < 0) {
 		FILE_OP_ERROR(mimeview->file, "fseek");
 		fclose(fp);
 		return;
@@ -458,7 +389,7 @@ static void mimeview_show_image_part(MimeView *mimeview, MimeInfo *partinfo)
 
 	filename = procmime_get_tmp_file_name(partinfo);
 
-	if (procmime_get_part(filename, mimeview->file, partinfo) < 0)
+	if (procmime_get_part(filename, partinfo) < 0)
 		alertpanel_error
 			(_("Can't get the part of multipart message."));
 	else {
@@ -466,10 +397,10 @@ static void mimeview_show_image_part(MimeView *mimeview, MimeInfo *partinfo)
 		/* Workaround for the GTK+ bug with handling scroll adjustments
 		 * in GtkViewport */
 		imageview_clear(mimeview->imageview);
-		imageview_show_image(mimeview->imageview, partinfo, filename);
+		imageview_show_image(mimeview->imageview, partinfo->filename);
 		unlink(filename);
 	}
-
+	
 	g_free(filename);
 }
 
@@ -544,17 +475,15 @@ static void mimeview_selected(GtkCTree *ctree, GtkCTreeNode *node, gint column,
 	
 	mimeview->textview->default_text = FALSE;
 	
-	switch (partinfo->mime_type) {
-	case MIME_TEXT:
-	case MIME_TEXT_HTML:
-	case MIME_TEXT_ENRICHED:
-	case MIME_MESSAGE_RFC822:
-	case MIME_MULTIPART:
+	switch (partinfo->type) {
+	case MIMETYPE_TEXT:
+	case MIMETYPE_MESSAGE:
+	case MIMETYPE_MULTIPART:
 		mimeview_show_message_part(mimeview, partinfo);
 		
 		break;
 #if (HAVE_GDK_PIXBUF || HAVE_GDK_IMLIB)
-	case MIME_IMAGE:
+	case MIMETYPE_IMAGE:
 		mimeview->textview->default_text = TRUE;	
 		if (prefs_common.display_img)
 			mimeview_show_image_part(mimeview, partinfo);
@@ -567,13 +496,6 @@ static void mimeview_selected(GtkCTree *ctree, GtkCTreeNode *node, gint column,
 	default:
 		mimeview->textview->default_text = TRUE;	
 		mimeview_change_view_type(mimeview, MIMEVIEW_TEXT);
-#if USE_GPGME
-		if (g_strcasecmp(partinfo->content_type,
-				 "application/pgp-signature") == 0)
-			textview_show_signature_part(mimeview->textview,
-						     partinfo);
-		else
-#endif
 			textview_show_mime_part(mimeview->textview, partinfo);
 		break;
 	}
@@ -623,19 +545,17 @@ static gint mimeview_button_pressed(GtkWidget *widget, GdkEventButton *event,
 	} else if (event->button == 3) {
 		partinfo = gtk_ctree_node_get_row_data
 			(GTK_CTREE(mimeview->ctree), mimeview->opened);
-		if (partinfo && (partinfo->mime_type == MIME_TEXT ||
-				 partinfo->mime_type == MIME_TEXT_HTML ||
-				 partinfo->mime_type == MIME_TEXT_ENRICHED ||
-				 partinfo->mime_type == MIME_MESSAGE_RFC822 ||
-				 partinfo->mime_type == MIME_IMAGE ||
-				 partinfo->mime_type == MIME_MULTIPART))
+		if (partinfo && (partinfo->type == MIMETYPE_TEXT ||
+				 partinfo->type == MIMETYPE_MESSAGE ||
+				 partinfo->type == MIMETYPE_IMAGE ||
+				 partinfo->type == MIMETYPE_MULTIPART))
 			menu_set_sensitive(mimeview->popupfactory,
 					   "/Display as text", FALSE);
 		else
 			menu_set_sensitive(mimeview->popupfactory,
 					   "/Display as text", TRUE);
 		if (partinfo &&
-		    partinfo->mime_type == MIME_APPLICATION_OCTET_STREAM)
+		    partinfo->type == MIMETYPE_APPLICATION)
 			menu_set_sensitive(mimeview->popupfactory,
 					   "/Open", FALSE);
 		else
@@ -643,15 +563,10 @@ static gint mimeview_button_pressed(GtkWidget *widget, GdkEventButton *event,
 					   "/Open", TRUE);
 
 #if (HAVE_GDK_PIXBUF || HAVE_GDK_IMLIB)
-		if (partinfo && (partinfo->mime_type == MIME_IMAGE))
+		if (partinfo && (partinfo->type == MIMETYPE_IMAGE))
 			menu_set_sensitive(mimeview->popupfactory,
 					   "/Display image", TRUE);
 #endif					   
-#if USE_GPGME
-		menu_set_sensitive(mimeview->popupfactory,
-				   "/Check signature",
-				   mimeview_is_signed(mimeview));
-#endif
 
 		gtk_menu_popup(GTK_MENU(mimeview->popupmenu),
 			       NULL, NULL, NULL, NULL,
@@ -778,7 +693,7 @@ static void mimeview_drag_data_get(GtkWidget	    *widget,
 	filename = g_strconcat(get_mime_tmp_dir(), G_DIR_SEPARATOR_S,
 			       filename, NULL);
 
-	if (procmime_get_part(filename, mimeview->file, partinfo) < 0)
+	if (procmime_get_part(filename, partinfo) < 0)
 		alertpanel_error
 			(_("Can't save the part of multipart message."));
 
@@ -839,7 +754,7 @@ static void mimeview_save_all(MimeView *mimeview)
 					  _("OK"), _("Cancel"), NULL);
 			if (G_ALERTDEFAULT != aval) return;
 		}
-		if (procmime_get_part(buf, mimeview->file, attachment) < 0)
+		if (procmime_get_part(buf, attachment) < 0)
 			alertpanel_error(_("Can't save the part of multipart message."));
 		attachment = attachment->next;
 	}
@@ -898,7 +813,7 @@ static void mimeview_save_as(MimeView *mimeview)
 		if (G_ALERTDEFAULT != aval) return;
 	}
 
-	if (procmime_get_part(filename, mimeview->file, partinfo) < 0)
+	if (procmime_get_part(filename, partinfo) < 0)
 		alertpanel_error
 			(_("Can't save the part of multipart message."));
 }
@@ -917,7 +832,7 @@ static void mimeview_launch(MimeView *mimeview)
 
 	filename = procmime_get_tmp_file_name(partinfo);
 
-	if (procmime_get_part(filename, mimeview->file, partinfo) < 0)
+	if (procmime_get_part(filename, partinfo) < 0)
 		alertpanel_error
 			(_("Can't save the part of multipart message."));
 	else
@@ -941,7 +856,7 @@ static void mimeview_open_with(MimeView *mimeview)
 
 	filename = procmime_get_tmp_file_name(partinfo);
 
-	if (procmime_get_part(filename, mimeview->file, partinfo) < 0) {
+	if (procmime_get_part(filename, partinfo) < 0) {
 		alertpanel_error
 			(_("Can't save the part of multipart message."));
 		g_free(filename);
@@ -987,20 +902,20 @@ static void mimeview_view_file(const gchar *filename, MimeInfo *partinfo,
 	if (cmdline) {
 		cmd = cmdline;
 		def_cmd = NULL;
-	} else if (MIME_APPLICATION_OCTET_STREAM == partinfo->mime_type) {
+	} else if (MIMETYPE_APPLICATION == partinfo->type) {
 		return;
-	} else if (MIME_IMAGE == partinfo->mime_type) {
+	} else if (MIMETYPE_IMAGE == partinfo->type) {
 		cmd = prefs_common.mime_image_viewer;
 		def_cmd = default_image_cmdline;
-	} else if (MIME_AUDIO == partinfo->mime_type) {
+	} else if (MIMETYPE_AUDIO == partinfo->type) {
 		cmd = prefs_common.mime_audio_player;
 		def_cmd = default_audio_cmdline;
-	} else if (MIME_TEXT_HTML == partinfo->mime_type) {
+	} else if (MIME_TEXT == partinfo->type && !strcmp(partinfo->subtype, "html")) {
 		cmd = prefs_common.uri_cmd;
 		def_cmd = default_html_cmdline;
 	} else {
 		g_snprintf(m_buf, sizeof(m_buf), mime_cmdline,
-			   partinfo->content_type, "%s");
+			   partinfo->subtype, "%s");
 		cmd = m_buf;
 		def_cmd = NULL;
 	}
@@ -1019,74 +934,3 @@ static void mimeview_view_file(const gchar *filename, MimeInfo *partinfo,
 
 	execute_command_line(buf, TRUE);
 }
-
-#if USE_GPGME
-static void update_node_name(GtkCTree *ctree, GtkCTreeNode *node,
-			     gpointer data)
-{
-	MimeInfo *partinfo;
-	gchar *part_name;
-
-	partinfo = gtk_ctree_node_get_row_data(ctree, node);
-	g_return_if_fail(partinfo != NULL);
-
-	part_name = get_part_name(partinfo);
-	gtk_ctree_node_set_text(ctree, node, COL_NAME, part_name);
-}
-
-static void mimeview_update_names(MimeView *mimeview)
-{
-	GtkCTree *ctree = GTK_CTREE(mimeview->ctree);
-
-	gtk_ctree_pre_recursive(ctree, NULL, update_node_name, NULL);
-}
-
-static void mimeview_update_signature_info(MimeView *mimeview)
-{
-	MimeInfo *partinfo;
-
-	if (!mimeview) return;
-	if (!mimeview->opened) return;
-
-	partinfo = gtk_ctree_node_get_row_data
-		(GTK_CTREE(mimeview->ctree), mimeview->opened);
-	if (!partinfo) return;
-
-	if (g_strcasecmp(partinfo->content_type,
-			 "application/pgp-signature") == 0) {
-		mimeview_change_view_type(mimeview, MIMEVIEW_TEXT);
-		textview_show_signature_part(mimeview->textview, partinfo);
-	}
-}
-
-void mimeview_check_signature(MimeView *mimeview)
-{
-	MimeInfo *mimeinfo;
-	FILE *fp;
-
-	g_return_if_fail (mimeview_is_signed(mimeview));
-	g_return_if_fail (gpg_started);
-
-	mimeinfo = gtk_ctree_node_get_row_data
-		(GTK_CTREE(mimeview->ctree), mimeview->opened);
-	g_return_if_fail(mimeinfo != NULL);
-	g_return_if_fail(mimeview->file != NULL);
-
-	while (mimeinfo->parent)
-		mimeinfo = mimeinfo->parent;
-
-	if ((fp = fopen(mimeview->file, "rb")) == NULL) {
-		FILE_OP_ERROR(mimeview->file, "fopen");
-		return;
-	}
-
-	rfc2015_check_signature(mimeinfo, fp);
-	fclose(fp);
-
-	mimeview_update_names(mimeview);
-	mimeview_update_signature_info(mimeview);
-
-	textview_show_message(mimeview->messageview->textview, mimeinfo,
-			      mimeview->file);
-}
-#endif /* USE_GPGME */

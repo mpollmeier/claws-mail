@@ -65,6 +65,18 @@ struct _MimeType
 	gchar *extension;
 };
 
+typedef enum
+{
+	MIMETYPE_TEXT,
+	MIMETYPE_IMAGE,
+	MIMETYPE_AUDIO,
+	MIMETYPE_VIDEO,
+	MIMETYPE_APPLICATION,
+	MIMETYPE_MESSAGE,
+	MIMETYPE_MULTIPART,
+	MIMETYPE_UNKNOWN,
+} MimeMediaType;
+
 /*
  * An example of MimeInfo structure:
  *
@@ -87,35 +99,41 @@ struct _MimeInfo
 {
 	gchar *encoding;
 
-	EncodingType encoding_type;
-	ContentType  mime_type;
-
-	gchar *content_type;
 	gchar *charset;
 	gchar *name;
-	gchar *boundary;
 
 	gchar *content_disposition;
-	gchar *filename;
-
-	glong fpos;
-	guint size;
 
 	MimeInfo *main;
-	MimeInfo *sub;
+
+	gint level;
+
+	/* Internal data */
+	gchar *filename;
+	gboolean tmpfile;
 
 	MimeInfo *next;
 	MimeInfo *parent;
 	MimeInfo *children;
 
-#if USE_GPGME
-	MimeInfo *plaintext;
-	gchar *plaintextfile;
-	gchar *sigstatus;
-	gchar *sigstatus_full;
-#endif
+	/* --- NEW MIME STUFF --- */
+	/* Content-Type */
+	MimeMediaType 	 type;
+	gchar		*subtype;
 
-	gint level;
+	GHashTable	*parameters;
+
+	/* Content-Transfer-Encoding */
+	EncodingType	 encoding_type;
+
+	/* Content-Description */
+	gchar		*description;
+
+	/* Content-ID */
+	gchar		*id;
+
+	guint		 offset;
+	guint		 length;
 };
 
 #define IS_BOUNDARY(s, bnd, len) \
@@ -151,11 +169,8 @@ void procmime_scan_subject              (MimeInfo       *mimeinfo,
 			                 const gchar    *subject);
 MimeInfo *procmime_scan_mime_header	(FILE		*fp);
 
-FILE *procmime_decode_content		(FILE		*outfp,
-					 FILE		*infp,
-					 MimeInfo	*mimeinfo);
+gboolean procmime_decode_content	(MimeInfo	*mimeinfo);
 gint procmime_get_part			(const gchar	*outfile,
-					 const gchar	*infile,
 					 MimeInfo	*mimeinfo);
 FILE *procmime_get_text_content		(MimeInfo	*mimeinfo,
 					 FILE		*infp);
@@ -179,6 +194,8 @@ GList *procmime_get_mime_type_list	(void);
 EncodingType procmime_get_encoding_for_charset	(const gchar	*charset);
 EncodingType procmime_get_encoding_for_file	(const gchar	*file);
 const gchar *procmime_get_encoding_str		(EncodingType	 encoding);
+MimeInfo *procmime_scan_file			(gchar *filename);
+const gchar *procmime_get_type_str		(MimeMediaType type);
 
 void renderer_read_config(void);
 void renderer_write_config(void);

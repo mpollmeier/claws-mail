@@ -433,20 +433,16 @@ void messageview_show(MessageView *messageview, MsgInfo *msginfo,
 
 	g_return_if_fail(msginfo != NULL);
 
-#if USE_GPGME
-	if ((fp = procmsg_open_message_decrypted(msginfo, &mimeinfo)) == NULL)
-		return;
-#else /* !USE_GPGME */
-	if ((fp = procmsg_open_message(msginfo)) == NULL) return;
-	mimeinfo = procmime_scan_mime_header(fp);
-#endif /* USE_GPGME */
-	fclose(fp);
-	if (!mimeinfo) return;
-
 	file = procmsg_get_message_file_path(msginfo);
 	if (!file) {
 		g_warning(_("can't get message file path.\n"));
 		procmime_mimeinfo_free_all(mimeinfo);
+		return;
+	}
+
+	mimeinfo = procmime_scan_file(file);
+	if(!mimeinfo) {
+		g_free(file);
 		return;
 	}
 
@@ -458,8 +454,7 @@ void messageview_show(MessageView *messageview, MsgInfo *msginfo,
 	textview_set_all_headers(messageview->textview, all_headers);
 	textview_set_all_headers(messageview->mimeview->textview, all_headers);
 
-	if (mimeinfo->mime_type != MIME_TEXT &&
-	    mimeinfo->mime_type != MIME_TEXT_HTML) {
+	if (mimeinfo->children->type != MIME_TEXT) {
 		messageview_change_view_type(messageview, MVIEW_MIME);
 		mimeview_show_message(messageview->mimeview, mimeinfo, file);
 	} else {

@@ -17,30 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef __IMAGEVIEW_H__
-#define __IMAGEVIEW_H__
+#ifndef __PRIVACY_H__
+#define __PRIVACY_H__
 
 #include <glib.h>
-#include <gtk/gtkwidget.h>
 
-typedef struct _ImageView	ImageView;
-
-#include "messageview.h"
-#include "procmime.h"
-
-struct _ImageView
-{
-	GtkWidget *scrolledwin;
-	GtkWidget *image;
-
-	MessageView *messageview;
-};
-
-ImageView *imageview_create	(void);
-void imageview_init		(ImageView	*imageview);
-void imageview_show_image	(ImageView	*imageview,
-				 const gchar	*filename);
-void imageview_clear		(ImageView	*imageview);
-void imageview_destroy		(ImageView	*imageview);
-
-#endif /* __IMAGEVIEW_H__ */
+#endif /* __PRIVACY_H__ */
