@@ -1,3 +1,44 @@
+2002-08-24 [paul]	0.8.2claws113
+
+	* sync with 0.8.1cvs30
+		see ChangeLog 2002-08-23
+
+2002-08-24 [alfons]	0.8.1claws112
+
+	* src/summaryview.c
+		remove unnecessary allocations for search bar fixing leaks
+		reported by Martin Kluge
+		(see "[ 599451 ] Further memory leaks?")
+
+2002-08-24 [alfons]	0.8.1claws111
+
+	* src/main.c
+		make get_socket_name() public for crash.c
+	* src/crash.c
+		o make report bug button work (goes to claws' 
+		  bug tracker at sf.net)
+		o introduce function for doing important stuff just
+		  before claws goes down
+		o clean up code 
+
+2002-08-24 [alfons]	0.8.1claws110
+
+	* src/compose.c
+		move cursor to "To" entry when forwarding as attachment
+		(reported and solved by Steve Lamb, closes bug report
+		"[ 592880 ] Forward as attachment; cursor not in to")
+
+2002-08-24 [colin]	0.8.1claws109
+
+	* src/mainwindow.c
+		fix quick search visibility after GUI (de)separations.
+
+2002-08-23 [colin]	0.8.1claws108
+
+	* src/mainwindow.c
+		fix header pane visibility after folderview or
+		messageview (de)separation
+
 2002-08-23 [paul]	0.8.1claws107
 
 	* src/mainwindow.[ch]
