@@ -92,7 +92,8 @@
 #define CTREE_INDENT			18
 #define FOLDER_SPACING			4
 #define COLOR_DIM			35000
-#define UI_REFRESH_INTERVAL		50000
+#define UI_REFRESH_INTERVAL		50000	/* usec */
+#define SESSION_TIMEOUT			60	/* sec */
 #define MAX_HISTORY_SIZE		16
 
 #define NORMAL_FONT prefs_common.normalfont

@@ -1,3 +1,13 @@
+2001-11-08
+
+	* src/socket.c: sock_connect_by_hostname(): removed h_errno.
+	* src/session.h
+	  src/defs.h
+	  src/imap.[ch]
+	  src/news.c: added last_access_time to Session.
+	  imap_session_get(): check connection only when access interval
+	  has been exceeded.
+
 2001-11-07
 
 	* version 0.6.5
