@@ -169,18 +169,26 @@ static void toolbar_prefs_cb		(GtkWidget	*widget,
 static void toolbar_account_cb		(GtkWidget	*widget,
 					 gpointer	 data);
 
+#if 0
 static void toolbar_account_button_pressed	(GtkWidget	*widget,
 						 GdkEventButton	*event,
 						 gpointer	 data);
+#endif
 static void ac_label_button_pressed		(GtkWidget	*widget,
 						 GdkEventButton	*event,
 						 gpointer	 data);
 static void ac_menu_popup_closed		(GtkMenuShell	*menu_shell,
 						 gpointer	 data);
 
-static gint main_window_close_cb (GtkWidget	*widget,
-				  GdkEventAny	*event,
-				  gpointer	 data);
+static gint main_window_close_cb	(GtkWidget	*widget,
+					 GdkEventAny	*event,
+					 gpointer	 data);
+static gint folder_window_close_cb	(GtkWidget	*widget,
+					 GdkEventAny	*event,
+					 gpointer	 data);
+static gint message_window_close_cb	(GtkWidget	*widget,
+					 GdkEventAny	*event,
+					 gpointer	 data);
 
 static void add_mailbox_cb	 (MainWindow	*mainwin,
 				  guint		 action,
@@ -341,6 +349,13 @@ static void hide_read_messages   (MainWindow	*mainwin,
 static void thread_cb		 (MainWindow	*mainwin,
 				  guint		 action,
 				  GtkWidget	*widget);
+static void expand_threads_cb	 (MainWindow	*mainwin,
+				  guint		 action,
+				  GtkWidget	*widget);
+static void collapse_threads_cb	 (MainWindow	*mainwin,
+				  guint		 action,
+				  GtkWidget	*widget);
+
 static void set_display_item_cb	 (MainWindow	*mainwin,
 				  guint		 action,
 				  GtkWidget	*widget);
@@ -523,21 +538,23 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_View/Ex_pand Message View"),	"<shift>V", toggle_expand_messageview_cb, 0, "<ToggleItem>"},
 	{N_("/_View/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_View/_Sort"),			NULL, NULL, 0, "<Branch>"},
-	{N_("/_View/_Sort/Sort by _number"),	NULL, sort_summary_cb, SORT_BY_NUMBER, NULL},
-	{N_("/_View/_Sort/Sort by s_ize"),	NULL, sort_summary_cb, SORT_BY_SIZE, NULL},
-	{N_("/_View/_Sort/Sort by _date"),	NULL, sort_summary_cb, SORT_BY_DATE, NULL},
-	{N_("/_View/_Sort/Sort by _from"),	NULL, sort_summary_cb, SORT_BY_FROM, NULL},
-	{N_("/_View/_Sort/Sort by _subject"),	NULL, sort_summary_cb, SORT_BY_SUBJECT, NULL},
-	{N_("/_View/_Sort/Sort by _color label"),
+	{N_("/_View/_Sort/by _number"),		NULL, sort_summary_cb, SORT_BY_NUMBER, NULL},
+	{N_("/_View/_Sort/by s_ize"),		NULL, sort_summary_cb, SORT_BY_SIZE, NULL},
+	{N_("/_View/_Sort/by _date"),		NULL, sort_summary_cb, SORT_BY_DATE, NULL},
+	{N_("/_View/_Sort/by _from"),		NULL, sort_summary_cb, SORT_BY_FROM, NULL},
+	{N_("/_View/_Sort/by _subject"),	NULL, sort_summary_cb, SORT_BY_SUBJECT, NULL},
+	{N_("/_View/_Sort/by _color label"),
 						NULL, sort_summary_cb, SORT_BY_LABEL, NULL},
-	{N_("/_View/_Sort/Sort by _mark"),	NULL, sort_summary_cb, SORT_BY_MARK, NULL},
-	{N_("/_View/_Sort/Sort by _unread"),	NULL, sort_summary_cb, SORT_BY_UNREAD, NULL},
-	{N_("/_View/_Sort/Sort by a_ttachment"),
+	{N_("/_View/_Sort/by _mark"),		NULL, sort_summary_cb, SORT_BY_MARK, NULL},
+	{N_("/_View/_Sort/by _unread"),		NULL, sort_summary_cb, SORT_BY_UNREAD, NULL},
+	{N_("/_View/_Sort/by a_ttachment"),
 						NULL, sort_summary_cb, SORT_BY_MIME, NULL},
 	{N_("/_View/_Sort/---"),		NULL, NULL, 0, "<Separator>"},
 	{N_("/_View/_Sort/_Attract by subject"),
 						NULL, attract_by_subject_cb, 0, NULL},
-	{N_("/_View/Th_read view"),		"<control>T",	     thread_cb, 0, "<ToggleItem>"},
+	{N_("/_View/Th_read view"),		"<control>T", thread_cb, 0, "<ToggleItem>"},
+	{N_("/_View/E_xpand all threads"),	NULL, expand_threads_cb, 0, NULL},
+	{N_("/_View/Co_llapse all threads"),	NULL, collapse_threads_cb, 0, NULL},
 	{N_("/_View/_Hide read messages"),	NULL, hide_read_messages, 0, "<ToggleItem>"},
 	{N_("/_View/Set display _item..."),	NULL, set_display_item_cb, 0, NULL},
 
@@ -649,7 +666,7 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_View/Mess_age source"),		"<control>U", view_source_cb, 0, NULL},
 	{N_("/_View/Show all _header"),		"<control>H", show_all_header_cb, 0, "<ToggleItem>"},
 	{N_("/_View/---"),			NULL, NULL, 0, "<Separator>"},
-	{N_("/_View/_Update"),			"<control><alt>U", update_summary_cb,  0, NULL},
+	{N_("/_View/_Update summary"),		"<control><alt>U", update_summary_cb,  0, NULL},
 
 	{N_("/_Message"),			NULL, NULL, 0, "<Branch>"},
 	{N_("/_Message/Get new ma_il"),		"<control>I",	inc_mail_cb, 0, NULL},
@@ -1270,6 +1287,9 @@ void main_window_separation_change(MainWindow *mainwin, SeparateType type)
 	GtkWidget *summary_wid = GTK_WIDGET_PTR(mainwin->summaryview);
 	GtkWidget *message_wid = GTK_WIDGET_PTR(mainwin->messageview);
 
+	debug_print(_("Changing window separation type from %d to %d\n"),
+		    mainwin->type, type);
+
 	if (mainwin->type == type) return;
 
 	/* remove widgets from those containers */
@@ -1548,39 +1568,41 @@ void main_window_set_toolbar_sensitive(MainWindow *mainwin)
 {
 	SensitiveCond state;
 	gboolean sensitive;
-	gint i;
+	gint i = 0;
 
 	struct {
 		GtkWidget *widget;
 		SensitiveCond cond;
 	} entry[11];
 
-	entry[0].widget  = mainwin->get_btn;
-	entry[0].cond    = M_HAVE_ACCOUNT|M_UNLOCKED;
-	entry[1].widget  = mainwin->getall_btn;
-	entry[1].cond    = M_HAVE_ACCOUNT|M_UNLOCKED;
-	entry[2].widget  = mainwin->compose_news_btn;
-	entry[2].cond    = M_HAVE_NEWS_ACCOUNT;
-	entry[3].widget  = mainwin->reply_btn;
-	entry[3].cond    = M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST;
-	entry[4].widget  = mainwin->replyall_btn;
-	entry[4].cond    = M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST;
-	entry[5].widget  = mainwin->replysender_btn;
-	entry[5].cond    = M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST;
-	entry[6].widget  = mainwin->fwd_btn;
-	entry[6].cond    = M_HAVE_ACCOUNT|M_TARGET_EXIST;
-/*	entry[6].widget  = mainwin->prefs_btn;
-	entry[6].cond    = M_UNLOCKED;
-	entry[7].widget  = mainwin->account_btn;
-	entry[7].cond    = M_UNLOCKED; */
-	entry[7].widget  = mainwin->next_btn;
-	entry[7].cond    = M_MSG_EXIST;
-	entry[8].widget  = mainwin->delete_btn;
-	entry[8].cond    = M_TARGET_EXIST|M_ALLOW_DELETE|M_UNLOCKED;
-	entry[9].widget = mainwin->exec_btn;
-	entry[9].cond   = M_MSG_EXIST|M_EXEC|M_UNLOCKED;
-	entry[10].widget = NULL;
-	entry[10].cond   = 0;
+#define SET_WIDGET_COND(w, c)	\
+{				\
+	entry[i].widget = w;	\
+	entry[i].cond = c;	\
+	i++;			\
+}
+
+	SET_WIDGET_COND(mainwin->get_btn, M_HAVE_ACCOUNT|M_UNLOCKED);
+	SET_WIDGET_COND(mainwin->getall_btn, M_HAVE_ACCOUNT|M_UNLOCKED);
+	SET_WIDGET_COND(mainwin->compose_news_btn, M_HAVE_ACCOUNT);
+	SET_WIDGET_COND(mainwin->reply_btn,
+			M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST);
+	SET_WIDGET_COND(mainwin->replyall_btn,
+			M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST);
+	SET_WIDGET_COND(mainwin->replysender_btn,
+			M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST);
+	SET_WIDGET_COND(mainwin->fwd_btn, M_HAVE_ACCOUNT|M_TARGET_EXIST);
+#if 0
+	SET_WIDGET_COND(mainwin->prefs_btn, M_UNLOCKED);
+	SET_WIDGET_COND(mainwin->account_btn, M_UNLOCKED);
+#endif
+	SET_WIDGET_COND(mainwin->next_btn, M_MSG_EXIST);
+	SET_WIDGET_COND(mainwin->delete_btn,
+			M_TARGET_EXIST|M_ALLOW_DELETE|M_UNLOCKED);
+	SET_WIDGET_COND(mainwin->exec_btn, M_MSG_EXIST|M_EXEC|M_UNLOCKED);
+	SET_WIDGET_COND(NULL, 0);
+
+#undef SET_WIDGET_COND
 
 	state = main_window_get_current_state(mainwin);
 
@@ -1622,6 +1644,8 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 		{"/Edit/Select thread"		   , M_SINGLE_TARGET_EXIST},
 		{"/View/Sort"                      , M_MSG_EXIST},
 		{"/View/Thread view"               , M_EXEC},
+		{"/View/Expand all threads"        , M_MSG_EXIST},
+		{"/View/Collapse all threads"      , M_MSG_EXIST},
 		{"/View/Hide read messages"	   , M_HIDE_READ_MSG},
 		{"/View/Go to/Prev message"        , M_MSG_EXIST},
 		{"/View/Go to/Next message"        , M_MSG_EXIST},
@@ -1763,8 +1787,8 @@ static void main_window_set_widgets(MainWindow *mainwin, SeparateType type)
 		gtk_container_set_border_width(GTK_CONTAINER(folderwin),
 					       BORDER_WIDTH);
 		gtk_signal_connect(GTK_OBJECT(folderwin), "delete_event",
-				   GTK_SIGNAL_FUNC(gtk_widget_hide_on_delete),
-				   NULL);
+				   GTK_SIGNAL_FUNC(folder_window_close_cb),
+				   mainwin);
 	}
 	if (type & SEPARATE_MESSAGE) {
 		messagewin = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -1782,8 +1806,8 @@ static void main_window_set_widgets(MainWindow *mainwin, SeparateType type)
 		gtk_container_set_border_width(GTK_CONTAINER(messagewin),
 					       BORDER_WIDTH);
 		gtk_signal_connect(GTK_OBJECT(messagewin), "delete_event",
-				   GTK_SIGNAL_FUNC(gtk_widget_hide_on_delete),
-				   NULL);
+				   GTK_SIGNAL_FUNC(message_window_close_cb),
+				   mainwin);
 	}
 
 	switch (type) {
@@ -1920,6 +1944,24 @@ static void main_window_set_widgets(MainWindow *mainwin, SeparateType type)
 
 	mainwin->type = type;
 
+	ifactory = gtk_item_factory_from_widget(mainwin->menubar);
+
+	menuitem = gtk_item_factory_get_item
+		(ifactory, "/View/Show or hide/Folder tree");
+	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), TRUE);
+	menuitem = gtk_item_factory_get_item
+		(ifactory, "/View/Show or hide/Message view");
+	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), TRUE);
+
+	menuitem = gtk_item_factory_get_item
+		(ifactory, "/View/Separate folder tree");
+	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem),
+				       ((type & SEPARATE_FOLDER) != 0));
+	menuitem = gtk_item_factory_get_item
+		(ifactory, "/View/Separate message view");
+	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem),
+				       ((type & SEPARATE_MESSAGE) != 0));
+
 	debug_print(_("done.\n"));
 }
 
@@ -1937,10 +1979,10 @@ static void main_window_toolbar_create(MainWindow *mainwin,
 	GtkWidget *replysender_btn;
 	GtkWidget *fwd_btn;
 	GtkWidget *send_btn;
-	/*
+#if 0
 	GtkWidget *prefs_btn;
 	GtkWidget *account_btn;
-	*/
+#endif
 	GtkWidget *next_btn;
 	GtkWidget *delete_btn;
 	GtkWidget *exec_btn;
@@ -2074,13 +2116,13 @@ static void main_window_toolbar_create(MainWindow *mainwin,
 					   toolbar_next_unread_cb,
 					   mainwin);
 
-	/*
+#if 0
 	gtk_toolbar_append_space(GTK_TOOLBAR(toolbar));
 
 	icon_wid = stock_pixmap_widget(container, STOCK_PIXMAP_PREFERENCES);
 	prefs_btn = gtk_toolbar_append_item(GTK_TOOLBAR(toolbar),
 					    _("Prefs"),
-					    _("Common preference"),
+					    _("Common preferences"),
 					    "Prefs",
 					    icon_wid,
 					    toolbar_prefs_cb,
@@ -2096,7 +2138,7 @@ static void main_window_toolbar_create(MainWindow *mainwin,
 	gtk_signal_connect(GTK_OBJECT(account_btn), "button_press_event",
 			   GTK_SIGNAL_FUNC(toolbar_account_button_pressed),
 			   mainwin);
-	*/
+#endif
 
 	gtk_signal_connect(GTK_OBJECT(reply_btn), "button_press_event",
 		GTK_SIGNAL_FUNC(toolbar_reply_popup_cb),
@@ -2115,23 +2157,23 @@ static void main_window_toolbar_create(MainWindow *mainwin,
 		mainwin);
 	
 
-	mainwin->toolbar        		 = toolbar;
-	mainwin->get_btn        		 = get_btn;
-	mainwin->getall_btn     		 = getall_btn;
-	mainwin->compose_mail_btn		 = compose_mail_btn;
-	mainwin->compose_news_btn		 = compose_news_btn;
-	mainwin->reply_btn      		 = reply_btn;
-	mainwin->replyall_btn   		 = replyall_btn;
-	mainwin->replysender_btn		 = replysender_btn;
-	mainwin->fwd_btn         = fwd_btn;
-	mainwin->send_btn        = send_btn;
-	/*
-	mainwin->prefs_btn       = prefs_btn;
-	mainwin->account_btn     = account_btn;
-	*/
-	mainwin->next_btn        = next_btn;
-	mainwin->delete_btn      = delete_btn;
-	mainwin->exec_btn        = exec_btn;
+	mainwin->toolbar        	= toolbar;
+	mainwin->get_btn        	= get_btn;
+	mainwin->getall_btn     	= getall_btn;
+	mainwin->compose_mail_btn	= compose_mail_btn;
+	mainwin->compose_news_btn	= compose_news_btn;
+	mainwin->reply_btn      	= reply_btn;
+	mainwin->replyall_btn   	= replyall_btn;
+	mainwin->replysender_btn	= replysender_btn;
+	mainwin->fwd_btn          	= fwd_btn;
+	mainwin->send_btn        	= send_btn;
+	#if 0
+	mainwin->prefs_btn       	= prefs_btn;
+	mainwin->account_btn     	= account_btn;
+	#endif
+	mainwin->next_btn        	= next_btn;
+	mainwin->delete_btn      	= delete_btn;
+	mainwin->exec_btn        	= exec_btn;
 
 	gtk_widget_show_all(toolbar);
 }
@@ -2357,6 +2399,7 @@ static void toolbar_account_cb	(GtkWidget	*widget,
 	prefs_account_open_cb(mainwin, 0, NULL);
 }
 
+#if 0
 static void toolbar_account_button_pressed(GtkWidget *widget,
 					   GdkEventButton *event,
 					   gpointer data)
@@ -2374,6 +2417,7 @@ static void toolbar_account_button_pressed(GtkWidget *widget,
 		       menu_button_position, widget,
 		       event->button, event->time);
 }
+#endif
 
 static void ac_label_button_pressed(GtkWidget *widget, GdkEventButton *event,
 				    gpointer data)
@@ -2410,6 +2454,36 @@ static gint main_window_close_cb(GtkWidget *widget, GdkEventAny *event,
 
 	if (mainwin->lock_count == 0)
 		app_exit_cb(data, 0, widget);
+
+	return TRUE;
+}
+
+static gint folder_window_close_cb(GtkWidget *widget, GdkEventAny *event,
+				   gpointer data)
+{
+	MainWindow *mainwin = (MainWindow *)data;
+	GtkItemFactory *ifactory;
+	GtkWidget *menuitem;
+
+	ifactory = gtk_item_factory_from_widget(mainwin->menubar);
+	menuitem = gtk_item_factory_get_item
+		(ifactory, "/View/Expand Summary View");
+	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), FALSE);
+
+	return TRUE;
+}
+
+static gint message_window_close_cb(GtkWidget *widget, GdkEventAny *event,
+				    gpointer data)
+{
+	MainWindow *mainwin = (MainWindow *)data;
+	GtkItemFactory *ifactory;
+	GtkWidget *menuitem;
+
+	ifactory = gtk_item_factory_from_widget(mainwin->menubar);
+	menuitem = gtk_item_factory_get_item
+		(ifactory, "/View/Expand Message View");
+	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), FALSE);
 
 	return TRUE;
 }
@@ -2502,18 +2576,28 @@ static void search_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
 static void toggle_folder_cb(MainWindow *mainwin, guint action,
 			     GtkWidget *widget)
 {
+	gboolean active;
+
+	active = GTK_CHECK_MENU_ITEM(widget)->active;
+
 	switch (mainwin->type) {
 	case SEPARATE_NONE:
 	case SEPARATE_MESSAGE:
+#if 0
+		if (active)
+			gtk_widget_show(GTK_WIDGET_PTR(mainwin->folderview));
+		else
+			gtk_widget_hide(GTK_WIDGET_PTR(mainwin->folderview));
+#endif
 		break;
 	case SEPARATE_FOLDER:
-		if (GTK_CHECK_MENU_ITEM(widget)->active)
+		if (active)
 			gtk_widget_show(mainwin->win.sep_folder.folderwin);
 		else
 			gtk_widget_hide(mainwin->win.sep_folder.folderwin);
 		break;
 	case SEPARATE_BOTH:
-		if (GTK_CHECK_MENU_ITEM(widget)->active)
+		if (active)
 			gtk_widget_show(mainwin->win.sep_both.folderwin);
 		else
 			gtk_widget_hide(mainwin->win.sep_both.folderwin);
@@ -2524,18 +2608,22 @@ static void toggle_folder_cb(MainWindow *mainwin, guint action,
 static void toggle_message_cb(MainWindow *mainwin, guint action,
 			      GtkWidget *widget)
 {
+	gboolean active;
+
+	active = GTK_CHECK_MENU_ITEM(widget)->active;
+
 	switch (mainwin->type) {
 	case SEPARATE_NONE:
 	case SEPARATE_FOLDER:
 		break;
 	case SEPARATE_MESSAGE:
-		if (GTK_CHECK_MENU_ITEM(widget)->active)
+		if (active)
 			gtk_widget_show(mainwin->win.sep_message.messagewin);
 		else
 			gtk_widget_hide(mainwin->win.sep_message.messagewin);
 		break;
 	case SEPARATE_BOTH:
-		if (GTK_CHECK_MENU_ITEM(widget)->active)
+		if (active)
 			gtk_widget_show(mainwin->win.sep_both.messagewin);
 		else
 			gtk_widget_hide(mainwin->win.sep_both.messagewin);
@@ -2626,10 +2714,11 @@ static void separate_widget_cb(GtkCheckMenuItem *checkitem, guint action, GtkWid
 	MainWindow *mainwin;
 	SeparateType type;
 
-	mainwin = (MainWindow *) gtk_object_get_data(GTK_OBJECT(checkitem), "mainwindow");
-	g_return_if_fail(mainwin != NULL);
+	if (GTK_CHECK_MENU_ITEM(widget)->active)
+		type = mainwin->type | action;
+	else
+		type = mainwin->type & ~action;
 
-	type = mainwin->type ^ action;
 	main_window_separation_change(mainwin, type);
 
 	prefs_common.sep_folder = (type & SEPARATE_FOLDER)  != 0;
@@ -2882,6 +2971,18 @@ static void thread_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
 	}
 }
 
+static void expand_threads_cb(MainWindow *mainwin, guint action,
+			      GtkWidget *widget)
+{
+	summary_expand_threads(mainwin->summaryview);
+}
+
+static void collapse_threads_cb(MainWindow *mainwin, guint action,
+				GtkWidget *widget)
+{
+	summary_collapse_threads(mainwin->summaryview);
+}
+
 static void set_display_item_cb(MainWindow *mainwin, guint action,
 				GtkWidget *widget)
 {
@@ -3002,8 +3103,11 @@ static void allsel_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
 {
 	if (GTK_WIDGET_HAS_FOCUS(mainwin->summaryview->ctree))
 		summary_select_all(mainwin->summaryview);
-	else if (mainwin->summaryview->msg_is_toggled_on &&
-		 GTK_WIDGET_HAS_FOCUS(mainwin->messageview->textview->text))
+	else if (mainwin->summaryview->msg_is_toggled_on && (
+		 GTK_WIDGET_HAS_FOCUS(mainwin->messageview->textview->text) ||
+		 GTK_WIDGET_HAS_FOCUS(mainwin->messageview->mimeview->ctree) ||
+		 GTK_WIDGET_HAS_FOCUS(mainwin->messageview->mimeview->notebook) ||
+		 GTK_WIDGET_HAS_FOCUS(mainwin->messageview->mimeview->textview->text)))
 		messageview_select_all(mainwin->messageview);
 }
 

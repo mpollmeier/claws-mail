@@ -592,7 +592,8 @@ static gchar *parse_action_cmd		(gchar *action,
 					msg = gtk_ctree_node_get_row_data(ctree,
 					      GTK_CTREE_NODE(cur->data));
 					cmd = parse_append_filename(cmd, msg);
-					cmd = g_string_append_c(cmd, ' ');
+					if (cur->next)
+						cmd = g_string_append_c(cmd, ' ');
 				     }
 				     p++;
 				     break;
@@ -704,9 +705,8 @@ static GString *parse_append_msgpart(GString *cmd, MsgInfo *msginfo,
 		g_free(partname);
 		return NULL;
 	}
-	cmd = g_string_append_c(cmd, '"');
+
 	cmd = g_string_append(cmd,partname);
-	cmd = g_string_append_c(cmd, '"');
 	
 	g_free(partname);
 	

@@ -1,3 +1,119 @@
+2002-05-18 [christoph]	0.7.6claws4
+
+	* src/summaryview.c
+		fix indentation of some code
+	* tools/Makefile.am
+		fix spaces after \
+	* src/Makefile.am
+		add missing \
+		correct path for ignorethread.xpm
+		incorrect filename for sylpheed_logo.xpm
+		add missing include matcher_parser_parse.h
+
+2002-05-18 [paul]	0.7.6claws3
+
+	* sync with 0.7.6cvs8
+		see ChangeLog 2002-05-16 and 2002-05-17
+
+2002-05-18 [melvin]	0.7.6claws2
+
+	* README.claws
+		Corrected an action's definition and fixed some misspellings.
+
+2002-05-18 [paul]	0.7.6claws1
+
+	* tools/Makefile.am
+	  tools/gpg-sign	** new file **
+	  tools/uudec		** new file **
+		add Melvin's Actions scripts
+
+	* README.claws
+		add Melvin's descriptions for Actions
+
+2002-05-18 [paul]	0.7.6claws
+
+	* Version 0.7.6claws released
+
+2002-05-17 [paul]	0.7.5claws32
+
+	* po/es.po
+		updated by Ricardo Mones Lastra
+
+2002-05-17 [paul]	0.7.5claws31
+
+	* src/compose.c
+		fix Account prefs default folder for sent/draft/deleted
+		messages bug
+
+	* po/it.po
+	  po/nl.po
+		updated translation by Alessandro Maestri and
+		Wilbert Berendsen
+
+2002-05-17 [melvin]	0.7.5claws30
+
+	* src/prefs_actions.c
+		Fixed bug where using %F not at the end of the command 
+		resulted in an additional empty argument being created.
+		Thanks to Darko Koruga for reporting the bug.
+
+2002-05-17 [melvin]	0.7.5claws29
+
+	* po/fr.po
+		Updated French translations.
+
+2002-05-15 [paul]	0.7.5claws28
+	
+	* po/es.po
+		updated by Ricardo Mones Lastra
+
+2002-05-15 [paul]	0.7.5claws27
+
+	* sync with 0.7.6cvs4
+		see ChangeLog 2002-05-14 and 2002-05-15
+
+2002-05-14 [paul]	0.7.5claws26
+
+	* sync with 0.7.6cvs1
+		see ChangeLog 2002-05-13
+
+2002-05-13 [thorsten]	0.7.5claws25
+
+	* src/messageview.c
+		fix select_all and copy in multipart messages
+	* src/mainwindow.c
+		fix select_all and copy in multipart messages
+
+2002-05-12 [paul]	0.7.5claws24
+
+	* src/summaryview.c
+		reverse last commit, bug already fixed in 0.7.5claws3
+
+2002-05-12 [netztorte]	0.7.5claws23
+
+	* src/summaryview.c
+		dont parse empty addressbook (checked in before claws20)
+
+2002-05-12 [melvin]	0.7.5claws22
+
+	* src/procmsg.[ch]
+		Removed unneeded priority code introduced by the previous 
+		commit.
+
+2002-05-12 [melvin]	0.7.5claws21
+
+	* src/compose.[ch]
+		Added possibility to set message's priority.
+	* src/procmsg.[ch]
+		Added possibility to set message's priority.
+		Added missing headers
+
+2002-05-12 [melvin]	0.7.5claws20
+
+	* src/prefs_actions.c
+		Removed implicitely added quotes around the name
+		of the temporary files of mime parts.
+
 2002-05-12 [paul]	0.7.5claws19
 
 	* sync with 0.7.5cvs20

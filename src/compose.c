@@ -138,6 +138,15 @@ typedef enum
 	COMPOSE_CALL_GTK_STEXT_DELETE_TO_LINE_END
 } ComposeCallGtkSTextAction;
 
+typedef enum
+{
+	PRIORITY_HIGHEST = 1,
+	PRIORITY_HIGH,
+	PRIORITY_NORMAL,
+	PRIORITY_LOW,
+	PRIORITY_LOWEST
+} PriorityLevel;
+
 #define B64_LINE_SIZE		57
 #define B64_BUFFSIZE		77
 
@@ -268,6 +277,7 @@ static gint calc_cursor_xpos	(GtkSText	*text,
 
 static void compose_create_header_entry	(Compose *compose);
 static void compose_add_header_entry	(Compose *compose, gchar *header, gchar *text);
+static void compose_update_priority_menu_item(Compose * compose);
 
 /* callback functions */
 
@@ -407,6 +417,9 @@ static void compose_toggle_encrypt_cb	(gpointer	 data,
 #endif
 static void compose_toggle_return_receipt_cb(gpointer data, guint action,
 					     GtkWidget *widget);
+static void compose_set_priority_cb	(gpointer 	 data,
+					 guint 		 action,
+					 GtkWidget 	*widget);
 
 static void compose_attach_drag_received_cb (GtkWidget		*widget,
 					     GdkDragContext	*drag_context,
@@ -628,6 +641,13 @@ static GtkItemFactoryEntry compose_entries[] =
 	{N_("/_Message/Si_gn"),   	NULL, compose_toggle_sign_cb   , 0, "<ToggleItem>"},
 	{N_("/_Message/_Encrypt"),	NULL, compose_toggle_encrypt_cb, 0, "<ToggleItem>"},
 #endif /* USE_GPGME */
+	{N_("/_Message/---"),		NULL,		NULL,	0, "<Separator>"},
+	{N_("/_Message/Priority"),	NULL,		NULL,   0, "<Branch>"},
+	{N_("/_Message/Priority/Highest"), NULL, compose_set_priority_cb, PRIORITY_HIGHEST, "<RadioItem>"},
+	{N_("/_Message/Priority/High"),    NULL, compose_set_priority_cb, PRIORITY_HIGH, "/Message/Priority/Highest"},
+	{N_("/_Message/Priority/Normal"),  NULL, compose_set_priority_cb, PRIORITY_NORMAL, "/Message/Priority/Highest"},
+	{N_("/_Message/Priority/Low"),	   NULL, compose_set_priority_cb, PRIORITY_LOW, "/Message/Priority/Highest"},
+	{N_("/_Message/Priority/Lowest"),  NULL, compose_set_priority_cb, PRIORITY_LOWEST, "/Message/Priority/Highest"},
 	{N_("/_Message/---"),		NULL,		NULL,	0, "<Separator>"},
 	{N_("/_Message/_Request Return Receipt"),	NULL, compose_toggle_return_receipt_cb, 0, "<ToggleItem>"},
 	{N_("/_Tools"),			NULL, NULL, 0, "<Branch>"},
@@ -1400,6 +1420,7 @@ static gint compose_parse_header(Compose *compose, MsgInfo *msginfo)
 				       {"Followup-To:",    NULL, FALSE},
 				       {"X-Mailing-List:", NULL, FALSE},
 				       {"X-BeenThere:",    NULL, FALSE},
+				       {"X-Priority:",     NULL, FALSE},
 				       {NULL,		   NULL, FALSE}};
 
 	enum
@@ -1411,7 +1432,8 @@ static gint compose_parse_header(Compose *compose, MsgInfo *msginfo)
 		H_NEWSGROUPS     = 4,
 		H_FOLLOWUP_TO	 = 5,
 		H_X_MAILING_LIST = 6,
-		H_X_BEENTHERE    = 7
+		H_X_BEENTHERE    = 7,
+ 		H_X_PRIORITY     = 8
 	};
 
 	FILE *fp;
@@ -1480,6 +1502,22 @@ static gint compose_parse_header(Compose *compose, MsgInfo *msginfo)
 		hentry[H_FOLLOWUP_TO].body = NULL;
 	}
 
+	if (compose->mode == COMPOSE_REEDIT)
+		if (hentry[H_X_PRIORITY].body != NULL) {
+			gint priority;
+			
+			priority = atoi(hentry[H_X_PRIORITY].body);
+			g_free(hentry[H_X_PRIORITY].body);
+			
+			hentry[H_X_PRIORITY].body = NULL;
+			
+			if (priority < PRIORITY_HIGHEST || 
+			    priority > PRIORITY_LOWEST)
+				priority = PRIORITY_NORMAL;
+			
+			compose->priority =  priority;
+		}
+ 
 	if (compose->mode == COMPOSE_REEDIT && msginfo->inreplyto)
 		compose->inreplyto = g_strdup(msginfo->inreplyto);
 	else if (compose->mode != COMPOSE_REEDIT &&
@@ -1730,6 +1768,8 @@ static void compose_reedit_set_entry(Compose *compose, MsgInfo *msginfo)
 	SET_ADDRESS(COMPOSE_CC, compose->cc);
 	SET_ADDRESS(COMPOSE_BCC, compose->bcc);
 	SET_ADDRESS(COMPOSE_REPLYTO, compose->replyto);
+
+	compose_update_priority_menu_item(compose);
 
 	compose_show_first_last_header(compose, TRUE);
 
@@ -3800,6 +3840,25 @@ static gint compose_write_headers(Compose *compose, FILE *fp,
 			procmime_get_encoding_str(encoding));
 	}
 
+	/* PRIORITY */
+	switch (compose->priority) {
+		case PRIORITY_HIGHEST: fprintf(fp, "Importance: high\n"
+						   "X-Priority: 1 (Highest)\n");
+			break;
+		case PRIORITY_HIGH: fprintf(fp, "Importance: high\n"
+						"X-Priority: 2 (High)\n");
+			break;
+		case PRIORITY_NORMAL: break;
+		case PRIORITY_LOW: fprintf(fp, "Importance: low\n"
+					       "X-Priority: 4 (Low)\n");
+			break;
+		case PRIORITY_LOWEST: fprintf(fp, "Importance: low\n"
+						  "X-Priority: 5 (Lowest)\n");
+			break;
+		default: debug_print(_("compose: priority unknown : %d\n"),
+				     compose->priority);
+	}
+
 	/* Request Return Receipt */
 	if (!IS_IN_CUSTOM_HEADER("Disposition-Notification-To")) {
 		if (compose->return_receipt) {
@@ -4179,7 +4238,7 @@ static GtkWidget *compose_create_others(Compose *compose)
 	savemsg_checkbtn = gtk_check_button_new_with_label(_("Save Message to "));
 	gtk_widget_show(savemsg_checkbtn);
 	gtk_table_attach(GTK_TABLE(table), savemsg_checkbtn, 0, 1, rowcount, rowcount + 1, GTK_SHRINK | GTK_FILL, GTK_SHRINK, 0, 0);
-	if(folder_get_default_outbox()) {
+	if(account_get_special_folder(compose->account, F_OUTBOX)) {
 		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(savemsg_checkbtn), prefs_common.savemsg);
 	}
 	gtk_signal_connect(GTK_OBJECT(savemsg_checkbtn), "toggled",
@@ -4189,8 +4248,9 @@ static GtkWidget *compose_create_others(Compose *compose)
 	gtk_widget_show(savemsg_entry);
 	gtk_table_attach_defaults(GTK_TABLE(table), savemsg_entry, 1, 2, rowcount, rowcount + 1);
 	gtk_editable_set_editable(GTK_EDITABLE(savemsg_entry), prefs_common.savemsg);
-	if(folder_get_default_outbox()) {
-		folderidentifier = folder_item_get_identifier(folder_get_default_outbox());
+	if(account_get_special_folder(compose->account, F_OUTBOX)) {
+		folderidentifier = folder_item_get_identifier(account_get_special_folder
+				  (compose->account, F_OUTBOX));
 		gtk_entry_set_text(GTK_ENTRY(savemsg_entry), folderidentifier);
 		g_free(folderidentifier);
 	}
@@ -4730,6 +4790,10 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 	if (!prefs_common.show_ruler)
 		gtk_widget_hide(ruler_hbox);
 
+	/* Priority */
+	compose->priority = PRIORITY_NORMAL;
+	compose_update_priority_menu_item(compose);
+
 	select_account(compose, account);
 	set_toolbar_style(compose);
 
@@ -4875,8 +4939,13 @@ static GtkWidget *compose_account_option_menu_create(Compose *compose)
 
 		if (ac == compose->account) def_menu = num;
 
-		name = g_strdup_printf("%s: %s <%s>",
-				       ac->account_name, ac->name, ac->address);
+		if (ac->name)
+			name = g_strdup_printf("%s: %s <%s>",
+					       ac->account_name,
+					       ac->name, ac->address);
+		else
+			name = g_strdup_printf("%s: %s",
+					       ac->account_name, ac->address);
 		MENUITEM_ADD(menu, menuitem, name, ac);
 		g_free(name);
 		gtk_signal_connect(GTK_OBJECT(menuitem), "activate",
@@ -4890,6 +4959,46 @@ static GtkWidget *compose_account_option_menu_create(Compose *compose)
 	return hbox;
 }
 
+static void compose_set_priority_cb(gpointer data,
+				    guint action,
+				    GtkWidget *widget)
+{
+	Compose *compose = (Compose *) data;
+	compose->priority = action;
+}
+
+static void compose_update_priority_menu_item(Compose * compose)
+{
+	GtkItemFactory *ifactory;
+	GtkWidget *menuitem;
+
+	ifactory = gtk_item_factory_from_widget(compose->menubar);
+	
+	switch (compose->priority) {
+		case PRIORITY_HIGHEST:
+			menuitem = gtk_item_factory_get_item
+				(ifactory, "/Message/Priority/Highest");
+			break;
+		case PRIORITY_HIGH:
+			menuitem = gtk_item_factory_get_item
+				(ifactory, "/Message/Priority/High");
+			break;
+		case PRIORITY_NORMAL:
+			menuitem = gtk_item_factory_get_item
+				(ifactory, "/Message/Priority/Normal");
+			break;
+		case PRIORITY_LOW:
+			menuitem = gtk_item_factory_get_item
+				(ifactory, "/Message/Priority/Low");
+			break;
+		case PRIORITY_LOWEST:
+			menuitem = gtk_item_factory_get_item
+				(ifactory, "/Message/Priority/Lowest");
+			break;
+	}
+	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), TRUE);
+}	
+ 
 static void compose_set_template_menu(Compose *compose)
 {
 	GSList *tmpl_list, *cur;
