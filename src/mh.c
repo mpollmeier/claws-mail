@@ -701,14 +701,16 @@ void mh_scan_folder(Folder *folder, FolderItem *item)
 		if ((num = to_number(d->d_name)) >= 0 &&
 		    stat(d->d_name, &s) == 0 &&
 		    S_ISREG(s.st_mode)) {
+/*
 			n_msg++;
+*/
 			if (max < num)
 				max = num;
 		}
 	}
-
 	closedir(dp);
 
+/*
 	if (n_msg == 0)
 		item->new = item->unread = item->total = 0;
 	else {
@@ -723,7 +725,7 @@ void mh_scan_folder(Folder *folder, FolderItem *item)
 		item->unread = unread;
 		item->total = n_msg;
 	}
-
+*/
 	debug_print(_("Last number in dir %s = %d\n"), item->path, max);
 	item->last_num = max;
 }

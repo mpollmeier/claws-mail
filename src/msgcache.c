@@ -148,7 +148,7 @@ MsgCache *msgcache_read(const gchar *cache_file, const gchar *mark_file, FolderI
 	}
 	setvbuf(fp, file_buf, _IOFBF, sizeof(file_buf));
 
-	debug_print(_("\tReading message cache...\n"));
+	debug_print(_("\tReading message cache from %s and %s...\n"), cache_file, mark_file);
 
 	/* compare cache version */
 	if (fread(&ver, sizeof(ver), 1, fp) != 1 ||
@@ -188,6 +188,7 @@ MsgCache *msgcache_read(const gchar *cache_file, const gchar *mark_file, FolderI
 
 		g_hash_table_insert(cache, GINT_TO_POINTER(msginfo->msgnum), msginfo);
 	}
+	fclose(fp);
 
 	if ((fp = fopen(mark_file, "r")) == NULL)
 		debug_print(_("Mark file not found.\n"));
@@ -206,10 +207,10 @@ MsgCache *msgcache_read(const gchar *cache_file, const gchar *mark_file, FolderI
 			}
 		}
 	}
+	fclose(fp);
 
 	g_hash_table_thaw(cache);
 
-	fclose(fp);
 	debug_print(_("done. (%d items read)\n"), g_hash_table_size(cache));
 
 	return cache;
@@ -287,7 +288,7 @@ gint msgcache_write(const gchar *cache_file, const gchar *mark_file, MsgCache *c
 
 	g_return_val_if_fail(cache_file != NULL, -1);
 
-	debug_print(_("\tWriting message cache...\n"));
+	debug_print(_("\tWriting message cache to %s and %s...\n"), cache_file, mark_file);
 
 	if ((fp = fopen(cache_file, "w")) == NULL) {
 		FILE_OP_ERROR(cache_file, "fopen");
@@ -312,7 +313,8 @@ gint msgcache_write(const gchar *cache_file, const gchar *mark_file, MsgCache *c
 
 	g_hash_table_foreach((GHashTable *)cache, msgcache_write_func, (gpointer)&write_fps);
 
-	fclose(fp);
+	fclose(write_fps.cache_fp);
+	fclose(write_fps.mark_fp);
 
 	debug_print(_("done.\n"));
 }

@@ -849,8 +849,6 @@ void procmsg_print_message(MsgInfo *msginfo, const gchar *cmdline)
 
 MsgInfo *procmsg_msginfo_new_ref(MsgInfo *msginfo)
 {
-	
-
 	msginfo->refcnt++;
 	
 	return msginfo;

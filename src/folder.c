@@ -647,9 +647,14 @@ void folder_item_write_cache(FolderItem *item)
 	gchar *cache_file, *mark_file;
 	PrefsFolderItem *prefs;
 	gint filemode = 0;
+	gchar *id;
 	
 	if (!item || !item->path || !item->cache)
 		return;
+
+	id = folder_item_get_identifier(item);
+	debug_print(_("Save cache for folder %s\n"), id);
+	g_free(id);
 
 	cache_file = folder_item_get_cache_file(item);
 	mark_file = folder_item_get_mark_file(item);
@@ -719,8 +724,12 @@ gint folder_item_add_msg(FolderItem *dest, const gchar *file,
         msginfo = procheader_parse(file, default_flags, TRUE, FALSE);
 
 	num = folder->add_msg(folder, dest, file, remove_source);
-	
+
         if (num > 0) {
+		dest->new++;
+		dest->unread++;
+		dest->total++;
+
 		msginfo->msgnum = num;
 		msginfo->folder = dest;
                 dest->last_num = num;
