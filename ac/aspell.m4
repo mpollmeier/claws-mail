@@ -1,5 +1,5 @@
 dnl Autoconf macros for libaspell
-dnl $Id: aspell.m4,v 1.1.2.2 2002-08-23 13:38:38 mhadasht Exp $
+dnl $Id: aspell.m4,v 1.1.2.3 2002-08-23 15:05:31 mhadasht Exp $
 
 # Configure paths for ASPELL
 # Shamelessly stolen from the one of GPGME by Werner Koch 
@@ -34,7 +34,7 @@ dnl
         aspell_includes=$aspell_prefix/include
      fi
      if test x$aspell_libs == x ; then
-        aspell_libs=$aspell_prefix/libs
+        aspell_libs=$aspell_prefix/lib
      fi
   fi
   if test x$aspell_includes == x ; then
