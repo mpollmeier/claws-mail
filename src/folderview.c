@@ -853,6 +853,7 @@ void folderview_check_new(Folder *folder)
 		     node != NULL; node = gtkut_ctree_node_next(ctree, node)) {
 			item = gtk_ctree_node_get_row_data(ctree, node);
 			if (!item || !item->path || !item->folder) continue;
+			if (item->no_select) continue;
 			if (folder && folder != item->folder) continue;
 			if (!folder && !FOLDER_IS_LOCAL(item->folder)) continue;
 
@@ -1086,7 +1087,9 @@ static void folderview_update_node(FolderView *folderview, GtkCTreeNode *node)
 			name = g_strconcat(item->name, name, NULL);
 		} else {
 			if (item->folder->type == F_NEWS &&
-			    !strcmp2(item->name, item->path))
+			    item->path &&
+			    !strcmp2(item->name, item->path) &&
+			    prefs_common.ng_abbrev_len < strlen(item->path))
 				name = get_abbrev_newsgroup_name(item->path);
 			else
 				name = g_strdup(item->name);

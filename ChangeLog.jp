@@ -1,3 +1,43 @@
+2002-05-10
+
+	* src/folderview.c
+	  src/prefs_common.[ch]
+	  src/summaryview.c: ニュースグループ名を簡略表示する最小の文字数
+	  を指定するオプションを追加。
+
+2002-05-09
+
+	* src/folderview.c: folderview_check_new(): 選択できないフォルダを
+	  スキップ。
+	* src/summaryview.c: コンテキストメニューに「振り分けルールを作成」
+	  を追加。
+	* src/imap.c: コードの整理。
+	  imap_scan_tree_recursive(): 各呼び出し時にパス区切りを取得。
+	  imap_get_path_separator(): 新規。
+
+2002-05-08
+
+	* src/imap.[ch]: others/shared フォルダの namespace に対応(作業中)。
+	  imap_parse_namespace(): others/shared namespace もパース。
+	  imap_find_namespace(): others/shared namespace も検索。
+	* src/utils.[ch]:
+	  strchr_parenthesis_close(): 閉じ括弧へのポインタを返す。
+	  strsplit_parenthesis(): 括弧のリストを文字列の配列に分割。
+
+2002-05-08
+
+	* src/procheader.c: procheader_date_parse(): "Mon,6 May 2002 20:31:12
+	  +0800" のような日時文字列をパースできないバグを修正。
+	  procheader_scan_date_string(): 新規。 procheader_date_parse() から
+	  文字列スキャン部分を分離。
+
+2002-05-07
+
+	* src/summary_search.c: summary_search_execute(): サマリの行を選択
+	  するときにロックを解除するようにした(Martin Schaaf さん thanks)。
+	* src/summaryview.c: summary_set_column_titles(): Win/Mac のスタイル
+	  に合うように矢印の方向を逆にした。
+
 2002-05-02
 
 	* src/compose.c: compose_write_headers(): 必要であれば自分のアドレス
@@ -8,6 +48,7 @@
 	* src/compose.c: compose_queue(): queue フォルダの存在をチェック。
 	* src/imap.c: QUOTE_IF_REQUIRED(): その他の IMAP スペシャルキャラクタ
 	  も引用符で囲むようにした。
+	  imap_open(): 不要な引数を削除。
 
 2002-04-25
 

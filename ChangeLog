@@ -1,3 +1,43 @@
+2002-05-10
+
+	* src/folderview.c
+	  src/prefs_common.[ch]
+	  src/summaryview.c: added an option to specify the minimum length
+	  for abbreviated newsgroups name.
+
+2002-05-09
+
+	* src/folderview.c: folderview_check_new(): skip unselectable folders.
+	* src/summaryview.c: added 'Create filter rule' to the context menu.
+	* src/imap.c: some code cleanups.
+	  imap_scan_tree_recursive(): get path separator for each calls.
+	  imap_get_path_separator(): new.
+
+2002-05-08
+
+	* src/imap.[ch]: supported namespace for others/shared folders
+	  (in progress).
+	  imap_parse_namespace(): parse also others/shared namespace.
+	  imap_find_namespace(): search also others/shared namespace.
+	* src/utils.[ch]:
+	  strchr_parenthesis_close(): return pointer to closing parenthesis.
+	  strsplit_parenthesis(): split parenthetic list into array of
+	  strings.
+
+2002-05-08
+
+	* src/procheader.c: procheader_date_parse(): fixed a bug that didn't
+	  parse date string like "Mon,6 May 2002 20:31:12 +0800".
+	  procheader_scan_date_string(): new. Separated string scanning
+	  part from procheader_date_parse().
+
+2002-05-07
+
+	* src/summary_search.c: summary_search_execute(): unlock while
+	  selecting summary row (thanks to Martin Schaaf).
+	* src/summaryview.c: summary_set_column_titles(): reversed the
+	  direction of the arrow so that it matches with Win/Mac style.
+
 2002-05-02
 
 	* src/compose.c: compose_write_headers(): quote self address name
@@ -7,6 +47,7 @@
 	* src/compose.c: compose_queue(): check if queue folder exists.
 	* src/imap.c: QUOTE_IF_REQUIRED(): quote also other IMAP special
 	  characters.
+	  imap_open(): removed an unrequired argument.
 
 2002-04-25
 

@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: sylpheed    \n"
-"POT-Creation-Date: 2002-04-28 22:52+0200\n"
+"POT-Creation-Date: 2002-05-10 17:44+0200\n"
 "PO-Revision-Date: 2002-03-11 16:15+0100\n"
 "Last-Translator: Jens Oberender <j.obi@troja.net>\n"
 "Language-Team: German <gnome-de@gnome.org>\n"
@@ -90,7 +90,7 @@ msgstr ""
 
 #. Button panel
 #: src/about.c:243 src/addressadd.c:239 src/addrgather.c:505
-#: src/alertpanel.c:239 src/compose.c:2773 src/compose.c:5305
+#: src/alertpanel.c:239 src/compose.c:2775 src/compose.c:5307
 #: src/editaddress.c:495 src/editbook.c:204 src/editgroup.c:364
 #: src/editjpilot.c:344 src/editldap.c:243 src/editldap_basedn.c:212
 #: src/editvcard.c:239 src/export.c:187 src/foldersel.c:186
@@ -98,14 +98,14 @@ msgstr ""
 #: src/import.c:191 src/importmutt.c:287 src/importpine.c:287
 #: src/inputdialog.c:202 src/main.c:411 src/main.c:419 src/mainwindow.c:2486
 #: src/messageview.c:335 src/mimeview.c:831 src/passphrase.c:130
-#: src/prefs.c:475 src/prefs_actions.c:267 src/prefs_common.c:3103
-#: src/prefs_common.c:3259 src/prefs_common.c:3579
+#: src/prefs.c:475 src/prefs_actions.c:267 src/prefs_common.c:3173
+#: src/prefs_common.c:3329 src/prefs_common.c:3649
 #: src/prefs_customheader.c:157 src/prefs_display_header.c:194
 #: src/prefs_filter.c:203 src/prefs_filtering.c:341
 #: src/prefs_folder_item.c:449 src/prefs_matcher.c:307
 #: src/prefs_matcher.c:1492 src/prefs_scoring.c:196
 #: src/prefs_summary_column.c:313 src/prefs_template.c:257 src/quote_fmt.c:128
-#: src/sigstatus.c:134 src/summaryview.c:3365
+#: src/sigstatus.c:134 src/summaryview.c:3379
 msgid "OK"
 msgstr "OK"
 
@@ -146,8 +146,8 @@ msgstr ""
 "Neue Nachrichten werden in diese Ablage eingecheckt. Ablagen in der\n"
 "`G' Spalte wählen um das Nachrichtenabholen mit `Hole alle' zu aktivieren."
 
-#: src/account.c:500 src/addressadd.c:183 src/addressbook.c:542
-#: src/compose.c:4114 src/compose.c:4287 src/editaddress.c:756
+#: src/account.c:500 src/addressadd.c:183 src/addressbook.c:534
+#: src/compose.c:4116 src/compose.c:4289 src/editaddress.c:756
 #: src/editaddress.c:805 src/editbook.c:174 src/editgroup.c:252
 #: src/editjpilot.c:295 src/editldap.c:298 src/editvcard.c:210
 #: src/importmutt.c:261 src/importpine.c:261 src/mimeview.c:153
@@ -163,7 +163,7 @@ msgstr "Protokoll"
 msgid "Server"
 msgstr "Server"
 
-#: src/account.c:531 src/addressbook.c:681 src/editaddress.c:704
+#: src/account.c:531 src/addressbook.c:673 src/editaddress.c:704
 #: src/editaddress.c:838 src/prefs_customheader.c:234
 #: src/prefs_display_header.c:275 src/prefs_display_header.c:330
 msgid "Add"
@@ -195,9 +195,9 @@ msgstr "Auf"
 msgid " Set as default account "
 msgstr " Als Standardaccount setzen "
 
-#: src/account.c:575 src/addressbook.c:902 src/addressbook.c:2913
-#: src/addressbook.c:2917 src/addressbook.c:2954 src/message_search.c:135
-#: src/summary_search.c:200
+#: src/account.c:575 src/addressbook.c:893 src/addressbook.c:2908
+#: src/addressbook.c:2912 src/addressbook.c:2949 src/exphtmldlg.c:167
+#: src/message_search.c:135 src/summary_search.c:200
 msgid "Close"
 msgstr "Schließen"
 
@@ -209,23 +209,23 @@ msgstr "Account löschen"
 msgid "Do you really want to delete this account?"
 msgstr "Wollen Sie diesen Account wirklich löschen?"
 
-#: src/account.c:659 src/addressbook.c:925 src/addressbook.c:2086
-#: src/compose.c:2652 src/compose.c:3065 src/compose.c:5479 src/compose.c:5929
-#: src/folderview.c:2014 src/folderview.c:2076 src/folderview.c:2175
-#: src/folderview.c:2306 src/folderview.c:2339 src/inc.c:172 src/inc.c:262
-#: src/mainwindow.c:1370 src/mainwindow.c:2680 src/message_search.c:198
-#: src/messageview.c:394 src/prefs_actions.c:872 src/prefs_customheader.c:541
-#: src/prefs_filter.c:813 src/prefs_filtering.c:972 src/prefs_scoring.c:637
-#: src/prefs_template.c:514 src/summary_search.c:310 src/summaryview.c:721
-#: src/summaryview.c:1149 src/summaryview.c:1184 src/summaryview.c:1227
-#: src/summaryview.c:1250 src/summaryview.c:1273 src/summaryview.c:1296
-#: src/summaryview.c:3019
+#: src/account.c:659 src/addressbook.c:916 src/addressbook.c:2081
+#: src/compose.c:2654 src/compose.c:3067 src/compose.c:5481 src/compose.c:5931
+#: src/exphtmldlg.c:156 src/folderview.c:2030 src/folderview.c:2094
+#: src/folderview.c:2199 src/folderview.c:2333 src/folderview.c:2369
+#: src/inc.c:172 src/inc.c:262 src/mainwindow.c:1370 src/mainwindow.c:2680
+#: src/message_search.c:198 src/messageview.c:394 src/prefs_actions.c:872
+#: src/prefs_customheader.c:541 src/prefs_filter.c:813
+#: src/prefs_filtering.c:972 src/prefs_scoring.c:637 src/prefs_template.c:514
+#: src/summary_search.c:310 src/summaryview.c:733 src/summaryview.c:1162
+#: src/summaryview.c:1197 src/summaryview.c:1240 src/summaryview.c:1263
+#: src/summaryview.c:1286 src/summaryview.c:1309 src/summaryview.c:3033
 msgid "Yes"
 msgstr "Ja"
 
-#: src/account.c:659 src/compose.c:3065 src/compose.c:5479
-#: src/folderview.c:2014 src/folderview.c:2076 src/folderview.c:2175
-#: src/folderview.c:2306 src/folderview.c:2339
+#: src/account.c:659 src/compose.c:3067 src/compose.c:5481
+#: src/folderview.c:2030 src/folderview.c:2094 src/folderview.c:2199
+#: src/folderview.c:2333 src/folderview.c:2369
 msgid "+No"
 msgstr "+Nein"
 
@@ -237,11 +237,11 @@ msgstr "Lösche alle Accountreferenzen für alle Ablagen...\n"
 msgid "Add Address to Book"
 msgstr "Adresse dem Adressbuch hinzufügen"
 
-#: src/addressadd.c:193 src/compose.c:4833 src/select-keys.c:302
+#: src/addressadd.c:193 src/compose.c:4835 src/select-keys.c:302
 msgid "Address"
 msgstr "Adresse"
 
-#: src/addressadd.c:203 src/addressbook.c:544 src/editaddress.c:610
+#: src/addressadd.c:203 src/addressbook.c:536 src/editaddress.c:610
 #: src/editaddress.c:674 src/editgroup.c:254
 msgid "Remarks"
 msgstr "Kommentar"
@@ -250,23 +250,23 @@ msgstr "Kommentar"
 msgid "Select Address Book Folder"
 msgstr "Wähle Adressbuchablage"
 
-#: src/addressadd.c:240 src/addressbook.c:2080 src/addrgather.c:506
-#: src/compose.c:2773 src/compose.c:5306 src/compose.c:6087 src/compose.c:6122
+#: src/addressadd.c:240 src/addressbook.c:2075 src/addrgather.c:506
+#: src/compose.c:2775 src/compose.c:5308 src/compose.c:6089 src/compose.c:6124
 #: src/editaddress.c:496 src/editbook.c:205 src/editgroup.c:365
 #: src/editjpilot.c:345 src/editldap.c:244 src/editldap_basedn.c:213
-#: src/editvcard.c:240 src/export.c:188 src/foldersel.c:187
-#: src/grouplistdialog.c:242 src/gtkspell.c:1363 src/import.c:192
-#: src/importldif.c:747 src/importmutt.c:288 src/importpine.c:288
-#: src/inputdialog.c:203 src/main.c:411 src/main.c:419 src/mainwindow.c:2486
-#: src/messageview.c:335 src/mimeview.c:831 src/passphrase.c:134
-#: src/prefs.c:476 src/prefs_actions.c:268 src/prefs_common.c:3104
-#: src/prefs_common.c:3580 src/prefs_customheader.c:158
-#: src/prefs_display_header.c:195 src/prefs_filter.c:204
-#: src/prefs_filtering.c:342 src/prefs_folder_item.c:450
-#: src/prefs_matcher.c:308 src/prefs_scoring.c:197
+#: src/editvcard.c:240 src/exphtmldlg.c:662 src/export.c:188
+#: src/foldersel.c:187 src/grouplistdialog.c:242 src/gtkspell.c:1363
+#: src/import.c:192 src/importldif.c:747 src/importmutt.c:288
+#: src/importpine.c:288 src/inputdialog.c:203 src/main.c:411 src/main.c:419
+#: src/mainwindow.c:2486 src/messageview.c:335 src/mimeview.c:831
+#: src/passphrase.c:134 src/prefs.c:476 src/prefs_actions.c:268
+#: src/prefs_common.c:3174 src/prefs_common.c:3650
+#: src/prefs_customheader.c:158 src/prefs_display_header.c:195
+#: src/prefs_filter.c:204 src/prefs_filtering.c:342
+#: src/prefs_folder_item.c:450 src/prefs_matcher.c:308 src/prefs_scoring.c:197
 #: src/prefs_summary_column.c:314 src/prefs_template.c:258
-#: src/progressdialog.c:77 src/select-keys.c:326 src/summaryview.c:721
-#: src/summaryview.c:3365
+#: src/progressdialog.c:77 src/select-keys.c:326 src/summaryview.c:733
+#: src/summaryview.c:3379
 msgid "Cancel"
 msgstr "Abbrechen"
 
@@ -311,7 +311,7 @@ msgstr "/_Datei/_Speichern"
 msgid "/_File/_Close"
 msgstr "/_Datei/S_chließen"
 
-#: src/addressbook.c:363 src/addressbook.c:400 src/addressbook.c:414
+#: src/addressbook.c:363 src/addressbook.c:392 src/addressbook.c:406
 #: src/compose.c:487 src/mainwindow.c:497
 msgid "/_Edit"
 msgstr "/_Bearbeiten"
@@ -365,90 +365,98 @@ msgstr "/_Adresse/_Bearbeiten"
 msgid "/_Address/_Delete"
 msgstr "/_Adresse/_Löschen"
 
-#: src/addressbook.c:376 src/mainwindow.c:688 src/mainwindow.c:697
-#: src/mainwindow.c:708 src/mainwindow.c:710 src/mainwindow.c:712
-#: src/mainwindow.c:715
+#: src/addressbook.c:376 src/addressbook.c:380 src/mainwindow.c:688
+#: src/mainwindow.c:697 src/mainwindow.c:708 src/mainwindow.c:710
+#: src/mainwindow.c:712 src/mainwindow.c:715
 msgid "/_Tools/---"
 msgstr "/_Werkzeuge/---"
 
 #: src/addressbook.c:377
-msgid "/_Tools/Import _LDIF file"
+#, fuzzy
+msgid "/_Tools/Import _LDIF file..."
 msgstr "/_Werkzeuge/Importiere _LDIF Datei"
 
 #: src/addressbook.c:378
-msgid "/_Tools/Import M_utt file"
+#, fuzzy
+msgid "/_Tools/Import M_utt file..."
 msgstr "/_Werkzeuge/Importiere M_utt Datei"
 
 #: src/addressbook.c:379
-msgid "/_Tools/Import _Pine file"
+#, fuzzy
+msgid "/_Tools/Import _Pine file..."
 msgstr "/_Werkzeuge/Importiere _Pine Datei"
 
-#: src/addressbook.c:380 src/compose.c:638 src/mainwindow.c:739
+#: src/addressbook.c:381
+#, fuzzy
+msgid "/_Tools/Export _HTML..."
+msgstr "/_Werkzeuge/Importiere _LDIF Datei"
+
+#: src/addressbook.c:382 src/compose.c:638 src/mainwindow.c:739
 msgid "/_Help"
 msgstr "/_Hilfe"
 
-#: src/addressbook.c:381 src/compose.c:639 src/mainwindow.c:753
+#: src/addressbook.c:383 src/compose.c:639 src/mainwindow.c:753
 msgid "/_Help/_About"
 msgstr "/_Hilfe/_Über"
 
-#: src/addressbook.c:396 src/addressbook.c:410
+#: src/addressbook.c:388 src/addressbook.c:402
 msgid "/New _Address"
 msgstr "/Neue _Adresse"
 
-#: src/addressbook.c:397 src/addressbook.c:411
+#: src/addressbook.c:389 src/addressbook.c:403
 msgid "/New _Group"
 msgstr "/Neue _Gruppe"
 
-#: src/addressbook.c:398 src/addressbook.c:412
+#: src/addressbook.c:390 src/addressbook.c:404
 msgid "/New _Folder"
 msgstr "/Neue Ab_lage"
 
-#: src/addressbook.c:399 src/addressbook.c:402 src/addressbook.c:413
-#: src/addressbook.c:416 src/addressbook.c:420 src/compose.c:474
+#: src/addressbook.c:391 src/addressbook.c:394 src/addressbook.c:405
+#: src/addressbook.c:408 src/addressbook.c:412 src/compose.c:474
 #: src/folderview.c:268 src/folderview.c:270 src/folderview.c:279
 #: src/folderview.c:283 src/folderview.c:287 src/folderview.c:289
 #: src/folderview.c:299 src/folderview.c:303 src/folderview.c:307
 #: src/folderview.c:309 src/folderview.c:319 src/folderview.c:323
-#: src/folderview.c:325 src/summaryview.c:399 src/summaryview.c:401
-#: src/summaryview.c:404 src/summaryview.c:409 src/summaryview.c:421
-#: src/summaryview.c:424 src/summaryview.c:430
+#: src/folderview.c:325 src/summaryview.c:402 src/summaryview.c:404
+#: src/summaryview.c:407 src/summaryview.c:412 src/summaryview.c:424
+#: src/summaryview.c:436 src/summaryview.c:442
 msgid "/---"
 msgstr "/---"
 
-#: src/addressbook.c:401 src/addressbook.c:415 src/summaryview.c:407
+#: src/addressbook.c:393 src/addressbook.c:407 src/summaryview.c:410
 msgid "/_Delete"
 msgstr "/_Löschen"
 
-#: src/addressbook.c:403 src/addressbook.c:417
+#: src/addressbook.c:395 src/addressbook.c:409
 msgid "/C_ut"
 msgstr "/_Ausschneiden"
 
-#: src/addressbook.c:404 src/addressbook.c:418
+#: src/addressbook.c:396 src/addressbook.c:410
 msgid "/_Copy"
 msgstr "/_Kopieren"
 
-#: src/addressbook.c:405 src/addressbook.c:419
+#: src/addressbook.c:397 src/addressbook.c:411
 msgid "/_Paste"
 msgstr "/_Einfügen"
 
-#: src/addressbook.c:421
+#: src/addressbook.c:413
 msgid "/Pa_ste Address"
 msgstr "/A_dresse einfügen"
 
-#: src/addressbook.c:543
+#: src/addressbook.c:535
 msgid "E-Mail address"
 msgstr "E-Mail Adresse"
 
-#: src/addressbook.c:547 src/compose.c:4834 src/prefs_common.c:2632
+#: src/addressbook.c:539 src/compose.c:4836 src/prefs_common.c:2702
 msgid "Address book"
 msgstr "Adressbuch"
 
-#: src/addressbook.c:646
+#: src/addressbook.c:638
 msgid "Name:"
 msgstr "Name:"
 
 #. Buttons
-#: src/addressbook.c:678 src/addressbook.c:2079 src/addressbook.c:2086
+#: src/addressbook.c:670 src/addressbook.c:2074 src/addressbook.c:2081
 #: src/editaddress.c:698 src/editaddress.c:832 src/mainwindow.c:2052
 #: src/prefs_actions.c:367 src/prefs_display_header.c:281
 #: src/prefs_display_header.c:337 src/prefs_filter.c:413
@@ -457,57 +465,58 @@ msgstr "Name:"
 msgid "Delete"
 msgstr "Löschen"
 
-#: src/addressbook.c:684
+#: src/addressbook.c:676
 msgid "Lookup"
 msgstr "Suchen"
 
-#: src/addressbook.c:696 src/compose.c:1316 src/compose.c:3932
-#: src/compose.c:4680 src/headerview.c:55 src/prefs_template.c:169
+#: src/addressbook.c:688 src/compose.c:1316 src/compose.c:3934
+#: src/compose.c:4682 src/headerview.c:55 src/prefs_template.c:169
 #: src/summary_search.c:154
 msgid "To:"
 msgstr "An:"
 
-#: src/addressbook.c:700 src/compose.c:1300
+#: src/addressbook.c:692 src/compose.c:1300
 msgid "Cc:"
 msgstr "Cc:"
 
-#: src/addressbook.c:704 src/compose.c:1303
+#: src/addressbook.c:696 src/compose.c:1303
 msgid "Bcc:"
 msgstr "Bcc:"
 
 #. Confirm deletion
-#: src/addressbook.c:900 src/addressbook.c:923
+#: src/addressbook.c:891 src/addressbook.c:914
 msgid "Delete address(es)"
 msgstr "Adresse(n) löschen"
 
-#: src/addressbook.c:901
+#: src/addressbook.c:892
 msgid "This address data is readonly and cannot be deleted."
 msgstr "Diese Adressdaten sind nur lesbar und können nicht gelöscht werden."
 
-#: src/addressbook.c:924
+#: src/addressbook.c:915
 msgid "Really delete the address(es)?"
 msgstr "Adresse(n) wirklich löschen?"
 
-#: src/addressbook.c:925 src/addressbook.c:2086 src/compose.c:2652
-#: src/compose.c:5929 src/inc.c:172 src/inc.c:262 src/mainwindow.c:1370
-#: src/mainwindow.c:2680 src/message_search.c:198 src/messageview.c:394
-#: src/prefs_actions.c:872 src/prefs_customheader.c:541 src/prefs_filter.c:813
-#: src/prefs_filtering.c:972 src/prefs_scoring.c:637 src/prefs_template.c:514
-#: src/summary_search.c:310 src/summaryview.c:721 src/summaryview.c:1149
-#: src/summaryview.c:1184 src/summaryview.c:1227 src/summaryview.c:1250
-#: src/summaryview.c:1273 src/summaryview.c:1296 src/summaryview.c:3019
+#: src/addressbook.c:916 src/addressbook.c:2081 src/compose.c:2654
+#: src/compose.c:5931 src/exphtmldlg.c:156 src/inc.c:172 src/inc.c:262
+#: src/mainwindow.c:1370 src/mainwindow.c:2680 src/message_search.c:198
+#: src/messageview.c:394 src/prefs_actions.c:872 src/prefs_customheader.c:541
+#: src/prefs_filter.c:813 src/prefs_filtering.c:972 src/prefs_scoring.c:637
+#: src/prefs_template.c:514 src/summary_search.c:310 src/summaryview.c:733
+#: src/summaryview.c:1162 src/summaryview.c:1197 src/summaryview.c:1240
+#: src/summaryview.c:1263 src/summaryview.c:1286 src/summaryview.c:1309
+#: src/summaryview.c:3033
 msgid "No"
 msgstr "Nein"
 
-#: src/addressbook.c:1422 src/addressbook.c:1495
+#: src/addressbook.c:1417 src/addressbook.c:1490
 msgid "Cannot paste. Target address book is readonly."
 msgstr "Kann nicht einfügen, da das Zieladressbuch nur lesbar ist."
 
-#: src/addressbook.c:1433
+#: src/addressbook.c:1428
 msgid "Cannot paste into an address group."
 msgstr "Kann nicht in die Adressgruppe einfügen."
 
-#: src/addressbook.c:2076
+#: src/addressbook.c:2071
 #, c-format
 msgid ""
 "Do you want to delete the folder AND all addresses in `%s' ? \n"
@@ -517,32 +526,32 @@ msgstr ""
 "Wenn nur die Ablage gelöscht wird, werden die Adressen in die "
 "darüberliegende Ablage verschoben"
 
-#: src/addressbook.c:2080
+#: src/addressbook.c:2075
 msgid "Folder only"
 msgstr "Nur Ablage"
 
-#: src/addressbook.c:2080
+#: src/addressbook.c:2075
 msgid "Folder and Addresses"
 msgstr "Ablage und Adressen"
 
-#: src/addressbook.c:2085
+#: src/addressbook.c:2080
 #, c-format
 msgid "Really delete `%s' ?"
 msgstr "Wirklich `%s' löschen ?"
 
-#: src/addressbook.c:2863
+#: src/addressbook.c:2858
 msgid "New user, could not save index file."
 msgstr "Neuer Benutzer, konnte Indexdatei nicht speichern."
 
-#: src/addressbook.c:2867
+#: src/addressbook.c:2862
 msgid "New user, could not save address book files."
 msgstr "Neuer Benutzer, konnte Adressbuchdatei nicht speichern."
 
-#: src/addressbook.c:2877
+#: src/addressbook.c:2872
 msgid "Old address book converted successfully."
 msgstr "Altes Adressesbuch erfolgreich konvertiert."
 
-#: src/addressbook.c:2882
+#: src/addressbook.c:2877
 msgid ""
 "Old address book converted,\n"
 "could not save new address index file"
@@ -550,7 +559,7 @@ msgstr ""
 "Altes Adressbuch konvertiert,\n"
 "konnte Indexdatei des neuen Adressbuches nicht speichern."
 
-#: src/addressbook.c:2895
+#: src/addressbook.c:2890
 msgid ""
 "Could not convert address book,\n"
 "but created empty new address book files."
@@ -558,7 +567,7 @@ msgstr ""
 "Konnte Adressbuch nicht konvertieren,\n"
 "aber eine leere, neue Adressbuchdatei wurde erstellt."
 
-#: src/addressbook.c:2901
+#: src/addressbook.c:2896
 msgid ""
 "Could not convert address book,\n"
 "could not create new address book files."
@@ -566,7 +575,7 @@ msgstr ""
 "Konnte Adressbuch nicht konvertieren,\n"
 "konnte keine neue Adressbuchdatei erstellen."
 
-#: src/addressbook.c:2906
+#: src/addressbook.c:2901
 msgid ""
 "Could not convert address book\n"
 "and could not create new address book files."
@@ -574,56 +583,58 @@ msgstr ""
 "Konnte Adressbuch nicht konvertieren\n"
 "und konnte keine neue Adressbuchdatei erstellen."
 
-#: src/addressbook.c:2913
+#: src/addressbook.c:2908
 msgid "Addressbook conversion error"
 msgstr "Adressbuch-Konvertierungsfehler"
 
-#: src/addressbook.c:2917
+#: src/addressbook.c:2912
 msgid "Addressbook conversion"
 msgstr "Adressbuchkonvertierung"
 
-#: src/addressbook.c:2952
+#: src/addressbook.c:2947
 msgid "Addressbook Error"
 msgstr "Adressbuch Fehler"
 
-#: src/addressbook.c:2953
+#: src/addressbook.c:2948
 msgid "Could not read address index"
 msgstr "Konnte Adressindex nicht lesen."
 
-#: src/addressbook.c:3429 src/prefs_common.c:974
+#: src/addressbook.c:3424 src/prefs_common.c:984
 msgid "Interface"
 msgstr "Benutzerschnittstelle"
 
-#: src/addressbook.c:3445 src/importldif.c:490
+#: src/addressbook.c:3440 src/exphtmldlg.c:373 src/exphtmldlg.c:577
+#: src/exporthtml.c:1014 src/importldif.c:490
 msgid "Address Book"
 msgstr "Adressbuch"
 
-#: src/addressbook.c:3461
+#: src/addressbook.c:3456
 msgid "Person"
 msgstr "Person"
 
-#: src/addressbook.c:3477
+#: src/addressbook.c:3472
 msgid "EMail Address"
 msgstr "EMail Adresse"
 
-#: src/addressbook.c:3493
+#: src/addressbook.c:3488
 msgid "Group"
 msgstr "Gruppe"
 
 #. special folder setting (maybe these options are redundant)
-#: src/addressbook.c:3509 src/folderview.c:353 src/prefs_account.c:1733
+#: src/addressbook.c:3504 src/exporthtml.c:916 src/folderview.c:353
+#: src/prefs_account.c:1733
 msgid "Folder"
 msgstr "Ablage"
 
-#: src/addressbook.c:3525
+#: src/addressbook.c:3520
 msgid "vCard"
 msgstr "vCard"
 
-#: src/addressbook.c:3541 src/addressbook.c:3557
+#: src/addressbook.c:3536 src/addressbook.c:3552
 msgid "JPilot"
 msgstr "JPilot"
 
-#: src/addressbook.c:3573
+#: src/addressbook.c:3568
 msgid "LDAP Server"
 msgstr "LDAP Server"
 
@@ -695,7 +706,7 @@ msgstr "Warnung"
 msgid "Header Fields"
 msgstr "Kopfzeilenfelder"
 
-#: src/addrgather.c:528 src/importldif.c:777
+#: src/addrgather.c:528 src/exphtmldlg.c:692 src/importldif.c:777
 msgid "Finish"
 msgstr "Ende"
 
@@ -716,11 +727,11 @@ msgstr "Allgemeine Adresse"
 msgid "Personal address"
 msgstr "Persönliche Adresse"
 
-#: src/alertpanel.c:120 src/compose.c:5479 src/main.c:409
+#: src/alertpanel.c:120 src/compose.c:5481 src/main.c:409
 msgid "Notice"
 msgstr "Notiz"
 
-#: src/alertpanel.c:146 src/compose.c:3063 src/inc.c:533
+#: src/alertpanel.c:146 src/compose.c:3065 src/inc.c:533
 msgid "Error"
 msgstr "Fehler"
 
@@ -768,8 +779,8 @@ msgstr "Braun"
 #. * index of label_colors[] as data parameter. for the None color we
 #. * pass an invalid (high) value. also we attach a data pointer so we
 #. * can always get back the SummaryView pointer.
-#: src/colorlabel.c:281 src/gtkspell.c:1427 src/gtkspell.c:2118
-#: src/summaryview.c:4326
+#: src/colorlabel.c:281 src/exphtmldlg.c:448 src/gtkspell.c:1427
+#: src/gtkspell.c:2118 src/summaryview.c:4340
 msgid "None"
 msgstr "Keine"
 
@@ -918,7 +929,7 @@ msgstr "/_Rechtschreibung/---"
 msgid "/_Spelling/_Spelling Configuration"
 msgstr "/_Rechtschreibung/Rechtschreibung konfigurieren"
 
-#: src/compose.c:593 src/mainwindow.c:505 src/summaryview.c:425
+#: src/compose.c:593 src/mainwindow.c:505 src/summaryview.c:437
 msgid "/_View"
 msgstr "/_Ansicht"
 
@@ -1056,7 +1067,7 @@ msgstr "Kann Textabschnitt nicht lesen\n"
 msgid "Reply-To:"
 msgstr "Antwort an:"
 
-#: src/compose.c:1309 src/compose.c:3929 src/compose.c:4682
+#: src/compose.c:1309 src/compose.c:3931 src/compose.c:4684
 #: src/headerview.c:56
 msgid "Newsgroups:"
 msgstr "Newsgroups:"
@@ -1098,21 +1109,21 @@ msgstr "Kann %s nicht lesen."
 msgid "Message: %s"
 msgstr "Nachricht: %s"
 
-#: src/compose.c:2558
+#: src/compose.c:2560
 msgid " [Edited]"
 msgstr " [Bearbeitet]"
 
-#: src/compose.c:2560
+#: src/compose.c:2562
 #, c-format
 msgid "%s - Compose message%s"
 msgstr "%s - Verfasse Nachricht%s"
 
-#: src/compose.c:2563
+#: src/compose.c:2565
 #, c-format
 msgid "Compose message%s"
 msgstr "Verfasse Nachricht%s"
 
-#: src/compose.c:2587
+#: src/compose.c:2589
 msgid ""
 "Account for sending mail is not specified.\n"
 "Please select a mail account before sending."
@@ -1120,37 +1131,37 @@ msgstr ""
 "Account zum Versenden von E-Mails, wurde nicht angegeben.\n"
 "Bitte wählen sie einen E-Mail-Account vor dem Senden."
 
-#: src/compose.c:2642
+#: src/compose.c:2644
 msgid "Recipient is not specified."
 msgstr "Empfänger nicht angegeben"
 
-#: src/compose.c:2650 src/compose.c:4761 src/mainwindow.c:1977
-#: src/prefs_account.c:685 src/prefs_actions.c:1632 src/prefs_common.c:956
+#: src/compose.c:2652 src/compose.c:4763 src/mainwindow.c:1977
+#: src/prefs_account.c:685 src/prefs_actions.c:1632 src/prefs_common.c:966
 msgid "Send"
 msgstr "Senden"
 
-#: src/compose.c:2651
+#: src/compose.c:2653
 msgid "Subject is empty. Send it anyway?"
 msgstr "Betreff ist leer. Trotzdem senden?"
 
-#: src/compose.c:2671
+#: src/compose.c:2673
 msgid "Could not queue message for sending"
 msgstr "Konnte Nachricht für das Senden nicht zwischenspeichern"
 
-#: src/compose.c:2715 src/compose.c:3246
+#: src/compose.c:2717 src/compose.c:3248
 msgid "can't get recipient list."
 msgstr "Kann die Empfängerliste nicht holen."
 
-#: src/compose.c:2756 src/procmsg.c:1372
+#: src/compose.c:2758 src/procmsg.c:1372
 #, c-format
 msgid "Error occurred while posting the message to %s ."
 msgstr "Fehler beim Senden der Nachricht an %s ."
 
-#: src/compose.c:2770 src/messageview.c:332
+#: src/compose.c:2772 src/messageview.c:332
 msgid "Queueing"
 msgstr "Einreihen"
 
-#: src/compose.c:2771
+#: src/compose.c:2773
 msgid ""
 "Error occurred while sending the message.\n"
 "Put this message into queue folder?"
@@ -1158,31 +1169,32 @@ msgstr ""
 "Fehler aufgetreten beim Senden der Nachricht.\n"
 "Soll die Nachricht in die Queue-Ablage?"
 
-#: src/compose.c:2777
+#: src/compose.c:2779
 msgid "Can't queue the message."
 msgstr "Nachricht kann nicht eingereiht werden."
 
-#: src/compose.c:2780
+#: src/compose.c:2782
 msgid "Error occurred while sending the message."
 msgstr "Fehler aufgetreten beim Senden der Nachricht."
 
-#: src/compose.c:2796
-msgid "Can't save the message to outbox."
+#: src/compose.c:2798
+#, fuzzy
+msgid "Can't save the message to Sent."
 msgstr "Kann die Nachricht nicht in der Outboxablage speichern."
 
-#: src/compose.c:2825
+#: src/compose.c:2827
 msgid "Writing bounce header\n"
 msgstr "Schreibe Bounce-Kopfzeile\n"
 
-#: src/compose.c:2917 src/compose.c:3031 src/compose.c:3171 src/compose.c:3316
+#: src/compose.c:2919 src/compose.c:3033 src/compose.c:3173 src/compose.c:3318
 #: src/mbox_folder.c:1315 src/mbox_folder.c:1416 src/mbox_folder.c:1987
 #: src/mbox_folder.c:2018 src/mbox_folder.c:2081 src/mbox_folder.c:2114
 #: src/messageview.c:204 src/messageview.c:290 src/news.c:991
-#: src/procmsg.c:1353 src/utils.c:1798
+#: src/procmsg.c:1353 src/utils.c:1951
 msgid "can't change file mode\n"
 msgstr "kann Dateimodus nicht ändern\n"
 
-#: src/compose.c:3064
+#: src/compose.c:3066
 msgid ""
 "Can't convert the character encoding of the message.\n"
 "Send it anyway?"
@@ -1190,95 +1202,100 @@ msgstr ""
 "Kann den Zeichensatz der Nachricht nicht konvertieren.\n"
 "Trotzdem senden?"
 
-#: src/compose.c:3081
+#: src/compose.c:3083
 msgid "can't write headers\n"
 msgstr "kann Kopfzeilen nicht schreiben\n"
 
-#: src/compose.c:3210
+#: src/compose.c:3212
 msgid "can't remove the old message\n"
 msgstr "kann die alte Nachricht nicht verschieben\n"
 
-#: src/compose.c:3234 src/messageview.c:185
+#: src/compose.c:3236 src/messageview.c:185
 msgid "queueing message...\n"
 msgstr "Nachricht einreihen...\n"
 
-#: src/compose.c:3260
+#: src/compose.c:3262
 msgid "No account for sending mails available!"
 msgstr "Kein Account zum Emailversenden vorhanden!"
 
-#: src/compose.c:3270
+#: src/compose.c:3272
 msgid "No account for posting news available!"
 msgstr "Kein Account zum Newsversenden vorhanden!"
 
-#: src/compose.c:3401 src/messageview.c:253
+#: src/compose.c:3402
+#, fuzzy
+msgid "can't find queue folder\n"
+msgstr "kann Ablage %s nicht auswählen\n"
+
+#: src/compose.c:3409 src/messageview.c:253
 msgid "can't queue the message\n"
 msgstr "Nachricht kann nicht eingereiht werden\n"
 
-#: src/compose.c:3444
+#: src/compose.c:3452
 #, c-format
 msgid "Can't open file %s\n"
 msgstr "Kann Datei %s nicht öffnen\n"
 
-#: src/compose.c:3520
+#: src/compose.c:3558
 #, c-format
 msgid "Writing %s-header\n"
 msgstr "Schreibe %s-Kopfzeile\n"
 
-#: src/compose.c:3865
+#: src/compose.c:3867
 #, c-format
 msgid "generated Message-ID: %s\n"
 msgstr "erzeugte Nachrichten-ID: %s\n"
 
-#: src/compose.c:4008 src/headerview.c:54 src/summary_search.c:147
+#: src/compose.c:4010 src/headerview.c:54 src/summary_search.c:147
 msgid "From:"
 msgstr "Von:"
 
-#: src/compose.c:4112 src/compose.c:4285 src/compose.c:5246
+#: src/compose.c:4114 src/compose.c:4287 src/compose.c:5248
 msgid "MIME type"
 msgstr "MIME-Typ"
 
 #. S_COL_DATE
-#: src/compose.c:4113 src/compose.c:4286 src/mimeview.c:152
+#: src/compose.c:4115 src/compose.c:4288 src/mimeview.c:152
 #: src/prefs_summary_column.c:73 src/select-keys.c:299
-#: src/selective_download.c:472 src/summaryview.c:442
+#: src/selective_download.c:472 src/summaryview.c:454
 msgid "Size"
 msgstr "Größe"
 
 #. Save Message to folder
-#: src/compose.c:4177
+#: src/compose.c:4179
 msgid "Save Message to "
 msgstr "Nachricht speichern unter "
 
-#: src/compose.c:4196 src/prefs_filtering.c:493
+#: src/compose.c:4198 src/prefs_filtering.c:493
 msgid "Select ..."
 msgstr "Auswählen ..."
 
-#: src/compose.c:4282
+#: src/compose.c:4284
 msgid "Creating compose window...\n"
 msgstr "Erstelle Verfassenfenster...\n"
 
 #. header labels and entries
-#: src/compose.c:4336 src/prefs_account.c:1167 src/prefs_customheader.c:188
+#: src/compose.c:4338 src/prefs_account.c:1167 src/prefs_customheader.c:188
 #: src/prefs_filter.c:256 src/prefs_matcher.c:150
 msgid "Header"
 msgstr "Kopfzeilen"
 
 #. attachment list
-#: src/compose.c:4338 src/mimeview.c:199
+#: src/compose.c:4340 src/mimeview.c:199
 msgid "Attachments"
 msgstr "Anhänge"
 
 #. Others Tab
-#: src/compose.c:4340
+#: src/compose.c:4342
 msgid "Others"
 msgstr "Weitere"
 
-#: src/compose.c:4355 src/headerview.c:57 src/prefs_template.c:171
+#: src/compose.c:4357 src/headerview.c:57 src/prefs_template.c:171
 #: src/summary_search.c:161
 msgid "Subject:"
 msgstr "Betreff:"
 
-#: src/compose.c:4602
+#: src/compose.c:4604
 #, c-format
 msgid ""
 "Spell checker could not be started.\n"
@@ -1287,101 +1304,101 @@ msgstr ""
 "Rechtschreibprüfung konnte nicht gestartet werden.\n"
 "%s"
 
-#: src/compose.c:4609
+#: src/compose.c:4611
 #, c-format
 msgid "Pspell: could not set suggestion mode %s"
 msgstr "Pspell: konnte Vorschlagmodus %s nicht setzen"
 
-#: src/compose.c:4762
+#: src/compose.c:4764
 msgid "Send message"
 msgstr "Sende Nachricht"
 
-#: src/compose.c:4768
+#: src/compose.c:4770
 msgid "Send later"
 msgstr "Später senden"
 
-#: src/compose.c:4769
+#: src/compose.c:4771
 msgid "Put into queue folder and send later"
 msgstr "In Queue-Ablage und später senden"
 
-#: src/compose.c:4776
+#: src/compose.c:4778
 msgid "Draft"
 msgstr "Entwurf"
 
-#: src/compose.c:4777
+#: src/compose.c:4779
 msgid "Save to draft folder"
 msgstr "Speichern in Entwurfablage"
 
-#: src/compose.c:4786 src/compose.c:6122
+#: src/compose.c:4788 src/compose.c:6124
 msgid "Insert"
 msgstr "Einfügen"
 
-#: src/compose.c:4787
+#: src/compose.c:4789
 msgid "Insert file"
 msgstr "Datei einfügen"
 
-#: src/compose.c:4794
+#: src/compose.c:4796
 msgid "Attach"
 msgstr "Anhängen"
 
-#: src/compose.c:4795
+#: src/compose.c:4797
 msgid "Attach file"
 msgstr "Datei anhängen"
 
-#: src/compose.c:4804 src/prefs_common.c:1729
+#: src/compose.c:4806 src/prefs_common.c:1739
 msgid "Signature"
 msgstr "Unterschrift"
 
-#: src/compose.c:4805
+#: src/compose.c:4807
 msgid "Insert signature"
 msgstr "Unterschrift einfügen"
 
-#: src/compose.c:4813 src/prefs_common.c:2800
+#: src/compose.c:4815 src/prefs_common.c:2870
 msgid "Editor"
 msgstr "Editor"
 
-#: src/compose.c:4814
+#: src/compose.c:4816
 msgid "Edit with external editor"
 msgstr "Bearbeiten mit externem Editor"
 
-#: src/compose.c:4822
+#: src/compose.c:4824
 msgid "Linewrap"
 msgstr "Zeilenumbruch"
 
-#: src/compose.c:4823
+#: src/compose.c:4825
 msgid "Wrap all long lines"
 msgstr "Umbrechen aller langen Zeilen"
 
-#: src/compose.c:5141
+#: src/compose.c:5143
 msgid "Invalid MIME type."
 msgstr "Ungültiger MIME Typ"
 
-#: src/compose.c:5159
+#: src/compose.c:5161
 msgid "File doesn't exist or is empty."
 msgstr "Datei existiert nicht oder ist leer."
 
-#: src/compose.c:5228
+#: src/compose.c:5230
 msgid "Property"
 msgstr "Eigenschaften"
 
-#: src/compose.c:5273
+#: src/compose.c:5275
 msgid "Encoding"
 msgstr "Zeichensatzkodierung"
 
-#: src/compose.c:5302
+#: src/compose.c:5304
 msgid "Path"
 msgstr "Pfad"
 
-#: src/compose.c:5303
+#: src/compose.c:5305
 msgid "File name"
 msgstr "Dateiname"
 
-#: src/compose.c:5450
+#: src/compose.c:5452
 #, c-format
 msgid "External editor command line is invalid: `%s'\n"
 msgstr "Kommandozeile für den externen Editor ist ungültig: `%s'\n"
 
-#: src/compose.c:5476
+#: src/compose.c:5478
 #, c-format
 msgid ""
 "The external editor is still working.\n"
@@ -1392,71 +1409,71 @@ msgstr ""
 "Prozess terminieren?\n"
 "Prozessgruppen ID: %d"
 
-#: src/compose.c:5489
+#: src/compose.c:5491
 #, c-format
 msgid "Terminated process group id: %d"
 msgstr "Gruppen ID: %d des terminierten Prozesses"
 
-#: src/compose.c:5490
+#: src/compose.c:5492
 #, c-format
 msgid "Temporary file: %s"
 msgstr "Temporäre Datei: %s"
 
-#: src/compose.c:5514
+#: src/compose.c:5516
 msgid "Compose: input from monitoring process\n"
 msgstr "Verfassen: Eingabe vom Überwachungsprozess\n"
 
 #. failed
-#: src/compose.c:5547
+#: src/compose.c:5549
 msgid "Couldn't exec external editor\n"
 msgstr "Kann externen Editor nicht ausführen\n"
 
-#: src/compose.c:5551
+#: src/compose.c:5553
 msgid "Couldn't write to file\n"
 msgstr "Kann nicht in Datei schreiben\n"
 
-#: src/compose.c:5553
+#: src/compose.c:5555
 msgid "Pipe read failed\n"
 msgstr "Lesen von Pipe fehlgeschlagen\n"
 
-#: src/compose.c:5927 src/inc.c:170 src/inc.c:260 src/mainwindow.c:2678
+#: src/compose.c:5929 src/inc.c:170 src/inc.c:260 src/mainwindow.c:2678
 msgid "Offline warning"
 msgstr "Offlinewarnung"
 
-#: src/compose.c:5928 src/inc.c:171 src/inc.c:261 src/mainwindow.c:2679
+#: src/compose.c:5930 src/inc.c:171 src/inc.c:261 src/mainwindow.c:2679
 msgid "You're working offline. Override?"
 msgstr "Sie arbeiten offline. Überschreiben?"
 
-#: src/compose.c:6032 src/compose.c:6053
+#: src/compose.c:6034 src/compose.c:6055
 msgid "Select file"
 msgstr "Wähle Datei"
 
-#: src/compose.c:6085
+#: src/compose.c:6087
 msgid "Discard message"
 msgstr "Nachricht verwerfen"
 
-#: src/compose.c:6086
+#: src/compose.c:6088
 msgid "This message has been modified. discard it?"
 msgstr "Diese Nachricht wurde geändert. Verwerfen?"
 
-#: src/compose.c:6087
+#: src/compose.c:6089
 msgid "Discard"
 msgstr "Verwerfen"
 
-#: src/compose.c:6087
+#: src/compose.c:6089
 msgid "to Draft"
 msgstr "zum Entwurf"
 
-#: src/compose.c:6119
+#: src/compose.c:6121
 #, c-format
 msgid "Do you want to apply the template `%s' ?"
 msgstr "Wollen Sie die Vorlage `%s' anwenden?"
 
-#: src/compose.c:6121
+#: src/compose.c:6123
 msgid "Apply template"
 msgstr "Vorlage anwenden"
 
-#: src/compose.c:6122
+#: src/compose.c:6124
 msgid "Replace"
 msgstr "Ersetze"
 
@@ -1481,7 +1498,7 @@ msgstr "Ein Name und Wert müssen angegeben werden."
 msgid "Edit Person Data"
 msgstr "Bearbeite Personendaten"
 
-#: src/editaddress.c:559
+#: src/editaddress.c:559 src/exporthtml.c:793
 msgid "Display Name"
 msgstr "Anzeigename"
 
@@ -1498,7 +1515,7 @@ msgid "Nickname"
 msgstr "Spitzname"
 
 #: src/editaddress.c:608 src/editaddress.c:656 src/editaddress.c:866
-#: src/editgroup.c:253
+#: src/editgroup.c:253 src/exporthtml.c:632 src/exporthtml.c:796
 msgid "E-Mail Address"
 msgstr "EMail Adresse"
 
@@ -1575,7 +1592,7 @@ msgstr "Ein Gruppenname muss angegeben werden."
 msgid "Edit Group Data"
 msgstr "Bearbeite Gruppendaten"
 
-#: src/editgroup.c:287
+#: src/editgroup.c:287 src/exporthtml.c:629
 msgid "Group Name"
 msgstr "Gruppenname"
 
@@ -1615,12 +1632,12 @@ msgstr "Bearbeite Ablage"
 msgid "Input the new name of folder:"
 msgstr "Geben Sie den neuen Namen der Ablage ein:"
 
-#: src/editgroup.c:504 src/folderview.c:1754 src/folderview.c:1818
-#: src/folderview.c:2107
+#: src/editgroup.c:504 src/folderview.c:1762 src/folderview.c:1828
+#: src/folderview.c:2126
 msgid "New folder"
 msgstr "Neue Ablage"
 
-#: src/editgroup.c:505 src/folderview.c:1755 src/folderview.c:1819
+#: src/editgroup.c:505 src/folderview.c:1763 src/folderview.c:1829
 msgid "Input the name of new folder:"
 msgstr "Geben Sie den Namen der neuen Ablage ein:"
 
@@ -1637,8 +1654,8 @@ msgid "Edit JPilot Entry"
 msgstr "Bearbeite JPilot Eintrag"
 
 #: src/editjpilot.c:314 src/editldap.c:340 src/editvcard.c:229
-#: src/importldif.c:510 src/importmutt.c:277 src/importpine.c:277
-#: src/prefs_account.c:1761
+#: src/exphtmldlg.c:394 src/importldif.c:510 src/importmutt.c:277
+#: src/importpine.c:277 src/prefs_account.c:1761
 msgid " ... "
 msgstr " ... "
 
@@ -1742,6 +1759,143 @@ msgstr "Bearbeite vCard Eintrag"
 msgid "Add New vCard Entry"
 msgstr "Neuen vCard Eintrag hinzufügen"
 
+#: src/exphtmldlg.c:99
+#, fuzzy
+msgid "Please specify output directory and file to create."
+msgstr "Bitte Adressbuchname und -datei zum Import angeben."
+
+#: src/exphtmldlg.c:102
+msgid "Select stylesheet and formatting."
+msgstr ""
+
+#: src/exphtmldlg.c:105
+#, fuzzy
+msgid "File exported successfully."
+msgstr "LDIF Datei erfolgreich importiert."
+
+#: src/exphtmldlg.c:152
+#, c-format
+msgid ""
+"HTML Output Directory '%s'\n"
+"does not exist. OK to create new directory?"
+msgstr ""
+
+#: src/exphtmldlg.c:155
+#, fuzzy
+msgid "Create Directory"
+msgstr "Wechlse Wörterbuch"
+
+#: src/exphtmldlg.c:164
+#, c-format
+msgid ""
+"Could not create output directory for HTML file:\n"
+"%s"
+msgstr ""
+
+#: src/exphtmldlg.c:166
+#, fuzzy
+msgid "Failed to Create Directory"
+msgstr "Aktiviere alternatives Wörterbuch"
+
+#: src/exphtmldlg.c:316
+#, fuzzy
+msgid "Select HTML Output File"
+msgstr "Wähle MUTT Datei"
+
+#: src/exphtmldlg.c:385
+msgid "HTML Output File"
+msgstr ""
+
+#: src/exphtmldlg.c:441
+msgid "Stylesheet"
+msgstr ""
+
+#: src/exphtmldlg.c:454 src/prefs_common.c:3639 src/prefs_common.c:3960
+msgid "Default"
+msgstr "Standard"
+
+#: src/exphtmldlg.c:460
+#, fuzzy
+msgid "Full"
+msgstr "Vollständiger Name"
+
+#: src/exphtmldlg.c:466
+#, fuzzy
+msgid "Custom"
+msgstr "Benutzerdefinierte Kopfzeilen"
+
+#: src/exphtmldlg.c:472
+msgid "Custom-2"
+msgstr ""
+
+#: src/exphtmldlg.c:478
+msgid "Custom-3"
+msgstr ""
+
+#: src/exphtmldlg.c:484
+msgid "Custom-4"
+msgstr ""
+
+#: src/exphtmldlg.c:498
+#, fuzzy
+msgid "Full Name Format"
+msgstr "Vollständiger Name des Abesenders"
+
+#: src/exphtmldlg.c:505
+#, fuzzy
+msgid "First Name, Last Name"
+msgstr "Vorname"
+
+#: src/exphtmldlg.c:511
+#, fuzzy
+msgid "Last Name, First Name"
+msgstr "Vorname"
+
+#: src/exphtmldlg.c:525
+msgid "Color Banding"
+msgstr ""
+
+#: src/exphtmldlg.c:531
+msgid "Format E-Mail Links"
+msgstr ""
+
+#: src/exphtmldlg.c:537
+#, fuzzy
+msgid "Format User Attributes"
+msgstr "Benutzerattribute"
+
+#: src/exphtmldlg.c:587 src/importldif.c:501
+msgid "File Name"
+msgstr "Dateiname"
+
+#: src/exphtmldlg.c:597
+#, fuzzy
+msgid "Open with Web Browser"
+msgstr "Webbrowser"
+
+#: src/exphtmldlg.c:626
+#, fuzzy
+msgid "Export Address Book to HTML File"
+msgstr "Wähle Adressbuchablage"
+
+#. Button panel
+#: src/exphtmldlg.c:660 src/importldif.c:745
+msgid "Prev"
+msgstr "Vorherige"
+
+#: src/exphtmldlg.c:661 src/importldif.c:746 src/mainwindow.c:2070
+msgid "Next"
+msgstr "Nächste"
+
+#: src/exphtmldlg.c:690 src/importldif.c:775
+msgid "File Info"
+msgstr "Dateiinfo"
+
+#: src/exphtmldlg.c:691
+#, fuzzy
+msgid "Format"
+msgstr "Normal"
+
 #: src/export.c:127
 msgid "Export"
 msgstr "Exportieren"
@@ -1767,6 +1921,38 @@ msgstr " Auswählen... "
 msgid "Select exporting file"
 msgstr "Wähle exportierte Datei"
 
+#: src/exporthtml.c:799
+#, fuzzy
+msgid "Full Name"
+msgstr "Vollständiger Name"
+
+#: src/exporthtml.c:803 src/importldif.c:776
+msgid "Attributes"
+msgstr "Attribute"
+
+#: src/exporthtml.c:1004
+#, fuzzy
+msgid "Sylpheed Address Book"
+msgstr "Adressbuch"
+
+#: src/exporthtml.c:1116
+msgid "Name already exists but is not a directory."
+msgstr ""
+
+#: src/exporthtml.c:1119
+msgid "No permissions to create directory."
+msgstr ""
+
+#: src/exporthtml.c:1122
+#, fuzzy
+msgid "Name is too long."
+msgstr "Menüname zu lang."
+
+#: src/exporthtml.c:1125
+#, fuzzy
+msgid "Not specified."
+msgstr "Empfänger nicht angegeben"
+
 #: src/folder.c:459
 msgid "Counting total number of messages...\n"
 msgstr "Zähl komplete Anzahl der Nachrichten...\n"
@@ -1776,27 +1962,27 @@ msgstr "Zähl komplete Anzahl der Nachrichten...\n"
 msgid "Scanning folder %s for cache changes.\n"
 msgstr "Durchsuche Ablage %s ..."
 
-#: src/folder.c:904
+#: src/folder.c:906
 #, c-format
 msgid "Remembered message %d for fetching\n"
 msgstr ""
 
-#: src/folder.c:910
+#: src/folder.c:912
 #, fuzzy, c-format
 msgid "Removed message %d from cache.\n"
 msgstr "Senden der wartenden Nachricht %d fehlgeschlagen.\n"
 
-#: src/folder.c:928
+#: src/folder.c:930
 #, c-format
 msgid "Updated msginfo for message %d.\n"
 msgstr ""
 
-#: src/folder.c:950
+#: src/folder.c:971
 #, fuzzy, c-format
 msgid "Added newly found message %d to cache.\n"
 msgstr "Senden der wartenden Nachricht %d fehlgeschlagen.\n"
 
-#: src/folder.c:1021
+#: src/folder.c:1025
 #, fuzzy, c-format
 msgid "Save cache for folder %s\n"
 msgstr "Speichern in Entwurfablage"
@@ -1805,23 +1991,23 @@ msgstr "Speichern in Entwurfablage"
 msgid "Select folder"
 msgstr "Wähle Ablage"
 
-#: src/foldersel.c:218 src/folderview.c:996
+#: src/foldersel.c:218 src/folderview.c:997
 msgid "Inbox"
 msgstr "Inbox"
 
-#: src/foldersel.c:221 src/folderview.c:1012
+#: src/foldersel.c:221 src/folderview.c:1013
 msgid "Sent"
 msgstr "Senden"
 
-#: src/foldersel.c:224 src/folderview.c:1028
+#: src/foldersel.c:224 src/folderview.c:1029
 msgid "Queue"
 msgstr "Queue"
 
-#: src/foldersel.c:227 src/folderview.c:1044
+#: src/foldersel.c:227 src/folderview.c:1045
 msgid "Trash"
 msgstr "Trash"
 
-#: src/foldersel.c:230 src/folderview.c:1058
+#: src/foldersel.c:230 src/folderview.c:1059
 msgid "Drafts"
 msgstr "Entwürfe"
 
@@ -1929,41 +2115,41 @@ msgstr "Erneuere Ablagenbaum..."
 msgid "Rescanning all folder trees..."
 msgstr "Erneuere alle Ablagenbaum..."
 
-#: src/folderview.c:1611
+#: src/folderview.c:1614
 #, c-format
 msgid "Folder %s is selected\n"
 msgstr "Ablage %s ist gewählt\n"
 
-#: src/folderview.c:1756 src/folderview.c:1820 src/folderview.c:2111
+#: src/folderview.c:1764 src/folderview.c:1830 src/folderview.c:2130
 msgid "NewFolder"
 msgstr "NeueAblage"
 
-#: src/folderview.c:1761 src/folderview.c:1878 src/folderview.c:2116
+#: src/folderview.c:1769 src/folderview.c:1891 src/folderview.c:2135
 #, c-format
 msgid "`%c' can't be included in folder name."
 msgstr "`%c' kann nicht in den Ablagenamen integriert werden."
 
-#: src/folderview.c:1770 src/folderview.c:1825 src/folderview.c:1887
-#: src/folderview.c:1963 src/folderview.c:2124
+#: src/folderview.c:1782 src/folderview.c:1835 src/folderview.c:1901
+#: src/folderview.c:1977 src/folderview.c:2147
 #, c-format
 msgid "The folder `%s' already exists."
 msgstr "Die Ablage `%s' existiert bereits."
 
-#: src/folderview.c:1778
+#: src/folderview.c:1789 src/folderview.c:2154
 #, c-format
-msgid "The folder `%s' could not be created."
-msgstr "Die Ablage `%s' konnte nicht erstellt werden."
+msgid "Can't create the folder `%s'."
+msgstr "Kann Ablage nicht erstellen `%s'."
 
-#: src/folderview.c:1870 src/folderview.c:1953
+#: src/folderview.c:1884 src/folderview.c:1967
 #, c-format
 msgid "Input new name for `%s':"
 msgstr "Neuer Name für `%s':"
 
-#: src/folderview.c:1872 src/folderview.c:1955
+#: src/folderview.c:1885 src/folderview.c:1969
 msgid "Rename folder"
 msgstr "Ablage umbenennen"
 
-#: src/folderview.c:2010
+#: src/folderview.c:2027
 #, c-format
 msgid ""
 "All folder(s) and message(s) under `%s' will be deleted.\n"
@@ -1972,29 +2158,29 @@ msgstr ""
 "Alle Ablagen und Nachrichten in `%s' werden gelöscht.\n"
 "Wollen Sie das wirklich?"
 
-#: src/folderview.c:2013
+#: src/folderview.c:2029
 msgid "Delete folder"
 msgstr "Ablage löschen"
 
-#: src/folderview.c:2022
+#: src/folderview.c:2038
 #, c-format
 msgid "Can't remove the folder `%s'."
 msgstr "Kann Ablage nicht entfernen `%s'."
 
-#: src/folderview.c:2072
-#, c-format
+#: src/folderview.c:2091
+#, fuzzy, c-format
 msgid ""
 "Really remove the mailbox `%s' ?\n"
-"(The messages are NOT deleted from disk)"
+"(The messages are NOT deleted from the disk)"
 msgstr ""
 "Mailbox `%s' wirklich entfernen?\n"
 "(Die Nachrichten werden NICHT von der Platte gelöscht)"
 
-#: src/folderview.c:2075
+#: src/folderview.c:2093
 msgid "Remove folder"
 msgstr "Ablage entfernen"
 
-#: src/folderview.c:2108
+#: src/folderview.c:2127
 msgid ""
 "Input the name of new folder:\n"
 "(if you want to create a folder to store subfolders,\n"
@@ -2004,35 +2190,30 @@ msgstr ""
 "(um eine neue Ablage für Unterablagen zu erstellen\n"
 " `/' an Ende des Namens anhängen)"
 
-#: src/folderview.c:2132
-#, c-format
-msgid "Can't create the folder `%s'."
-msgstr "Kann Ablage nicht erstellen `%s'."
-
-#: src/folderview.c:2172
+#: src/folderview.c:2197
 #, c-format
 msgid "Really delete IMAP4 account `%s'?"
 msgstr "IMAP4-Account `%s' wirklich löschen?"
 
-#: src/folderview.c:2174
+#: src/folderview.c:2198
 msgid "Delete IMAP4 account"
 msgstr "IMAP4-Account löschen"
 
-#: src/folderview.c:2303
+#: src/folderview.c:2331
 #, c-format
 msgid "Really delete newsgroup `%s'?"
 msgstr "Newsgroup `%s' wirklich löschen?"
 
-#: src/folderview.c:2305
+#: src/folderview.c:2332
 msgid "Delete newsgroup"
 msgstr "Newsgroup löschen"
 
-#: src/folderview.c:2336
+#: src/folderview.c:2367
 #, c-format
 msgid "Really delete news account `%s'?"
 msgstr "Newsaccount `%s' wirklich löschen?"
 
-#: src/folderview.c:2338
+#: src/folderview.c:2368
 msgid "Delete news account"
 msgstr "Newsaccount löschen"
 
@@ -2084,7 +2265,7 @@ msgstr "unbekannt"
 msgid "Can't retrieve newsgroup list."
 msgstr "Kann die Gruppenliste nicht empfangen."
 
-#: src/grouplistdialog.c:441 src/summaryview.c:943
+#: src/grouplistdialog.c:441 src/summaryview.c:955
 msgid "Done."
 msgstr "Fertig."
 
@@ -2279,7 +2460,7 @@ msgstr "Wörterbuch %s"
 msgid "Use alternate (%s)"
 msgstr "Verwende Alternative (%s)"
 
-#: src/gtkspell.c:1968 src/prefs_common.c:1553
+#: src/gtkspell.c:1968 src/prefs_common.c:1563
 msgid "Check while typing"
 msgstr " Überprüfe beim Schreiben"
 
@@ -2304,11 +2485,11 @@ msgstr "Abcdef"
 msgid "Creating header view...\n"
 msgstr "Erzeuge Kopfzeilenansicht...\n"
 
-#: src/headerview.c:174 src/summaryview.c:2285
+#: src/headerview.c:174 src/summaryview.c:2299
 msgid "(No From)"
 msgstr "(Kein Von)"
 
-#: src/headerview.c:189 src/summaryview.c:2327 src/summaryview.c:2330
+#: src/headerview.c:189 src/summaryview.c:2341 src/summaryview.c:2344
 msgid "(No Subject)"
 msgstr "(Kein Betreff)"
 
@@ -2320,199 +2501,199 @@ msgstr "Erstelle Bilderansicht...\n"
 msgid "Can't load the image."
 msgstr "Kann das Bild nicht laden."
 
-#: src/imap.c:367
+#: src/imap.c:369
 #, c-format
 msgid "IMAP4 connection to %s:%d has been disconnected. Reconnecting...\n"
 msgstr "IMAP4-Verbindung zu %s:%d wurde unterbrochen. Verbinden...\n"
 
-#: src/imap.c:405
+#: src/imap.c:407
 msgid "creating tunneled IMAP4 connection\n"
 msgstr "erstelle getunnelte IMAP4-Verbindung\n"
 
-#: src/imap.c:412
+#: src/imap.c:414
 #, c-format
 msgid "creating IMAP4 connection to %s:%d ...\n"
 msgstr "erstelle IMAP4-Verbindung zu %s:%d ...\n"
 
-#: src/imap.c:595
+#: src/imap.c:597
 #, c-format
 msgid "message %d has been already cached.\n"
 msgstr "Nachricht %d wurde schon zwischengespeichert.\n"
 
-#: src/imap.c:609
+#: src/imap.c:611
 #, c-format
 msgid "can't select mailbox %s\n"
 msgstr "kann Mailbox %s nicht wählen\n"
 
-#: src/imap.c:614
+#: src/imap.c:616
 #, c-format
 msgid "getting message %d...\n"
 msgstr "empfange Nachricht %d...\n"
 
-#: src/imap.c:620 src/procmsg.c:775
+#: src/imap.c:622 src/procmsg.c:775
 #, c-format
 msgid "can't fetch message %d\n"
 msgstr "kann Nachricht %d nicht holen\n"
 
-#: src/imap.c:647
+#: src/imap.c:650 src/imap.c:659
 #, c-format
 msgid "can't append message %s\n"
 msgstr "kann Nachricht %s nicht anhängen\n"
 
-#: src/imap.c:675 src/imap.c:730 src/mh.c:443 src/mh.c:554 src/mh.c:612
+#: src/imap.c:687 src/imap.c:742 src/mh.c:443 src/mh.c:554 src/mh.c:612
 #: src/mh.c:725
 msgid "the src folder is identical to the dest.\n"
 msgstr "Die Quellablage ist identisch mit dem Ziel.\n"
 
-#: src/imap.c:682 src/imap.c:735 src/mh.c:457 src/mh.c:557
+#: src/imap.c:694 src/imap.c:747 src/mh.c:457 src/mh.c:557
 #, c-format
 msgid "Moving message %s%c%d to %s ...\n"
 msgstr "Verschiebe Nachricht %s%c%d nach %s ...\n"
 
-#: src/imap.c:686 src/imap.c:739 src/mh.c:626 src/mh.c:728
+#: src/imap.c:698 src/imap.c:751 src/mh.c:626 src/mh.c:728
 #, c-format
 msgid "Copying message %s%c%d to %s ...\n"
 msgstr "Kopiere Nachricht %s%c%d nach %s ...\n"
 
-#: src/imap.c:887
+#: src/imap.c:899
 #, c-format
 msgid "can't set deleted flags: %d\n"
 msgstr "kann gelöschte Flags nicht setzen: %d\n"
 
-#: src/imap.c:894 src/imap.c:934
+#: src/imap.c:906 src/imap.c:946
 msgid "can't expunge\n"
 msgstr "kann nicht löschen\n"
 
-#: src/imap.c:927
+#: src/imap.c:939
 #, c-format
 msgid "can't set deleted flags: 1:%d\n"
 msgstr ""
 "kann gelöschte Flags nicht setzen: 1:%d\n"
 "\n"
 
-#: src/imap.c:1123
+#: src/imap.c:1132
 msgid "error occured while getting LIST.\n"
 msgstr "Fehler beim Empfang von LIST.\n"
 
-#: src/imap.c:1241
+#: src/imap.c:1250
 #, c-format
 msgid "Can't create '%s'\n"
 msgstr "Kann '%s' nicht erstellen\n"
 
-#: src/imap.c:1246
+#: src/imap.c:1255
 #, c-format
 msgid "Can't create '%s' under INBOX\n"
 msgstr "Kann '%s' unter der INBOX nicht erstellen\n"
 
-#: src/imap.c:1309
+#: src/imap.c:1316
 msgid "can't create mailbox: LIST failed\n"
 msgstr "kann Mailbox nicht erstellen: LIST fehlgeschlagen\n"
 
-#: src/imap.c:1330
+#: src/imap.c:1337
 msgid "can't create mailbox\n"
 msgstr "kann Mailbox nicht erstellen\n"
 
-#: src/imap.c:1402
+#: src/imap.c:1408
 #, c-format
 msgid "can't rename mailbox: %s to %s\n"
 msgstr "kann %s nicht in %s umbenennen\n"
 
-#: src/imap.c:1468
+#: src/imap.c:1474
 msgid "can't delete mailbox\n"
 msgstr "kann Mailbox nicht löschen\n"
 
-#: src/imap.c:1501 src/imap.c:3118
+#: src/imap.c:1507 src/imap.c:3156
 msgid "can't get envelope\n"
 msgstr "kann die Nachrichteneigenschaften nicht empfangen\n"
 
-#: src/imap.c:1509 src/imap.c:3125
+#: src/imap.c:1515 src/imap.c:3163
 msgid "error occurred while getting envelope.\n"
 msgstr "Fehler beim Empfang der Nachrichteneigenschaften.\n"
 
-#: src/imap.c:1531 src/imap.c:3136
+#: src/imap.c:1537 src/imap.c:3174
 #, c-format
 msgid "can't parse envelope: %s\n"
 msgstr "kann die Nachrichteneigenschaften nicht bearbeiten: %s\n"
 
-#: src/imap.c:1566
+#: src/imap.c:1572
 #, c-format
 msgid "Deleting cached messages %d - %d ... "
 msgstr "Lösche zwischengespeicherte Nachrichten %d - %d ... "
 
-#: src/imap.c:1586 src/imap.c:1605 src/mainwindow.c:1003 src/mainwindow.c:1923
+#: src/imap.c:1592 src/imap.c:1611 src/mainwindow.c:1003 src/mainwindow.c:1923
 #: src/mh.c:1131 src/mh.c:1138 src/news.c:971 src/procmsg.c:269
-#: src/procmsg.c:333 src/summaryview.c:1618 src/summaryview.c:1962
-#: src/summaryview.c:2103 src/summaryview.c:2209 src/summaryview.c:3071
-#: src/summaryview.c:3698 src/summaryview.c:3762 src/summaryview.c:3787
-#: src/summaryview.c:3873 src/summaryview.c:3925
+#: src/procmsg.c:333 src/summaryview.c:1631 src/summaryview.c:1976
+#: src/summaryview.c:2117 src/summaryview.c:2223 src/summaryview.c:3085
+#: src/summaryview.c:3712 src/summaryview.c:3776 src/summaryview.c:3801
+#: src/summaryview.c:3887 src/summaryview.c:3939
 msgid "done.\n"
 msgstr "Fertig.\n"
 
-#: src/imap.c:1599
+#: src/imap.c:1605
 msgid "Deleting all cached messages... "
 msgstr "Lösche alle zwischengespeicherten Nachrichten... "
 
-#: src/imap.c:1615
+#: src/imap.c:1621
 #, c-format
 msgid "Can't establish IMAP4 session with: %s\n"
 msgstr "Kann IMAP Sitzung nicht herstellen mit: %s\n"
 
-#: src/imap.c:1633
+#: src/imap.c:1639
 #, c-format
 msgid "Can't connect to IMAP4 server: %s:%d\n"
 msgstr "Keine Verbindung mit IMAP4-Server: %s:%d\n"
 
-#: src/imap.c:1640
+#: src/imap.c:1646
 #, c-format
 msgid "Can't establish IMAP4 session with: %s:%d\n"
 msgstr "Kann IMAP4 Sitzung nicht herstellen: %s:%d\n"
 
-#: src/imap.c:1656
+#: src/imap.c:1662
 msgid "Can't establish IMAP4 session\n"
 msgstr "Kann IMAP Sitzung nicht herstellen\n"
 
-#: src/imap.c:1682
+#: src/imap.c:1736
 msgid "can't get namespace\n"
 msgstr "kann Namensbereich nicht empfangen\n"
 
-#: src/imap.c:2237
+#: src/imap.c:2275
 #, c-format
 msgid "can't select folder: %s\n"
 msgstr "kann Ablage %s nicht auswählen\n"
 
-#: src/imap.c:2357
+#: src/imap.c:2395
 msgid "IMAP4 login failed.\n"
 msgstr "IMAP4-Login fehlgeschlagen.\n"
 
-#: src/imap.c:2612
+#: src/imap.c:2650
 #, c-format
 msgid "can't append %s to %s\n"
 msgstr "kann %s nicht an %s anhängen\n"
 
-#: src/imap.c:2617
+#: src/imap.c:2655
 msgid "(sending file...)"
 msgstr "(sende Datei...)"
 
-#: src/imap.c:2653
+#: src/imap.c:2691
 #, c-format
 msgid "can't copy %d to %s\n"
 msgstr "kann %d nicht nach %s kopieren\n"
 
-#: src/imap.c:2678
+#: src/imap.c:2716
 #, c-format
 msgid "error while imap command: STORE %d:%d %s\n"
 msgstr "Fehler beim IMAP-Befehl: STORE %d:%d %s\n"
 
-#: src/imap.c:2692
+#: src/imap.c:2730
 msgid "error while imap command: EXPUNGE\n"
 msgstr "Fehler beim IMAP-Befehl: EXPUNGE\n"
 
-#: src/imap.c:2891 src/imap.c:2928
+#: src/imap.c:2929 src/imap.c:2966
 #, c-format
 msgid "iconv cannot convert UTF-7 to %s\n"
 msgstr "iconv kann UTF-7 nicht konvertieren in %s\n"
 
-#: src/imap.c:2962 src/imap.c:2995
+#: src/imap.c:3000 src/imap.c:3033
 #, c-format
 msgid "iconv cannot convert %s to UTF-7\n"
 msgstr "iconv kann %s nicht in UTF-7 konvertieren\n"
@@ -2569,10 +2750,6 @@ msgstr "LDIF Datei erfolgreich importiert."
 msgid "Select LDIF File"
 msgstr "Wähle LDIF Datei"
 
-#: src/importldif.c:501
-msgid "File Name"
-msgstr "Dateiname"
-
 #: src/importldif.c:542
 msgid "S"
 msgstr "S"
@@ -2604,23 +2781,6 @@ msgstr "Einträge :"
 #: src/importldif.c:712
 msgid "Import LDIF file into Address Book"
 msgstr "Importiere LDIF Datei in Adressbuch"
-
-#. Button panel
-#: src/importldif.c:745
-msgid "Prev"
-msgstr "Vorherige"
-
-#: src/importldif.c:746 src/mainwindow.c:2070
-msgid "Next"
-msgstr "Nächste"
-
-#: src/importldif.c:775
-msgid "File Info"
-msgstr "Dateiinfo"
-
-#: src/importldif.c:776
-msgid "Attributes"
-msgstr "Attribute"
 
 #: src/importmutt.c:143
 msgid "Error importing MUTT file."
@@ -3194,7 +3354,7 @@ msgstr "/_Ansicht/_Zeichensatz/Thailändisch (TIS-620)"
 msgid "/_View/_Code set/Thai (Windows-874)"
 msgstr "/_Ansicht/_Zeichensatz/Thailändisch (Windows-874)"
 
-#: src/mainwindow.c:648 src/summaryview.c:426
+#: src/mainwindow.c:648 src/summaryview.c:438
 msgid "/_View/Open in new _window"
 msgstr "/_Ansicht/Öffnen in _neuem Fenster"
 
@@ -3610,7 +3770,7 @@ msgstr "Email"
 msgid "Compose an email message"
 msgstr "Verfasse Email"
 
-#: src/mainwindow.c:1997 src/prefs_common.c:1170
+#: src/mainwindow.c:1997 src/prefs_common.c:1180
 msgid "News"
 msgstr "News"
 
@@ -3817,8 +3977,8 @@ msgstr "ungültige Datei - %s.\n"
 msgid "invalid file - %s.\n"
 msgstr "ungültige Datei - %s.\n"
 
-#: src/mbox_folder.c:1455 src/mbox_folder.c:1830 src/utils.c:1728
-#: src/utils.c:1805
+#: src/mbox_folder.c:1455 src/mbox_folder.c:1830 src/utils.c:1881
+#: src/utils.c:1958
 #, c-format
 msgid "writing to %s failed.\n"
 msgstr "Schreiben in %s fehlgeschlagen.\n"
@@ -3995,7 +4155,7 @@ msgstr "/_Darstellung als Text"
 msgid "/_Display image"
 msgstr "/_Bild anzeigen"
 
-#: src/mimeview.c:120 src/summaryview.c:431
+#: src/mimeview.c:120 src/summaryview.c:443
 msgid "/_Save as..."
 msgstr "/Speichern _als..."
 
@@ -4011,7 +4171,7 @@ msgstr "Erstelle MIME-Ansicht...\n"
 msgid "MIME Type"
 msgstr "MIME Typ"
 
-#: src/mimeview.c:161 src/prefs_common.c:2049
+#: src/mimeview.c:161 src/prefs_common.c:2094
 msgid "Text"
 msgstr "Text"
 
@@ -4023,15 +4183,15 @@ msgstr "Wähle \"Digitale Unterschrift Überprüfen\" zum Überprüfen"
 msgid "Can't save the part of multipart message."
 msgstr "Kann einen Teil einer mehrteiligen Nachricht nicht speichern."
 
-#: src/mimeview.c:824 src/summaryview.c:3358
+#: src/mimeview.c:824 src/summaryview.c:3372
 msgid "Save as"
 msgstr "Speichern als"
 
-#: src/mimeview.c:829 src/summaryview.c:3363
+#: src/mimeview.c:829 src/summaryview.c:3377
 msgid "Overwrite"
 msgstr "Überschreiben"
 
-#: src/mimeview.c:830 src/summaryview.c:3364
+#: src/mimeview.c:830 src/summaryview.c:3378
 msgid "Overwrite existing file?"
 msgstr "Überschreibe existierende Datei?"
 
@@ -4286,16 +4446,16 @@ msgstr "Accounteinstellungen"
 msgid "Creating account preferences window...\n"
 msgstr "Erstelle Accounteinstellungenfenster...\n"
 
-#: src/prefs_account.c:683 src/prefs_account.c:1498 src/prefs_common.c:954
+#: src/prefs_account.c:683 src/prefs_account.c:1498 src/prefs_common.c:964
 #: src/selective_download.c:501
 msgid "Receive"
 msgstr "Empfangen"
 
-#: src/prefs_account.c:687 src/prefs_common.c:958
+#: src/prefs_account.c:687 src/prefs_common.c:968
 msgid "Compose"
 msgstr "Verfassen"
 
-#: src/prefs_account.c:690 src/prefs_common.c:971
+#: src/prefs_account.c:690 src/prefs_common.c:981
 msgid "Privacy"
 msgstr "Privat"
 
@@ -4446,7 +4606,7 @@ msgstr "Erzeuge Nachrichten-ID"
 msgid "Add user-defined header"
 msgstr "Füge benutzerdefinierte Kopfzeile ein"
 
-#: src/prefs_account.c:1184 src/prefs_common.c:2254 src/prefs_common.c:2279
+#: src/prefs_account.c:1184 src/prefs_common.c:2324 src/prefs_common.c:2349
 msgid " Edit... "
 msgstr " Bearbeiten... "
 
@@ -4649,99 +4809,99 @@ msgstr "Keine Dateinamen für die lokale Mailbox angegeben."
 msgid "mail command is not entered."
 msgstr "Keine Mailkommando angegeben."
 
-#: src/prefs_common.c:933
+#: src/prefs_common.c:943
 msgid "Creating common preferences window...\n"
 msgstr "Erstelle Allgemeine-Einstellungenfenster...\n"
 
-#: src/prefs_common.c:937
+#: src/prefs_common.c:947
 msgid "Common Preferences"
 msgstr "Allgemeine Einstellungen"
 
-#: src/prefs_common.c:961
+#: src/prefs_common.c:971
 msgid "Spell Checker"
 msgstr "Rechtschreibprüfung"
 
-#: src/prefs_common.c:964
+#: src/prefs_common.c:974
 msgid "Quote"
 msgstr "Zitat"
 
-#: src/prefs_common.c:966
+#: src/prefs_common.c:976
 msgid "Display"
 msgstr "Anzeige"
 
-#: src/prefs_common.c:968
+#: src/prefs_common.c:978
 msgid "Message"
 msgstr "Nachricht"
 
-#: src/prefs_common.c:976 src/select-keys.c:324
+#: src/prefs_common.c:986 src/select-keys.c:324
 msgid "Other"
 msgstr "Weiteres"
 
-#: src/prefs_common.c:1026 src/prefs_common.c:1246
+#: src/prefs_common.c:1036 src/prefs_common.c:1256
 msgid "External program"
 msgstr "Externes Programm"
 
-#: src/prefs_common.c:1035
+#: src/prefs_common.c:1045
 msgid "Use external program for incorporation"
 msgstr "Benutze externes Programm, um E-Mails zu empfangen"
 
-#: src/prefs_common.c:1042 src/prefs_common.c:1261
+#: src/prefs_common.c:1052 src/prefs_common.c:1271
 msgid "Command"
 msgstr "Befehl"
 
-#: src/prefs_common.c:1056
+#: src/prefs_common.c:1066
 msgid "Local spool"
 msgstr "Lokale Mailboxdatei"
 
-#: src/prefs_common.c:1067
+#: src/prefs_common.c:1077
 msgid "Incorporate from spool"
 msgstr "Empfange aus lokaler Mailboxdatei"
 
-#: src/prefs_common.c:1069
+#: src/prefs_common.c:1079
 msgid "Filter on incorporation"
 msgstr "Filtern beim Empfangen"
 
-#: src/prefs_common.c:1077
+#: src/prefs_common.c:1087
 msgid "Spool directory"
 msgstr "lokales Mailboxverzeichnis"
 
-#: src/prefs_common.c:1095
+#: src/prefs_common.c:1105
 msgid "Auto-check new mail"
 msgstr "Automatische Aktualisierung"
 
-#: src/prefs_common.c:1097
+#: src/prefs_common.c:1107
 msgid "every"
 msgstr "alle"
 
-#: src/prefs_common.c:1109 src/prefs_common.c:2429
+#: src/prefs_common.c:1119 src/prefs_common.c:2499
 msgid "minute(s)"
 msgstr "Minute(n)"
 
-#: src/prefs_common.c:1118
+#: src/prefs_common.c:1128
 msgid "Check new mail on startup"
 msgstr "Hole neue E-Mail beim Programmstart"
 
-#: src/prefs_common.c:1121
+#: src/prefs_common.c:1131
 msgid "No error popup on receive error"
 msgstr "Kein Popup-Fenster bei Empfangsfehlern"
 
-#: src/prefs_common.c:1123
+#: src/prefs_common.c:1133
 msgid "Update all local folders after incorporation"
 msgstr "Erneuere alle lokalen Ablagen nach Eingliederung"
 
-#: src/prefs_common.c:1126
+#: src/prefs_common.c:1136
 msgid "Run command when new mail arrives"
 msgstr "Führe Kommando aus wenn neue Nachrichten eintreffen"
 
-#: src/prefs_common.c:1136
+#: src/prefs_common.c:1146
 msgid "after autochecking"
 msgstr "nach automatischer Überprüfung"
 
-#: src/prefs_common.c:1138
+#: src/prefs_common.c:1148
 msgid "after manual checking"
 msgstr "nach manueller Überprüfung"
 
-#: src/prefs_common.c:1152
+#: src/prefs_common.c:1162
 #, c-format
 msgid ""
 "Command  to execute:\n"
@@ -4750,7 +4910,7 @@ msgstr ""
 "Auszuführendes Kommando:\n"
 "(verwende %d als Zahl der neuen Nachrichten)"
 
-#: src/prefs_common.c:1178
+#: src/prefs_common.c:1188
 msgid ""
 "Maximum number of articles to download\n"
 "(unlimited if 0 is specified)"
@@ -4758,123 +4918,124 @@ msgstr ""
 "Maximum an herunterzuladenden Artikeln\n"
 "(0 angeben für unbegrenzt)"
 
-#: src/prefs_common.c:1254
+#: src/prefs_common.c:1264
 msgid "Use external program for sending"
 msgstr "Benutze externes Programm zum Senden"
 
-#: src/prefs_common.c:1280
-msgid "Save sent messages to outbox"
+#: src/prefs_common.c:1290
+#, fuzzy
+msgid "Save sent messages to Sent"
 msgstr "Gesendete Nachrichten in Outbox speichern"
 
-#: src/prefs_common.c:1282
+#: src/prefs_common.c:1292
 msgid "Queue messages that fail to send"
 msgstr "Nachrichten die nicht gesendet werden konnten, in Queue-Ablage"
 
-#: src/prefs_common.c:1284
+#: src/prefs_common.c:1294
 msgid "Send return receipt on request"
 msgstr "Empfangsbestätigung bei Anforderung senden"
 
-#: src/prefs_common.c:1290
+#: src/prefs_common.c:1300
 msgid "Outgoing codeset"
 msgstr "Ausgehender Zeichensatz"
 
-#: src/prefs_common.c:1305
+#: src/prefs_common.c:1315
 msgid "Automatic (Recommended)"
 msgstr "Automatisch (Empfohlen)"
 
-#: src/prefs_common.c:1306
+#: src/prefs_common.c:1316
 msgid "7bit ascii (US-ASCII)"
 msgstr "7bit ascii (US-ASCII)"
 
-#: src/prefs_common.c:1308
+#: src/prefs_common.c:1318
 msgid "Unicode (UTF-8)"
 msgstr "Unicode (UTF-8)"
 
-#: src/prefs_common.c:1310
+#: src/prefs_common.c:1320
 msgid "Western European (ISO-8859-1)"
 msgstr "Westeuropäisch (ISO-8859-1)"
 
-#: src/prefs_common.c:1311
+#: src/prefs_common.c:1321
 msgid "Western European (ISO-8859-15)"
 msgstr "Westeuropäisch (ISO-8859-15)"
 
-#: src/prefs_common.c:1312
+#: src/prefs_common.c:1322
 msgid "Central European (ISO-8859-2)"
 msgstr "Mitteleuropäisch (ISO-8859-2)"
 
-#: src/prefs_common.c:1313
+#: src/prefs_common.c:1323
 msgid "Baltic (ISO-8859-13)"
 msgstr "Baltisch (ISO-8859-13)"
 
-#: src/prefs_common.c:1314
+#: src/prefs_common.c:1324
 msgid "Baltic (ISO-8859-4)"
 msgstr "Baltisch (ISO-8859-4)"
 
-#: src/prefs_common.c:1315
+#: src/prefs_common.c:1325
 msgid "Greek (ISO-8859-7)"
 msgstr "Griechisch (ISO-8859-7)"
 
-#: src/prefs_common.c:1316
+#: src/prefs_common.c:1326
 msgid "Turkish (ISO-8859-9)"
 msgstr "Türkisch (ISO-8859-9)"
 
-#: src/prefs_common.c:1318
+#: src/prefs_common.c:1328
 msgid "Cyrillic (ISO-8859-5)"
 msgstr "Kyrillisch (ISO-8859-5)"
 
-#: src/prefs_common.c:1320
+#: src/prefs_common.c:1330
 msgid "Cyrillic (KOI8-R)"
 msgstr "Kyrillisch (KOI8-R)"
 
-#: src/prefs_common.c:1322
+#: src/prefs_common.c:1332
 msgid "Cyrillic (Windows-1251)"
 msgstr "Kyrillisch (Windows-1251)"
 
-#: src/prefs_common.c:1323
+#: src/prefs_common.c:1333
 msgid "Cyrillic (KOI8-U)"
 msgstr "Kyrillisch (KOI8-U)"
 
-#: src/prefs_common.c:1325
+#: src/prefs_common.c:1335
 msgid "Japanese (ISO-2022-JP)"
 msgstr "Japanisch (ISO-2022-JP)"
 
-#: src/prefs_common.c:1327
+#: src/prefs_common.c:1337
 msgid "Japanese (EUC-JP)"
 msgstr "Japanisch (EUC-JP)"
 
-#: src/prefs_common.c:1328
+#: src/prefs_common.c:1338
 msgid "Japanese (Shift_JIS)"
 msgstr "Japanisch (Shift_JIS)"
 
-#: src/prefs_common.c:1330
+#: src/prefs_common.c:1340
 msgid "Simplified Chinese (GB2312)"
 msgstr "Vereinfachtes Chinesisch (GB2312)"
 
-#: src/prefs_common.c:1331
+#: src/prefs_common.c:1341
 msgid "Traditional Chinese (Big5)"
 msgstr "Traditioneles Chinesisch (Big5)"
 
-#: src/prefs_common.c:1333
+#: src/prefs_common.c:1343
 msgid "Traditional Chinese (EUC-TW)"
 msgstr "Traditioneles Chinesisch (EUC-TW)"
 
-#: src/prefs_common.c:1334
+#: src/prefs_common.c:1344
 msgid "Chinese (ISO-2022-CN)"
 msgstr "Chinesisch (ISO-2022-CN)"
 
-#: src/prefs_common.c:1336
+#: src/prefs_common.c:1346
 msgid "Korean (EUC-KR)"
 msgstr "Koreanisch (EUC-KR)"
 
-#: src/prefs_common.c:1337
+#: src/prefs_common.c:1347
 msgid "Thai (TIS-620)"
 msgstr "Thailändisch (TIS-620)"
 
-#: src/prefs_common.c:1338
+#: src/prefs_common.c:1348
 msgid "Thai (Windows-874)"
 msgstr "Thailändisch (Windows-874)"
 
-#: src/prefs_common.c:1347
+#: src/prefs_common.c:1357
 msgid ""
 "If `Automatic' is selected, the optimal encoding\n"
 "for the current locale will be used."
@@ -4882,24 +5043,24 @@ msgstr ""
 "Wenn `Automatisch' gewählt ist, wird die optimale\n"
 "Codierung für die aktuellen Lokalisierungen verwendet"
 
-#: src/prefs_common.c:1475
+#: src/prefs_common.c:1485
 msgid "Select dictionaries location"
 msgstr "Wähle Ort der Wörterbücher"
 
 #. spell checker defaults
-#: src/prefs_common.c:1538
+#: src/prefs_common.c:1548
 msgid "Global spelling checker settings"
 msgstr "Allgemeine Rechtschreibprüfungeinstellungen"
 
-#: src/prefs_common.c:1545
+#: src/prefs_common.c:1555
 msgid "Enable spell checker (EXPERIMENTAL)"
 msgstr "Aktiviere Rechtschreibprüfung (EXPERIMENTELL)"
 
-#: src/prefs_common.c:1556
+#: src/prefs_common.c:1566
 msgid "Enable alternate dictionary"
 msgstr "Aktiviere alternatives Wörterbuch"
 
-#: src/prefs_common.c:1558
+#: src/prefs_common.c:1568
 msgid ""
 "Enabling alternate dictionary makes switching\n"
 "with the last used dictionary faster."
@@ -4907,240 +5068,259 @@ msgstr ""
 "Aktivieren eines alternativen Wörterbuches macht das umschalten\n"
 "mit dem letzten verwendeten Wörterbuch schneller."
 
-#: src/prefs_common.c:1569
+#: src/prefs_common.c:1579
 msgid "Dictionaries path:"
 msgstr "Wörterbuchpfad"
 
-#: src/prefs_common.c:1596
+#: src/prefs_common.c:1606
 msgid "Default dictionary:"
 msgstr "Standard Wörterbuch:"
 
 #. Suggestion mode
-#: src/prefs_common.c:1612
+#: src/prefs_common.c:1622
 msgid "Default suggestion mode"
 msgstr "Standard Vorschlagsmodus"
 
 #. Color
-#: src/prefs_common.c:1627
+#: src/prefs_common.c:1637
 msgid "Misspelled word color:"
 msgstr "Farbe falsch geschriebener Wörter:"
 
-#: src/prefs_common.c:1737
+#: src/prefs_common.c:1747
 msgid "Insert signature automatically"
 msgstr "Füge Unterschrift automatisch hinzu"
 
-#: src/prefs_common.c:1742
+#: src/prefs_common.c:1752
 msgid "Signature separator"
 msgstr "Unterschriftentrenner"
 
 #. Account autoselection
-#: src/prefs_common.c:1753
+#: src/prefs_common.c:1763
 msgid "Automatic account selection"
 msgstr "Automatische Accountwahl"
 
-#: src/prefs_common.c:1761
+#: src/prefs_common.c:1771
 msgid "when replying"
 msgstr "wenn antworten"
 
-#: src/prefs_common.c:1763
+#: src/prefs_common.c:1773
 msgid "when forwarding"
 msgstr "wenn weiterleiten"
 
-#: src/prefs_common.c:1765
+#: src/prefs_common.c:1775
 msgid "when re-editing"
 msgstr "wenn wiederbearbeiten"
 
-#: src/prefs_common.c:1772
+#: src/prefs_common.c:1782
 msgid "Automatically launch the external editor"
 msgstr "Starte automatisch den externen Editor"
 
-#: src/prefs_common.c:1781 src/prefs_filtering.c:231
+#: src/prefs_common.c:1791 src/prefs_filtering.c:231
 msgid "Forward as attachment"
 msgstr "Weiterleiten als Anhang"
 
-#: src/prefs_common.c:1784
+#: src/prefs_common.c:1794
 msgid "Block cursor"
 msgstr "Cursor Rechteck"
 
-#: src/prefs_common.c:1787
+#: src/prefs_common.c:1797
 msgid "Keep the original 'From' header when bouncing"
 msgstr "Behalte den originalen 'Von' Nachrichtenkopf"
 
-#: src/prefs_common.c:1793
+#: src/prefs_common.c:1803
 msgid "Undo level"
 msgstr "Anzahl der Undoschritte"
 
 #. line-wrapping
-#: src/prefs_common.c:1808
+#: src/prefs_common.c:1818
 msgid "Message wrapping"
 msgstr "Nachrichtenumbruch"
 
-#: src/prefs_common.c:1822
+#: src/prefs_common.c:1832
 msgid "Wrap messages at"
 msgstr "Zeilenumbruch nach"
 
-#: src/prefs_common.c:1834
+#: src/prefs_common.c:1844
 msgid "characters"
 msgstr "Zeichen"
 
-#: src/prefs_common.c:1844
+#: src/prefs_common.c:1854
 msgid "Wrap quotation"
 msgstr "Zitat umbrechen"
 
-#: src/prefs_common.c:1846
+#: src/prefs_common.c:1856
 msgid "Wrap before sending"
 msgstr "Zeilenumbruch vor dem Senden"
 
-#: src/prefs_common.c:1849
+#: src/prefs_common.c:1859
 msgid "Smart wrapping (EXPERIMENTAL)"
 msgstr "Intelligenter Zeilenumbruch (EXPERIMENTELL)"
 
 #. reply
-#: src/prefs_common.c:1910
+#: src/prefs_common.c:1923
 msgid "Reply will quote by default"
 msgstr "Antwort wird standardmäßig zitiert"
 
-#: src/prefs_common.c:1912
+#: src/prefs_common.c:1925
 msgid "Reply format"
 msgstr "Antwortformat"
 
-#: src/prefs_common.c:1927 src/prefs_common.c:1966
+#: src/prefs_common.c:1940 src/prefs_common.c:1979
 msgid "Quotation mark"
 msgstr "Zitatzeichen"
 
 #. forward
-#: src/prefs_common.c:1951
+#: src/prefs_common.c:1964
 msgid "Forward format"
 msgstr "Weiterleitungsformat"
 
-#: src/prefs_common.c:1995
+#: src/prefs_common.c:2008
 msgid " Description of symbols "
 msgstr " Beschreibung der Symbole "
 
-#: src/prefs_common.c:2039
+#. quote chars
+#: src/prefs_common.c:2016
+#, fuzzy
+msgid "Quoting characters"
+msgstr "Zeichen"
+
+#: src/prefs_common.c:2031
+msgid "Treat these characters as quotation marks: "
+msgstr ""
+
+#: src/prefs_common.c:2084
 msgid "Font"
 msgstr "Schriftart"
 
-#: src/prefs_common.c:2068
+#: src/prefs_common.c:2113
 msgid "Small"
 msgstr "Klein"
 
-#: src/prefs_common.c:2087
+#: src/prefs_common.c:2132
 msgid "Normal"
 msgstr "Normal"
 
-#: src/prefs_common.c:2106
+#: src/prefs_common.c:2151
 msgid "Bold"
 msgstr "Fett"
 
-#: src/prefs_common.c:2131
+#: src/prefs_common.c:2176
 msgid "Translate header name (such as `From:', `Subject:')"
 msgstr "Übersetze Kopfzeilennamen (wie `Von:', `Betreff:')"
 
-#: src/prefs_common.c:2134
+#: src/prefs_common.c:2179
 msgid "Display unread number next to folder name"
 msgstr "Zeige Anzahl der ungelesenen E-Mails nach Ablagenname"
 
-#: src/prefs_common.c:2137
+#: src/prefs_common.c:2182
 msgid "Automatically display images"
 msgstr "Stelle Bilder automatisch dar"
 
+#: src/prefs_common.c:2188
+msgid "Abbreviate newsgroups longer than"
+msgstr ""
+
+#: src/prefs_common.c:2203
+#, fuzzy
+msgid "letters"
+msgstr "Löschen"
+
 #. ---- Summary ----
-#: src/prefs_common.c:2141
+#: src/prefs_common.c:2209
 msgid "Summary View"
 msgstr "Gesamtansicht"
 
-#: src/prefs_common.c:2150
+#: src/prefs_common.c:2218
 msgid "Display recipient on `From' column if sender is yourself"
 msgstr "Zeige Empfänger in `Von'-Zeile, wenn Sie selbst der Sender sind"
 
-#: src/prefs_common.c:2153
+#: src/prefs_common.c:2221
 msgid "Display sender using address book"
 msgstr "Stelle Absender mittels Adressbuch dar"
 
-#: src/prefs_common.c:2155
+#: src/prefs_common.c:2223
 msgid "Enable horizontal scroll bar"
 msgstr "Benutze horizontalen Scrollbar"
 
-#: src/prefs_common.c:2157
+#: src/prefs_common.c:2225
 msgid "Expand threads"
 msgstr "Threads ausweiten"
 
-#: src/prefs_common.c:2160
+#: src/prefs_common.c:2228
 msgid "Display unread messages with bold font"
 msgstr "Zeige ungelesene E-Mails mit Fettschrift"
 
-#: src/prefs_common.c:2168 src/prefs_common.c:3034 src/prefs_common.c:3072
+#: src/prefs_common.c:2236 src/prefs_common.c:3104 src/prefs_common.c:3142
 msgid "Date format"
 msgstr "Datumsformat"
 
-#: src/prefs_common.c:2190
+#: src/prefs_common.c:2258
 msgid " Set display item of summary... "
 msgstr " Setze Einträge der Ablageninhaltsansicht... "
 
-#: src/prefs_common.c:2249
+#: src/prefs_common.c:2319
 msgid "Enable coloration of message"
 msgstr "Benutze Farben für Nachrichten"
 
-#: src/prefs_common.c:2268
+#: src/prefs_common.c:2338
 msgid "Display 2-byte alphabet and numeric with 1-byte character"
 msgstr "Stelle 2-byte Alphabet und Zahlen mit 1-byte Zeichen dar"
 
-#: src/prefs_common.c:2270
+#: src/prefs_common.c:2340
 msgid "Display header pane above message view"
 msgstr "Zeige Kopfzeilenleiste über Nachrichtenansicht"
 
-#: src/prefs_common.c:2277
+#: src/prefs_common.c:2347
 msgid "Display short headers on message view"
 msgstr "Zeige kurze Kopfzeilen in der Nachrichtenansicht"
 
-#: src/prefs_common.c:2299
+#: src/prefs_common.c:2369
 msgid "Line space"
 msgstr "Zeilenabstand"
 
-#: src/prefs_common.c:2313 src/prefs_common.c:2353
+#: src/prefs_common.c:2383 src/prefs_common.c:2423
 msgid "pixel(s)"
 msgstr "Pixel"
 
-#: src/prefs_common.c:2318
+#: src/prefs_common.c:2388
 msgid "Leave space on head"
 msgstr "Halte Abstand vom Anfang"
 
-#: src/prefs_common.c:2320
+#: src/prefs_common.c:2390
 msgid "Scroll"
 msgstr "Scroll"
 
-#: src/prefs_common.c:2327
+#: src/prefs_common.c:2397
 msgid "Half page"
 msgstr "Halbe Seite"
 
-#: src/prefs_common.c:2333
+#: src/prefs_common.c:2403
 msgid "Smooth scroll"
 msgstr "Fließendes Scrollen"
 
-#: src/prefs_common.c:2339
+#: src/prefs_common.c:2409
 msgid "Step"
 msgstr "Schritt"
 
-#: src/prefs_common.c:2406
+#: src/prefs_common.c:2476
 msgid "Automatically check signatures"
 msgstr "Überprüfe digitale Unterschriften automatisch"
 
-#: src/prefs_common.c:2409
+#: src/prefs_common.c:2479
 msgid "Show signature check result in a popup window"
 msgstr ""
 "Zeige das Ergebnis der Überprüfung der digitalen Unterschrift in einem POPUP-"
 "Fenster an"
 
-#: src/prefs_common.c:2415
+#: src/prefs_common.c:2485
 msgid "Store passphrase temporarily"
 msgstr "Speichere Passwort zeitweilig"
 
-#: src/prefs_common.c:2417
+#: src/prefs_common.c:2487
 msgid "- remove after"
 msgstr "- löschen nach"
 
-#: src/prefs_common.c:2437
+#: src/prefs_common.c:2507
 msgid ""
 "(A setting of '0' will store the passphrase\n"
 " for the whole session)"
@@ -5148,32 +5328,32 @@ msgstr ""
 "(Ein Wert von '0' speichert das Passwort für\n"
 " die ganze Sitzung)"
 
-#: src/prefs_common.c:2450
+#: src/prefs_common.c:2520
 msgid "Grab input while entering a passphrase"
 msgstr "Eingabe sperren, bei der Eingabe eines Mantra"
 
-#: src/prefs_common.c:2455
+#: src/prefs_common.c:2525
 msgid "Display warning on startup if GnuPG doesn't work"
 msgstr "Zeige Warnung beim Start, wenn GnuPG nicht funktioniert"
 
 #. create default signkey box
-#: src/prefs_common.c:2462
+#: src/prefs_common.c:2532
 msgid "Default Sign Key"
 msgstr "Standard Schlüssel zum Unterschreiben"
 
-#: src/prefs_common.c:2584
+#: src/prefs_common.c:2654
 msgid "Open first unread message when entering a folder"
 msgstr "Erste Nachricht anzeigen beim Öffnen einer Ablage"
 
-#: src/prefs_common.c:2588
+#: src/prefs_common.c:2658
 msgid "Go to inbox after receiving new mail"
 msgstr "Wechsle zu Inbox nach dem Empfang neuer E-Mail"
 
-#: src/prefs_common.c:2596
+#: src/prefs_common.c:2666
 msgid "Execute immediately when moving or deleting messages"
 msgstr "Sofort Ausführen beim Bewegen oder Löschen von Nachrichten"
 
-#: src/prefs_common.c:2603
+#: src/prefs_common.c:2673
 msgid ""
 "(Messages will be marked until execution\n"
 " if this is turned off)"
@@ -5181,229 +5361,229 @@ msgstr ""
 "(Nachricht wird markiert bis zur Ausführung,\n"
 " wenn dies ausgeschaltet)"
 
-#: src/prefs_common.c:2615
+#: src/prefs_common.c:2685
 msgid "Show receive dialog"
 msgstr "Zeige Empfangsdialog"
 
-#: src/prefs_common.c:2625 src/prefs_common.c:2659
+#: src/prefs_common.c:2695 src/prefs_common.c:2729
 msgid "Always"
 msgstr "Immer"
 
-#: src/prefs_common.c:2626
+#: src/prefs_common.c:2696
 msgid "Only if a window is active"
 msgstr "Nur wenn ein Sylpheedfenster aktiv ist"
 
-#: src/prefs_common.c:2628
+#: src/prefs_common.c:2698
 msgid "Never"
 msgstr "Niemals"
 
-#: src/prefs_common.c:2641
+#: src/prefs_common.c:2711
 msgid "Add address to destination when double-clicked"
 msgstr "Adresse ins Ziel einfügen bei Doppel-Click"
 
-#: src/prefs_common.c:2648
+#: src/prefs_common.c:2718
 msgid "Show no-unread-message dialog"
 msgstr "Zeige 'Keine ungelesenen Nachrichten' Dialog"
 
-#: src/prefs_common.c:2661
+#: src/prefs_common.c:2731
 msgid "Assume 'Yes'"
 msgstr "Nehme an 'Ja'"
 
-#: src/prefs_common.c:2663
+#: src/prefs_common.c:2733
 msgid "Assume 'No'"
 msgstr "Nehme an 'Nein'"
 
-#: src/prefs_common.c:2694
+#: src/prefs_common.c:2764
 msgid " Set key bindings... "
 msgstr "Setze Tastenbindungen"
 
-#: src/prefs_common.c:2759
+#: src/prefs_common.c:2829
 #, c-format
 msgid "External commands (%s will be replaced with file name / URI)"
 msgstr "Externeres Kommando (%s wird durch Dateinamen / URI ersetzt)"
 
-#: src/prefs_common.c:2768
+#: src/prefs_common.c:2838
 msgid "Web browser"
 msgstr "Webbrowser"
 
-#: src/prefs_common.c:2789 src/summaryview.c:3388
+#: src/prefs_common.c:2859 src/summaryview.c:3402
 msgid "Print"
 msgstr "Drucken"
 
 #. On Exit
-#: src/prefs_common.c:2822
+#: src/prefs_common.c:2892
 msgid "On exit"
 msgstr "Beim Beenden"
 
-#: src/prefs_common.c:2830
+#: src/prefs_common.c:2900
 msgid "Confirm on exit"
 msgstr "Nachfragen beim Beenden"
 
-#: src/prefs_common.c:2837
+#: src/prefs_common.c:2907
 msgid "Empty trash on exit"
 msgstr "Leere Papierkorb beim Beenden"
 
-#: src/prefs_common.c:2839
+#: src/prefs_common.c:2909
 msgid "Ask before emptying"
 msgstr "Fragen vor dem Leeren"
 
-#: src/prefs_common.c:2843
+#: src/prefs_common.c:2913
 msgid "Warn if there are queued messages"
 msgstr "Warnen, wenn wartende Nachrichten vorhanden"
 
-#: src/prefs_common.c:3010
+#: src/prefs_common.c:3080
 msgid "the full abbreviated weekday name"
 msgstr "den abgekürzten Namen des Wochentags"
 
-#: src/prefs_common.c:3011
+#: src/prefs_common.c:3081
 msgid "the full weekday name"
 msgstr "den vollständigen Namen des Wochentags"
 
-#: src/prefs_common.c:3012
+#: src/prefs_common.c:3082
 msgid "the abbreviated month name"
 msgstr "den abgekürzten Namen des Monats"
 
-#: src/prefs_common.c:3013
+#: src/prefs_common.c:3083
 msgid "the full month name"
 msgstr "den vollständigen Namen des Monats"
 
-#: src/prefs_common.c:3014
+#: src/prefs_common.c:3084
 msgid "the preferred date and time for the current locale"
 msgstr "das bevorzugte lokale Zeit-/Datumsformat"
 
-#: src/prefs_common.c:3015
+#: src/prefs_common.c:3085
 msgid "the century number (year/100)"
 msgstr "das Jahrhundert (Jahr/100)"
 
-#: src/prefs_common.c:3016
+#: src/prefs_common.c:3086
 msgid "the day of the month as a decimal number"
 msgstr "der Tag des Monats als Dezimalzahl"
 
-#: src/prefs_common.c:3017
+#: src/prefs_common.c:3087
 msgid "the hour as a decimal number using a 24-hour clock"
 msgstr "die Stunde als Dezimalzahl einer 24-Std. Uhr"
 
-#: src/prefs_common.c:3018
+#: src/prefs_common.c:3088
 msgid "the hour as a decimal number using a 12-hour clock"
 msgstr "die Stunde als Dezimalzahl einer 12-Std. Uhr"
 
-#: src/prefs_common.c:3019
+#: src/prefs_common.c:3089
 msgid "the day of the year as a decimal number"
 msgstr "der Tag des Jahres als Dezimalzahl"
 
-#: src/prefs_common.c:3020
+#: src/prefs_common.c:3090
 msgid "the month as a decimal number"
 msgstr "der Monat als Dezimalzahl"
 
-#: src/prefs_common.c:3021
+#: src/prefs_common.c:3091
 msgid "the minute as a decimal number"
 msgstr "die Minute als Dezimalzahl"
 
-#: src/prefs_common.c:3022
+#: src/prefs_common.c:3092
 msgid "either AM or PM"
 msgstr "entweder AM oder PM"
 
-#: src/prefs_common.c:3023
+#: src/prefs_common.c:3093
 msgid "the second as a decimal number"
 msgstr "die Sekunden als Dezimalzahl"
 
-#: src/prefs_common.c:3024
+#: src/prefs_common.c:3094
 msgid "the day of the week as a decimal number"
 msgstr "der Wochentag als Dezimalzahl"
 
-#: src/prefs_common.c:3025
+#: src/prefs_common.c:3095
 msgid "the preferred date for the current locale"
 msgstr "das bevorzugte lokale Datumsformat"
 
-#: src/prefs_common.c:3026
+#: src/prefs_common.c:3096
 msgid "the last two digits of a year"
 msgstr "die letzten beiden Stellen des Jahres"
 
-#: src/prefs_common.c:3027
+#: src/prefs_common.c:3097
 msgid "the year as a decimal number"
 msgstr "das Jahr als Dezimalzahl"
 
-#: src/prefs_common.c:3028
+#: src/prefs_common.c:3098
 msgid "the time zone or name or abbreviation"
 msgstr "die Zeitzone oder Abkürzung"
 
-#: src/prefs_common.c:3049
+#: src/prefs_common.c:3119
 msgid "Specifier"
 msgstr "Spezifikationssymbol"
 
-#: src/prefs_common.c:3050
+#: src/prefs_common.c:3120
 msgid "Description"
 msgstr "Beschreibung"
 
-#: src/prefs_common.c:3089
+#: src/prefs_common.c:3159
 msgid "Example"
 msgstr "Beispiel"
 
-#: src/prefs_common.c:3177
+#: src/prefs_common.c:3247
 msgid "Set message colors"
 msgstr "Setze Nachrichtenfarbe"
 
-#: src/prefs_common.c:3185
+#: src/prefs_common.c:3255
 msgid "Colors"
 msgstr "Farben"
 
-#: src/prefs_common.c:3226
+#: src/prefs_common.c:3296
 msgid "Quoted Text - First Level"
 msgstr "Zitierter Text - Erste Ebene"
 
-#: src/prefs_common.c:3232
+#: src/prefs_common.c:3302
 msgid "Quoted Text - Second Level"
 msgstr "Zitierter Text - Zweite Ebene"
 
-#: src/prefs_common.c:3238
+#: src/prefs_common.c:3308
 msgid "Quoted Text - Third Level"
 msgstr "Zitierter Text - Dritte Ebene"
 
-#: src/prefs_common.c:3244
+#: src/prefs_common.c:3314
 msgid "URI link"
 msgstr "URI-Link"
 
-#: src/prefs_common.c:3250
+#: src/prefs_common.c:3320
 msgid "Target folder"
 msgstr "Zielablage"
 
-#: src/prefs_common.c:3257
+#: src/prefs_common.c:3327
 msgid "Recycle quote colors"
 msgstr "Stelle Zitatfarben wiederher"
 
-#: src/prefs_common.c:3320
+#: src/prefs_common.c:3390
 msgid "Pick color for quotation level 1"
 msgstr "Wähle Farbe für Zitatebene 1"
 
-#: src/prefs_common.c:3323
+#: src/prefs_common.c:3393
 msgid "Pick color for quotation level 2"
 msgstr "Wähle Farbe für Zitatebene 2"
 
-#: src/prefs_common.c:3326
+#: src/prefs_common.c:3396
 msgid "Pick color for quotation level 3"
 msgstr "Wähle Farbe für Zitatebene 3"
 
-#: src/prefs_common.c:3329
+#: src/prefs_common.c:3399
 msgid "Pick color for URI"
 msgstr "Wähle Farbe für URI"
 
-#: src/prefs_common.c:3332
+#: src/prefs_common.c:3402
 msgid "Pick color for target folder"
 msgstr "Wähle Farbe für Zielablage"
 
-#: src/prefs_common.c:3336
+#: src/prefs_common.c:3406
 msgid "Pick color for misspelled word"
 msgstr "Wähle Farbe für falsche Worte"
 
-#: src/prefs_common.c:3469
+#: src/prefs_common.c:3539
 msgid "Font selection"
 msgstr "Schriftauswahl"
 
-#: src/prefs_common.c:3543
+#: src/prefs_common.c:3613
 msgid "Key bindings"
 msgstr "Tastaturkürzel"
 
-#: src/prefs_common.c:3557
+#: src/prefs_common.c:3627
 msgid ""
 "Select the preset of key bindings.\n"
 "You can also modify each menu's shortcuts by pressing\n"
@@ -5414,11 +5594,7 @@ msgstr ""
 "Tastenkombination\n"
 "drückt, während sich der Mauszeiger über dem Eintrag befindet."
 
-#: src/prefs_common.c:3569 src/prefs_common.c:3890
-msgid "Default"
-msgstr "Standard"
-
-#: src/prefs_common.c:3572 src/prefs_common.c:3896
+#: src/prefs_common.c:3642 src/prefs_common.c:3966
 msgid "Old Sylpheed"
 msgstr "Altes Sylpheed"
 
@@ -5658,7 +5834,8 @@ msgid "Request Return Receipt"
 msgstr "Empfangsbestätigung fordern"
 
 #: src/prefs_folder_item.c:337
-msgid "Save copy of outgoing messages to this folder instead of outbox"
+#, fuzzy
+msgid "Save copy of outgoing messages to this folder instead of Sent"
 msgstr "Speichere ausgehende Nachrichten in diesen Folder anstelle von outbox"
 
 #. Default To
@@ -5707,13 +5884,13 @@ msgstr "Alle Nachrichten"
 
 #. S_COL_MIME
 #: src/prefs_matcher.c:146 src/prefs_summary_column.c:70 src/quote_fmt.c:45
-#: src/selective_download.c:465 src/summaryview.c:439
+#: src/selective_download.c:465 src/summaryview.c:451
 msgid "Subject"
 msgstr "Betreff"
 
 #. S_COL_SUBJECT
 #: src/prefs_matcher.c:147 src/prefs_summary_column.c:71 src/quote_fmt.c:40
-#: src/selective_download.c:458 src/summaryview.c:440
+#: src/selective_download.c:458 src/summaryview.c:452
 msgid "From"
 msgstr "Von"
 
@@ -5879,7 +6056,7 @@ msgid "Scoring setting"
 msgstr "Benotungseinstellungen"
 
 #. S_COL_NUMBER
-#: src/prefs_scoring.c:246 src/prefs_summary_column.c:75 src/summaryview.c:444
+#: src/prefs_scoring.c:246 src/prefs_summary_column.c:75 src/summaryview.c:456
 msgid "Score"
 msgstr "Note"
 
@@ -6125,7 +6302,7 @@ msgid "Attachment"
 msgstr "Anhang"
 
 #. S_COL_FROM
-#: src/prefs_summary_column.c:72 src/quote_fmt.c:39 src/summaryview.c:441
+#: src/prefs_summary_column.c:72 src/quote_fmt.c:39 src/summaryview.c:453
 msgid "Date"
 msgstr "Datum"
 
@@ -6752,142 +6929,167 @@ msgstr "Anfang der Liste erreicht. Weiter vom Ende?"
 msgid "End of list reached; continue from beginning?"
 msgstr "Ende der Liste erreicht. Weiter vom Anfang?"
 
-#: src/summaryview.c:393
+#: src/summaryview.c:396
 msgid "/_Reply"
 msgstr "/An_twort"
 
-#: src/summaryview.c:394
+#: src/summaryview.c:397
 msgid "/Repl_y to sender"
 msgstr "/_Antwort an Absender"
 
-#: src/summaryview.c:395
+#: src/summaryview.c:398
 msgid "/Follow-up and reply to"
 msgstr "/Folge-nach und antworte an"
 
-#: src/summaryview.c:396
+#: src/summaryview.c:399
 msgid "/Reply to a_ll"
 msgstr "/Antwort an a_lle"
 
-#: src/summaryview.c:397
+#: src/summaryview.c:400
 msgid "/_Forward"
 msgstr "/_Weiterleiten"
 
-#: src/summaryview.c:398
+#: src/summaryview.c:401
 msgid "/Bounce"
 msgstr "/Bounce"
 
-#: src/summaryview.c:400
+#: src/summaryview.c:403
 msgid "/Re-_edit"
 msgstr "/Wi_ederbearbeiten"
 
-#: src/summaryview.c:402
+#: src/summaryview.c:405
 msgid "/Select _thread"
 msgstr "/Wähle _Thread"
 
-#: src/summaryview.c:403
+#: src/summaryview.c:406
 msgid "/Select _all"
 msgstr "/A_lle auswählen"
 
-#: src/summaryview.c:405
+#: src/summaryview.c:408
 msgid "/M_ove..."
 msgstr "/_Verschieben..."
 
-#: src/summaryview.c:406
+#: src/summaryview.c:409
 msgid "/_Copy..."
 msgstr "/_Kopieren..."
 
-#: src/summaryview.c:408
+#: src/summaryview.c:411
 msgid "/E_xecute"
 msgstr "/_Ausführen"
 
-#: src/summaryview.c:410
+#: src/summaryview.c:413
 msgid "/_Mark"
 msgstr "/_Markieren"
 
-#: src/summaryview.c:411
+#: src/summaryview.c:414
 msgid "/_Mark/_Mark"
 msgstr "/_Markieren/_Markieren"
 
-#: src/summaryview.c:412
+#: src/summaryview.c:415
 msgid "/_Mark/_Unmark"
 msgstr "/_Markieren/Markierung _entfernen"
 
-#: src/summaryview.c:413
+#: src/summaryview.c:416
 msgid "/_Mark/---"
 msgstr "/_Markieren/---"
 
-#: src/summaryview.c:414
+#: src/summaryview.c:417
 msgid "/_Mark/Mark as unr_ead"
 msgstr "/_Markieren/Markiere als _ungelesen"
 
-#: src/summaryview.c:415
+#: src/summaryview.c:418
 msgid "/_Mark/Mark as rea_d"
 msgstr "/_Markieren/Markiere als gelesen"
 
-#: src/summaryview.c:416
+#: src/summaryview.c:419
 msgid "/_Mark/Mark all read"
 msgstr "/_Markieren/Markiere alle als gelesen"
 
-#: src/summaryview.c:417
+#: src/summaryview.c:420
 msgid "/_Mark/Ignore thread"
 msgstr "/_Markieren/Ignoriere Thread"
 
-#: src/summaryview.c:418
+#: src/summaryview.c:421
 msgid "/_Mark/Unignore thread"
 msgstr "/_Markieren/Unignoriere Thread"
 
-#: src/summaryview.c:419
+#: src/summaryview.c:422
 msgid "/Color la_bel"
 msgstr "/Einfärben"
 
-#: src/summaryview.c:422
+#: src/summaryview.c:425
 msgid "/Add sender to address boo_k"
 msgstr "/Absender dem _Adressbuch hinzufügen"
 
+#: src/summaryview.c:427
+#, fuzzy
+msgid "/Create f_ilter rule"
+msgstr "/_Werkzeuge/Filter_regel erstellen"
+
 #: src/summaryview.c:428
+#, fuzzy
+msgid "/Create f_ilter rule/_Automatically"
+msgstr "/_Werkzeuge/Filter_regel erstellen/_Automatisch"
+
+#: src/summaryview.c:430
+#, fuzzy
+msgid "/Create f_ilter rule/by _From"
+msgstr "/_Werkzeuge/Filter_regel erstellen/nach _Von"
+
+#: src/summaryview.c:432
+#, fuzzy
+msgid "/Create f_ilter rule/by _To"
+msgstr "/_Werkzeuge/Filter_regel erstellen/nach _An"
+
+#: src/summaryview.c:434
+#, fuzzy
+msgid "/Create f_ilter rule/by _Subject"
+msgstr "/_Werkzeuge/Filter_regel erstellen/nach _Betreff"
+
+#: src/summaryview.c:440
 msgid "/_View/_Source"
 msgstr "/_Ansicht/Zeige _Quellen"
 
-#: src/summaryview.c:429
+#: src/summaryview.c:441
 msgid "/_View/All _header"
 msgstr "/_Ansicht/Alle _Kopfzeilen"
 
-#: src/summaryview.c:432
+#: src/summaryview.c:444
 msgid "/_Print..."
 msgstr "/_Drucken..."
 
-#: src/summaryview.c:436
+#: src/summaryview.c:448
 msgid "M"
 msgstr "M"
 
 #. S_COL_MARK
-#: src/summaryview.c:437
+#: src/summaryview.c:449
 msgid "U"
 msgstr "U"
 
 #. S_COL_SIZE
-#: src/summaryview.c:443
+#: src/summaryview.c:455
 msgid "No."
 msgstr "Nr."
 
 #. S_COL_SCORE
-#: src/summaryview.c:445
+#: src/summaryview.c:457
 msgid "L"
 msgstr "L"
 
-#: src/summaryview.c:466
+#: src/summaryview.c:478
 msgid "Creating summary view...\n"
 msgstr "Erstelle Ablageninhaltsansicht...\n"
 
-#: src/summaryview.c:719
+#: src/summaryview.c:731
 msgid "Process mark"
 msgstr "Markierte verarbeiten"
 
-#: src/summaryview.c:720
+#: src/summaryview.c:732
 msgid "Some marks are left. Process it?"
 msgstr "Einige Markierungen sind übrig. Verarbeiten?"
 
-#: src/summaryview.c:765
+#: src/summaryview.c:777
 msgid ""
 "empty folder\n"
 "\n"
@@ -6895,205 +7097,205 @@ msgstr ""
 "leere Ablage\n"
 "\n"
 
-#: src/summaryview.c:783
+#: src/summaryview.c:795
 #, c-format
 msgid "Scanning folder (%s)..."
 msgstr "Durchsuche Ablage (%s)..."
 
-#: src/summaryview.c:1146 src/summaryview.c:1181
+#: src/summaryview.c:1159 src/summaryview.c:1194
 msgid "No more unread messages"
 msgstr "Keine weiteren ungelesene Nachrichten"
 
-#: src/summaryview.c:1147
+#: src/summaryview.c:1160
 msgid "No unread message found. Search from the end?"
 msgstr "Keine ungelesene Nachricht gefunden. Vom Ende suchen?"
 
-#: src/summaryview.c:1159 src/summaryview.c:1194
+#: src/summaryview.c:1172 src/summaryview.c:1207
 msgid ""
 "Internal error: unexpected value for prefs_common.next_unread_msg_dialog\n"
 msgstr ""
 "Interner Fehler: Unerwarteter Wert fürprefs_common.next_unread_msg_dialog\n"
 
-#: src/summaryview.c:1166
+#: src/summaryview.c:1179
 msgid "No unread messages."
 msgstr "Keine ungelesene Nachrichten."
 
-#: src/summaryview.c:1182
+#: src/summaryview.c:1195
 msgid "No unread message found. Go to next folder?"
 msgstr "Keine ungelesene Nachricht gefunden. Gehe zu nächster Ablage?"
 
-#: src/summaryview.c:1184
+#: src/summaryview.c:1197
 msgid "Search again"
 msgstr "Nochmal Suchen"
 
-#: src/summaryview.c:1224 src/summaryview.c:1247
+#: src/summaryview.c:1237 src/summaryview.c:1260
 msgid "No more marked messages"
 msgstr "Keine weiteren markierten Nachrichten"
 
-#: src/summaryview.c:1225
+#: src/summaryview.c:1238
 msgid "No marked message found. Search from the end?"
 msgstr "Keine markierte Nachricht gefunden. Vom Ende suchen?"
 
-#: src/summaryview.c:1233 src/summaryview.c:1256
+#: src/summaryview.c:1246 src/summaryview.c:1269
 msgid "No marked messages."
 msgstr "Keine markierten Nachrichten"
 
-#: src/summaryview.c:1248
+#: src/summaryview.c:1261
 msgid "No marked message found. Search from the beginning?"
 msgstr "Keine markierte Nachricht gefunden. Vom Anfang suchen?"
 
-#: src/summaryview.c:1270 src/summaryview.c:1293
+#: src/summaryview.c:1283 src/summaryview.c:1306
 msgid "No more labeled messages"
 msgstr "Keine weiteren eingefärbten Nachrichten"
 
-#: src/summaryview.c:1271
+#: src/summaryview.c:1284
 msgid "No labeled message found. Search from the end?"
 msgstr "Keine eingefärbte Nachricht gefunden. Vom Ende suchen?"
 
-#: src/summaryview.c:1279 src/summaryview.c:1302
+#: src/summaryview.c:1292 src/summaryview.c:1315
 msgid "No labeled messages."
 msgstr "Keine eingefärbte Nachrichten"
 
-#: src/summaryview.c:1294
+#: src/summaryview.c:1307
 msgid "No labeled message found. Search from the beginning?"
 msgstr "Keine eingefärbte Nachricht gefunden. Vom Anfang suchen?"
 
-#: src/summaryview.c:1572 src/summaryview.c:1574
+#: src/summaryview.c:1585 src/summaryview.c:1587
 msgid "Attracting messages by subject..."
 msgstr "Ziehe Nachrichten nach Betreff an..."
 
-#: src/summaryview.c:1730
+#: src/summaryview.c:1744
 #, c-format
 msgid "%d deleted"
 msgstr "%d gelöscht"
 
-#: src/summaryview.c:1734
+#: src/summaryview.c:1748
 #, c-format
 msgid "%s%d moved"
 msgstr "%s%d verschoben"
 
-#: src/summaryview.c:1735 src/summaryview.c:1742
+#: src/summaryview.c:1749 src/summaryview.c:1756
 msgid ", "
 msgstr ", "
 
-#: src/summaryview.c:1740
+#: src/summaryview.c:1754
 #, c-format
 msgid "%s%d copied"
 msgstr "%s%d kopiert"
 
-#: src/summaryview.c:1755
+#: src/summaryview.c:1769
 msgid " item selected"
 msgstr " Eintrag gewählt"
 
-#: src/summaryview.c:1757
+#: src/summaryview.c:1771
 msgid " items selected"
 msgstr " Einträge gewählt"
 
-#: src/summaryview.c:1774
+#: src/summaryview.c:1788
 #, c-format
 msgid "%d new, %d unread, %d total (%s)"
 msgstr "%d Neue, %d Ungelesene, %d Gesamt (%s)"
 
-#: src/summaryview.c:1780
+#: src/summaryview.c:1794
 #, c-format
 msgid "%d new, %d unread, %d total"
 msgstr "%d Neue, %d Ungelesene, %d Gesamt"
 
-#: src/summaryview.c:1935 src/summaryview.c:1936
+#: src/summaryview.c:1949 src/summaryview.c:1950
 msgid "Sorting summary..."
 msgstr "Sortiere Ablagenansicht..."
 
-#: src/summaryview.c:2020
+#: src/summaryview.c:2034
 msgid "\tSetting summary from message data..."
 msgstr "\tSetze Ablagenansicht aus Nachrichtendaten..."
 
-#: src/summaryview.c:2022
+#: src/summaryview.c:2036
 msgid "Setting summary from message data..."
 msgstr "Setze Ablagenansicht aus Nachrichtendaten..."
 
-#: src/summaryview.c:2186
+#: src/summaryview.c:2200
 #, c-format
 msgid "Writing summary cache (%s)..."
 msgstr "Schreibe Ablagenansichtszwischenspeicher (%s)..."
 
-#: src/summaryview.c:2282
+#: src/summaryview.c:2296
 msgid "(No Date)"
 msgstr "(Kein Datum)"
 
-#: src/summaryview.c:2775
+#: src/summaryview.c:2789
 #, c-format
 msgid "Message %s/%d is marked\n"
 msgstr "Nachricht %s/%d ist markiert\n"
 
-#: src/summaryview.c:2805
+#: src/summaryview.c:2819
 #, c-format
 msgid "Message %d is locked\n"
 msgstr "Nachricht %d ist gesperrt\n"
 
-#: src/summaryview.c:2835
+#: src/summaryview.c:2849
 #, c-format
 msgid "Message %d is marked as read\n"
 msgstr "Nachricht %d ist markiert als gelesen\n"
 
-#: src/summaryview.c:2890
+#: src/summaryview.c:2904
 #, c-format
 msgid "Message %d is marked as unread\n"
 msgstr "Nachricht %d ist markiert als ungelesen\n"
 
-#: src/summaryview.c:2947
+#: src/summaryview.c:2961
 msgid "You're not the author of the article\n"
 msgstr "Sie sind nicht der Autor dieses Artikels\n"
 
-#: src/summaryview.c:2994
+#: src/summaryview.c:3008
 #, c-format
 msgid "Message %s/%d is set to delete\n"
 msgstr "Nachricht %s/%d ist zum Löschen markiert\n"
 
-#: src/summaryview.c:3017
+#: src/summaryview.c:3031
 msgid "Delete message(s)"
 msgstr "Nachricht(en) löschen"
 
-#: src/summaryview.c:3018
+#: src/summaryview.c:3032
 msgid "Do you really want to delete message(s) from the trash?"
 msgstr "Wollen Sie wirklich diese Nachricht(en) aus dem Müll löschen?"
 
-#: src/summaryview.c:3058 src/summaryview.c:3060
+#: src/summaryview.c:3072 src/summaryview.c:3074
 msgid "Deleting duplicated messages..."
 msgstr "Lösche mehrfach vorhandene Nachrichten..."
 
-#: src/summaryview.c:3115
+#: src/summaryview.c:3129
 #, c-format
 msgid "Message %s/%d is unmarked\n"
 msgstr "Nachricht %s/%d ist nicht markiert.\n"
 
-#: src/summaryview.c:3172
+#: src/summaryview.c:3186
 #, c-format
 msgid "Message %d is set to move to %s\n"
 msgstr "Nachricht %d ist markiert zum Verschieben nach %s\n"
 
-#: src/summaryview.c:3187
+#: src/summaryview.c:3201
 msgid "Destination is same as current folder."
 msgstr "Ziel ist gleich der aktuellen Ablage."
 
-#: src/summaryview.c:3261
+#: src/summaryview.c:3275
 #, c-format
 msgid "Message %d is set to copy to %s\n"
 msgstr "Nachricht %d ist markiert zum Kopieren nach %s\n"
 
-#: src/summaryview.c:3276
+#: src/summaryview.c:3290
 msgid "Destination to copy is same as current folder."
 msgstr "Kopierziel ist gleich der aktuellen Ablage."
 
-#: src/summaryview.c:3326
+#: src/summaryview.c:3340
 msgid "Selecting all messages..."
 msgstr "Wähle alle Nachrichten..."
 
-#: src/summaryview.c:3371
+#: src/summaryview.c:3385
 #, c-format
 msgid "Can't save the file `%s'."
 msgstr "Kann Datei `%s' nicht speichern."
 
-#: src/summaryview.c:3389
+#: src/summaryview.c:3403
 #, c-format
 msgid ""
 "Enter the print command line:\n"
@@ -7102,7 +7304,7 @@ msgstr ""
 "Geben Sie den Druckbefehl ein:\n"
 "(`%s' wird durch den Dateinamen ersetzt)"
 
-#: src/summaryview.c:3395
+#: src/summaryview.c:3409
 #, c-format
 msgid ""
 "Print command line is invalid:\n"
@@ -7111,70 +7313,70 @@ msgstr ""
 "Druck-Befehlszeile ist ungültig:\n"
 "`%s'"
 
-#: src/summaryview.c:3644 src/summaryview.c:3645
+#: src/summaryview.c:3658 src/summaryview.c:3659
 msgid "Building threads..."
 msgstr "Erstelle Threads"
 
-#: src/summaryview.c:3738 src/summaryview.c:3739
+#: src/summaryview.c:3752 src/summaryview.c:3753
 msgid "Unthreading..."
 msgstr "Hebe Threads auf"
 
-#: src/summaryview.c:3776
+#: src/summaryview.c:3790
 msgid "Unthreading for execution..."
 msgstr "Hebe Threads zur Ausführung auf"
 
-#: src/summaryview.c:3843 src/summaryview.c:5167
+#: src/summaryview.c:3857 src/summaryview.c:5187
 #, c-format
 msgid "Processing (%s)..."
 msgstr "Bearbeite (%s)..."
 
-#: src/summaryview.c:3883
+#: src/summaryview.c:3897
 msgid "No filter rules defined."
 msgstr "Keine Filterregeln definiert."
 
-#: src/summaryview.c:3889
+#: src/summaryview.c:3903
 msgid "filtering..."
 msgstr "filtere..."
 
-#: src/summaryview.c:3890
+#: src/summaryview.c:3904
 msgid "Filtering..."
 msgstr "Filtere..."
 
-#: src/summaryview.c:4976
+#: src/summaryview.c:4996
 #, c-format
 msgid "nfcp: checking <%s>"
 msgstr "nfcp: checking <%s>"
 
-#: src/summaryview.c:4979
+#: src/summaryview.c:4999
 #, c-format
 msgid " <%s>"
 msgstr " <%s>"
 
-#: src/summaryview.c:4988
+#: src/summaryview.c:5008
 msgid "\n"
 msgstr "\n"
 
-#: src/summaryview.c:5020
+#: src/summaryview.c:5040
 #, c-format
 msgid "Cross-reference %d: Hash <%s>\n"
 msgstr "Cross-reference %d: Hash <%s>\n"
 
-#: src/summaryview.c:5059
+#: src/summaryview.c:5079
 #, c-format
 msgid "Message %d selected\n"
 msgstr "Nachricht %d ausgewählt\n"
 
-#: src/summaryview.c:5098
+#: src/summaryview.c:5118
 #, c-format
 msgid "Message %d is marked as ignore thread\n"
 msgstr "Nachricht %d ist markiert als ignoriere Thread\n"
 
-#: src/summaryview.c:5130
+#: src/summaryview.c:5150
 #, c-format
 msgid "Message %d is marked as unignore thread\n"
 msgstr "Nachricht %d ist markiert als unignoriere Thread\n"
 
-#: src/summaryview.c:5248
+#: src/summaryview.c:5268
 #, c-format
 msgid ""
 "Regular expression (regexp) error:\n"
@@ -7217,15 +7419,15 @@ msgstr "%s:%d schreibe Vorlage \"%s\" nach %s\n"
 msgid "Creating text view...\n"
 msgstr "Erstelle Textansicht...\n"
 
-#: src/textview.c:522
+#: src/textview.c:523
 msgid "To save this part, pop up the context menu with "
 msgstr "Zum Speichern dieses Teiles, öffnen Sie das Kontextmenü mit der "
 
-#: src/textview.c:523
+#: src/textview.c:524
 msgid "right click and select `Save as...', "
 msgstr "rechten Maustaste und wählen `Speichern als...', "
 
-#: src/textview.c:524
+#: src/textview.c:525
 msgid ""
 "or press `y' key.\n"
 "\n"
@@ -7233,11 +7435,11 @@ msgstr ""
 "oder drücken die `y'-Taste.\n"
 "\n"
 
-#: src/textview.c:526
+#: src/textview.c:527
 msgid "To display this part as a text message, select "
 msgstr "Zum Anzeigen dieses Teiles der Nachricht als Text, wählen Sie "
 
-#: src/textview.c:527
+#: src/textview.c:528
 msgid ""
 "`Display as text', or press `t' key.\n"
 "\n"
@@ -7245,11 +7447,11 @@ msgstr ""
 "`Darstellung als Text', oder die `t'-Taste drücken.\n"
 "\n"
 
-#: src/textview.c:529
+#: src/textview.c:530
 msgid "To display this part as an image, select "
 msgstr "Zum Anzeigen dieses Teiles als Bild, wählen Sie "
 
-#: src/textview.c:530
+#: src/textview.c:531
 msgid ""
 "`Display image', or press `i' key.\n"
 "\n"
@@ -7257,47 +7459,50 @@ msgstr ""
 "`Bild anzeigen', oder die `i'-Taste drücken.\n"
 "\n"
 
-#: src/textview.c:532
+#: src/textview.c:533
 msgid "To open this part with external program, select "
 msgstr "Zum Öffnen dieses Teiles mit einem externen Programm, wählen Sie "
 
-#: src/textview.c:533
+#: src/textview.c:534
 msgid "`Open' or `Open with...', "
 msgstr "`Öffnen' oder `Öffnen mit...', "
 
-#: src/textview.c:534
+#: src/textview.c:535
 msgid "or double-click, or click the center button, "
 msgstr "oder Doppelclick, oder drücken Sie die mittlere Maustaste, "
 
-#: src/textview.c:535
+#: src/textview.c:536
 msgid "or press `l' key."
 msgstr "oder die `l'-Taste."
 
-#: src/textview.c:554
+#: src/textview.c:555
 msgid "This signature has not been checked yet.\n"
 msgstr "Diese digitale Unterschrift wurde noch nicht geprüft.\n"
 
-#: src/textview.c:555
+#: src/textview.c:556
 msgid "To check it, pop up the context menu with\n"
 msgstr "Zum Überprüfen, öffnen Sie das Kontextmenü mit der\n"
 
-#: src/textview.c:556
+#: src/textview.c:557
 msgid "right click and select `Check signature'.\n"
 msgstr ""
 "rechten Maustaste und wählen `Digitale Unterschrift Überprüfen'.\n"
 "\n"
 
-#: src/utils.c:1748
+#: src/utils.c:1901
 #, c-format
 msgid "File copy from %s to %s failed.\n"
 msgstr "Datei kopieren von %s nach %s fehlgeschlagen.\n"
 
-#: src/utils.c:1846
+#: src/utils.c:1999
 #, c-format
 msgid "move_file(): file %s already exists."
 msgstr "move_file(): Datei %s' existiert bereits."
 
-#: src/utils.c:2134
+#: src/utils.c:2287
 #, c-format
 msgid "Open URI command line is invalid: `%s'"
 msgstr "Öffne-URI-Befehlszeile ist ungültig: `%s'"
+
+#~ msgid "The folder `%s' could not be created."
+#~ msgstr "Die Ablage `%s' konnte nicht erstellt werden."
