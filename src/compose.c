@@ -2212,15 +2212,16 @@ compose_end:
 /* Darko: used when I debug wrapping */
 void dump_text(GtkSText *text, int pos, int tlen, int breakoncr)
 {
-	gint i;
-	gchar ch;
+	gint i, clen;
+	gchar cbuf[MB_LEN_MAX];
 
 	printf("%d [", pos);
 	for (i = pos; i < tlen; i++) {
-		ch = GTK_STEXT_INDEX(text, i);
-		if (breakoncr && ch == '\n')
+		GET_CHAR(i, cbuf, clen);
+		if (clen < 0) break;
+		if (breakoncr && clen == 1 && cbuf[0] == '\n')
 			break;
-		printf("%c", ch);
+		fwrite(cbuf, clen, 1, stdout);
 	}
 	printf("]\n");
 }
@@ -2333,7 +2334,7 @@ static gboolean join_next_line(GtkSText *text, guint start_pos, guint tlen,
 
 	indent_len = get_indent_length(text, start_pos, tlen);
 
-	if ((indent_len > 0) && (indent_len == prev_ilen)) {
+	if (indent_len == prev_ilen) {
 		GET_CHAR(start_pos + indent_len, cbuf, ch_len);
 		if (ch_len > 0 && (cbuf[0] != '\n'))
 			do_join = TRUE;
@@ -2352,14 +2353,13 @@ static void compose_wrap_line_all(Compose *compose)
 	gboolean is_new_line = TRUE, do_delete = FALSE;
 	guint i_len = 0;
 	gboolean linewrap_quote = TRUE;
+	gboolean set_editable_pos = FALSE;
+	gint editable_pos = 0;
 	guint linewrap_len = prefs_common.linewrap_len;
 	gchar *qfmt = prefs_common.quotemark;
 	gchar cbuf[MB_LEN_MAX];
 
 	gtk_stext_freeze(text);
-
-	/* make text buffer contiguous */
-	/* gtk_stext_compact_buffer(text); */
 
 	tlen = gtk_stext_get_length(text);
 
@@ -2372,7 +2372,7 @@ static void compose_wrap_line_all(Compose *compose)
 			is_new_line = FALSE;
 			p_pos = cur_pos;
 #ifdef WRAP_DEBUG
-			printf("new line i_len=%d p_pos=", i_len);
+			g_print("new line i_len=%d p_pos=", i_len);
 			dump_text(text, p_pos, tlen, 1);
 #endif
 		}
@@ -2385,7 +2385,7 @@ static void compose_wrap_line_all(Compose *compose)
 			guint tab_offset = line_len % tab_width;
 
 #ifdef WRAP_DEBUG
-			printf("found tab at pos=%d line_len=%d ", cur_pos,
+			g_print("found tab at pos=%d line_len=%d ", cur_pos,
 				line_len);
 #endif
 			if (tab_offset) {
@@ -2403,14 +2403,14 @@ static void compose_wrap_line_all(Compose *compose)
 			gchar cb[MB_LEN_MAX];
 
 			/* should we join the next line */
-			if ((i_len != cur_len) && do_delete &&
+			if (do_delete &&
 			    join_next_line(text, cur_pos + 1, tlen, i_len))
 				do_delete = TRUE;
 			else
 				do_delete = FALSE;
 
 #ifdef WRAP_DEBUG
-			printf("found CR at %d do_del is %d next line is ",
+			g_print("found CR at %d do_del is %d next line is ",
 			       cur_pos, do_delete);
 			dump_text(text, cur_pos + 1, tlen, 1);
 #endif
@@ -2421,7 +2421,7 @@ static void compose_wrap_line_all(Compose *compose)
 				do_delete = FALSE;
 
 #ifdef WRAP_DEBUG
-			printf("l_len=%d wrap_len=%d do_del=%d\n",
+			g_print("l_len=%d wrap_len=%d do_del=%d\n",
 				line_len, linewrap_len, do_delete);
 #endif
 			/* should we delete to perform smart wrapping */
@@ -2452,7 +2452,6 @@ static void compose_wrap_line_all(Compose *compose)
 				    ((clen > 1) || isalnum(cb[0]))) {
 					gtk_stext_insert(text, NULL, NULL,
 							NULL, " ", 1);
-					/* gtk_stext_compact_buffer(text); */
 					tlen++;
 				}
 
@@ -2463,7 +2462,7 @@ static void compose_wrap_line_all(Compose *compose)
 				do_delete = FALSE;
 				is_new_line = TRUE;
 #ifdef WRAP_DEBUG
-				printf("after delete l_pos=");
+				g_print("after delete l_pos=");
 				dump_text(text, line_pos, tlen, 1);
 #endif
 				continue;
@@ -2493,7 +2492,7 @@ static void compose_wrap_line_all(Compose *compose)
 			gint clen;
 
 #ifdef WRAP_DEBUG
-			printf("should wrap cur_pos=%d ", cur_pos);
+			g_print("should wrap cur_pos=%d ", cur_pos);
 			dump_text(text, p_pos, tlen, 1);
 			dump_text(text, line_pos, tlen, 1);
 #endif
@@ -2503,16 +2502,23 @@ static void compose_wrap_line_all(Compose *compose)
 				    (text, line_pos, tlen))
 					line_pos = cur_pos - 1;
 #ifdef WRAP_DEBUG
-			printf("new line_pos=%d\n", line_pos);
+			g_print("new line_pos=%d\n", line_pos);
 #endif
 
 			GET_CHAR(line_pos - 1, cbuf, clen);
 
 			/* if next character is space delete it */
-                        if (clen == 1 && isspace(*cbuf)) {
+			if (clen == 1 && isspace(*cbuf)) {
 				if (p_pos + i_len != line_pos ||
                             	    !gtkut_stext_is_uri_string
 					(text, line_pos, tlen)) {
+					/* workaround for correct cursor
+					   position */
+					if (set_editable_pos == FALSE) {
+						editable_pos = gtk_editable_get_position(GTK_EDITABLE(text));
+						if (editable_pos == line_pos)
+							set_editable_pos = TRUE;
+					}
 					gtk_stext_set_point(text, line_pos);
 					gtk_stext_backward_delete(text, 1);
 					tlen--;
@@ -2527,7 +2533,7 @@ static void compose_wrap_line_all(Compose *compose)
 			if (p_pos + i_len == line_pos &&
 			    gtkut_stext_is_uri_string(text, line_pos, tlen)) {
 #ifdef WRAP_DEBUG
-				printf("found URL at ");
+				g_print("found URL at ");
 				dump_text(text, line_pos, tlen, 1);
 #endif
 				continue;
@@ -2545,12 +2551,9 @@ static void compose_wrap_line_all(Compose *compose)
 			is_new_line = TRUE;
 			line_len = 0;
 			cur_len = 0;
-			if (i_len)
-				do_delete = TRUE;
-			else
-				do_delete = FALSE;
+			do_delete = TRUE;
 #ifdef WRAP_DEBUG
-			printf("after CR insert ");
+			g_print("after CR insert ");
 			dump_text(text, line_pos, tlen, 1);
 			dump_text(text, cur_pos, tlen, 1);
 #endif
@@ -2571,7 +2574,7 @@ static void compose_wrap_line_all(Compose *compose)
 						tlen += ins_len;
 					}
 #ifdef WRAP_DEBUG
-					printf("after quote insert ");
+					g_print("after quote insert ");
 					dump_text(text, line_pos, tlen, 1);
 #endif
 				}
@@ -2588,6 +2591,9 @@ static void compose_wrap_line_all(Compose *compose)
 	}
 
 	gtk_stext_thaw(text);
+
+	if (set_editable_pos && editable_pos <= tlen)
+		gtk_editable_set_position(GTK_EDITABLE(text), editable_pos);
 }
 
 #undef GET_CHAR
