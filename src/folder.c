@@ -613,7 +613,7 @@ void folder_item_read_cache(FolderItem *item)
 	gchar *cache_file;
 	
 	cache_file = folder_item_get_cache_file(item);
-	item->cache = msgcache_read(cache_file);
+	item->cache = msgcache_read(cache_file, item);
 	g_free(cache_file);
 }
 
@@ -626,9 +626,7 @@ void folder_item_write_cache(FolderItem *item)
 	if (!item || !item->path || !item->cache)
 		return;
 
-	cache_file_tmp = folder_item_get_cache_file(item);
-	cache_file = g_strconcat(cache_file_tmp, "_new", NULL);
-	g_free(cache_file_tmp);
+	cache_file = folder_item_get_cache_file(item);
 	if(msgcache_write(cache_file, item->cache) < 0) {
 		prefs = item->prefs;
     		if (prefs && prefs->enable_folder_chmod && prefs->folder_chmod) {
@@ -694,9 +692,12 @@ gint folder_item_add_msg(FolderItem *dest, const gchar *file,
         msginfo = procheader_parse(file, default_flags, TRUE, FALSE);
 
 	num = folder->add_msg(folder, dest, file, remove_source);
+	
         if (num > 0) {
+		msginfo->msgnum = num;
+		msginfo->folder = dest;
                 dest->last_num = num;
-                msgcache_add_msg_with_newnum(dest->cache, msginfo, num);
+                msgcache_add_msg(dest->cache, msginfo);
         }
         procmsg_msginfo_free(msginfo);
 
@@ -744,9 +745,16 @@ gint folder_item_move_msg(FolderItem *dest, MsgInfo *msginfo)
 	src_folder = msginfo->folder->folder;
 
 	num = folder->copy_msg(folder, dest, msginfo);
-        msgcache_add_msg_with_newnum(dest->cache, msginfo, num);
 
 	if (num != -1) {
+		MsgInfo *newmsginfo;
+
+		newmsginfo = procmsg_msginfo_copy(msginfo);
+		newmsginfo->msgnum = num;
+		newmsginfo->folder = dest;
+    		msgcache_add_msg(dest->cache, newmsginfo);
+		procmsg_msginfo_free(newmsginfo);
+
 		src_folder->remove_msg(src_folder,
 				       msginfo->folder,
 				       msginfo->msgnum);
@@ -813,12 +821,20 @@ gint folder_item_move_msgs_with_dest(FolderItem *dest, GSList *msglist)
 			item = msginfo->folder;
 
 		num = folder->copy_msg(folder, dest, msginfo);
-		if (num != -1)
-    			msgcache_add_msg_with_newnum(dest->cache, msginfo, num);
+		if (num != -1) {
+			MsgInfo *newmsginfo;
+
+			newmsginfo = procmsg_msginfo_copy(msginfo);
+			newmsginfo->msgnum = num;
+			newmsginfo->folder = dest;
+    			msgcache_add_msg(dest->cache, newmsginfo);
+			procmsg_msginfo_free(newmsginfo);
+
 			item->folder->remove_msg(item->folder,
 						 msginfo->folder,
 						 msginfo->msgnum);
 			msgcache_remove_msg(item->cache, msginfo->msgnum);
+		}
     	}
 
 	if (folder->finished_copy)
@@ -869,7 +885,15 @@ gint folder_item_copy_msg(FolderItem *dest, MsgInfo *msginfo)
 	if (!dest->cache) folder_item_read_cache(dest);
 	
 	num = folder->copy_msg(folder, dest, msginfo);
-	msgcache_add_msg_with_newnum(dest->cache, msginfo, num);
+	if (num != -1) {
+		MsgInfo *newmsginfo;
+
+		newmsginfo = procmsg_msginfo_copy(msginfo);
+		newmsginfo->msgnum = num;
+		newmsginfo->folder = dest;
+    		msgcache_add_msg(dest->cache, newmsginfo);
+		procmsg_msginfo_free(newmsginfo);
+	}
 
 	if (folder->finished_copy)
 		folder->finished_copy(folder, dest);
@@ -921,7 +945,15 @@ gint folder_item_copy_msgs_with_dest(FolderItem *dest, GSList *msglist)
 		MsgInfo * msginfo = (MsgInfo *) l->data;
 
 		num = folder->copy_msg(folder, dest, msginfo);
-		msgcache_add_msg_with_newnum(dest->cache, msginfo, num);
+		if (num != -1) {
+			MsgInfo *newmsginfo;
+
+			newmsginfo = procmsg_msginfo_copy(msginfo);
+			newmsginfo->msgnum = num;
+			newmsginfo->folder = dest;
+    			msgcache_add_msg(dest->cache, newmsginfo);
+			procmsg_msginfo_free(newmsginfo);
+		}
 	}
 
 	if (folder->finished_copy)

@@ -157,6 +157,8 @@ struct _MsgFlags
 
 struct _MsgInfo
 {
+	guint refcnt;
+
 	guint  msgnum;
 	off_t  size;
 	time_t mtime;
@@ -231,6 +233,8 @@ gint	procmsg_send_queue		(void);
 void	procmsg_print_message		(MsgInfo	*msginfo,
 					 const gchar	*cmdline);
 
+MsgInfo *procmsg_msginfo_new		();
+MsgInfo *procmsg_msginfo_new_ref	(MsgInfo 	*msginfo);
 MsgInfo *procmsg_msginfo_copy		(MsgInfo	*msginfo);
 void	 procmsg_msginfo_free		(MsgInfo	*msginfo);
 

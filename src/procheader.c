@@ -515,7 +515,7 @@ MsgInfo *procheader_file_parse(FILE * fp, MsgFlags flags,
 			if (buf[0] == '\r' || buf[0] == '\n') break;
 	}
 
-	msginfo = g_new0(MsgInfo, 1);
+	msginfo = procmsg_msginfo_new();
 	
 	if (flags.tmp_flags || flags.perm_flags) 
 		msginfo->flags = flags;

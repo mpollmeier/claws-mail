@@ -1825,7 +1825,7 @@ static MsgInfo *imap_parse_envelope(SockInfo *sock, GString *line_str)
 		}
 	}
 
-	msginfo = g_new0(MsgInfo, 1);
+	msginfo = procmsg_msginfo_new();
 	msginfo->msgnum = uid;
 	msginfo->size = size;
 	msginfo->date = g_strdup(date);

@@ -46,22 +46,7 @@ void msgcache_add_msg(MsgCache *cache, MsgInfo *msginfo)
 {
 	MsgInfo *newmsginfo;
 	
-	newmsginfo = procmsg_msginfo_copy(msginfo);
-	newmsginfo->folder = NULL;
-
-	g_hash_table_insert(cache, GINT_TO_POINTER(msginfo->msgnum), newmsginfo);
-
-	debug_print(_("Cache size: %d\n"), g_hash_table_size(cache));
-}
-
-void msgcache_add_msg_with_newnum(MsgCache *cache, MsgInfo *msginfo, gint num)
-{
-	MsgInfo *newmsginfo;
-	
-	newmsginfo = procmsg_msginfo_copy(msginfo);
-	newmsginfo->folder = NULL;
-	newmsginfo->msgnum = num;
-
+	newmsginfo = procmsg_msginfo_new_ref(msginfo);
 	g_hash_table_insert(cache, GINT_TO_POINTER(msginfo->msgnum), newmsginfo);
 
 	debug_print(_("Cache size: %d\n"), g_hash_table_size(cache));
@@ -141,7 +126,7 @@ static gint msgcache_read_cache_data_str(FILE *fp, gchar **str)
 	} \
 }
 
-MsgCache *msgcache_read(const gchar *cache_file)
+MsgCache *msgcache_read(const gchar *cache_file, FolderItem *item)
 {
 	MsgCache *cache;
 	FILE *fp;
@@ -152,6 +137,7 @@ MsgCache *msgcache_read(const gchar *cache_file)
 	guint num;
 
 	g_return_val_if_fail(cache_file != NULL, NULL);
+	g_return_val_if_fail(item != NULL, NULL);
 
 	cache = msgcache_new();
 
@@ -174,11 +160,12 @@ MsgCache *msgcache_read(const gchar *cache_file)
 	g_hash_table_freeze(cache);
 
 	while (fread(&num, sizeof(num), 1, fp) == 1) {
-		msginfo = g_new0(MsgInfo, 1);
+		msginfo = procmsg_msginfo_new();
 		msginfo->msgnum = num;
 		READ_CACHE_DATA_INT(msginfo->size, fp);
 		READ_CACHE_DATA_INT(msginfo->mtime, fp);
 		READ_CACHE_DATA_INT(msginfo->date_t, fp);
+		READ_CACHE_DATA_INT(msginfo->flags.perm_flags, fp);
 		READ_CACHE_DATA_INT(msginfo->flags.tmp_flags, fp);
 
 		READ_CACHE_DATA(msginfo->fromname, fp);
@@ -193,8 +180,11 @@ MsgCache *msgcache_read(const gchar *cache_file)
 		READ_CACHE_DATA(msginfo->inreplyto, fp);
 		READ_CACHE_DATA(msginfo->references, fp);
 
+/*
 		MSG_SET_PERM_FLAGS(msginfo->flags, default_flags.perm_flags);
 		MSG_SET_TMP_FLAGS(msginfo->flags, default_flags.tmp_flags);
+*/
+		msginfo->folder = item;
 
 		g_hash_table_insert(cache, GINT_TO_POINTER(msginfo->msgnum), msginfo);
 	}
@@ -226,13 +216,12 @@ MsgCache *msgcache_read(const gchar *cache_file)
 
 void msgcache_write_cache(MsgInfo *msginfo, FILE *fp)
 {
-	MsgTmpFlags flags = msginfo->flags.tmp_flags & MSG_CACHED_FLAG_MASK;
-
 	WRITE_CACHE_DATA_INT(msginfo->msgnum, fp);
 	WRITE_CACHE_DATA_INT(msginfo->size, fp);
 	WRITE_CACHE_DATA_INT(msginfo->mtime, fp);
 	WRITE_CACHE_DATA_INT(msginfo->date_t, fp);
-	WRITE_CACHE_DATA_INT(flags, fp);
+	WRITE_CACHE_DATA_INT(msginfo->flags.perm_flags, fp);
+	WRITE_CACHE_DATA_INT(msginfo->flags.tmp_flags, fp);
 
 	WRITE_CACHE_DATA(msginfo->fromname, fp);
 
@@ -280,4 +269,21 @@ gint msgcache_write(const gchar *cache_file, MsgCache *cache)
 	fclose(fp);
 
 	debug_print(_("done.\n"));
+}
+
+static void msgcache_get_msg_list_func(gpointer key, gpointer value, gpointer user_data)
+{
+	GSList **listptr = user_data;
+	MsgInfo *msginfo = value;
+
+	*listptr = g_slist_append(*listptr, procmsg_msginfo_new_ref(msginfo));
+}
+
+GSList *msgcache_get_msg_list(MsgCache *cache)
+{
+	GSList *msg_list = NULL;
+
+	g_hash_table_foreach((GHashTable *)cache, msgcache_get_msg_list_func, (gpointer)&msg_list);	
+
+	return msg_list;
 }

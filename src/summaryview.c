@@ -714,7 +714,7 @@ gboolean summary_show(SummaryView *summaryview, FolderItem *item,
    		folder_update_op_count();
 	} else
 		summary_write_cache(summaryview);
-        
+
 	summaryview->folderview->opened = selected_node;
 
 	gtk_clist_freeze(GTK_CLIST(ctree));
@@ -755,9 +755,16 @@ gboolean summary_show(SummaryView *summaryview, FolderItem *item,
 
 	main_window_cursor_wait(summaryview->mainwin);
 
+/*
 	mlist = item->folder->get_msg_list(item->folder, item, !update_cache);
+
+	!!! NEW !!!
+	USE LIST FROM CACHE, WILL NOT DISPLAY ANY MESSAGES DROPED
+	BY OTHER PROGRAMS TO THE FOLDER
+*/
 	if(!item->cache)
 		folder_item_read_cache(item);
+	mlist = msgcache_get_msg_list(item->cache);
 
 	summary_processing(summaryview, mlist);
 
@@ -2093,6 +2100,12 @@ gint summary_write_cache(SummaryView *summaryview)
 
 	if (!summaryview->folder_item || !summaryview->folder_item->path)
 		return -1;
+		
+	if (!summaryview->folder_item->cache)
+		return -1;
+	
+	folder_item_write_cache(summaryview->folder_item);
+	return 0;
 
 	if (summaryview->folder_item->folder->update_mark != NULL)
 		summaryview->folder_item->folder->update_mark(summaryview->folder_item->folder, summaryview->folder_item);

@@ -719,7 +719,7 @@ static MsgInfo *news_parse_xover(const gchar *xover_str)
 	line_int = atoi(line);
 
 	/* set MsgInfo */
-	msginfo = g_new0(MsgInfo, 1);
+	msginfo = procmsg_msginfo_new();
 	msginfo->msgnum = num;
 	msginfo->size = size_int;
 

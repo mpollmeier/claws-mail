@@ -220,7 +220,7 @@ GSList *procmsg_read_cache(FolderItem *item, gboolean scan_file)
 	}
 
 	while (fread(&num, sizeof(num), 1, fp) == 1) {
-		msginfo = g_new0(MsgInfo, 1);
+		msginfo = procmsg_msginfo_new();
 		msginfo->msgnum = num;
 		READ_CACHE_DATA_INT(msginfo->size, fp);
 		READ_CACHE_DATA_INT(msginfo->mtime, fp);
@@ -847,6 +847,25 @@ void procmsg_print_message(MsgInfo *msginfo, const gchar *cmdline)
 	system(buf);
 }
 
+MsgInfo *procmsg_msginfo_new_ref(MsgInfo *msginfo)
+{
+	
+
+	msginfo->refcnt++;
+	
+	return msginfo;
+}
+
+MsgInfo *procmsg_msginfo_new()
+{
+	MsgInfo *newmsginfo;
+
+	newmsginfo = g_new0(MsgInfo, 1);
+	newmsginfo->refcnt = 1;
+	
+	return newmsginfo;
+}
+
 MsgInfo *procmsg_msginfo_copy(MsgInfo *msginfo)
 {
 	MsgInfo *newmsginfo;
@@ -854,6 +873,8 @@ MsgInfo *procmsg_msginfo_copy(MsgInfo *msginfo)
 	if (msginfo == NULL) return NULL;
 
 	newmsginfo = g_new0(MsgInfo, 1);
+
+	newmsginfo->refcnt = 1;
 
 #define MEMBCOPY(mmb)	newmsginfo->mmb = msginfo->mmb
 #define MEMBDUP(mmb)	newmsginfo->mmb = msginfo->mmb ? \
@@ -893,6 +914,10 @@ MsgInfo *procmsg_msginfo_copy(MsgInfo *msginfo)
 void procmsg_msginfo_free(MsgInfo *msginfo)
 {
 	if (msginfo == NULL) return;
+
+	msginfo->refcnt--;
+	if(msginfo->refcnt > 0)
+		return;
 
 	g_free(msginfo->fromspace);
 	g_free(msginfo->references);

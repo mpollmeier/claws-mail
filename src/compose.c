@@ -5928,7 +5928,7 @@ static void compose_draft_cb(gpointer data, guint action, GtkWidget *widget)
 		g_free(path);
 
 		procmsg_msginfo_free(compose->targetinfo);
-		compose->targetinfo = g_new0(MsgInfo, 1);
+		compose->targetinfo = procmsg_msginfo_new();
 		compose->targetinfo->msgnum = msgnum;
 		compose->targetinfo->size = s.st_size;
 		compose->targetinfo->mtime = s.st_mtime;
