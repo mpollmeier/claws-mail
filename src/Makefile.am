@@ -124,11 +124,12 @@ sylpheed_SOURCES = \
 	prefs_filtering.c prefs_filtering.h \
 	mbox_folder.c mbox_folder.h \
 	quote_fmt_lex.l quote_fmt_lex.h \
-	quote_fmt_parse.y quote_fmt.h \
+	quote_fmt_parse.y quote_fmt.c quote_fmt.h \
 	gtkspell.c gtkspell.h gtkxtext.h \
 	matcher_parser_lex.l matcher_parser_lex.h \
 	matcher_parser_parse.y matcher_parser.h \
 	string_match.h string_match.c \
+	selective_download.c selective_download.h \
 	msgcache.h msgcache.c
 
 BUILT_SOURCES = \

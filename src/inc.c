@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2001 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2002 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,6 +64,7 @@
 #include "automaton.h"
 #include "folder.h"
 #include "filtering.h"
+#include "selective_download.h"
 
 static guint inc_lock_count = 0;
 
@@ -130,9 +131,9 @@ static gint inc_autocheck_func			(gpointer	 data);
 static void inc_finished(MainWindow *mainwin, gboolean new_messages)
 {
 	FolderItem *item;
-	
+
 	if (prefs_common.scan_all_after_inc)
-		folderview_update_all_node();
+		folderview_check_new(NULL);
 
 	if (!new_messages && !prefs_common.scan_all_after_inc) return;
 
@@ -185,11 +186,28 @@ void inc_mail(MainWindow *mainwin)
 	inc_autocheck_timer_set();
 }
 
+gint inc_selective_download(MainWindow *mainwin, gint session_type)
+{
+	PrefsAccount *account = cur_account;
+	gint new_msgs = 0;	
+
+	account->session_type = session_type;
+	new_msgs = inc_account_mail(account, mainwin);
+	account->session_type = RETR_NORMAL;
+	
+	return new_msgs;
+}
+
 static gint inc_account_mail(PrefsAccount *account, MainWindow *mainwin)
 {
 	IncProgressDialog *inc_dialog;
 	IncSession *session;
 	gchar *text[3];
+
+	if (account->protocol == A_IMAP4 || account->protocol == A_NNTP) {
+		folderview_check_new(FOLDER(account->folder));
+		return 1;
+	}
 
 	session = inc_session_new(account);
 	if (!session) return 0;
@@ -230,10 +248,19 @@ void inc_all_account_mail(MainWindow *mainwin)
 		return;
 	}
 
+	/* check IMAP4 folders */
 	for (; list != NULL; list = list->next) {
+		PrefsAccount *account = list->data;
+		if ((account->protocol == A_IMAP4 ||
+		     account->protocol == A_NNTP) && account->recv_at_getall)
+			folderview_check_new(FOLDER(account->folder));
+	}
+
+	/* check POP3 accounts */
+	for (list = account_get_list(); list != NULL; list = list->next) {
 		IncSession *session;
 		PrefsAccount *account = list->data;
-
+		account->session_type = RETR_NORMAL;
 		if (account->recv_at_getall) {
 			session = inc_session_new(account);
 			if (session)
@@ -546,6 +573,7 @@ static IncState inc_pop3_session_do(IncSession *session)
 		pop3_getrange_last_send , pop3_getrange_last_recv,
 		pop3_getrange_uidl_send , pop3_getrange_uidl_recv,
 		pop3_getsize_list_send  , pop3_getsize_list_recv,
+		pop3_top_send           , pop3_top_recv,
 		pop3_retr_send          , pop3_retr_recv,
 		pop3_delete_send        , pop3_delete_recv,
 		pop3_logout_send        , pop3_logout_recv
@@ -789,6 +817,21 @@ void inc_progress_update(Pop3State *state, Pop3Phase phase)
 	case POP3_GETSIZE_LIST_RECV:
 		progress_dialog_set_label
 			(dialog, _("Getting the size of messages (LIST)..."));
+		break;
+	case POP3_TOP_SEND:
+	case POP3_TOP_RECV:
+		g_snprintf(buf, sizeof(buf),
+			   _("Retrieving header (%d / %d)"),
+			   state->cur_msg, state->count);
+		progress_dialog_set_label (dialog, buf);
+		progress_dialog_set_percentage
+			(dialog,
+			 (gfloat)(state->cur_msg) /
+			 (gfloat)(state->count));
+		gtk_progress_bar_update 
+			(GTK_PROGRESS_BAR(inc_dialog->mainwin->progressbar),
+			 (gfloat)(state->cur_msg) /
+			 (gfloat)(state->count));
 		break;
 	case POP3_RETR_SEND:
 	case POP3_RETR_RECV:

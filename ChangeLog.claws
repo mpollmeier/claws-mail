@@ -1,3 +1,103 @@
+2002-02-22 [christoph]	0.7.2claws7
+
+	* src/quote_fmt.c
+		Add column space to table
+	* src/quote_fmt_parse.y
+		Close files
+
+2002-02-22 [paul]	0.7.2claws6
+
+	* src/Makefile.am
+	  src/defs.h
+	  src/filtering.c
+	  src/inc.[ch]
+	  src/mainwindow.c
+	  src/matcher.[ch]
+	  src/matcher_parser_lex.l
+	  src/matcher_parser_parse.y
+	  src/pop.[ch]
+	  src/prefs_account.h
+	  src/prefs_filtering.c
+	  src/selective_download.[ch]	*** NEW FILES ***
+	  src/utils.[ch]
+	  po/POTFILES.in
+		Selective Download added to 'Tool' menu. 
+		Retrieves email headers of the currently selected pop3 
+		account and allows the user to mark emails for deletion 
+		right on the pop3 server. Patch submitted by Oliver Haertel 
+		<oha@users.sourceforge.net>.
+	
+	* po/POTFILES.in
+		add 'src/quote_fmt.c'		
+
+2002-02-22 [christoph]	0.7.2claws5
+
+	* src/Makefile.am
+		added quote_fmt.c
+	* src/prefs_common.[ch]
+	* src/prefs_template.c
+	* src/quote_fmt.c		*** NEW FILE ***
+	* src/quote_fmt.h
+		move quote format symbol description code
+		to it's own file because it is used from
+		differnent code parts
+		Rewrote symbol description GUI
+		  + use table
+		  + add separators
+		  + get data from array (no more long constant strings)
+	* src/quote_fmt_lex.l
+	* src/quote_fmt_parse.y
+		Symbol for Literal % changed to \% instead of %%
+		(More logical as \ is used for quoting for other symbols)
+		Add |f and |p to include files and program output
+		Examples:
+		    |f{/home/.../.signature}
+		    |p{date}
+	* po/de.po
+		Correct wrong spelling for "Referenzen"
+
+2002-02-21 [paul]	0.7.2claws4
+
+	* src/procmsg.c
+		forgotten during sync
+
+2002-02-21 [paul]	0.7.2claws3
+
+	* sync with sylpheed 0.7.2cvs11
+		see ChangeLog entries 2002-02-17, 2002-02-18, 2002-02-19,
+		2002-02-20 and 2002-02-21
+
+2002-02-20 [melvin]	0.7.2claws2
+
+	* src/prefs_actions.c
+		Added error report when child cannot fork or when execvp 
+		returns with an error.
+
+2002-02-19 [christoph]	0.7.2claws1
+
+	* src/codeconv.c
+		return unconverted text if conde conversion is not possible
+		when libjconv is used.
+		(patch submitted by "Simon 'corecode' Schubert")
+
+2002-02-19 [paul]	
+
+	* version 0.7.2claws release
+
+2002-02-19 [paul]	0.7.2claws
+
+	* po/nl.po
+		updated by Wilbert Berendsen
+
+
+2002-02-18 [alfons]	0.7.1claws13
+
+	* src/syldap.c
+	* src/jpilot.c
+		remove references to dlfcn and explicitly loading functions
+		from dynalink libs, because libs linked anyway, and functions
+		are loaded explicitly
+
 2002-02-17 [melvin]	0.7.1claws12
 
 	* src/prefs_actions.c
@@ -869,7 +969,7 @@
 	* src/compose.c
 		clean up account preference poison in rfc2015,
 		and preparation to fix double sign bug 
-		(patch submitted by Simon 'corecode' Schubert) 
+		(patch submitted by Simon 'corecode' Schubert)
 
 2002-01-07 [christoph]	0.6.6claws43
 

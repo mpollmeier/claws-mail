@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2001 Hiroyuki Yamamoto & The Sylpheed Claws Team
+ * Copyright (C) 1999-2002 Hiroyuki Yamamoto & The Sylpheed Claws Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -434,7 +434,9 @@ gchar *filteringaction_to_string(gchar *dest, gint destlen, FilteringAction *act
 	case MATCHACTION_COLOR:
 		g_snprintf(dest, destlen, "%s %d", command_str, action->labelcolor);
 		return dest;  
-
+	case MATCHACTION_DELETE_ON_SERVER:
+		g_snprintf(dest, destlen, "%s", command_str);
+		return dest;
 	default:
 		return NULL;
 	}

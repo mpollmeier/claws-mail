@@ -17,25 +17,27 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef __PREFS_FILTER_H__
-#define __PREFS_FILTER_H__
+#ifndef __SELECTIVE_DOWNLOAD_H__
+#define __SELECTIVE_DOWNLOAD_H__
 
-typedef enum
-{
-	FILTER_BY_NONE,
-	FILTER_BY_AUTO,
-	FILTER_BY_FROM,
-	FILTER_BY_TO,
-	FILTER_BY_SUBJECT
-} PrefsFilterType;
+#include "mainwindow.h"
 
-void prefs_filter_read_config	(void);
-void prefs_filter_write_config	(void);
-void prefs_filter_open		(const gchar	*header,
-				 const gchar	*key);
+#define SIZE_HEADER "Complete-Size: "
+#define SIZE_HEADER_LEN strlen(SIZE_HEADER)
 
-void prefs_filter_rename_path	(const gchar	*old_path,
-				 const gchar	*new_path);
-void prefs_filter_delete_path	(const gchar	*path);
+#define CHECKED    TRUE
+#define UNCHECKED  FALSE
 
-#endif /* __PREFS_FILTER_H__ */
+typedef struct _HeaderItems HeaderItems;
+
+struct _HeaderItems {
+	gint     index;
+	gboolean state;
+	gchar    *from;
+	gchar    *subject;
+	gchar    *size;
+};
+
+void selective_download(MainWindow *mainwin);
+
+#endif /* __SELECTIVE_DOWNLOAD_H__ */
