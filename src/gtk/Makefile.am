@@ -1,5 +1,8 @@
 noinst_LTLIBRARIES = libsylpheedgtk.la
 
+EXTRA_DIST = \
+	sylpheed-marshal.list
+
 libsylpheedgtk_la_SOURCES = \
 	about.c \
 	colorlabel.c \
@@ -7,17 +10,16 @@ libsylpheedgtk_la_SOURCES = \
 	description_window.c \
 	filesel.c \
 	gtkaspell.c \
-	gtksctree.c \
-	gtkshruler.c \
-	gtkstext.c \
 	gtkutils.c \
-	gtkvscrollbutton.c \
-	logwindow.c \
+	gtkshruler.c \
+	gtksctree.c \
 	manage_window.c \
 	menu.c \
 	pluginwindow.c \
 	prefswindow.c \
-	sslcertwindow.c
+	sslcertwindow.c \
+	sylpheed-marshal.c \
+	gtkvscrollbutton.c
 
 sylpheedgtkincludedir = $(pkgincludedir)/gtk
 sylpheedgtkinclude_HEADERS = \
@@ -27,17 +29,16 @@ sylpheedgtkinclude_HEADERS = \
 	description_window.h \
 	filesel.h \
 	gtkaspell.h \
-	gtksctree.h \
-	gtkshruler.h \
-	gtkstext.h \
 	gtkutils.h \
-	gtkvscrollbutton.h \
-	logwindow.h \
+	gtkshruler.h \
+	gtksctree.h \
 	manage_window.h \
 	menu.h \
 	pluginwindow.h \
 	prefswindow.h \
-	sslcertwindow.h
+	sslcertwindow.h \
+	sylpheed-marshal.h \
+	gtkvscrollbutton.h
 
 AM_CPPFLAGS = \
 	-I../common \
@@ -50,3 +51,11 @@ libsylpheedgtk_la_LIBADD = \
 	../common/libsylpheedcommon.la \
 	$(GTK_LIBS) \
 	$(ASPELL_LIBS)
+
+BUILT_SOURCES=sylpheed-marshal.c sylpheed-marshal.h
+
+sylpheed-marshal.h: sylpheed-marshal.list
+	$(GLIB_GENMARSHAL) $< --header --prefix=sylpheed_marshal > $@
+
+sylpheed-marshal.c: sylpheed-marshal.list
+	$(GLIB_GENMARSHAL) $< --body --prefix=sylpheed_marshal > $@

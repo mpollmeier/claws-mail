@@ -93,7 +93,7 @@ enum {
 	MC_(HEADERS_PART), MC_(NOT_HEADERS_PART),
 	MC_(MESSAGE), MC_(NOT_MESSAGE),
 	MC_(BODY_PART), MC_(NOT_BODY_PART),
-	MC_(TEST), MC_(NOT_TEST),
+	MC_(EXECUTE), MC_(NOT_EXECUTE),
 	MC_(SCORE_EQUAL),
 	MC_(SIZE_GREATER), 
 	MC_(SIZE_SMALLER),
@@ -170,6 +170,6 @@ gchar *matching_build_command		(const gchar	*cmd,
 
 void prefs_matcher_read_config		(void);
 void prefs_matcher_write_config		(void);
-void *matcher_parser_scan_string        (gchar          *str);
+void *matcher_parser_scan_string        (const gchar    *str);
 
 #endif

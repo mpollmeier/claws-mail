@@ -51,7 +51,6 @@
 #include "prefs_common.h"
 #include "prefs_account.h"
 #include "prefs_actions.h"
-#include "prefs_fonts.h"
 #include "prefs_spelling.h"
 #include "scoring.h"
 #include "prefs_display_header.h"
@@ -231,7 +230,7 @@ int main(int argc, char *argv[])
 	gtk_rc_parse("./gtkrc");
 
 	userrc = g_strconcat(get_rc_dir(), G_DIR_SEPARATOR_S, MENU_RC, NULL);
-	gtk_item_factory_parse_rc(userrc);
+	gtk_accel_map_load (userrc);
 	g_free(userrc);
 
 	CHDIR_RETURN_VAL_IF_FAIL(get_home_dir(), 1);
@@ -273,7 +272,6 @@ int main(int argc, char *argv[])
 	gpgme_register_idle(idle_function_for_gpgme);
 #endif
 
-	prefs_fonts_init();
 #ifdef USE_ASPELL
 	gtkaspell_checkers_init();
 	prefs_spelling_init();
@@ -382,7 +380,6 @@ int main(int argc, char *argv[])
 
 	addressbook_destroy();
 
-	prefs_fonts_done();
 #ifdef USE_ASPELL       
 	prefs_spelling_done();
 	gtkaspell_checkers_quit();
@@ -652,7 +649,7 @@ void app_will_exit(GtkWidget *widget, gpointer data)
 	addressbook_export_to_file();
 
 	filename = g_strconcat(get_rc_dir(), G_DIR_SEPARATOR_S, MENU_RC, NULL);
-	gtk_item_factory_dump_rc(filename, NULL, TRUE);
+	gtk_accel_map_save (filename);
 	g_free(filename);
 
 	/* delete temporary files */

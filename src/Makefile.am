@@ -1,5 +1,19 @@
 SUBDIRS = common gtk plugins
 
+
+if PLATFORM_WIN32
+
+SYLPHEED_RES = sylpheed.res
+
+sylpheed.rc:
+	echo "SYLPHEED ICON sylpheed.ico" > sylpheed.rc
+
+sylpheed.res: sylpheed.rc
+	$(WINDRES) $< -O coff -o $@
+
+endif
+
+
 bin_PROGRAMS = sylpheed
 
 sylpheed_SOURCES = \
@@ -57,6 +71,7 @@ sylpheed_SOURCES = \
 	ldapserver.c \
 	ldaputil.c \
 	ldif.c \
+	logwindow.c \
 	main.c \
 	mainwindow.c \
 	manual.c \
@@ -84,7 +99,6 @@ sylpheed_SOURCES = \
 	prefs_filtering.c \
 	prefs_filtering_action.c \
 	prefs_folder_item.c \
-	prefs_fonts.c \
 	prefs_gtk.c \
 	prefs_matcher.c \
 	prefs_scoring.c \
@@ -178,6 +192,7 @@ sylpheedinclude_HEADERS = \
 	ldapserver.h \
 	ldaputil.h \
 	ldif.h \
+	logwindow.h \
 	main.h \
 	mainwindow.h \
 	manual.h \
@@ -206,7 +221,6 @@ sylpheedinclude_HEADERS = \
 	prefs_filtering.h \
 	prefs_filtering_action.h \
 	prefs_folder_item.h \
-	prefs_fonts.h \
 	prefs_gtk.h \
 	prefs_matcher.h \
 	prefs_scoring.h \
@@ -246,6 +260,7 @@ BUILT_SOURCES = \
 	quote_fmt_parse.h
 
 EXTRA_DIST = \
+	sylpheed.ico \
 	pixmaps/address_book.xpm \
 	pixmaps/address_search.xpm \
 	pixmaps/address.xpm \
@@ -346,7 +361,8 @@ sylpheed_LDADD = \
 	$(GPGME_LIBS) \
 	$(LDAP_LIBS) \
 	$(OPENSSL_LIBS) \
-	$(LIBICONV)
+	$(LIBICONV) \
+	$(SYLPHEED_RES)
 
 AM_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\"Sylpheed\" \

@@ -64,6 +64,9 @@ struct _PrefsCommon
 	/* Receive */
 	gboolean use_extinc;
 	gchar *extinc_cmd;
+	gboolean inc_local;
+	gboolean filter_on_inc;
+	gchar *spool_path;
 	gboolean scan_all_after_inc;
 	gboolean autochk_newmail;
 	gint autochk_itv;
@@ -76,6 +79,8 @@ struct _PrefsCommon
 	gboolean no_recv_err_panel;
 
 	/* Send */
+	gboolean use_extsend;
+	gchar *extsend_cmd;
 	gboolean savemsg;
 	gboolean queue_msg;
 	SendDialogMode send_dialog_mode;
@@ -120,11 +125,20 @@ struct _PrefsCommon
 #endif
         
 	/* Display */
+	/* obsolete fonts */
+	gchar *widgetfont_gtk1;
+	gchar *textfont_gtk1;
+	gchar *normalfont_gtk1;
+	gchar *boldfont_gtk1;
+	gchar *smallfont_gtk1;
+
+	/* new fonts */
 	gchar *widgetfont;
 	gchar *textfont;
 	gchar *normalfont;
 	gchar *boldfont;
 	gchar *smallfont;
+	gchar *titlefont;
 
 	gboolean trans_hdr;
 	gboolean display_folder_unread;

@@ -26,7 +26,9 @@
 #include <glib.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
-#include <gdk/gdkx.h>
+#ifdef GDK_WINDOWING_X11
+#	include <gdk/gdkx.h>
+#endif /* GDK_WINDOWING_X11 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,10 +49,7 @@
 #include "action.h"
 #include "compose.h"
 #include "procmsg.h"
-#include "gtkstext.h"
 #include "textview.h"
-#include "matcher_parser.h" /* CLAWS */
-#include "filtering.h"
 
 typedef struct _Children		Children;
 typedef struct _ChildInfo		ChildInfo;
@@ -76,7 +75,8 @@ struct _Children
 	gboolean	 output;
 
 	GtkWidget	*msg_text;
-	GdkFont		*msgfont;
+
+ 	gboolean	 is_selection;
 };
 
 struct _ChildInfo
@@ -114,13 +114,9 @@ static void message_actions_execute	(MessageView	*msgview,
 					 guint		 action_nb,
 					 GSList		*msg_list);
 
-static gboolean execute_filtering_actions(gchar		*action, 
-					  GSList	*msglist);
-
 static gboolean execute_actions		(gchar		*action, 
 					 GSList		*msg_list, 
 					 GtkWidget	*text,
-					 GdkFont	*msgfont,
 					 gint		 body_pos,
 					 MimeInfo	*partinfo);
 
@@ -196,18 +192,8 @@ ActionType action_get_type(const gchar *action_str)
 		return ACTION_ERROR;
 
 	while (*p && action_type != ACTION_ERROR) {
-		if (p[0] == '%' && p[1]) {
+		if (p[0] == '%') {
 			switch (p[1]) {
-			case 'a':
-				/* CLAWS: filtering action is a mutually exclusive
-				 * action. we can enable others if needed later. we
-				 * add ACTION_SINGLE | ACTION_MULTIPLE so it will
-				 * only be executed from the main window toolbar */
-				if (p[2] == 's')  /* source messages */
-					action_type = ACTION_FILTERING_ACTION 
-						    | ACTION_SINGLE 
-						    | ACTION_MULTIPLE;
-				break;
 			case 'f':
 				action_type |= ACTION_SINGLE;
 				break;
@@ -486,11 +472,11 @@ static void compose_actions_execute_cb(Compose *compose, guint action_nb,
 	if (action_type & (ACTION_SINGLE | ACTION_MULTIPLE)) {
 		alertpanel_warning
 			(_("The selected action cannot be used in the compose window\n"
-			   "because it contains %%f, %%F, %%as or %%p."));
+			   "because it contains %%f, %%F or %%p."));
 		return;
 	}
 
-	execute_actions(action, NULL, compose->text, NULL, 0, NULL);
+	execute_actions(action, NULL, compose->text, 0, NULL);
 }
 
 static void mainwin_actions_execute_cb(MainWindow *mainwin, guint action_nb,
@@ -522,7 +508,6 @@ static void message_actions_execute(MessageView *msgview, guint action_nb,
 	gchar *buf;
 	gchar *action;
 	GtkWidget *text = NULL;
-	GdkFont *msgfont = NULL;
 	guint body_pos = 0;
 	ActionType action_type;
 	
@@ -531,7 +516,7 @@ static void message_actions_execute(MessageView *msgview, guint action_nb,
 	buf = (gchar *)g_slist_nth_data(prefs_common.actions_list, action_nb);
 
 	g_return_if_fail(buf);
-	g_return_if_fail(action = strstr(buf, ": "));
+	g_return_if_fail((action = strstr(buf, ": ")));
 
 	/* Point to the beginning of the command-line */
 	action += 2;
@@ -539,7 +524,6 @@ static void message_actions_execute(MessageView *msgview, guint action_nb,
 	textview = messageview_get_current_textview(msgview);
 	if (textview) {
 		text     = textview->text;
-		msgfont  = textview->msgfont;
 		body_pos = textview->body_pos;
 	}
 	partinfo = messageview_get_selected_mime_part(msgview);
@@ -549,43 +533,11 @@ static void message_actions_execute(MessageView *msgview, guint action_nb,
 	if (action_type & (ACTION_PIPE_OUT | ACTION_INSERT))
 		msgview->filtered = TRUE;
 
-	if (action_type & ACTION_FILTERING_ACTION) 
-		/* CLAWS: most of the above code is not necessary for applying
-		 * filtering */
-		execute_filtering_actions(action, msg_list);
-	else
-		execute_actions(action, msg_list, text, msgfont, body_pos, partinfo);
-}
-
-static gboolean execute_filtering_actions(gchar *action, GSList *msglist)
-{
-	GSList *action_list, *p;
-	const gchar *sbegin, *send;
-	gchar *action_string;
-	
-	if (NULL == (sbegin = strstr2(action, "%as{")))
-		return FALSE;
-	sbegin += sizeof "%as{" - 1;
-	if (NULL == (send = strrchr(sbegin, '}')))
-		return FALSE;
-	action_string = g_strndup(sbegin, send - sbegin);
-	
-	action_list = matcher_parser_get_action_list(action_string);
-	g_free(action_string);
-	if (action_list == NULL) return FALSE;
-	
-	/* apply actions on each message info */
-	for (p = msglist; p && p->data; p = g_slist_next(p))
-		filteringaction_apply_action_list(action_list, (MsgInfo *) p->data);
-		
-	for (p = action_list; p; p = g_slist_next(p))
-		if (p->data) filteringaction_free(p->data);	
-	g_slist_free(action_list);		
-	return TRUE;	
+	execute_actions(action, msg_list, text, body_pos, partinfo);
 }
 
 static gboolean execute_actions(gchar *action, GSList *msg_list,
-				GtkWidget *text, GdkFont *msgfont,
+				GtkWidget *text,
 				gint body_pos, MimeInfo *partinfo)
 {
 	GSList *children_list = NULL;
@@ -596,11 +548,12 @@ static gboolean execute_actions(gchar *action, GSList *msg_list,
 	ActionType action_type;
 	MsgInfo *msginfo;
 	gchar *cmd;
-	guint start = 0, end = 0;
 	gchar *sel_str = NULL;
 	gchar *msg_str = NULL;
 	gchar *user_str = NULL;
 	gchar *user_hidden_str = NULL;
+	GtkTextIter start_iter, end_iter;
+	gboolean is_selection = FALSE;
 
 	g_return_val_if_fail(action && *action, FALSE);
 
@@ -627,32 +580,21 @@ static gboolean execute_actions(gchar *action, GSList *msg_list,
 	}
 
 	if (text) {
-		if (GTK_EDITABLE(text)->has_selection) {
-			start = GTK_EDITABLE(text)->selection_start_pos;
-			end   = GTK_EDITABLE(text)->selection_end_pos;
-			if (start > end) {
-				guint tmp;
-				tmp = start;
-				start = end;
-				end = tmp;
-			}
+		GtkTextBuffer *textbuf;
 
-			if (start == end) {
-				start = body_pos;
-				end = gtk_stext_get_length(GTK_STEXT(text));
-				msg_str = gtk_editable_get_chars
-					(GTK_EDITABLE(text), start, end);
-			} else {
-				sel_str = gtk_editable_get_chars
-					(GTK_EDITABLE(text), start, end);
-				msg_str = g_strdup(sel_str);
-			}
-		} else {
-			start = body_pos;
-			end = gtk_stext_get_length(GTK_STEXT(text));
-			msg_str = gtk_editable_get_chars(GTK_EDITABLE(text),
-							 start, end);
+		textbuf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text));
+		is_selection = gtk_text_buffer_get_selection_bounds(textbuf,
+								    &start_iter,
+								    &end_iter);
+		if (!is_selection) {
+			gtk_text_buffer_get_start_iter(textbuf, &start_iter);
+			gtk_text_buffer_get_end_iter(textbuf, &end_iter);
 		}
+		msg_str = gtk_text_buffer_get_text(textbuf,
+						   &start_iter, &end_iter,
+						   FALSE);
+		if (is_selection)
+			sel_str = g_strdup (msg_str);
 	}
 
 	if (action_type & ACTION_USER_STR) {
@@ -673,11 +615,10 @@ static gboolean execute_actions(gchar *action, GSList *msg_list,
 		}
 	}
 
-	if (action_type & ACTION_PIPE_OUT) {
-		gtk_stext_freeze(GTK_STEXT(text));
-		gtk_stext_set_point(GTK_STEXT(text), start);
-		gtk_stext_forward_delete(GTK_STEXT(text), end - start);
-		gtk_stext_thaw(GTK_STEXT(text));
+ 	if (text && (action_type & ACTION_PIPE_OUT)) {
+ 		GtkTextBuffer *textbuf;
+ 		textbuf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text));
+ 		gtk_text_buffer_delete(textbuf, &start_iter, &end_iter);
 	}
 
 	children = g_new0(Children, 1);
@@ -685,7 +626,7 @@ static gboolean execute_actions(gchar *action, GSList *msg_list,
 	children->action      = g_strdup(action);
 	children->action_type = action_type;
 	children->msg_text    = text;
-	children->msgfont     = msgfont;
+ 	children->is_selection = is_selection;
 
 	if ((action_type & (ACTION_USER_IN | ACTION_USER_HIDDEN_IN)) &&
 	    ((action_type & ACTION_SINGLE) == 0 || msg_list_len == 1))
@@ -796,7 +737,9 @@ static ChildInfo *fork_child(gchar *cmd, const gchar *msg_str,
 		if (setpgid(0, 0))
 			perror("setpgid");
 
+#ifdef GDK_WINDOWING_X11
 		close(ConnectionNumber(gdk_display));
+#endif /* GDK_WINDOWING_X11 */
 
 		gch_pid = fork();
 
@@ -1062,25 +1005,24 @@ static void update_io_dialog(Children *children)
 		if (children->input_hbox)
 			gtk_widget_set_sensitive(children->input_hbox, FALSE);
 		gtk_widget_grab_focus(children->close_btn);
-		gtk_signal_connect(GTK_OBJECT(children->dialog),
-				   "key_press_event",
-				   GTK_SIGNAL_FUNC(io_dialog_key_pressed_cb),
-				   children);
+		g_signal_connect(G_OBJECT(children->dialog),
+				 "key_press_event",
+				 G_CALLBACK(io_dialog_key_pressed_cb),
+				 children);
 	}
 
 	if (children->output) {
 		GtkWidget *text = children->text;
 		gchar *caption;
 		ChildInfo *child_info;
-		GdkFont *font;
+		GtkTextBuffer *textbuf;
+		GtkTextIter iter, start_iter, end_iter;
 
-		font = gtk_object_get_data(GTK_OBJECT(children->dialog), 
-					   "s_txtfont");
 		gtk_widget_show(children->scrolledwin);
-		gtk_text_freeze(GTK_TEXT(text));
-		gtk_text_set_point(GTK_TEXT(text), 0);
-		gtk_text_forward_delete(GTK_TEXT(text), 
-					gtk_text_get_length(GTK_TEXT(text)));
+		textbuf = gtk_text_view_get_buffer (GTK_TEXT_VIEW(text));
+		gtk_text_buffer_get_start_iter (textbuf, &start_iter);
+		gtk_text_buffer_get_end_iter (textbuf, &end_iter);
+		iter = start_iter;
 		for (cur = children->list; cur; cur = cur->next) {
 			child_info = (ChildInfo *)cur->data;
 			if (child_info->pid)
@@ -1092,14 +1034,13 @@ static void update_io_dialog(Children *children)
 					(_("--- Ended: %s\n"),
 					 child_info->cmd);
 
-			gtk_text_insert(GTK_TEXT(text), font, NULL, NULL,
-					caption, -1);
-			gtk_text_insert(GTK_TEXT(text), font, NULL, NULL,
-					child_info->output->str, -1);
+			gtk_text_buffer_insert(textbuf, &iter,
+					       caption, -1);
+			gtk_text_buffer_insert(textbuf, &iter,
+					       child_info->output->str, -1);
 			g_free(caption);
 			child_info->new_out = FALSE;
 		}
-		gtk_text_thaw(GTK_TEXT(text));
 	}
 }
 
@@ -1117,7 +1058,6 @@ static void create_io_dialog(Children *children)
 	GtkWidget *progress_bar = NULL;
 	GtkWidget *abort_button;
 	GtkWidget *close_button;
-	GdkFont   *output_font;
 
 	debug_print("Creating action IO dialog\n");
 
@@ -1128,11 +1068,11 @@ static void create_io_dialog(Children *children)
 	gtk_window_set_title(GTK_WINDOW(dialog), _("Action's input/output"));
 	gtk_window_set_modal(GTK_WINDOW(dialog), TRUE);
 	manage_window_set_transient(GTK_WINDOW(dialog));
-	gtk_signal_connect(GTK_OBJECT(dialog), "delete_event",
-			GTK_SIGNAL_FUNC(delete_io_dialog_cb), children);
-	gtk_signal_connect(GTK_OBJECT(dialog), "destroy",
-			GTK_SIGNAL_FUNC(hide_io_dialog_cb),
-			children);
+	g_signal_connect(G_OBJECT(dialog), "delete_event",
+			 G_CALLBACK(delete_io_dialog_cb), children);
+	g_signal_connect(G_OBJECT(dialog), "destroy",
+			 G_CALLBACK(hide_io_dialog_cb),
+			 children);
 
 	vbox = gtk_vbox_new(FALSE, 8);
 	gtk_container_add(GTK_CONTAINER(GTK_DIALOG(dialog)->vbox), vbox);
@@ -1147,14 +1087,11 @@ static void create_io_dialog(Children *children)
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledwin),
 				       GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
 	gtk_box_pack_start(GTK_BOX(vbox), scrolledwin, TRUE, TRUE, 0);
-	gtk_widget_set_usize(scrolledwin, 480, 200);
+	gtk_widget_set_size_request(scrolledwin, 480, 200);
 	gtk_widget_hide(scrolledwin);
 
-	text = gtk_text_new(gtk_scrolled_window_get_hadjustment
-			    (GTK_SCROLLED_WINDOW(scrolledwin)),
-			    gtk_scrolled_window_get_vadjustment
-			    (GTK_SCROLLED_WINDOW(scrolledwin)));
-	gtk_text_set_editable(GTK_TEXT(text), FALSE);
+	text = gtk_text_view_new();
+	gtk_text_view_set_editable(GTK_TEXT_VIEW(text), FALSE);
 	gtk_container_add(GTK_CONTAINER(scrolledwin), text);
 	gtk_widget_show(text);
 
@@ -1163,17 +1100,17 @@ static void create_io_dialog(Children *children)
 		gtk_widget_show(input_hbox);
 
 		entry = gtk_entry_new();
-		gtk_widget_set_usize(entry, 320, -1);
-		gtk_signal_connect(GTK_OBJECT(entry), "activate",
-				   GTK_SIGNAL_FUNC(send_input), children);
+		gtk_widget_set_size_request(entry, 320, -1);
+		g_signal_connect(G_OBJECT(entry), "activate",
+				 G_CALLBACK(send_input), children);
 		gtk_box_pack_start(GTK_BOX(input_hbox), entry, TRUE, TRUE, 0);
 		if (children->action_type & ACTION_USER_HIDDEN_IN)
 			gtk_entry_set_visibility(GTK_ENTRY(entry), FALSE);
 		gtk_widget_show(entry);
 
 		send_button = gtk_button_new_with_label(_(" Send "));
-		gtk_signal_connect(GTK_OBJECT(send_button), "clicked",
-				   GTK_SIGNAL_FUNC(send_input), children);
+		g_signal_connect(G_OBJECT(send_button), "clicked",
+				 G_CALLBACK(send_input), children);
 		gtk_box_pack_start(GTK_BOX(input_hbox), send_button, FALSE,
 				   FALSE, 0);
 		gtk_widget_show(send_button);
@@ -1197,16 +1134,16 @@ static void create_io_dialog(Children *children)
 				children->initial_nb -children->nb,
 				0.0, children->initial_nb);
 
-		gtk_box_pack_start(GTK_BOX(vbox), progress_bar, FALSE, FALSE, 0);
+		gtk_box_pack_start(GTK_BOX(vbox), progress_bar, TRUE, TRUE, 0);
 		gtk_widget_show(progress_bar);
 	}
 
 	gtkut_button_set_create(&hbox, &abort_button, _("Abort"),
 				&close_button, _("Close"), NULL, NULL);
-	gtk_signal_connect(GTK_OBJECT(abort_button), "clicked",
-			GTK_SIGNAL_FUNC(kill_children_cb), children);
-	gtk_signal_connect(GTK_OBJECT(close_button), "clicked",
-			GTK_SIGNAL_FUNC(hide_io_dialog_cb), children);
+	g_signal_connect(G_OBJECT(abort_button), "clicked",
+			 G_CALLBACK(kill_children_cb), children);
+	g_signal_connect(G_OBJECT(close_button), "clicked",
+			 G_CALLBACK(hide_io_dialog_cb), children);
 	gtk_widget_show(hbox);
 
 	if (children->nb)
@@ -1223,10 +1160,6 @@ static void create_io_dialog(Children *children)
 	children->abort_btn    = abort_button;
 	children->close_btn    = close_button;
 
-	output_font = gtkut_font_load_from_fontset(prefs_common.textfont);
-	gtk_object_set_data_full(GTK_OBJECT(dialog), "s_txtfont",
-				 output_font, 
-				 (GtkDestroyNotify)gdk_font_unref); 
 	gtk_widget_show(dialog);
 }
 
@@ -1295,29 +1228,26 @@ static void catch_output(gpointer data, gint source, GdkInputCondition cond)
 	if (child_info->children->action_type &
 	    (ACTION_PIPE_OUT | ACTION_INSERT)
 	    && source == child_info->chld_out) {
-		gboolean is_selection = FALSE;
-		GtkWidget *text = child_info->children->msg_text;
+ 		GtkTextView *text = GTK_TEXT_VIEW(child_info->children->msg_text);
+ 		GtkTextBuffer *textbuf = gtk_text_view_get_buffer(text);
+ 		GtkTextIter iter1, iter2;
+ 		GtkTextMark *mark;
+ 
+ 		mark = gtk_text_buffer_get_insert(textbuf);
+ 		gtk_text_buffer_get_iter_at_mark(textbuf, &iter1, mark);
+ 		gtk_text_buffer_get_iter_at_mark(textbuf, &iter2, mark);
 
-		if (GTK_EDITABLE(text)->has_selection)
-			is_selection = TRUE;
-		gtk_stext_freeze(GTK_STEXT(text));
 		while (TRUE) {
 			c = read(source, buf, sizeof(buf) - 1);
 			if (c == 0)
 				break;
-			gtk_stext_insert(GTK_STEXT(text),
-					 child_info->children->msgfont,
-					 NULL, NULL, buf, c);
+ 			gtk_text_buffer_insert(textbuf, &iter2, buf, c);
 		}
-		if (is_selection) {
-			/* Using the select_region draws things. Should not.
-			 * so we just change selection position and 
-			 * defere drawing when thawing. Hack?
-			 */
-			GTK_EDITABLE(text)->selection_end_pos =
-					gtk_stext_get_point(GTK_STEXT(text));
+ 		if (child_info->children->is_selection) {
+ 			gtk_text_buffer_place_cursor(textbuf, &iter1);
+ 			gtk_text_buffer_move_mark_by_name
+ 				(textbuf, "selection_bound", &iter2);
 		}
-		gtk_stext_thaw(GTK_STEXT(text));
 	} else {
 		c = read(source, buf, sizeof(buf) - 1);
 		for (i = 0; i < c; i++)

@@ -77,7 +77,7 @@ void matcher_parser_start_parsing(FILE *f)
 	matcher_parserparse();
 }
  
-FilteringProp *matcher_parser_get_filtering(gchar *str)
+FilteringProp *matcher_parser_get_filtering(const gchar *str)
 {
 	void *bufstate;
 
@@ -96,7 +96,7 @@ FilteringProp *matcher_parser_get_filtering(gchar *str)
 	return filtering;
 }
 
-ScoringProp *matcher_parser_get_scoring(gchar *str)
+ScoringProp *matcher_parser_get_scoring(const gchar *str)
 {
 	void *bufstate;
 
@@ -117,7 +117,7 @@ ScoringProp *matcher_parser_get_scoring(gchar *str)
 
 static gboolean check_quote_symetry(gchar *str)
 {
-	gchar *walk;
+	const gchar *walk;
 	int ret = 0;
 	
 	if (str == NULL)
@@ -134,7 +134,7 @@ static gboolean check_quote_symetry(gchar *str)
 	return !(ret % 2);
 }
 
-MatcherList *matcher_parser_get_cond(gchar *str)
+MatcherList *matcher_parser_get_cond(const gchar *str)
 {
 	void *bufstate;
 
@@ -156,7 +156,7 @@ MatcherList *matcher_parser_get_cond(gchar *str)
 	return cond;
 }
 
-GSList *matcher_parser_get_action_list(gchar *str)
+GSList *matcher_parser_get_action_list(const gchar *str)
 {
 	void *bufstate;
 
@@ -178,7 +178,7 @@ GSList *matcher_parser_get_action_list(gchar *str)
 	return action_list;
 }
 
-MatcherProp *matcher_parser_get_prop(gchar *str)
+MatcherProp *matcher_parser_get_prop(const gchar *str)
 {
 	MatcherList *list;
 	MatcherProp *prop;
@@ -245,10 +245,9 @@ int matcher_parserwrap(void)
 %token MATCHER_SCORE_LOWER  MATCHER_HEADER  MATCHER_NOT_HEADER
 %token MATCHER_HEADERS_PART  MATCHER_NOT_HEADERS_PART  MATCHER_MESSAGE
 %token MATCHER_NOT_MESSAGE  MATCHER_BODY_PART  MATCHER_NOT_BODY_PART
-%token MATCHER_TEST  MATCHER_NOT_TEST  MATCHER_MATCHCASE  MATCHER_MATCH
+%token MATCHER_EXECUTE  MATCHER_NOT_EXECUTE  MATCHER_MATCHCASE  MATCHER_MATCH
 %token MATCHER_REGEXPCASE  MATCHER_REGEXP  MATCHER_SCORE  MATCHER_MOVE
 %token MATCHER_COPY  MATCHER_DELETE  MATCHER_MARK  MATCHER_UNMARK MATCHER_LOCK MATCHER_UNLOCK
-%token MATCHER_EXECUTE
 %token MATCHER_MARK_AS_READ  MATCHER_MARK_AS_UNREAD  MATCHER_FORWARD
 %token MATCHER_FORWARD_AS_ATTACHMENT  MATCHER_EOL  MATCHER_STRING  
 %token MATCHER_OR MATCHER_AND  
@@ -871,21 +870,21 @@ MATCHER_ALL
 	expr = $3;
 	prop = matcherprop_unquote_new(criteria, NULL, match_type, expr, 0);
 }
-| MATCHER_TEST MATCHER_STRING
+| MATCHER_EXECUTE MATCHER_STRING
 {
 	gint criteria = 0;
 	gchar *expr = NULL;
 
-	criteria = MATCHCRITERIA_TEST;
+	criteria = MATCHCRITERIA_EXECUTE;
 	expr = $2;
 	prop = matcherprop_unquote_new(criteria, NULL, 0, expr, 0);
 }
-| MATCHER_NOT_TEST MATCHER_STRING
+| MATCHER_NOT_EXECUTE MATCHER_STRING
 {
 	gint criteria = 0;
 	gchar *expr = NULL;
 
-	criteria = MATCHCRITERIA_NOT_TEST;
+	criteria = MATCHCRITERIA_NOT_EXECUTE;
 	expr = $2;
 	prop = matcherprop_unquote_new(criteria, NULL, 0, expr, 0);
 }
