@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 2002-2003 Match Grun
+ * Copyright (C) 2003 Hiroyuki Yamamoto & The Sylpheed Claws Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,19 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/*
- * Export addressbook to HTML file.
- */
+#ifndef COLORSEL_H
+#define COLORSEL_H
 
-#ifndef __EXPORT_HTML_H__
-#define __EXPORT_HTML_H__
+gint colorsel_select_color_rgb(gchar *title, gint rgbvalue);
 
-/* Function prototypes */
-void addressbook_exp_html( AddressCache *cache );
-
-#endif /* __EXPORT_HTML_H__ */
-
-/*
-* End of Source.
-*/
-
+#endif /* COLORSEL_H */

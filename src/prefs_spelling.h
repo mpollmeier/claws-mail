@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 2002-2003 Match Grun
+ * Copyright (C) 1999-2001 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,19 +17,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/*
- * Export addressbook to HTML file.
- */
+#ifndef PREFS_SPELLING_H
+#define PREFS_SPELLING_H
 
-#ifndef __EXPORT_HTML_H__
-#define __EXPORT_HTML_H__
+void prefs_spelling_init	(void);
+void prefs_spelling_done	(void);
 
-/* Function prototypes */
-void addressbook_exp_html( AddressCache *cache );
-
-#endif /* __EXPORT_HTML_H__ */
-
-/*
-* End of Source.
-*/
-
+#endif /* PREFS_SPELLING_H */ 
