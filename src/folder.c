@@ -1032,6 +1032,7 @@ void folder_item_free_cache(FolderItem *item)
 	g_return_if_fail(item != NULL);
 	g_return_if_fail(item->cache != NULL);
 	
+	folder_item_write_cache(item);
 	msgcache_destroy(item->cache);
 	item->cache = NULL;
 }

@@ -35,11 +35,9 @@ The check if memory can be freed is currently done after the active
 folder has been changed or whenever a new cache is read, i.e. triggered
 by mail incorporation.
 
-Folder updates are not done automatically yet for NEWS and IMAP, so you
-will have to use the View / Update menu to update the folder content. New
-mails in MH folders are not detected automatically like in the claws main
-branch and you have to update the folder manually too, or activate the auto
-update setting in the options.
+New mails in MH folders are not detected automatically like in the claws
+main branch and you have to update the folder manually, or activate
+the auto update setting in the options.
 
 The release is mainly to search for bugs or unexpected behaviour. Please
 report to the sylpheed claws user mailing list.
