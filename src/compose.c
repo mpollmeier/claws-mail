@@ -1998,6 +1998,9 @@ static void compose_attach_parts(Compose *compose, MsgInfo *msginfo)
 	}								     \
 }
 
+#define INDENT_CHARS	">|#"
+#define SPACE_CHARS	" \t"
+
 static void compose_wrap_line(Compose *compose)
 {
 	GtkSText *text = GTK_STEXT(compose->text);
@@ -2038,7 +2041,7 @@ static void compose_wrap_line(Compose *compose)
 			}
 			line_end = 1;
 		} else {
-			if (ch_len == 1 && strchr(">|:#", *cbuf))
+			if (ch_len == 1 && strchr(INDENT_CHARS, *cbuf))
 				quoted = 1;
 			else if (ch_len != 1 || !isspace(*cbuf))
 				quoted = 0;
@@ -2060,7 +2063,8 @@ static void compose_wrap_line(Compose *compose)
 			}
 			line_end = 1;
 		} else {
-			if (line_end && ch_len == 1 && strchr(">|:#", *cbuf))
+			if (line_end && ch_len == 1 &&
+			    strchr(INDENT_CHARS, *cbuf))
 				goto compose_end; /* quoted part */
 
 			line_end = 0;
@@ -2177,13 +2181,10 @@ void dump_text(GtkSText *text, int pos, int tlen, int breakoncr)
 #endif
 
 typedef enum {
-	WAIT_FOR_SPACETAB,
-	WAIT_FOR_INDENTCHAR,
-	WAIT_FOR_INDENTCHARORSPACETAB
-} IndentStates;
-
-#define INDCHARS   ">|:#"
-#define SPACECHARS " \t"
+	WAIT_FOR_SPACE,
+	WAIT_FOR_INDENT_CHAR,
+	WAIT_FOR_INDENT_CHAR_OR_SPACE
+} IndentState;
 
 /* return indent length, we allow:
    > followed by spaces/tabs
@@ -2195,50 +2196,49 @@ static guint get_indent_length(GtkSText *text, guint start_pos, guint text_len)
 {
 	guint i_len = 0;
 	guint i, ch_len, alnum_cnt = 0;
-	IndentStates state = WAIT_FOR_INDENTCHAR;
-	gchar cb[MB_LEN_MAX];
+	IndentState state = WAIT_FOR_INDENT_CHAR;
+	gchar cbuf[MB_LEN_MAX];
 	gboolean is_space;
 	gboolean is_indent;
 
 	for (i = start_pos; i < text_len; i++) {
-		GET_CHAR(i, cb, ch_len);
+		GET_CHAR(i, cbuf, ch_len);
 		if (ch_len > 1)
 			break;
 
-		if (cb[0] == '\n')
+		if (cbuf[0] == '\n')
 			break;
 
-		is_indent = strchr(INDCHARS, cb[0]) ? TRUE : FALSE;
-		is_space = strchr(SPACECHARS, cb[0]) ? TRUE : FALSE;
+		is_indent = strchr(INDENT_CHARS, cbuf[0]) ? TRUE : FALSE;
+		is_space = strchr(SPACE_CHARS, cbuf[0]) ? TRUE : FALSE;
 
 		switch (state) {
-		case WAIT_FOR_SPACETAB:
+		case WAIT_FOR_SPACE:
 			if (is_space == FALSE)
 				goto out;
-			state = WAIT_FOR_INDENTCHARORSPACETAB;
+			state = WAIT_FOR_INDENT_CHAR_OR_SPACE;
 			break;
-		case WAIT_FOR_INDENTCHARORSPACETAB:
+		case WAIT_FOR_INDENT_CHAR_OR_SPACE:
 			if (is_indent == FALSE && is_space == FALSE &&
-			    !isupper(cb[0]))
+			    !isupper(cbuf[0]))
 				goto out;
 			if (is_space == TRUE) {
 				alnum_cnt = 0;
-				state = WAIT_FOR_INDENTCHARORSPACETAB;
+				state = WAIT_FOR_INDENT_CHAR_OR_SPACE;
 			} else if (is_indent == TRUE) {
 				alnum_cnt = 0;
-				state = WAIT_FOR_SPACETAB;
+				state = WAIT_FOR_SPACE;
 			} else {
 				alnum_cnt++;
-				state = WAIT_FOR_INDENTCHAR;
-				break;
+				state = WAIT_FOR_INDENT_CHAR;
 			}
 			break;
-		case WAIT_FOR_INDENTCHAR:
-			if (is_indent == FALSE && !isupper(cb[0]))
+		case WAIT_FOR_INDENT_CHAR:
+			if (is_indent == FALSE && !isupper(cbuf[0]))
 				goto out;
 			if (is_indent == TRUE) {
 				alnum_cnt = 0;
-				state = WAIT_FOR_SPACETAB;
+				state = WAIT_FOR_SPACE;
 			} else {
 				alnum_cnt++;
 			}
@@ -2249,7 +2249,7 @@ static guint get_indent_length(GtkSText *text, guint start_pos, guint text_len)
 	}
 
 out:
-	if ((i_len > 0) && (state == WAIT_FOR_INDENTCHAR))
+	if ((i_len > 0) && (state == WAIT_FOR_INDENT_CHAR))
 		i_len -= alnum_cnt;
 
 	return i_len;
@@ -2286,7 +2286,7 @@ static gboolean join_next_line(GtkSText *text, guint start_pos, guint tlen,
 
 	if ((indent_len > 0) && (indent_len == prev_ilen)) {
 		GET_CHAR(start_pos + indent_len, cbuf, ch_len);
-		if (ch_len == 1 && (cbuf[0] != '\n'))
+		if (ch_len > 0 && (cbuf[0] != '\n'))
 			do_join = TRUE;
 	}
 
@@ -2351,7 +2351,6 @@ static void compose_wrap_line_all(Compose *compose)
 		/* we have encountered line break */
 		if (ch_len == 1 && *cbuf == '\n') {
 			gint clen;
-			guint ilen;
 			gchar cb[MB_CUR_MAX];
 
 			/* should we join the next line */
@@ -2386,6 +2385,7 @@ static void compose_wrap_line_all(Compose *compose)
 				/* if text starts with quote fmt or with
 				   indent string, delete them */
 				if (i_len) {
+					guint ilen;
 					ilen =  gtkut_stext_str_compare_n
 						(text, cur_pos, p_pos, i_len,
 						 tlen);
@@ -2780,13 +2780,10 @@ gint compose_send(Compose *compose)
 		}
 		/* save message to outbox */
 		if (prefs_common.savemsg) {
-			Folder *folder = FOLDER(compose->account->folder);
-			FolderItem *outbox = NULL;
+			FolderItem *outbox;
 
-			if (folder)
-				outbox = folder->outbox;
-			if (!outbox)
-				outbox = folder_get_default_outbox();
+			outbox = account_get_special_folder
+				(compose->account, F_OUTBOX);
 			if (procmsg_save_to_outbox(outbox, tmp, FALSE) < 0)
 				alertpanel_error
 					(_("Can't save the message to outbox."));
@@ -3388,12 +3385,8 @@ static gint compose_queue(Compose *compose, gint *msgnum, FolderItem **item)
 		return -1;
 	}
 
-	if (compose->account->folder &&
-	    FOLDER(compose->account->folder)->queue)
-		queue = FOLDER(compose->account->folder)->queue;
-	else
-		queue = folder_get_default_queue();
-
+	queue = account_get_special_folder(compose->account, F_QUEUE);
+	folder_item_scan(queue);
 	if ((num = folder_item_add_msg(queue, tmp, TRUE)) < 0) {
 		g_warning(_("can't queue the message\n"));
 		unlink(tmp);
@@ -4272,6 +4265,8 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
         GtkPspell * gtkpspell = NULL;
 #endif
 
+	static GdkGeometry geometry;
+
 	g_return_val_if_fail(account != NULL, NULL);
 
 	debug_print(_("Creating compose window...\n"));
@@ -4288,6 +4283,14 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode)
 	gtk_window_set_policy(GTK_WINDOW(window), TRUE, TRUE, FALSE);
 	gtk_widget_set_usize(window, -1, prefs_common.compose_height);
 	gtk_window_set_wmclass(GTK_WINDOW(window), "compose window", "Sylpheed");
+
+	if (!geometry.max_width) {
+		geometry.max_width = gdk_screen_width();
+		geometry.max_height = gdk_screen_height();
+	}
+	gtk_window_set_geometry_hints(GTK_WINDOW(window), NULL,
+				      &geometry, GDK_HINT_MAX_SIZE);
+
 	gtk_signal_connect(GTK_OBJECT(window), "delete_event",
 			   GTK_SIGNAL_FUNC(compose_delete_cb), compose);
 	gtk_signal_connect(GTK_OBJECT(window), "destroy",
@@ -5909,6 +5912,12 @@ static void compose_send_cb(gpointer data, guint action, GtkWidget *widget)
 {
 	Compose *compose = (Compose *)data;
 	gint val;
+	
+	if (prefs_common.work_offline)
+		if (alertpanel(_("Offline warning"), 
+			       _("You're working offline. Override?"),
+			       _("Yes"), _("No"), NULL) != G_ALERTDEFAULT)
+		return;
 
 	val = compose_send(compose);
 
@@ -5937,11 +5946,7 @@ static void compose_draft_cb(gpointer data, guint action, GtkWidget *widget)
 	
 	if (lock) return;
 
-	if (compose->account && compose->account->folder &&
-	    FOLDER(compose->account->folder)->draft)
-		draft = FOLDER(compose->account->folder)->draft;
-	else
-		draft = folder_get_default_draft();
+	draft = account_get_special_folder(compose->account, F_DRAFT);
 	g_return_if_fail(draft != NULL);
 
 	lock = TRUE;
@@ -6632,6 +6637,9 @@ static gboolean compose_send_control_enter(Compose *compose)
 	GtkAccelEntry *accel;
 	GtkWidget *send_menu;
 	GSList *list;
+	GdkModifierType ignored_mods =
+		(GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK |
+		 GDK_MOD4_MASK | GDK_MOD5_MASK);
 
 	ev = gtk_get_current_event();
 	if (ev->type != GDK_KEY_PRESS) return FALSE;
@@ -6645,7 +6653,8 @@ static gboolean compose_send_control_enter(Compose *compose)
 	list = gtk_accel_group_entries_from_object(GTK_OBJECT(send_menu));
 	accel = (GtkAccelEntry *)list->data;
 	if (accel->accelerator_key == kev->keyval &&
-	    accel->accelerator_mods == kev->state) {
+	    (accel->accelerator_mods & ~ignored_mods) ==
+	    (kev->state & ~ignored_mods)) {
 		compose_send_cb(compose, 0, NULL);
 		return TRUE;
 	}

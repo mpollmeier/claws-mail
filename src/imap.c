@@ -144,8 +144,9 @@ static gint imap_status			(IMAPSession	*session,
 					 const gchar	*path,
 					 gint		*messages,
 					 gint		*recent,
-					 gint		*unseen,
-					 guint32	*uid_validity);
+					 guint32	*uid_next,
+					 guint32	*uid_validity,
+					 gint		*unseen);
 
 static void imap_parse_namespace		(IMAPSession	*session,
 						 IMAPFolder	*folder);
@@ -475,7 +476,7 @@ void imap_session_destroy_all(void)
 		IMAPSession *session = (IMAPSession *)session_list->data;
 
 		imap_cmd_logout(SESSION(session)->sock);
-		imap_session_destroy(session);
+		session_destroy(SESSION(session));
 	}
 }
 
@@ -597,6 +598,15 @@ gchar *imap_fetch_msg(Folder *folder, FolderItem *item, gint uid)
 
 	session = imap_session_get(folder);
 	if (!session) {
+		g_free(filename);
+		return NULL;
+	}
+
+	ok = imap_select(session, IMAP_FOLDER(folder), item->path,
+			 NULL, NULL, NULL, NULL);
+	statusbar_pop_all();
+	if (ok != IMAP_SUCCESS) {
+		g_warning(_("can't select mailbox %s\n"), item->path);
 		g_free(filename);
 		return NULL;
 	}
@@ -934,28 +944,31 @@ gboolean imap_is_msg_changed(Folder *folder, FolderItem *item, MsgInfo *msginfo)
 	return FALSE;
 }
 
-void imap_scan_folder(Folder *folder, FolderItem *item)
+gint imap_scan_folder(Folder *folder, FolderItem *item)
 {
 	IMAPSession *session;
 	gint messages, recent, unseen;
-	guint32 uid_validity;
+	guint32 uid_next, uid_validity;
 	gint ok;
 
-	g_return_if_fail(folder != NULL);
-	g_return_if_fail(item != NULL);
+	g_return_val_if_fail(folder != NULL, -1);
+	g_return_val_if_fail(item != NULL, -1);
 
 	session = imap_session_get(folder);
-	if (!session) return;
+	if (!session) return -1;
 
 	ok = imap_status(session, IMAP_FOLDER(folder), item->path,
-			 &messages, &recent, &unseen, &uid_validity);
+			 &messages, &recent, &uid_next, &uid_validity, &unseen);
 	statusbar_pop_all();
-	if (ok != IMAP_SUCCESS) return;
+	if (ok != IMAP_SUCCESS) return -1;
 
 	item->new = unseen > 0 ? recent : 0;
 	item->unread = unseen;
 	item->total = messages;
+	item->last_num = (messages > 0 && uid_next > 0) ? uid_next - 1 : 0;
 	/* item->mtime = uid_validity; */
+
+	return 0;
 }
 
 void imap_scan_tree(Folder *folder)
@@ -1155,7 +1168,8 @@ static GSList *imap_parse_list(IMAPSession *session, const gchar *real_path)
 		new_item = folder_item_new(loc_name, loc_path);
 		if (strcasestr(flags, "\\Noinferiors") != NULL)
 			new_item->no_sub = TRUE;
-		if (strcasestr(flags, "\\Noselect") != NULL)
+		if (strcmp(buf, "INBOX") != 0 &&
+		    strcasestr(flags, "\\Noselect") != NULL)
 			new_item->no_select = TRUE;
 
 		item_list = g_slist_append(item_list, new_item);
@@ -1191,6 +1205,7 @@ static void imap_create_missing_folders(Folder *folder)
 	if (!folder->inbox)
 		folder->inbox = imap_create_special_folder
 			(folder, F_INBOX, "INBOX");
+#if 0
 	if (!folder->outbox)
 		folder->outbox = imap_create_special_folder
 			(folder, F_OUTBOX, "Sent");
@@ -1200,6 +1215,7 @@ static void imap_create_missing_folders(Folder *folder)
 	if (!folder->queue)
 		folder->queue = imap_create_special_folder
 			(folder, F_QUEUE, "Queue");
+#endif
 	if (!folder->trash)
 		folder->trash = imap_create_special_folder
 			(folder, F_TRASH, "Trash");
@@ -1356,6 +1372,8 @@ gint imap_rename_folder(Folder *folder, FolderItem *item, const gchar *name)
 
 	real_oldpath = imap_get_real_path(IMAP_FOLDER(folder), item->path);
 
+	g_free(session->mbox);
+	session->mbox = NULL;
 	ok = imap_cmd_examine(SESSION(session)->sock, "INBOX",
 			      &exists, &recent, &unseen, &uid_validity);
 	statusbar_pop_all();
@@ -1491,11 +1509,18 @@ static GSList *imap_get_uncached_messages(IMAPSession *session,
 			return newlist;
 		}
 		strretchomp(tmp);
-		log_print("IMAP4< %s\n", tmp);
 		if (tmp[0] != '*' || tmp[1] != ' ') {
+			log_print("IMAP4< %s\n", tmp);
 			g_free(tmp);
 			break;
 		}
+		if (strstr(tmp, "FETCH") == NULL) {
+			log_print("IMAP4< %s\n", tmp);
+			g_free(tmp);
+			continue;
+		}
+		/* log_print("IMAP4< %s\n", tmp); */
+		debug_print("IMAP4< %s\n", tmp);
 		g_string_assign(str, tmp);
 		g_free(tmp);
 
@@ -1766,7 +1791,8 @@ static gchar *imap_parse_atom(SockInfo *sock, gchar *src,
 		g_string_assign(str, nextline);
 		cur_pos = str->str;
 		strretchomp(nextline);
-		log_print("IMAP4< %s\n", nextline);
+		/* log_print("IMAP4< %s\n", nextline); */
+		debug_print("IMAP4< %s\n", nextline);
 		g_free(nextline);
 
 		while (isspace(*cur_pos)) cur_pos++;
@@ -1798,7 +1824,8 @@ static gchar *imap_parse_atom(SockInfo *sock, gchar *src,
 			g_string_append(str, nextline);
 			cur_pos = str->str;
 			strretchomp(nextline);
-			log_print("IMAP4< %s\n", nextline);
+			/* log_print("IMAP4< %s\n", nextline); */
+			debug_print("IMAP4< %s\n", nextline);
 			g_free(nextline);
 		} while (line_len < len);
 
@@ -2187,12 +2214,27 @@ static gint imap_select(IMAPSession *session, IMAPFolder *folder,
 {
 	gchar *real_path;
 	gint ok;
+	gint exists_, recent_, unseen_, uid_validity_;
+
+	if (!exists || !recent || !unseen || !uid_validity) {
+		if (session->mbox && strcmp(session->mbox, path) == 0)
+			return IMAP_SUCCESS;
+		exists = &exists_;
+		recent = &recent_;
+		unseen = &unseen_;
+		uid_validity = &uid_validity_;
+	}
+
+	g_free(session->mbox);
+	session->mbox = NULL;
 
 	real_path = imap_get_real_path(folder, path);
 	ok = imap_cmd_select(SESSION(session)->sock, real_path,
 			     exists, recent, unseen, uid_validity);
 	if (ok != IMAP_SUCCESS)
 		log_warning(_("can't select folder: %s\n"), real_path);
+	else
+		session->mbox = g_strdup(path);
 	g_free(real_path);
 
 	return ok;
@@ -2232,8 +2274,9 @@ catch:
 
 static gint imap_status(IMAPSession *session, IMAPFolder *folder,
 			const gchar *path,
-			gint *messages, gint *recent, gint *unseen,
-			guint32 *uid_validity)
+			gint *messages, gint *recent,
+			guint32 *uid_next, guint32 *uid_validity,
+			gint *unseen)
 {
 	gchar *real_path;
 	gchar *real_path_;
@@ -2241,14 +2284,15 @@ static gint imap_status(IMAPSession *session, IMAPFolder *folder,
 	GPtrArray *argbuf;
 	gchar *str;
 
-	*messages = *recent = *unseen = *uid_validity = 0;
+	*messages = *recent = *uid_next = *uid_validity = *unseen = 0;
 
 	argbuf = g_ptr_array_new();
 
 	real_path = imap_get_real_path(folder, path);
 	QUOTE_IF_REQUIRED(real_path_, real_path);
 	imap_cmd_gen_send(SESSION(session)->sock, "STATUS %s "
-			  "(MESSAGES RECENT UNSEEN UIDVALIDITY)", real_path_);
+			  "(MESSAGES RECENT UIDNEXT UIDVALIDITY UNSEEN)",
+			  real_path_);
 
 	ok = imap_cmd_ok(SESSION(session)->sock, argbuf);
 	if (ok != IMAP_SUCCESS) THROW(ok);
@@ -2268,12 +2312,15 @@ static gint imap_status(IMAPSession *session, IMAPFolder *folder,
 		} else if (!strncmp(str, "RECENT ", 7)) {
 			str += 7;
 			*recent = strtol(str, &str, 10);
-		} else if (!strncmp(str, "UNSEEN ", 7)) {
-			str += 7;
-			*unseen = strtol(str, &str, 10);
+		} else if (!strncmp(str, "UIDNEXT ", 8)) {
+			str += 8;
+			*uid_next = strtoul(str, &str, 10);
 		} else if (!strncmp(str, "UIDVALIDITY ", 12)) {
 			str += 12;
 			*uid_validity = strtoul(str, &str, 10);
+		} else if (!strncmp(str, "UNSEEN ", 7)) {
+			str += 7;
+			*unseen = strtol(str, &str, 10);
 		} else {
 			g_warning("invalid STATUS response: %s\n", str);
 			break;
@@ -2507,12 +2554,15 @@ static gint imap_cmd_fetch(SockInfo *sock, guint32 uid, const gchar *filename)
 
 	imap_cmd_gen_send(sock, "UID FETCH %d BODY[]", uid);
 
-	if (sock_gets(sock, buf, sizeof(buf)) < 0)
-		return IMAP_ERROR;
-	strretchomp(buf);
-	if (buf[0] != '*' || buf[1] != ' ')
-		return IMAP_ERROR;
-	log_print("IMAP4< %s\n", buf);
+	while ((ok = imap_cmd_gen_recv(sock, buf, sizeof(buf)))
+	       == IMAP_SUCCESS) {
+		if (buf[0] != '*' || buf[1] != ' ')
+			return IMAP_ERROR;
+		if (strstr(buf, "FETCH") != NULL)
+			break;
+	}
+	if (ok != IMAP_SUCCESS)
+		return ok;
 
 	cur_pos = strchr(buf, '{');
 	g_return_val_if_fail(cur_pos != NULL, IMAP_ERROR);

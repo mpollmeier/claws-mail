@@ -30,6 +30,7 @@ sylpheed_SOURCES = \
 	prefs_common.c prefs_common.h \
 	prefs_filter.c prefs_filter.h \
 	prefs_account.c prefs_account.h \
+	prefs_folder_item.c prefs_folder_item.h \
 	prefs_display_header.c prefs_display_header.h \
 	prefs_customheader.c prefs_customheader.h \
 	prefs_summary_column.c prefs_summary_column.h \
@@ -94,7 +95,6 @@ sylpheed_SOURCES = \
 	automaton.c automaton.h \
 	session.c session.h \
 	smtp.c smtp.h \
-	esmtp.c esmtp.h \
 	pop.c pop.h \
 	mh.c mh.h \
 	mbox.c mbox.h \
@@ -119,7 +119,6 @@ sylpheed_SOURCES = \
 	manual.c manual.h \
 	stringtable.c stringtable.h \
 	scoring.c scoring.h \
-	prefs_folder_item.c prefs_folder_item.h \
 	matcher.c matcher.h \
 	prefs_matcher.c prefs_matcher.h \
 	prefs_scoring.c prefs_scoring.h \
@@ -168,27 +167,27 @@ EXTRA_DIST = \
 	pixmaps/continue.xpm \
 	pixmaps/complete.xpm \
 	pixmaps/error.xpm \
-	pixmaps/stock_mail.xpm \
-	pixmaps/stock_mail_attach.xpm \
-	pixmaps/stock_mail_receive.xpm \
-	pixmaps/stock_mail_receive_all.xpm \
-	pixmaps/stock_mail_send.xpm \
-	pixmaps/stock_mail_send_queue.xpm \
-	pixmaps/stock_mail_compose.xpm \
-	pixmaps/stock_news_compose.xpm \
-	pixmaps/stock_mail_reply.xpm \
-	pixmaps/stock_mail_reply_to_all.xpm \
-	pixmaps/stock_mail_reply_to_author.xpm \
-	pixmaps/stock_mail_forward.xpm \
-	pixmaps/stock_preferences.xpm \
-	pixmaps/stock_properties.xpm \
-	pixmaps/stock_search.xpm \
-	pixmaps/stock_close.xpm \
-	pixmaps/stock_exec.xpm \
-	pixmaps/stock_trash.xpm \
-	pixmaps/stock_up_arrow.xpm \
-	pixmaps/stock_down_arrow.xpm \
-	pixmaps/stock_paste.xpm \
+	pixmaps/mail.xpm \
+	pixmaps/mail_attach.xpm \
+	pixmaps/mail_receive.xpm \
+	pixmaps/mail_receive_all.xpm \
+	pixmaps/mail_send.xpm \
+	pixmaps/mail_send_queue.xpm \
+	pixmaps/mail_compose.xpm \
+	pixmaps/news_compose.xpm \
+	pixmaps/mail_reply.xpm \
+	pixmaps/mail_reply_to_all.xpm \
+	pixmaps/mail_reply_to_author.xpm \
+	pixmaps/mail_forward.xpm \
+	pixmaps/preferences.xpm \
+	pixmaps/properties.xpm \
+	pixmaps/search.xpm \
+	pixmaps/close.xpm \
+	pixmaps/exec.xpm \
+	pixmaps/trash.xpm \
+	pixmaps/up_arrow.xpm \
+	pixmaps/down_arrow.xpm \
+	pixmaps/paste.xpm \
 	pixmaps/tb_address_book.xpm \
 	pixmaps/sylpheed-logo.xpm \
 	pixmaps/address.xpm \
@@ -198,7 +197,9 @@ EXTRA_DIST = \
 	pixmaps/jpilot.xpm \
 	pixmaps/ldap.xpm \
 	pixmaps/vcard.xpm \
-	pixmaps/locked.xpm
+	pixmaps/locked.xpm \
+	pixmaps/work_offline.xpm \
+	pixmaps/work_online.xpm
 
 INCLUDES = \
 	-DG_LOG_DOMAIN=\"Sylpheed\" \

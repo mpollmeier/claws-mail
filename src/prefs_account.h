@@ -29,6 +29,7 @@
 typedef struct _PrefsAccount	PrefsAccount;
 
 #include "folder.h"
+#include "smtp.h"
 
 #ifdef USE_GPGME
 #  include "rfc2015.h"
@@ -59,14 +60,6 @@ typedef enum {
 	SIGN_KEY_CUSTOM
 } SignKeyType;
 #endif /* USE_GPGME */
-
-#if USE_SSL
-typedef enum {
-	SSL_SMTP_NONE,
-	SSL_SMTP_TUNNEL,
-	SSL_SMTP_STARTTLS
-} SSLSMTPType;
-#endif /* USE_SSL */
 
 struct _PrefsAccount
 {
@@ -114,8 +107,6 @@ struct _PrefsAccount
 	/* selective Download */
 	gint   session_type;
 	GSList *to_delete;
-
-	gchar *imap_dir;
 
 	/* Send */
 	gboolean add_date;
@@ -174,6 +165,15 @@ struct _PrefsAccount
 	 * as a particular user. */
 	gboolean  set_tunnelcmd;
 	gchar     *tunnelcmd;
+
+	gchar *imap_dir;
+
+	gboolean set_sent_folder;
+	gchar *sent_folder;
+	gboolean set_draft_folder;
+	gchar *draft_folder;
+	gboolean set_trash_folder;
+	gchar *trash_folder;
 
 	/* Default or not */
 	gboolean is_default;

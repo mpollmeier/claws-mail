@@ -141,10 +141,7 @@ struct _Folder
 	gboolean (*is_msg_changed)	(Folder		*folder,
 					 FolderItem	*item,
 					 MsgInfo	*msginfo);
-/*
-	void     (*scan)		(Folder		*folder,
-					 FolderItem	*item);
-*/
+	gint     (*scan)		(Folder		*folder);
 	GSList	* (*get_num_list)	(Folder		*folder,
 					 FolderItem	*item);
 	void     (*scan_tree)		(Folder		*folder);
@@ -164,7 +161,8 @@ struct _Folder
 					 FolderItem	*item,
 					 MsgInfo        *info);
 	void     (*finished_copy)       (Folder * folder, FolderItem * item);
-	void     (*finished_remove)       (Folder * folder, FolderItem * item);
+	void     (*finished_remove)     (Folder * folder, FolderItem * item);
+	gboolean (*check_msgnum_validity) (Folder * folder, FolderItem * item);
 };
 
 struct _LocalFolder
@@ -293,7 +291,7 @@ FolderItem *folder_get_default_processing (void);
 void folder_set_missing_folders		(void);
 
 gchar *folder_item_get_path		(FolderItem	*item);
-void   folder_item_scan			(FolderItem	*item);
+gint   folder_item_scan			(FolderItem	*item);
 void   folder_item_scan_foreach		(GHashTable	*table);
 MsgInfo *folder_item_fetch_msginfo	(FolderItem 	*item,
 					 gint		 num);

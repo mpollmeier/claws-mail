@@ -1,3 +1,115 @@
+2002-04-22 [alfons]
+
+	* src/Makefile.am
+		add colin's new pixmaps to EXTRA_DIST
+
+2002-04-21 [colin]	0.7.4claws89
+	* src/compose.c
+	* src/inc.c
+	* src/mainwindow.[ch]
+	* src/prefs_common.[ch]
+	* src/stock_pixmap.[ch]
+		Added "Work offline" ability.
+
+2002-04-21 [colin]	0.7.4claws88
+	
+	* src/mimeview.c
+	* src/prefs_common.c
+	* src/prefs_common.h
+	* src/textview.c : Added an option to common preferences -> display
+	  to allow user not to automatically display images.
+
+2002-04-21 [paul]	0.7.4claws87
+
+	* sync with 0.7.4cvs52
+		see ChangeLog entry 2002-04-21 (src/imap.c)
+
+2002-04-21 [paul]	0.7.4claws86
+
+	* sync with 0.7.4cvs51
+		see ChangeLog entry 2002-04-21
+
+2002-04-21 [paul]	0.7.4claws85
+
+	* sync with 0.7.4cvs49
+		see ChangeLog entries 2002-04-20 and 2002-04-21
+
+	* src/Makefile.am
+		clean up: remove old 'stock_' element from xpm 
+		filenames.
+
+2002-04-21 [alfons]	0.7.4claws84
+
+	apply sync patch from Paul
+
+	* src/folderview.c
+		use old claws prefs_folder_item_create() for now
+
+2002-04-19 [match]	0.7.4claws83
+
+	* src/addressbook.[ch]
+	* src/addrharvest.[ch]
+	* src/addrgather.[ch]
+		recurse folders.
+	* src/mainwindow.c
+	* src/summaryview.[ch]
+		change menu option.
+
+2002-04-19 [paul]	0.7.4claws82
+
+	* po/pt_BR.po
+		updated by Fabio Junior Beneditto
+
+2002-04-14 [alfons]	0.7.4claws81
+
+	* src/passphrase.c
+		add #include <sys/types.h> for mode_t and off_t 
+
+2002-04-13 [paul]	0.7.4claws80
+	
+	* src/main.c
+	  src/passphrase.[ch]
+	  src/pgptext.c
+	  src/prefs_common.[ch]
+	  src/rfc2015.c
+		enable storing of GnuPG passphrase for the whole 
+		session or a user-defined number of minutes. patch 
+		submitted by Ravemax <ravemax@dextrose.com>
+
+2002-04-13 [alfons]	0.7.4claws79
+
+	* src/textview.c
+		make email parser also stop scanning when encountering separators
+		',' and ';' (reported by Fabien Vantard <fvantard@opsion.fr>)
+
+2002-04-13 [paul]	0.7.4claws78
+
+	* sync with 0.7.4cvs39
+		see ChangeLog entry 2002-04-12
+
+2002-04-11 [paul]	0.7.4claws77
+
+	* sync with 0.7.4cvs37
+		see ChangeLog entry 2002-04-11
+
+2002-04-11 [paul]	0.7.4claws76
+
+	* COPYING 
+		re-licensed (removal of "NO-VIRUS CLAUSE" and addition of
+		the clause for OpenSSL). sync with sylpheed main
+
+2002-04-09 [melvin]	0.7.4claws75
+
+	* src/compose.c
+		Made 'Ctrl-Enter' on send ignore some modifiers 
+		(LOCK_MASK, MOD2, MOD3, MOD4, MOD5). Make it possible
+		to bind other *-Enter (but not Alt-Enter).
+
+2002-04-09 [paul]	0.7.4claws74
+
+	* sync with 0.7.4cvs35
+		see ChangeLog entries 2002-04-09
+
 2002-04-08 [paul]	0.7.4claws73
 
 	* sync with 0.7.4cvs33

@@ -242,6 +242,9 @@ static void toggle_expand_summaryview_cb	 (MainWindow	*mainwin,
 static void toggle_expand_messageview_cb	 (MainWindow	*mainwin,
 				  guint		 action,
 				  GtkWidget	*widget);
+static void toggle_work_offline_cb	 (MainWindow	*mainwin,
+				  guint		 action,
+				  GtkWidget	*widget);
 static void separate_widget_cb	(GtkCheckMenuItem *checkitem,
 				 guint action,
 				 GtkWidget *widget);
@@ -432,6 +435,9 @@ static void new_account_cb	 (MainWindow	*mainwin,
 static void account_menu_cb	 (GtkMenuItem	*menuitem,
 				  gpointer	 data);
 
+static void online_switch_clicked(GtkButton     *btn, 
+				  gpointer data);
+
 static void manual_open_cb	 (MainWindow	*mainwin,
 				  guint		 action,
 				  GtkWidget	*widget);
@@ -457,11 +463,11 @@ static void key_pressed (GtkWidget *widget,
 
 static void set_toolbar_style(MainWindow *mainwin);
 
-static void addr_gather_cb	 ( MainWindow  *mainwin,
+static void addr_harvest_cb	 ( MainWindow  *mainwin,
 				   guint       action,
 				   GtkWidget   *widget );
 
-static void addr_gather_msg_cb	 ( MainWindow  *mainwin,
+static void addr_harvest_msg_cb	 ( MainWindow  *mainwin,
 				   guint       action,
 				   GtkWidget   *widget );
 
@@ -481,6 +487,7 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_File/_Import mbox file..."),	NULL, import_mbox_cb, 0, NULL},
 	{N_("/_File/_Export to mbox file..."),	NULL, export_mbox_cb, 0, NULL},
 	{N_("/_File/Empty _trash"),		"<shift>D", empty_trash_cb, 0, NULL},
+	{N_("/_File/_Work offline"),		"<control>W", toggle_work_offline_cb, 0, "<ToggleItem>"},						
 	{N_("/_File/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_File/_Save as..."),		"<control>S", save_as_cb, 0, NULL},
 	{N_("/_File/_Print..."),		NULL, print_cb, 0, NULL},
@@ -533,6 +540,28 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_View/Th_read view"),		"<control>T",	     thread_cb, 0, "<ToggleItem>"},
 	{N_("/_View/_Hide read messages"),	NULL, hide_read_messages, 0, "<ToggleItem>"},
 	{N_("/_View/Set display _item..."),	NULL, set_display_item_cb, 0, NULL},
+
+	{N_("/_View/---"),			NULL, NULL, 0, "<Separator>"},
+	{N_("/_View/_Go to"),			NULL, NULL, 0, "<Branch>"},
+	{N_("/_View/_Go to/_Prev message"),	"P", prev_cb, 0, NULL},
+	{N_("/_View/_Go to/_Next message"),	"N", next_cb, 0, NULL},
+	{N_("/_View/_Go to/---"),		NULL, NULL, 0, "<Separator>"},
+	{N_("/_View/_Go to/P_rev unread message"),
+						"<shift>P", prev_unread_cb, 0, NULL},
+	{N_("/_View/_Go to/N_ext unread message"),
+						"<shift>N", next_unread_cb, 0, NULL},
+	{N_("/_View/_Go to/---"),		NULL, NULL, 0, "<Separator>"},
+	{N_("/_View/_Go to/Prev _marked message"),
+						NULL, prev_marked_cb, 0, NULL},
+	{N_("/_View/_Go to/Next m_arked message"),
+						NULL, next_marked_cb, 0, NULL},
+	{N_("/_View/_Go to/---"),		NULL, NULL, 0, "<Separator>"},
+	{N_("/_View/_Go to/Prev _labeled message"),
+						NULL, prev_labeled_cb, 0, NULL},
+	{N_("/_View/_Go to/Next la_beled message"),
+						NULL, next_labeled_cb, 0, NULL},
+	{N_("/_View/_Go to/---"),		NULL, NULL, 0, "<Separator>"},
+	{N_("/_View/_Go to/Other _folder..."),	"G", goto_folder_cb, 0, NULL},
 	{N_("/_View/---"),			NULL, NULL, 0, "<Separator>"},
 
 #define CODESET_SEPARATOR \
@@ -616,27 +645,6 @@ static GtkItemFactoryEntry mainwin_entries[] =
 #undef CODESET_ACTION
 
 	{N_("/_View/---"),			NULL, NULL, 0, "<Separator>"},
-	{N_("/_View/_Go to"),			NULL, NULL, 0, "<Branch>"},
-	{N_("/_View/_Go to/_Prev message"),	"P", prev_cb, 0, NULL},
-	{N_("/_View/_Go to/_Next message"),	"N", next_cb, 0, NULL},
-	{N_("/_View/_Go to/---"),		NULL, NULL, 0, "<Separator>"},
-	{N_("/_View/_Go to/P_rev unread message"),
-						"<shift>P", prev_unread_cb, 0, NULL},
-	{N_("/_View/_Go to/N_ext unread message"),
-						"<shift>N", next_unread_cb, 0, NULL},
-	{N_("/_View/_Go to/---"),		NULL, NULL, 0, "<Separator>"},
-	{N_("/_View/_Go to/Prev _marked message"),
-						NULL, prev_marked_cb, 0, NULL},
-	{N_("/_View/_Go to/Next m_arked message"),
-						NULL, next_marked_cb, 0, NULL},
-	{N_("/_View/_Go to/---"),		NULL, NULL, 0, "<Separator>"},
-	{N_("/_View/_Go to/Prev _labeled message"),
-						NULL, prev_labeled_cb, 0, NULL},
-	{N_("/_View/_Go to/Next la_beled message"),
-						NULL, next_labeled_cb, 0, NULL},
-	{N_("/_View/_Go to/---"),		NULL, NULL, 0, "<Separator>"},
-	{N_("/_View/_Go to/Other _folder..."),	"G", goto_folder_cb, 0, NULL},
-	{N_("/_View/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_View/Open in new _window"),	"<control><alt>N", open_msg_cb, 0, NULL},
 	{N_("/_View/Mess_age source"),		"<control>U", view_source_cb, 0, NULL},
 	{N_("/_View/Show all _header"),		"<control>H", show_all_header_cb, 0, "<ToggleItem>"},
@@ -681,9 +689,11 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_Tools/_Address book..."),	"<shift><control>A", addressbook_open_cb, 0, NULL},
 	{N_("/_Tools/Add sender to address boo_k"),
 						NULL, add_address_cb, 0, NULL},
-	{N_("/_Tools/_Gather addresses"),	NULL, NULL, 0, "<Branch>"},
-	{N_("/_Tools/_Gather addresses/from _Folder..."),	NULL, addr_gather_cb, 0, NULL},
-	{N_("/_Tools/_Gather addresses/from _Messages..."),	NULL, addr_gather_msg_cb, 0, NULL},
+	{N_("/_Tools/_Harvest addresses"),	NULL, NULL, 0, "<Branch>"},
+	{N_("/_Tools/_Harvest addresses/from _Folder..."),
+						NULL, addr_harvest_cb, 0, NULL},
+	{N_("/_Tools/_Harvest addresses/from _Messages..."),
+						NULL, addr_harvest_msg_cb, 0, NULL},
 	{N_("/_Tools/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_Tools/_Filter messages"),		NULL, filter_cb, 0, NULL},
 	{N_("/_Tools/_Create filter rule"),	NULL, NULL, 0, "<Branch>"},
@@ -760,7 +770,6 @@ static GtkItemFactoryEntry fwd_popup_entries[] =
 	{N_("/Forward message as _attachment"), "<shift>F", reply_cb, COMPOSE_FORWARD_AS_ATTACH, NULL}
 };
 
-
 MainWindow *main_window_create(SeparateType type)
 {
 	MainWindow *mainwin;
@@ -775,6 +784,10 @@ MainWindow *main_window_create(SeparateType type)
 	GtkWidget *statuslabel;
 	GtkWidget *ac_button;
 	GtkWidget *ac_label;
+ 	GtkWidget *online_status;
+	GtkWidget *offline_status;
+	GtkWidget *online_switch;
+	GtkWidget *offline_switch;
 
 	FolderView *folderview;
 	SummaryView *summaryview;
@@ -793,6 +806,8 @@ MainWindow *main_window_create(SeparateType type)
 	GtkWidget *fwd_popup;
 	gint i;
 
+	static GdkGeometry geometry;
+
 	debug_print(_("Creating main window...\n"));
 	mainwin = g_new0(MainWindow, 1);
 
@@ -801,6 +816,14 @@ MainWindow *main_window_create(SeparateType type)
 	gtk_window_set_title(GTK_WINDOW(window), PROG_VERSION);
 	gtk_window_set_policy(GTK_WINDOW(window), TRUE, TRUE, FALSE);
 	gtk_window_set_wmclass(GTK_WINDOW(window), "main_window", "Sylpheed");
+
+	if (!geometry.min_height) {
+		geometry.min_width = 320;
+		geometry.min_height = 200;
+	}
+	gtk_window_set_geometry_hints(GTK_WINDOW(window), NULL, &geometry,
+				      GDK_HINT_MIN_SIZE);
+
 	gtk_signal_connect(GTK_OBJECT(window), "delete_event",
 			   GTK_SIGNAL_FUNC(main_window_close_cb), mainwin);
 	MANAGE_WINDOW_SIGNALS_CONNECT(window);
@@ -873,6 +896,19 @@ MainWindow *main_window_create(SeparateType type)
 	gtk_widget_set_usize(progressbar, 120, 1);
 	gtk_box_pack_start(GTK_BOX(hbox_stat), progressbar, FALSE, FALSE, 0);
 
+	online_status = stock_pixmap_widget(hbox_stat, STOCK_PIXMAP_WORK_ONLINE);
+	offline_status = stock_pixmap_widget(hbox_stat, STOCK_PIXMAP_WORK_OFFLINE);
+	online_switch = gtk_button_new ();
+	offline_switch = gtk_button_new ();
+	gtk_container_add (GTK_CONTAINER(online_switch), online_status);
+	gtk_button_set_relief (GTK_BUTTON(online_switch), GTK_RELIEF_NONE);
+	gtk_signal_connect (GTK_OBJECT(online_switch), "clicked", (GtkSignalFunc)online_switch_clicked, mainwin);
+	gtk_box_pack_start (GTK_BOX(hbox_stat), online_switch, FALSE, FALSE, 0);
+	gtk_container_add (GTK_CONTAINER(offline_switch), offline_status);
+	gtk_button_set_relief (GTK_BUTTON(offline_switch), GTK_RELIEF_NONE);
+	gtk_signal_connect (GTK_OBJECT(offline_switch), "clicked", (GtkSignalFunc)online_switch_clicked, mainwin);
+	gtk_box_pack_start (GTK_BOX(hbox_stat), offline_switch, FALSE, FALSE, 0);
+	
 	statuslabel = gtk_label_new("");
 	gtk_box_pack_start(GTK_BOX(hbox_stat), statuslabel, FALSE, FALSE, 0);
 
@@ -889,6 +925,7 @@ MainWindow *main_window_create(SeparateType type)
 
 	gtk_widget_show_all(hbox_stat);
 
+	gtk_widget_hide(offline_switch);
 	/* create views */
 	mainwin->folderview  = folderview  = folderview_create();
 	mainwin->summaryview = summaryview = summary_create();
@@ -920,6 +957,8 @@ MainWindow *main_window_create(SeparateType type)
 	mainwin->replyall_popup = replyall_popup;
 	mainwin->replysender_popup = replysender_popup;
 	mainwin->fwd_popup = fwd_popup;
+	mainwin->online_switch = online_switch;
+	mainwin->offline_switch = offline_switch;
 	
 	/* set context IDs for status bar */
 	mainwin->mainwin_cid = gtk_statusbar_get_context_id
@@ -1054,6 +1093,10 @@ MainWindow *main_window_create(SeparateType type)
 		watch_cursor = gdk_cursor_new(GDK_WATCH);
 
 	mainwin_list = g_list_append(mainwin_list, mainwin);
+
+	/* init work_offline */
+	if (prefs_common.work_offline)
+		online_switch_clicked (GTK_BUTTON(online_switch), mainwin);
 
 	return mainwin;
 }
@@ -1567,6 +1610,7 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 		{"/File/Import mbox file..."   , M_UNLOCKED},
 		{"/File/Export to mbox file...", M_UNLOCKED},
 		{"/File/Empty trash"           , M_UNLOCKED},
+		{"/File/Work offline"	       , M_UNLOCKED},
 		{"/File/Save as...", M_SINGLE_TARGET_EXIST|M_UNLOCKED},
 		{"/File/Print..."  , M_TARGET_EXIST|M_UNLOCKED},
 		/* {"/File/Close", M_UNLOCKED}, */
@@ -1606,7 +1650,7 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 
 		{"/Tools/Selective download..."	    , M_HAVE_ACCOUNT|M_UNLOCKED},
 		{"/Tools/Add sender to address book", M_SINGLE_TARGET_EXIST},
-		{"/Tools/Gather addresses"	    , M_TARGET_EXIST|M_UNLOCKED},
+		{"/Tools/Harvest addresses"	    , M_UNLOCKED},
 		{"/Tools/Filter messages"           , M_MSG_EXIST|M_EXEC|M_UNLOCKED},
 		{"/Tools/Create filter rule"        , M_SINGLE_TARGET_EXIST|M_UNLOCKED},
 		{"/Tools/Execute"                   , M_MSG_EXIST|M_EXEC|M_UNLOCKED},
@@ -2534,8 +2578,47 @@ static void toggle_expand_messageview_cb(MainWindow *mainwin, guint action, GtkW
 	messageview_toggle_view_real(mainwin->messageview);
 }
 
-static void separate_widget_cb(GtkCheckMenuItem *checkitem, guint action, GtkWidget *widget)
+static void toggle_work_offline_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
+{
+	if (GTK_CHECK_MENU_ITEM(widget)->active) {
+		online_switch_clicked (GTK_BUTTON(mainwin->online_switch), mainwin);
+	} else {
+		online_switch_clicked (GTK_BUTTON(mainwin->offline_switch), mainwin);		
+	}
+}
 
+static void online_switch_clicked (GtkButton *btn, gpointer data) 
+{
+	MainWindow *mainwin;
+	GtkItemFactory *ifactory;
+	GtkCheckMenuItem *menuitem;
+
+	mainwin = (MainWindow *) data;
+	
+	ifactory = gtk_item_factory_from_widget(mainwin->menubar);
+	menuitem = GTK_CHECK_MENU_ITEM (gtk_item_factory_get_widget(ifactory, "/File/Work offline"));
+	
+	g_return_if_fail(mainwin != NULL);
+	g_return_if_fail(menuitem != NULL);
+	
+	if (btn == GTK_BUTTON(mainwin->online_switch)) {
+		/* go offline */
+		gtk_widget_hide (mainwin->online_switch);
+		gtk_widget_show (mainwin->offline_switch);
+		menuitem->active = TRUE;
+		prefs_common.work_offline = TRUE;
+		inc_autocheck_timer_remove();		
+	} else {
+		/*go online */
+		gtk_widget_hide (mainwin->offline_switch);
+		gtk_widget_show (mainwin->online_switch);
+		menuitem->active = FALSE;
+		prefs_common.work_offline = FALSE;
+		inc_autocheck_timer_set();
+	}
+}
+
+static void separate_widget_cb(GtkCheckMenuItem *checkitem, guint action, GtkWidget *widget)
 {
 	MainWindow *mainwin;
 	SeparateType type;
@@ -2587,6 +2670,12 @@ static void inc_cancel_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
 static void send_queue_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
 {
 	GList *list;
+
+	if (prefs_common.work_offline)
+		if (alertpanel(_("Offline warning"), 
+			       _("You're working offline. Override?"),
+			       _("Yes"), _("No"), NULL) != G_ALERTDEFAULT)
+		return;
 
 	for (list = folder_get_list(); list != NULL; list = list->next) {
 		Folder *folder = list->data;
@@ -3110,23 +3199,23 @@ static void set_toolbar_style(MainWindow *mainwin)
 }
 
 /*
- * Gather addresses for selected folder.
+ * Harvest addresses for selected folder.
  */
-static void addr_gather_cb( MainWindow *mainwin,
+static void addr_harvest_cb( MainWindow *mainwin,
 			    guint action,
 			    GtkWidget *widget )
 {
-	addressbook_gather( mainwin->summaryview->folder_item, NULL );
+	addressbook_harvest( mainwin->summaryview->folder_item, FALSE, NULL );
 }
 
 /*
- * Gather addresses for selected messages in summary view.
+ * Harvest addresses for selected messages in summary view.
  */
-static void addr_gather_msg_cb( MainWindow *mainwin,
+static void addr_harvest_msg_cb( MainWindow *mainwin,
 			    guint action,
 			    GtkWidget *widget )
 {
-	summary_gather_address( mainwin->summaryview );
+	summary_harvest_address( mainwin->summaryview );
 }
 
 /*

@@ -111,6 +111,7 @@ struct _PrefsCommon
 	gchar *boldfont;
 	gchar *smallfont;
 	gboolean display_folder_unread;
+	gboolean display_img;
 	ToolbarStyle toolbar_style;
 	gboolean show_statusbar;
 	gboolean trans_hdr;
@@ -198,6 +199,8 @@ struct _PrefsCommon
 	/* Privacy */
 	gboolean auto_check_signatures;
 	gboolean gpg_signature_popup;
+	gboolean store_passphrase;
+	gint     store_passphrase_timeout;
 	gboolean passphrase_grab;
 	gchar *default_signkey;
 	gboolean gpg_warning;
@@ -225,6 +228,11 @@ struct _PrefsCommon
 	gboolean ask_on_clean;
 	gboolean warn_queued_on_exit;
 	gboolean return_receipt;
+	
+	/* boolean for work offline 
+	   stored here for use in inc.c */
+	gboolean work_offline;
+
 };
 
 extern PrefsCommon prefs_common;

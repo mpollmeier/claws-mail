@@ -526,6 +526,9 @@ void textview_show_mime_part(TextView *textview, MimeInfo *partinfo)
 	TEXT_INSERT(_("To display this part as a text message, select "));
 	TEXT_INSERT(_("`Display as text', or press `t' key.\n\n"));
 
+	TEXT_INSERT(_("To display this part as an image, select "));
+	TEXT_INSERT(_("`Display image', or press `i' key.\n\n"));
+
 	TEXT_INSERT(_("To open this part with external program, select "));
 	TEXT_INSERT(_("`Open' or `Open with...', "));
 	TEXT_INSERT(_("or double-click, or click the center button, "));
@@ -688,7 +691,7 @@ static gchar *make_uri_string(const gchar *bp, const gchar *ep)
 	 (ch) > 32   && \
 	 (ch) != 127 && \
 	 !isspace(ch) && \
-	 !strchr("()<>\"", (ch)))
+	 !strchr("(),;<>\"", (ch)))
 
 /* alphabet and number within 7bit ASCII */
 #define IS_ASCII_ALNUM(ch)	(isascii(ch) && isalnum(ch))

@@ -1,3 +1,131 @@
+2002-04-21
+
+	* src/summaryview.c: summary_show(): 残ったマークを処理しないバグを
+	  修正。
+	* src/account.c: account_edit_prefs(): アカウント名が空の場合の
+	  クラッシュバグを修正。
+	* src/prefs_account.c: prefs_account_apply(): アカウント名が空の場合
+	  エラーダイアログを表示。
+	* src/imap.c: ログの量を減らすためにいくつかの log_print() を
+	  debug_print() に変更。
+
+2002-04-21
+
+	* src/mh.c: mh_get_new_msg_filename(): 新規。新規メッセージのファイル
+	  名を返す。
+	  mh_add_msg()
+	  mh_do_move()
+	  mh_do_move_msgs_with_dest()
+	  mh_copy_msg()
+	  mh_copy_msgs_with_dest(): mh_get_new_msg_filename() を使用。
+	* src/utils.[ch]: is_file_entry_exist() を追加。 stat() が成功したら
+	  TRUE を返す。
+	* src/imap.c:
+	  imap_fetch_msg(): 必要であれば FETCH の前にメールボックスを SELECT
+	  するようにした。
+	  imap_scan_folder(): UIDNEXT の値を用いて last_num をセット。
+	  imap_select(): SELECT の必要がなければすぐに返るようにした。
+	  現在選択中のメールボックスのパスを保存。
+	  imap_status(): UIDNEXT を追加。
+
+2002-04-20
+
+	* src/folder.c: folder_item_scan(): 警告を除去。
+	* src/inputdialog.[ch]: input_dialog_combo(): 大小文字の区別の指定の
+	  ための引数を追加。
+
+2002-04-17
+
+	* src/mainwindow.c: main_window_create(): 最小サイズを制限。
+
+2002-04-17
+
+	* src/compose.c: 新しい自動改行ルーチンをマージ。
+	  join_next_line(): マルチバイト文字を結合しないバグを修正。
+	  get_indent_length(): enum と変数名を修正。
+	  INDENT_CHARS: ':' をインデントしないようにした。
+	* src/folderview.c:
+	  folderview_rename_folder_cb()
+	  folderview_delete_folder_cb(): フォルダ識別子に対応。
+	  folderview_rm_imap_folder_cb(): folderview_delete_folder_cb()
+	  と統合。
+
+2002-04-15
+
+	* src/folder.[ch]: folder_item_scan(): スキャンに失敗したら -1 を
+	  返す。
+	* src/folderview.c: folderview_check_new(): folder_item_scan() に
+	  失敗したらチェックを中断。
+
+2002-04-15
+
+	* src/imap.c: imap_create_missing_folders(): INBOX と Trash のみを
+	  作成するようにした。
+	* src/prefs_folder_item.c: prefs_folder_item_set_dialog(): ニュース
+	  フォルダのタイプを変えられないようにした。
+	  prefs_folder_item_destroy(): prefs_dialog_destroy() を使用。
+	* src/prefs.[ch]: prefs_dialog_destroy(): 新規。
+
+2002-04-15
+
+	* src/prefs_account.[ch]: 「高度な設定」タブに特別フォルダの設定を
+	  追加。「 IMAP サーバディレクトリ」の設定もそこに移動。
+	* src/account.[ch]: account_get_special_folder(): 新規。アカウント
+	  に対する最適な特別フォルダを返す。
+	* src/compose.c: account_get_special_folder() を使用。
+	* src/prefs_folder_item.[ch]: 新規。フォルダプロパティダイアログを
+	  実装し、特別フォルダの設定を実装(claws の大部分の機能はまだ統合
+	  されておらず、構造は少し変更されている)。
+	* src/folderview.c: プロパティメニューを有効にした。
+
+2002-04-14
+
+	* src/textview.c: IS_RFC822_CHAR(): ',' や ';' 等のセパレータが
+	  現れたときにもパーサのスキャンを停止するようにした。
+
+2002-04-12
+
+	* src/mainwindow.c: メニューの順序を少し変更。
+	* src/compose.c: 'Ctrl-Enter' でいくつかの修飾キーを無視するように
+	  した。
+	  compose_reply_set_entry(): 「差出人に返信」がニュースグループで
+	  使えるようにした。
+
+2002-04-11
+
+	* src/compose.c: compose_create(): ジオメトリヒントを設定して
+	  ウィンドウの最大サイズを制限するようにした。
+	* src/imap.c: imap_parse_list(): INBOX を \Noselect としてマーク
+	  しないようにした。
+	  imap_get_uncached_messages()
+	  imap_cmd_fetch(): FETCH を含まない応答を無視するようにした。
+
+2002-04-11
+
+	* COPYING: ライセンス変更("NO-VIRUS CLAUSE" の削除と OpenSSL に対する
+	  条項の追加)。
+
+2002-04-09
+
+	* src/prefs_account.c
+	  src/smtp.[ch]: OpenSSL 有効時にコンパイルできないバグを修正。
+
+2002-04-09
+
+	* src/smtp.[ch]
+	  src/send.c
+	  src/session.[ch]: SMTP プロトコル処理の最初の再構成。
+	  SMTPSession: 新規クラス。 Session のサブクラス。
+	  smtp_session_new(): send_smtp_open() をこの関数に移動。
+	  smtp_from(): SMTP AUTH の呼び出しを smtp_auth() に移動。
+	  smtp_auth(): SMTP AUTH メソッドにサーバの応答を使用。
+	  smtp_ehlo(): サーバの応答を読み、認証タイプのフラグをセット。
+	  smtp_helo(): EHLO コマンドを分離。
+	  smtp_ok(): バッファが指定されていれば最後のサーバの応答を返す
+	  ようにした。
+	* src/esmtp.[ch]: smtp.[ch] にマージ。
+	* src/imap.c: imap_session_destroy_all(): session_destroy() を使用。
+
 2002-04-08
 
 	* src/imap.c: imap_open(): IMAP4 セッションが確立できない場合警告

@@ -362,6 +362,56 @@ void account_set_missing_folder(void)
 	}
 }
 
+FolderItem *account_get_special_folder(PrefsAccount *ac_prefs,
+				       SpecialFolderItemType type)
+{
+	FolderItem *item = NULL;
+
+	g_return_val_if_fail(ac_prefs != NULL, NULL);
+
+	if (type == F_OUTBOX) {
+		if (ac_prefs->set_sent_folder && ac_prefs->sent_folder) {
+			item = folder_find_item_from_identifier
+				(ac_prefs->sent_folder);
+		}
+		if (!item) {
+			if (ac_prefs->folder)
+				item = FOLDER(ac_prefs->folder)->outbox;
+			if (!item)
+				item = folder_get_default_outbox();
+		}
+	} else if (type == F_DRAFT) {
+		if (ac_prefs->set_draft_folder && ac_prefs->draft_folder) {
+			item = folder_find_item_from_identifier
+				(ac_prefs->draft_folder);
+		}
+		if (!item) {
+			if (ac_prefs->folder)
+				item = FOLDER(ac_prefs->folder)->draft;
+			if (!item)
+				item = folder_get_default_draft();
+		}
+	} else if (type == F_QUEUE) {
+		if (ac_prefs->folder)
+			item = FOLDER(ac_prefs->folder)->queue;
+		if (!item)
+			item = folder_get_default_queue();
+	} else if (type == F_TRASH) {
+		if (ac_prefs->set_trash_folder && ac_prefs->trash_folder) {
+			item = folder_find_item_from_identifier
+				(ac_prefs->trash_folder);
+		}
+		if (!item) {
+			if (ac_prefs->folder)
+				item = FOLDER(ac_prefs->folder)->trash;
+			if (!item)
+				item = folder_get_default_trash();
+		}
+	}
+
+	return item;
+}
+
 void account_destroy(PrefsAccount *ac_prefs)
 {
 	g_return_if_fail(ac_prefs != NULL);
@@ -556,7 +606,8 @@ static void account_edit_prefs(void)
 	row = GPOINTER_TO_INT(clist->selection->data);
 	ac_prefs = gtk_clist_get_row_data(clist, row);
 	prev_default = ac_prefs->is_default;
-	Xstrdup_a(ac_name, ac_prefs->account_name, return);
+	Xstrdup_a(ac_name, ac_prefs->account_name ? ac_prefs->account_name : "",
+		  return);
 
 	prefs_account_open(ac_prefs);
 
@@ -564,7 +615,7 @@ static void account_edit_prefs(void)
 		account_set_as_default(ac_prefs);
 
 	if ((ac_prefs->protocol == A_IMAP4 || ac_prefs->protocol == A_NNTP) &&
-	    ac_prefs->folder && strcmp(ac_name, ac_prefs->account_name) != 0) {
+	    ac_prefs->folder && strcmp2(ac_name, ac_prefs->account_name) != 0) {
 		folder_set_name(FOLDER(ac_prefs->folder),
 				ac_prefs->account_name);
 		folderview_rescan_all();
