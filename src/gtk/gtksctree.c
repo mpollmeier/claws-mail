@@ -234,8 +234,11 @@ select_row (GtkSCTree *sctree, gint row, gint col, guint state)
 		   (GTK_CLIST(sctree)->selection_mode != GTK_SELECTION_BROWSE);
 
 	gtk_clist_freeze (GTK_CLIST (sctree));
+
 	GTK_CLIST(sctree)->focus_row = row;
+
 	GTK_CLIST_GET_CLASS(sctree)->refresh(GTK_CLIST(sctree));
+
 	if (!additive)
 		gtk_clist_unselect_all (GTK_CLIST (sctree));
 
@@ -260,6 +263,7 @@ select_row (GtkSCTree *sctree, gint row, gint col, guint state)
 		sctree->anchor_row = node;
 	} else
 		select_range (sctree, row);
+	
 	gtk_clist_thaw (GTK_CLIST (sctree));
 }
 
@@ -351,7 +355,7 @@ gtk_sctree_button_press (GtkWidget *widget, GdkEventButton *event)
 		sctree->dnd_select_pending_state = 0;
 
 		if (on_row)
-			g_signal_emit (GTK_OBJECT (sctree),
+			g_signal_emit (G_OBJECT (sctree),
 				       sctree_signals[OPEN_ROW], 0);
 
 		retval = TRUE;
@@ -585,6 +589,13 @@ void gtk_sctree_select (GtkSCTree *sctree, GtkCTreeNode *node)
 	select_row(sctree, 
 		   g_list_position(GTK_CLIST(sctree)->row_list, (GList *)node),
 		   -1, 0);
+}
+
+void gtk_sctree_select_with_state (GtkSCTree *sctree, GtkCTreeNode *node, int state)
+{
+	select_row(sctree, 
+		   g_list_position(GTK_CLIST(sctree)->row_list, (GList *)node),
+		   -1, state);
 }
 
 void gtk_sctree_unselect_all (GtkSCTree *sctree)

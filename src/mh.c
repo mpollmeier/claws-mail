@@ -114,52 +114,41 @@ static gboolean mh_rename_folder_func		(GNode		*node,
 static gchar   *mh_item_get_path		(Folder *folder, 
 						 FolderItem *item);
 
-static FolderClass mh_class =
-{
-	F_MH,
-	"mh",
-	"MH",
-
-	/* Folder functions */
-	mh_folder_new,
-	mh_folder_destroy,
-	folder_local_set_xml,
-	folder_local_get_xml,
-	mh_scan_tree,
-	mh_create_tree,
-
-	/* FolderItem functions */
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	mh_item_get_path,
-	mh_create_folder,
-	mh_rename_folder,
-	mh_remove_folder,
-	NULL,
-	mh_get_num_list,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	
-	/* Message functions */
-	mh_get_msginfo,
-	NULL,
-	mh_fetch_msg,
-	mh_add_msg,
-	mh_add_msgs,
-	mh_copy_msg,
-	NULL,
-	mh_remove_msg,
-	mh_remove_all_msg,
-	mh_is_msg_changed,
-	NULL,
-};
+static FolderClass mh_class;
 
 FolderClass *mh_get_class(void)
 {
+	if (mh_class.idstr == NULL) {
+		mh_class.type = F_MH;
+		mh_class.idstr = "mh";
+		mh_class.uistr = "MH";
+		
+		/* Folder functions */
+		mh_class.new_folder = mh_folder_new;
+		mh_class.destroy_folder = mh_folder_destroy;
+		mh_class.set_xml = folder_local_set_xml;
+		mh_class.get_xml = folder_local_get_xml;
+		mh_class.scan_tree = mh_scan_tree;
+		mh_class.create_tree = mh_create_tree;
+
+		/* FolderItem functions */
+		mh_class.item_get_path = mh_item_get_path;
+		mh_class.create_folder = mh_create_folder;
+		mh_class.rename_folder = mh_rename_folder;
+		mh_class.remove_folder = mh_remove_folder;
+		mh_class.get_num_list = mh_get_num_list;
+		
+		/* Message functions */
+		mh_class.get_msginfo = mh_get_msginfo;
+		mh_class.fetch_msg = mh_fetch_msg;
+		mh_class.add_msg = mh_add_msg;
+		mh_class.add_msgs = mh_add_msgs;
+		mh_class.copy_msg = mh_copy_msg;
+		mh_class.remove_msg = mh_remove_msg;
+		mh_class.remove_all_msg = mh_remove_all_msg;
+		mh_class.is_msg_changed = mh_is_msg_changed;
+	}
+
 	return &mh_class;
 }
 
@@ -671,7 +660,7 @@ static gint mh_rename_folder(Folder *folder, FolderItem *item,
 	if (!is_dir_exist(oldpath))
 		make_dir_hier(oldpath);
 
-	dirname = g_dirname(oldpath);
+	dirname = g_path_get_dirname(oldpath);
 	real_name = mh_filename_from_utf8(name);
 	newpath = g_strconcat(dirname, G_DIR_SEPARATOR_S, real_name, NULL);
 	g_free(real_name);
@@ -687,7 +676,7 @@ static gint mh_rename_folder(Folder *folder, FolderItem *item,
 	g_free(newpath);
 
 	if (strchr(item->path, G_DIR_SEPARATOR) != NULL) {
-		dirname = g_dirname(item->path);
+		dirname = g_path_get_dirname(item->path);
 		utf8newpath = g_strconcat(dirname, G_DIR_SEPARATOR_S,
 					  name, NULL);
 		g_free(dirname);
@@ -729,7 +718,6 @@ static gint mh_remove_folder(Folder *folder, FolderItem *item)
 
 static MsgInfo *mh_parse_msg(const gchar *file, FolderItem *item)
 {
-	struct stat s;
 	MsgInfo *msginfo;
 	MsgFlags flags;
 
@@ -745,20 +733,11 @@ static MsgInfo *mh_parse_msg(const gchar *file, FolderItem *item)
 		MSG_SET_TMP_FLAGS(flags, MSG_DRAFT);
 	}
 
-	if (stat(file, &s) < 0) {
-		FILE_OP_ERROR(file, "stat");
-		return NULL;
-	}
-	if (!S_ISREG(s.st_mode))
-		return NULL;
-
 	msginfo = procheader_parse_file(file, flags, FALSE, FALSE);
 	if (!msginfo) return NULL;
 
 	msginfo->msgnum = atoi(file);
 	msginfo->folder = item;
-	msginfo->size = s.st_size;
-	msginfo->mtime = s.st_mtime;
 
 	return msginfo;
 }

@@ -144,7 +144,7 @@ static void export_create(void)
 	gtk_container_set_border_width(GTK_CONTAINER(window), 5);
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	gtk_window_set_modal(GTK_WINDOW(window), TRUE);
-	gtk_window_set_policy(GTK_WINDOW(window), FALSE, TRUE, FALSE);
+	gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
 	g_signal_connect(G_OBJECT(window), "delete_event",
 			 G_CALLBACK(delete_event), NULL);
 	g_signal_connect(G_OBJECT(window), "key_press_event",
@@ -187,22 +187,22 @@ static void export_create(void)
 	gtk_table_attach(GTK_TABLE(table), file_entry, 1, 2, 1, 2,
 			 GTK_EXPAND|GTK_SHRINK|GTK_FILL, 0, 0, 0);
 
-	src_button = gtk_button_new_with_label(_(" Select... "));
+	src_button = gtk_button_new_from_stock(GTK_STOCK_OPEN);
 	gtk_table_attach(GTK_TABLE(table), src_button, 2, 3, 0, 1,
 			 0, 0, 0, 0);
 	g_signal_connect(G_OBJECT(src_button), "clicked",
 			 G_CALLBACK(export_srcsel_cb), NULL);
 
-	file_button = gtk_button_new_with_label(_(" Select... "));
+	file_button = gtk_button_new_from_stock(GTK_STOCK_OPEN);
 	gtk_table_attach(GTK_TABLE(table), file_button, 2, 3, 1, 2,
 			 0, 0, 0, 0);
 	g_signal_connect(G_OBJECT(file_button), "clicked",
 			 G_CALLBACK(export_filesel_cb), NULL);
 
-	gtkut_button_set_create(&confirm_area,
-				&ok_button,	_("OK"),
-				&cancel_button, _("Cancel"),
-				NULL, NULL);
+	gtkut_button_set_create_stock(&confirm_area,
+				      &ok_button,     GTK_STOCK_OK,
+				      &cancel_button, GTK_STOCK_CANCEL,
+				      NULL, NULL);
 	gtk_box_pack_end(GTK_BOX(vbox), confirm_area, FALSE, FALSE, 0);
 	gtk_widget_grab_default(ok_button);
 
@@ -232,7 +232,7 @@ static void export_filesel_cb(GtkWidget *widget, gpointer data)
 {
 	gchar *filename;
 
-	filename = filesel_select_file(_("Select exporting file"), NULL);
+	filename = filesel_select_file_save(_("Select exporting file"), NULL);
 	if (!filename) return;
 
 	if (g_getenv ("G_BROKEN_FILENAMES")) {

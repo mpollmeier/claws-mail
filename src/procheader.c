@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2003 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2004 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/stat.h>
 
 #include "intl.h"
 #include "procheader.h"
@@ -117,7 +118,7 @@ static gint generic_get_one_field(gchar *buf, gint len, void *data,
 
 			for (hp = hentry, hnum = 0; hp->name != NULL;
 			     hp++, hnum++) {
-				if (!strncasecmp(hp->name, buf,
+				if (!g_ascii_strncasecmp(hp->name, buf,
 						 strlen(hp->name)))
 					break;
 			}
@@ -408,7 +409,7 @@ gboolean procheader_headername_equal(char * hdr1, char * hdr2)
 	if (len1 != len2)
 		return 0;
 
-	return (g_strncasecmp(hdr1, hdr2, len1) == 0);
+	return (g_ascii_strncasecmp(hdr1, hdr2, len1) == 0);
 }
 
 /*
@@ -484,8 +485,16 @@ void procheader_get_header_fields(FILE *fp, HeaderEntry hentry[])
 MsgInfo *procheader_parse_file(const gchar *file, MsgFlags flags,
 			       gboolean full, gboolean decrypted)
 {
+	struct stat s;
 	FILE *fp;
 	MsgInfo *msginfo;
+
+	if (stat(file, &s) < 0) {
+		FILE_OP_ERROR(file, "stat");
+		return NULL;
+	}
+	if (!S_ISREG(s.st_mode))
+		return NULL;
 
 	if ((fp = fopen(file, "rb")) == NULL) {
 		FILE_OP_ERROR(file, "fopen");
@@ -494,6 +503,12 @@ MsgInfo *procheader_parse_file(const gchar *file, MsgFlags flags,
 
 	msginfo = procheader_parse_stream(fp, flags, full, decrypted);
 	fclose(fp);
+
+	if (msginfo) {
+		msginfo->size = s.st_size;
+		msginfo->mtime = s.st_mtime;
+	}
+
 	return msginfo;
 }
 
@@ -519,9 +534,14 @@ enum
 	H_STATUS        = 11,
 	H_X_STATUS      = 12,
 	H_FROM_SPACE	= 13,
-	H_X_FACE	= 14,
-	H_DISPOSITION_NOTIFICATION_TO = 15,
-	H_RETURN_RECEIPT_TO = 16
+	H_SC_PLANNED_DOWNLOAD = 14,
+	H_SC_MESSAGE_SIZE = 15,
+	H_X_FACE	= 16,
+	H_DISPOSITION_NOTIFICATION_TO = 17,
+	H_RETURN_RECEIPT_TO = 18,
+	H_SC_PARTIALLY_RETRIEVED = 19,
+	H_SC_ACCOUNT_SERVER = 20,
+	H_SC_ACCOUNT_LOGIN = 21,
 };
 
 static HeaderEntry hentry_full[] = {{"Date:",		NULL, FALSE},
@@ -530,7 +550,7 @@ static HeaderEntry hentry_full[] = {{"Date:",		NULL, FALSE},
 				   {"Cc:",		NULL, TRUE},
 				   {"Newsgroups:",	NULL, TRUE},
 				   {"Subject:",		NULL, TRUE},
-				   {"Message-Id:",	NULL, FALSE},
+				   {"Message-ID:",	NULL, FALSE},
 				   {"References:",	NULL, FALSE},
 				   {"In-Reply-To:",	NULL, FALSE},
 				   {"Content-Type:",	NULL, FALSE},
@@ -538,9 +558,14 @@ static HeaderEntry hentry_full[] = {{"Date:",		NULL, FALSE},
 				   {"Status:",          NULL, FALSE},
 				   {"X-Status:",        NULL, FALSE},
 				   {"From ",		NULL, FALSE},
+				   {"SC-Marked-For-Download:", NULL, FALSE},
+				   {"SC-Message-Size:", NULL, FALSE},
 				   {"X-Face:",		NULL, FALSE},
 				   {"Disposition-Notification-To:", NULL, FALSE},
 				   {"Return-Receipt-To:", NULL, FALSE},
+				   {"SC-Partially-Retrieved:", NULL, FALSE},
+				   {"SC-Account-Server:", NULL, FALSE},
+				   {"SC-Account-Login:",NULL, FALSE},
 				   {NULL,		NULL, FALSE}};
 
 static HeaderEntry hentry_short[] = {{"Date:",		NULL, FALSE},
@@ -549,7 +574,7 @@ static HeaderEntry hentry_short[] = {{"Date:",		NULL, FALSE},
 				    {"Cc:",		NULL, TRUE},
 				    {"Newsgroups:",	NULL, TRUE},
 				    {"Subject:",	NULL, TRUE},
-				    {"Message-Id:",	NULL, FALSE},
+				    {"Message-ID:",	NULL, FALSE},
 				    {"References:",	NULL, FALSE},
 				    {"In-Reply-To:",	NULL, FALSE},
 				    {"Content-Type:",	NULL, FALSE},
@@ -557,6 +582,8 @@ static HeaderEntry hentry_short[] = {{"Date:",		NULL, FALSE},
 				    {"Status:",		NULL, FALSE},
 				    {"X-Status:",	NULL, FALSE},
 				    {"From ",		NULL, FALSE},
+				    {"SC-Marked-For-Download:", NULL, FALSE},
+				    {"SC-Message-Size:",NULL, FALSE},
 				    {NULL,		NULL, FALSE}};
 
 HeaderEntry* procheader_get_headernames(gboolean full)
@@ -598,9 +625,6 @@ static MsgInfo *parse_stream(void *data, gboolean isstring, MsgFlags flags,
 	else 
 		MSG_SET_PERM_FLAGS(msginfo->flags, MSG_NEW | MSG_UNREAD);
 	
-	if (decrypted)
-		MSG_UNSET_TMP_FLAGS(msginfo->flags, MSG_MIME);
-
 	msginfo->inreplyto = NULL;
 
 	while ((hnum = get_one_field(buf, sizeof(buf), data, hentry))
@@ -677,27 +701,8 @@ static MsgInfo *parse_stream(void *data, gboolean isstring, MsgFlags flags,
 			}
 			break;
 		case H_CONTENT_TYPE:
-			if (decrypted) {
-				if (!strncasecmp(hp, "multipart", 9)) {
-					if (strncasecmp(hp, "multipart/signed", 16)) {
-						MSG_SET_TMP_FLAGS(msginfo->flags,
-							  MSG_MIME);
-					} else {
-						MSG_SET_TMP_FLAGS(msginfo->flags,
-							  MSG_SIGNED);
-					}
-				}
-			}
-			else if (!strncasecmp(hp, "multipart/encrypted", 19)) {
-				MSG_SET_TMP_FLAGS(msginfo->flags,
-						  MSG_ENCRYPTED);
-			} 
-			else if (!strncasecmp(hp, "multipart", 9) &&
-				   !strncasecmp(hp, "multipart/signed", 16)) {
-				MSG_SET_TMP_FLAGS(msginfo->flags, MSG_SIGNED);
-			} 
-			else if (!strncasecmp(hp, "multipart", 9))
-				MSG_SET_TMP_FLAGS(msginfo->flags, MSG_MIME);
+			if (!g_ascii_strncasecmp(hp, "multipart/", 10))
+				MSG_SET_TMP_FLAGS(msginfo->flags, MSG_MULTIPART);
 			break;
 #ifdef ALLOW_HEADER_HINT			
 		case H_SEEN:
@@ -716,6 +721,25 @@ static MsgInfo *parse_stream(void *data, gboolean isstring, MsgFlags flags,
 		case H_RETURN_RECEIPT_TO:
 			if (msginfo->returnreceiptto) break;
 			msginfo->returnreceiptto = g_strdup(hp);
+			break;
+		case H_SC_PARTIALLY_RETRIEVED:
+			if (msginfo->partial_recv) break;
+			msginfo->partial_recv = g_strdup(hp);
+			break;
+		case H_SC_ACCOUNT_SERVER:
+			if (msginfo->account_server) break;
+			msginfo->account_server = g_strdup(hp);
+			break;
+		case H_SC_ACCOUNT_LOGIN:
+			if (msginfo->account_login) break;
+			msginfo->account_login = g_strdup(hp);
+			break;
+		case H_SC_MESSAGE_SIZE:
+			if (msginfo->total_size) break;
+			msginfo->total_size = atoi(hp);
+			break;
+		case H_SC_PLANNED_DOWNLOAD:
+			msginfo->planned_download = atoi(hp);
 			break;
 #ifdef ALLOW_HEADER_HINT			
 		case H_STATUS:
@@ -910,7 +934,7 @@ time_t procheader_date_parse(gchar *dest, const gchar *src, gint len)
 
 	month[3] = '\0';
 	for (p = monthstr; *p != '\0'; p += 3) {
-		if (!strncasecmp(p, month, 3)) {
+		if (!g_ascii_strncasecmp(p, month, 3)) {
 			dmonth = (gint)(p - monthstr) / 3 + 1;
 			break;
 		}
@@ -946,6 +970,8 @@ void procheader_date_get_localtime(gchar *dest, gint len, const time_t timer)
 {
 	struct tm *lt;
 	gchar *default_format = "%y/%m/%d(%a) %H:%M";
+	gchar *str;
+	const gchar *src_codeset, *dest_codeset;
 
 	lt = localtime(&timer);
 
@@ -954,24 +980,14 @@ void procheader_date_get_localtime(gchar *dest, gint len, const time_t timer)
 	else
 		strftime(dest, len, default_format, lt);
 
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
-#if 1
-	{
-		gchar *str;
-		const gchar *src_codeset, *dest_codeset;
-
-		src_codeset = conv_get_current_charset_str();
-		dest_codeset = CS_UTF_8;
-		str = conv_codeset_strdup(dest, src_codeset, dest_codeset);
-		if (str) {
-			g_snprintf(dest, len, "%s", str);
-			strncpy2(dest, str, len);
-			g_free(str);
-		}
+	src_codeset = conv_get_current_charset_str();
+	dest_codeset = CS_UTF_8;
+	str = conv_codeset_strdup(dest, src_codeset, dest_codeset);
+	if (str) {
+		g_snprintf(dest, len, "%s", str);
+		strncpy2(dest, str, len);
+		g_free(str);
 	}
-#endif
 }
 
 /* Added by Mel Hadasht on 27 Aug 2001 */

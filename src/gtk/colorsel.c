@@ -18,6 +18,7 @@
  */
 
 #include <gtk/gtk.h>
+#include <gdk/gdkkeysyms.h>
 
 #include "colorsel.h"
 #include "manage_window.h"
@@ -38,8 +39,16 @@ static gboolean quote_colors_set_dialog_key_pressed(GtkWidget *widget,
 						GdkEventKey *event,
 						gpointer data)
 {
-	*((gint *) data) = 1;
-	gtk_main_quit();
+	if (event && event->keyval == GDK_Escape) {
+		*((gint *) data) = 1;
+		gtk_main_quit();
+		return TRUE;
+	} else if (event && event->keyval == GDK_Return) {
+		*((gint *) data) = 0;
+		gtk_main_quit();
+		return FALSE;
+	}
+	return FALSE;
 }
 
 gint colorsel_select_color_rgb(gchar *title, gint rgbvalue)
@@ -49,18 +58,18 @@ gint colorsel_select_color_rgb(gchar *title, gint rgbvalue)
 	gint result;
 
 	color_dialog = GTK_COLOR_SELECTION_DIALOG(gtk_color_selection_dialog_new(title));
-	gtk_window_set_position(GTK_WINDOW(color_dialog), GTK_WIN_POS_CENTER);
 	gtk_window_set_modal(GTK_WINDOW(color_dialog), TRUE);
-	gtk_window_set_policy(GTK_WINDOW(color_dialog), FALSE, FALSE, FALSE);
+	gtk_window_set_resizable(GTK_WINDOW(color_dialog), FALSE);
 	manage_window_set_transient(GTK_WINDOW(color_dialog));
 
-	gtk_signal_connect(GTK_OBJECT(GTK_COLOR_SELECTION_DIALOG(color_dialog)->ok_button),
-			   "clicked", GTK_SIGNAL_FUNC(quote_colors_set_dialog_ok), &result);
-	gtk_signal_connect(GTK_OBJECT(GTK_COLOR_SELECTION_DIALOG(color_dialog)->cancel_button),
-			   "clicked", GTK_SIGNAL_FUNC(quote_colors_set_dialog_cancel), &result);
-	gtk_signal_connect(GTK_OBJECT(color_dialog), "key_press_event",
-			   GTK_SIGNAL_FUNC(quote_colors_set_dialog_key_pressed),
-			   &result);
+	g_signal_connect(G_OBJECT(GTK_COLOR_SELECTION_DIALOG(color_dialog)->ok_button),
+			 "clicked", 
+			 G_CALLBACK(quote_colors_set_dialog_ok), &result);
+	g_signal_connect(G_OBJECT(GTK_COLOR_SELECTION_DIALOG(color_dialog)->cancel_button),
+			 "clicked", 
+			 G_CALLBACK(quote_colors_set_dialog_cancel), &result);
+	g_signal_connect(G_OBJECT(color_dialog), "key_press_event",
+			 G_CALLBACK(quote_colors_set_dialog_key_pressed), &result);
 
 	/* preselect the previous color in the color selection dialog */
 	color[0] = (gdouble) ((rgbvalue & 0xff0000) >> 16) / 255.0;

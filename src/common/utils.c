@@ -43,6 +43,9 @@
 #include <sys/types.h>
 #include <time.h>
 #include <regex.h>
+#ifndef WIN32
+#include <sys/utsname.h>
+#endif /* WIN32 */
 
 #include "intl.h"
 #include "utils.h"
@@ -158,7 +161,7 @@ void hash_free_value_mem(GHashTable *table)
 
 gint str_case_equal(gconstpointer v, gconstpointer v2)
 {
-	return strcasecmp((const gchar *)v, (const gchar *)v2) == 0;
+	return g_ascii_strcasecmp((const gchar *)v, (const gchar *)v2) == 0;
 }
 
 guint str_case_hash(gconstpointer key)
@@ -186,6 +189,26 @@ void ptr_array_free_strings(GPtrArray *array)
 		str = g_ptr_array_index(array, i);
 		g_free(str);
 	}
+}
+
+gboolean str_find(const gchar *haystack, const gchar *needle)
+{
+	return strstr(haystack, needle) != NULL ? TRUE : FALSE;
+}
+
+gboolean str_case_find(const gchar *haystack, const gchar *needle)
+{
+	return strcasestr(haystack, needle) != NULL ? TRUE : FALSE;
+}
+
+gboolean str_find_equal(const gchar *haystack, const gchar *needle)
+{
+	return strcmp(haystack, needle) == 0;
+}
+
+gboolean str_case_find_equal(const gchar *haystack, const gchar *needle)
+{
+	return strcasecmp(haystack, needle) == 0;
 }
 
 gint to_number(const gchar *nstr)
@@ -337,12 +360,35 @@ gchar *strcasestr(const gchar *haystack, const gchar *needle)
 		return NULL;
 
 	while (haystack_len >= needle_len) {
-		if (!strncasecmp(haystack, needle, needle_len))
+		if (!g_ascii_strncasecmp(haystack, needle, needle_len))
 			return (gchar *)haystack;
 		else {
 			haystack++;
 			haystack_len--;
 		}
+	}
+
+	return NULL;
+}
+
+gpointer my_memmem(gconstpointer haystack, size_t haystacklen,
+		   gconstpointer needle, size_t needlelen)
+{
+	const gchar *haystack_ = (const gchar *)haystack;
+	const gchar *needle_ = (const gchar *)needle;
+	const gchar *haystack_cur = (const gchar *)haystack;
+
+	if (needlelen == 1)
+		return memchr(haystack_, *needle_, haystacklen);
+
+	while ((haystack_cur = memchr(haystack_cur, *needle_, haystacklen))
+	       != NULL) {
+		if (haystacklen - (haystack_cur - haystack_) < needlelen)
+			break;
+		if (memcmp(haystack_cur + 1, needle_ + 1, needlelen - 1) == 0)
+			return (gpointer)haystack_cur;
+		else
+			haystack_cur++;
 	}
 
 	return NULL;
@@ -633,12 +679,12 @@ gint subject_compare_for_sort(const gchar *s1, const gchar *s2)
 	trim_subject_for_sort(str1);
 	trim_subject_for_sort(str2);
 
-	return strcasecmp(str1, str2);
+	return g_utf8_collate(str1, str2);
 }
 
 void trim_subject_for_compare(gchar *str)
 {
-	guchar *srcp;
+	gchar *srcp;
 
 	eliminate_parenthesis(str, '[', ']');
 	eliminate_parenthesis(str, '(', ')');
@@ -651,7 +697,7 @@ void trim_subject_for_compare(gchar *str)
 
 void trim_subject_for_sort(gchar *str)
 {
-	guchar *srcp;
+	gchar *srcp;
 
 	g_strstrip(str);
 
@@ -1100,9 +1146,9 @@ void subst_chars(gchar *str, gchar *orig, gchar subst)
 void subst_for_filename(gchar *str)
 {
 #ifdef WIN32
-	subst_chars(str, " \t\r\n\"/\\:()", '_');
+	subst_chars(str, " \t\r\n\"/\\:", '_');
 #else
-	subst_chars(str, " \t\r\n\"/\\", '_');
+	subst_chars(str, " \t\r\n\"'/\\", '_');
 #endif
 }
 
@@ -1524,21 +1570,6 @@ GList *uri_list_extract_filenames(const gchar *uri_list)
 	return result;
 }
 
-#define HEX_TO_INT(val, hex) \
-{ \
-	gchar c = hex; \
- \
-	if ('0' <= c && c <= '9') { \
-		val = c - '0'; \
-	} else if ('a' <= c && c <= 'f') { \
-		val = c - 'a' + 10; \
-	} else if ('A' <= c && c <= 'F') { \
-		val = c - 'A' + 10; \
-	} else { \
-		val = 0; \
-	} \
-}
-
 /* Converts two-digit hexadecimal to decimal.  Used for unescaping escaped 
  * characters
  */
@@ -1573,19 +1604,19 @@ static gint axtoi(const gchar *hexstr)
 
 gboolean is_uri_string(const gchar *str)
 {
-	return (g_strncasecmp(str, "http://", 7) == 0 ||
-		g_strncasecmp(str, "https://", 8) == 0 ||
-		g_strncasecmp(str, "ftp://", 6) == 0 ||
-		g_strncasecmp(str, "www.", 4) == 0);
+	return (g_ascii_strncasecmp(str, "http://", 7) == 0 ||
+		g_ascii_strncasecmp(str, "https://", 8) == 0 ||
+		g_ascii_strncasecmp(str, "ftp://", 6) == 0 ||
+		g_ascii_strncasecmp(str, "www.", 4) == 0);
 }
 
 gchar *get_uri_path(const gchar *uri)
 {
-	if (g_strncasecmp(uri, "http://", 7) == 0)
+	if (g_ascii_strncasecmp(uri, "http://", 7) == 0)
 		return (gchar *)(uri + 7);
-	else if (g_strncasecmp(uri, "https://", 8) == 0)
+	else if (g_ascii_strncasecmp(uri, "https://", 8) == 0)
 		return (gchar *)(uri + 8);
-	else if (g_strncasecmp(uri, "ftp://", 6) == 0)
+	else if (g_ascii_strncasecmp(uri, "ftp://", 6) == 0)
 		return (gchar *)(uri + 6);
 	else
 		return (gchar *)uri;
@@ -1661,15 +1692,15 @@ gint scan_mailto_url(const gchar *mailto, gchar **to, gchar **cc, gchar **bcc,
 
 		if (*value == '\0') continue;
 
-		if (cc && !*cc && !g_strcasecmp(field, "cc")) {
+		if (cc && !*cc && !g_ascii_strcasecmp(field, "cc")) {
 			*cc = g_strdup(value);
-		} else if (bcc && !*bcc && !g_strcasecmp(field, "bcc")) {
+		} else if (bcc && !*bcc && !g_ascii_strcasecmp(field, "bcc")) {
 			*bcc = g_strdup(value);
 		} else if (subject && !*subject &&
-			   !g_strcasecmp(field, "subject")) {
+			   !g_ascii_strcasecmp(field, "subject")) {
 			*subject = g_malloc(strlen(value) + 1);
 			decode_uri(*subject, value);
-		} else if (body && !*body && !g_strcasecmp(field, "body")) {
+		} else if (body && !*body && !g_ascii_strcasecmp(field, "body")) {
 			*body = g_malloc(strlen(value) + 1);
 			decode_uri(*body, value);
 		}
@@ -1829,21 +1860,46 @@ const gchar *get_domain_name(void)
 	static gchar *domain_name = NULL;
 
 	if (!domain_name) {
-		gchar buf[128] = "";
-		struct hostent *hp;
+#ifdef WIN32
+		gchar tmpname[1024];
+		gint i;
 
-		if (gethostname(buf, sizeof(buf)) < 0) {
+		if (!gethostname(&tmpname, sizeof(tmpname))) {
+			struct hostent *hp;
+
+			tmpname[sizeof(tmpname) - 1] = '\0';
+			if ((hp = my_gethostbyname(tmpname)) == NULL) {
+				perror("gethostbyname");
+				domain_name = g_strdup(tmpname);
+			} else {
+				for (i=0; hp->h_name[i]; i++) {
+					if (hp->h_name[i]=='.') {
+						domain_name = g_strdup(&hp->h_name[i+1]);
+						break;
+					}
+				}
+				if (!domain_name)
+					domain_name = g_strdup(hp->h_name);
+			}
+		}
+		if (!domain_name)
+			domain_name = "";
+#else
+		struct hostent *hp;
+		struct utsname uts;
+
+		if (uname(&uts) < 0) {
 			perror("gethostname");
 			domain_name = "unknown";
 		} else {
-			buf[sizeof(buf) - 1] = '\0';
-			if ((hp = my_gethostbyname(buf)) == NULL) {
+			if ((hp = my_gethostbyname(uts.nodename)) == NULL) {
 				perror("gethostbyname");
-				domain_name = g_strdup(buf);
+				domain_name = g_strdup(uts.nodename);
 			} else {
 				domain_name = g_strdup(hp->h_name);
 			}
 		}
+#endif
 
 		debug_print("domain name = %s\n", domain_name);
 	}
@@ -2595,18 +2651,44 @@ gint move_file(const gchar *src, const gchar *dest, gboolean overwrite)
 	return 0;
 }
 
-gint copy_file_part(FILE *fp, off_t offset, size_t length, const gchar *dest)
+gint copy_file_part_to_fp(FILE *fp, off_t offset, size_t length, FILE *dest_fp)
 {
-	FILE *dest_fp;
 	gint n_read;
 	gint bytes_left, to_read;
 	gchar buf[BUFSIZ];
-	gboolean err = FALSE;
 
 	if (fseek(fp, offset, SEEK_SET) < 0) {
 		perror("fseek");
 		return -1;
 	}
+
+	bytes_left = length;
+	to_read = MIN(bytes_left, sizeof(buf));
+
+	while ((n_read = fread(buf, sizeof(gchar), to_read, fp)) > 0) {
+		if (n_read < to_read && ferror(fp))
+			break;
+		if (fwrite(buf, n_read, 1, dest_fp) < 1) {
+			return -1;
+		}
+		bytes_left -= n_read;
+		if (bytes_left == 0)
+			break;
+		to_read = MIN(bytes_left, sizeof(buf));
+	}
+
+	if (ferror(fp)) {
+		perror("fread");
+		return -1;
+	}
+
+	return 0;
+}
+
+gint copy_file_part(FILE *fp, off_t offset, size_t length, const gchar *dest)
+{
+	FILE *dest_fp;
+	gboolean err = FALSE;
 
 	if ((dest_fp = fopen(dest, "wb")) == NULL) {
 		FILE_OP_ERROR(dest, "fopen");
@@ -2618,34 +2700,16 @@ gint copy_file_part(FILE *fp, off_t offset, size_t length, const gchar *dest)
 		g_warning("can't change file mode\n");
 	}
 
-	bytes_left = length;
-	to_read = MIN(bytes_left, sizeof(buf));
-
-	while ((n_read = fread(buf, sizeof(gchar), to_read, fp)) > 0) {
-		if (n_read < to_read && ferror(fp))
-			break;
-		if (fwrite(buf, n_read, 1, dest_fp) < 1) {
-			g_warning("writing to %s failed.\n", dest);
-			fclose(dest_fp);
-			unlink(dest);
-			return -1;
-		}
-		bytes_left -= n_read;
-		if (bytes_left == 0)
-			break;
-		to_read = MIN(bytes_left, sizeof(buf));
-	}
-
-	if (ferror(fp)) {
-		perror("fread");
+	if (copy_file_part_to_fp(fp, offset, length, dest_fp) < 0)
 		err = TRUE;
-	}
-	if (fclose(dest_fp) == EOF) {
+
+	if (!err && fclose(dest_fp) == EOF) {
 		FILE_OP_ERROR(dest, "fclose");
 		err = TRUE;
 	}
 
 	if (err) {
+		g_warning("writing to %s failed.\n", dest);
 		unlink(dest);
 		return -1;
 	}
@@ -2892,7 +2956,7 @@ gchar *get_outgoing_rfc2822_str(FILE *fp)
 	/* output header part */
 	while (fgets(buf, sizeof(buf), fp) != NULL) {
 		strretchomp(buf);
-		if (!g_strncasecmp(buf, "Bcc:", 4)) {
+		if (!g_ascii_strncasecmp(buf, "Bcc:", 4)) {
 			gint next;
 
 			for (;;) {
@@ -2966,7 +3030,7 @@ gchar *generate_mime_boundary(const gchar *prefix)
 	 * doesn't do any harm.
 	 */
 	for (i = 0; i < sizeof(buf_uniq) - 1; i++)
-		buf_uniq[i] = tbl[(random() ^ pid) % (sizeof(tbl) - 1)];
+		buf_uniq[i] = tbl[(rand() ^ pid) % (sizeof(tbl) - 1)];
 	buf_uniq[i] = '\0';
 
 	get_rfc822_date(buf_date, sizeof(buf_date));
@@ -2974,7 +3038,7 @@ gchar *generate_mime_boundary(const gchar *prefix)
 	subst_char(buf_date, ',', '_');
 	subst_char(buf_date, ':', '_');
 
-	return g_strdup_printf("%s=_%s_%s", prefix ? prefix : "Multipart",
+	return g_strdup_printf("%s_%s_%s", prefix ? prefix : "Multipart",
 			       buf_date, buf_uniq);
 }
 
@@ -3017,6 +3081,8 @@ FILE *my_tmpfile(void)
 	tmpdir = get_tmp_dir();
 	tmplen = strlen(tmpdir);
 	progname = g_get_prgname();
+	if (progname == NULL)
+		progname = "sylpheed-claws";
 	proglen = strlen(progname);
 	Xalloca(fname, tmplen + 1 + proglen + sizeof(suffix),
 		return tmpfile());
@@ -3167,6 +3233,16 @@ gchar *file_read_stream_to_str(FILE *fp)
 	str = (gchar *)array->data;
 	g_byte_array_free(array, FALSE);
 
+	if (!g_utf8_validate(str, -1, NULL)) {
+		const gchar *src_codeset, *dest_codeset;
+		gchar *tmp = NULL;
+		src_codeset = conv_get_current_charset_str();
+		dest_codeset = CS_UTF_8;
+		tmp = conv_codeset_strdup(str, src_codeset, dest_codeset);
+		g_free(str);
+		str = tmp;
+	}
+
 	return str;
 }
 
@@ -3206,8 +3282,11 @@ gint execute_async(gchar *const argv[])
 		;
 	g_free(parsed_argv);
 	g_free(fullname);
+//XXX (WIFEXITED(status))
+	return 0;
 #else
 	pid_t pid;
+	gint status;
 
 	if ((pid = fork()) < 0) {
 		perror("fork");
@@ -3232,10 +3311,13 @@ gint execute_async(gchar *const argv[])
 		_exit(0);
 	}
 
-	waitpid(pid, NULL, 0);
-#endif
+	waitpid(pid, &status, 0);
 
-	return 0;
+	if (WIFEXITED(status))
+		return WEXITSTATUS(status);
+	else
+		return -1;
+#endif
 }
 
 gint execute_sync(gchar *const argv[])
@@ -3275,8 +3357,11 @@ gint execute_sync(gchar *const argv[])
 		;
 	g_free(parsed_argv);
 	g_free(fullname);
+//XXX:TODO:WIFEXITED(status)
+	return 0;
 #else
 	pid_t pid;
+	gint status;
 
 	if ((pid = fork()) < 0) {
 		perror("fork");
@@ -3290,9 +3375,13 @@ gint execute_sync(gchar *const argv[])
 		_exit(1);
 	}
 
-	waitpid(pid, NULL, 0);
+	waitpid(pid, &status, 0);
+
+	if (WIFEXITED(status))
+		return WEXITSTATUS(status);
+	else
+		return -1;
 #endif
-	return 0;
 }
 
 gint execute_command_line(const gchar *cmdline, gboolean async)
@@ -3300,12 +3389,15 @@ gint execute_command_line(const gchar *cmdline, gboolean async)
 	gchar **argv;
 	gint ret;
 
+	debug_print("executing: %s\n", cmdline);
+
 	argv = strsplit_with_quote(cmdline, " ", 0);
 
 	if (async)
 		ret = execute_async(argv);
 	else
 		ret = execute_sync(argv);
+
 	g_strfreev(argv);
 
 	return ret;
@@ -3353,6 +3445,16 @@ gchar *get_command_output(const gchar *cmdline)
 	ret = str->str;
 	g_string_free(str, FALSE);
 
+	if (!g_utf8_validate(ret, -1, NULL)) {
+		const gchar *src_codeset, *dest_codeset;
+		gchar *tmp = NULL;
+		src_codeset = conv_get_current_charset_str();
+		dest_codeset = CS_UTF_8;
+		tmp = conv_codeset_strdup(ret, src_codeset, dest_codeset);
+		g_free(ret);
+		ret = tmp;
+	}
+	
 	return ret;
 }
 
@@ -3426,11 +3528,12 @@ gint open_uri(const gchar *uri, const gchar *cmdline)
 #endif
 	else {
 		if (cmdline)
-			g_warning("Open URI command line is invalid: `%s'",
+			g_warning("Open URI command line is invalid "
+				  "(there must be only one '%%s'): %s",
 				  cmdline);
 		g_snprintf(buf, sizeof(buf), DEFAULT_BROWSER_CMD, encoded_uri);
 	}
-	
+
 	execute_command_line(buf, TRUE);
 
 	return 0;
@@ -3495,7 +3598,7 @@ time_t remote_tzoffset_sec(const gchar *zone)
 		remoteoffset = 0;
 	} else if (strlen(zone3) == 3) {
 		for (p = ustzstr; *p != '\0'; p += 3) {
-			if (!strncasecmp(p, zone3, 3)) {
+			if (!g_ascii_strncasecmp(p, zone3, 3)) {
 				iustz = ((gint)(p - ustzstr) / 3 + 1) / 2 - 8;
 				remoteoffset = iustz * 3600;
 				break;
@@ -3693,6 +3796,7 @@ int subject_get_prefix_length(const gchar *subject)
 		"Fw\\:",			/* "Fw:" Forward */
 		"Enc\\:",			/* "Enc:" Forward (Brazilian Outlook) */
 		"Odp\\:",			/* "Odp:" Re (Polish Outlook) */
+		"Rif\\:"			/* "Rif:" (Italian Outlook) */
 		/* add more */
 	};
 	const int PREFIXES = sizeof prefixes / sizeof prefixes[0];
@@ -3710,7 +3814,7 @@ int subject_get_prefix_length(const gchar *subject)
 		for (n = 0; n < PREFIXES; n++)
 			/* Terminate each prefix regexpression by a
 			 * "\ ?" (zero or ONE space), and OR them */
-			g_string_sprintfa(s, "(%s\\ ?)%s",
+			g_string_append_printf(s, "(%s\\ ?)%s",
 					  prefixes[n],
 					  n < PREFIXES - 1 ? 
 					  "|" : "");
@@ -3738,200 +3842,13 @@ int subject_get_prefix_length(const gchar *subject)
 		return 0;
 }
 
-/* allow Mutt-like patterns in quick search */
-gchar *expand_search_string(const gchar *search_string)
-{
-	int i = 0;
-	gchar term_char, save_char;
-	gchar *cmd_start, *cmd_end;
-	GString *matcherstr;
-	gchar *returnstr = NULL;
-	gchar *copy_str;
-	gboolean casesens, dontmatch;
-	/* list of allowed pattern abbreviations */
-	struct {
-		gchar		*abbreviated;	/* abbreviation */
-		gchar		*command;	/* actual matcher command */ 
-		gint		numparams;	/* number of params for cmd */
-		gboolean	qualifier;	/* do we append regexpcase */
-		gboolean	quotes;		/* do we need quotes */
-	}
-	cmds[] = {
-		{ "a",	"all",				0,	FALSE,	FALSE },
-		{ "ag",	"age_greater",			1,	FALSE,	FALSE },
-		{ "al",	"age_lower",			1,	FALSE,	FALSE },
-		{ "b",	"body_part",			1,	TRUE,	TRUE  },
-		{ "B",	"message",			1,	TRUE,	TRUE  },
-		{ "c",	"cc",				1,	TRUE,	TRUE  },
-		{ "C",	"to_or_cc",			1,	TRUE,	TRUE  },
-		{ "D",	"deleted",			0,	FALSE,	FALSE },
-		{ "e",	"header \"Sender\"",		1,	TRUE,	TRUE  },
-		{ "E",	"execute",			1,	FALSE,	TRUE  },
-		{ "f",	"from",				1,	TRUE,	TRUE  },
-		{ "F",	"forwarded",			0,	FALSE,	FALSE },
-		{ "h",	"headers_part",			1,	TRUE,	TRUE  },
-		{ "i",	"header \"Message-Id\"",	1,	TRUE,	TRUE  },
-		{ "I",	"inreplyto",			1,	TRUE,	TRUE  },
-		{ "L",	"locked",			0,	FALSE,	FALSE },
-		{ "n",	"newsgroups",			1,	TRUE,	TRUE  },
-		{ "N",	"new",				0,	FALSE,	FALSE },
-		{ "O",	"~new",				0,	FALSE,	FALSE },
-		{ "r",	"replied",			0,	FALSE,	FALSE },
-		{ "R",	"~unread",			0,	FALSE,	FALSE },
-		{ "s",	"subject",			1,	TRUE,	TRUE  },
-		{ "se",	"score_equal",			1,	FALSE,	FALSE },
-		{ "sg",	"score_greater",		1,	FALSE,	FALSE },
-		{ "sl",	"score_lower",			1,	FALSE,	FALSE },
-		{ "Se",	"size_equal",			1,	FALSE,	FALSE },
-		{ "Sg",	"size_greater",			1,	FALSE,	FALSE },
-		{ "Ss",	"size_smaller",			1,	FALSE,	FALSE },
-		{ "t",	"to",				1,	TRUE,	TRUE  },
-		{ "T",	"marked",			0,	FALSE,	FALSE },
-		{ "U",	"unread",			0,	FALSE,	FALSE },
-		{ "x",	"header \"References\"",	1,	TRUE,	TRUE  },
-		{ "X",  "test",				1,	FALSE,  FALSE }, 
-		{ "y",	"header \"X-Label\"",		1,	TRUE,	TRUE  },
-		{ "&",	"&",				0,	FALSE,	FALSE },
-		{ "|",	"|",				0,	FALSE,	FALSE },
-		{ NULL,	NULL,				0,	FALSE,	FALSE }
-	};
-
-	if (search_string == NULL)
-		return NULL;
-
-	copy_str = g_strdup(search_string);
-
-	/* if it's a full command don't process it so users
-	   can still do something like from regexpcase "foo" */
-	for (i = 0; cmds[i].command; i++) {
-		const gchar *tmp_search_string = search_string;
-		cmd_start = cmds[i].command;
-		/* allow logical NOT */
-		if (*tmp_search_string == '~')
-			tmp_search_string++;
-		if (!strncmp(tmp_search_string, cmd_start, strlen(cmd_start)))
-			break;
-	}
-	if (cmds[i].command)
-		return copy_str;
-
-	matcherstr = g_string_sized_new(16);
-	cmd_start = cmd_end = copy_str;
-	while (cmd_end && *cmd_end) {
-		/* skip all white spaces */
-		while (*cmd_end && isspace(*cmd_end))
-			cmd_end++;
-
-		/* extract a command */
-		while (*cmd_end && !isspace(*cmd_end))
-			cmd_end++;
-
-		/* save character */
-		save_char = *cmd_end;
-		*cmd_end = '\0';
-
-		dontmatch = FALSE;
-		casesens = FALSE;
-
-		/* ~ and ! mean logical NOT */
-		if (*cmd_start == '~' || *cmd_start == '!')
-		{
-			dontmatch = TRUE;
-			cmd_start++;
-		}
-		/* % means case sensitive match */
-		if (*cmd_start == '%')
-		{
-			casesens = TRUE;
-			cmd_start++;
-		}
-
-		/* find matching abbreviation */
-		for (i = 0; cmds[i].command; i++) {
-			if (!strcmp(cmd_start, cmds[i].abbreviated)) {
-				/* restore character */
-				*cmd_end = save_char;
-
-				/* copy command */
-				if (matcherstr->len > 0) {
-					g_string_append(matcherstr, " ");
-				}
-				if (dontmatch)
-					g_string_append(matcherstr, "~");
-				g_string_append(matcherstr, cmds[i].command);
-				g_string_append(matcherstr, " ");
-
-				/* stop if no params required */
-				if (cmds[i].numparams == 0)
-					break;
-
-				/* extract a parameter, allow quotes */
-				cmd_end++;
-				cmd_start = cmd_end;
-				if (*cmd_start == '"') {
-					term_char = '"';
-					cmd_end++;
-				}
-				else
-					term_char = ' ';
-
-				/* extract actual parameter */
-				while ((*cmd_end) && (*cmd_end != term_char))
-					cmd_end++;
-
-				if (*cmd_end && (*cmd_end != term_char))
-					break;
-
-				if (*cmd_end == '"')
-					cmd_end++;
-
-				save_char = *cmd_end;
-				*cmd_end = '\0';
-
-				if (cmds[i].qualifier) {
-					if (casesens)
-						g_string_append(matcherstr, "regexp ");
-					else
-						g_string_append(matcherstr, "regexpcase ");
-				}
-
-				/* do we need to add quotes ? */
-				if (cmds[i].quotes && term_char != '"')
-					g_string_append(matcherstr, "\"");
-
-				/* copy actual parameter */
-				g_string_append(matcherstr, cmd_start);
-
-				/* do we need to add quotes ? */
-				if (cmds[i].quotes && term_char != '"')
-					g_string_append(matcherstr, "\"");
-
-				/* restore original character */
-				*cmd_end = save_char;
-
-				break;
-			}
-		}
-
-		if (*cmd_end) {
-			cmd_end++;
-			cmd_start = cmd_end;
-		}
-	}
-
-	g_free(copy_str);
-	returnstr = matcherstr->str;
-	g_string_free(matcherstr, FALSE);
-	return returnstr;
-}
-
 guint g_stricase_hash(gconstpointer gptr)
 {
 	guint hash_result = 0;
 	const char *str;
 
 	for (str = gptr; str && *str; str++) {
-		if (isupper(*str)) hash_result += (*str + ' ');
+		if (isupper((guchar)*str)) hash_result += (*str + ' ');
 		else hash_result += *str;
 	}
 
@@ -3943,7 +3860,7 @@ gint g_stricase_equal(gconstpointer gptr1, gconstpointer gptr2)
 	const char *str1 = gptr1;
 	const char *str2 = gptr2;
 
-	return !strcasecmp(str1, str2);
+	return !g_utf8_collate(str1, str2);
 }
 
 gint g_int_compare(gconstpointer a, gconstpointer b)
@@ -3951,9 +3868,8 @@ gint g_int_compare(gconstpointer a, gconstpointer b)
 	return GPOINTER_TO_INT(a) - GPOINTER_TO_INT(b);
 }
 
-gchar *generate_msgid(const gchar *address, gchar *buf, gint len)
+gchar *generate_msgid(gchar *buf, gint len)
 {
-	/* steal from compose.c::compose_generate_msgid() */
 	struct tm *lt;
 	time_t t;
 	gchar *addr;
@@ -3961,25 +3877,17 @@ gchar *generate_msgid(const gchar *address, gchar *buf, gint len)
 	t = time(NULL);
 	lt = localtime(&t);
 
-	if (address && *address) {
-		if (strchr(address, '@'))
-			addr = g_strdup(address);
-		else
-			addr = g_strconcat(address, "@", get_domain_name(), NULL);
-	} else
-		addr = g_strconcat(g_get_user_name(), "@", get_domain_name(),
-				   NULL);
+	addr = g_strconcat("@", get_domain_name(), NULL);
 
-	g_snprintf(buf, len, "%04d%02d%02d%02d%02d%02d.%08x.%s",
+	g_snprintf(buf, len, "%04d%02d%02d%02d%02d%02d.%08x%s",
 		   lt->tm_year + 1900, lt->tm_mon + 1,
 		   lt->tm_mday, lt->tm_hour,
 		   lt->tm_min, lt->tm_sec,
-		   (guint)random(), addr);
+		   (guint) rand(), addr);
 
 	g_free(addr);
 	return buf;
 }
-
 
 /*
    quote_cmd_argument()
@@ -4001,7 +3909,7 @@ gint quote_cmd_argument(gchar * result, guint size,
 
 	for(p = path ; * p != '\0' ; p ++) {
 
-		if (isalnum(* p) || (* p == '/')) {
+		if (isalnum((guchar)*p) || (* p == '/')) {
 			if (remaining > 0) {
 				* result_p = * p;
 				result_p ++; 
@@ -4082,6 +3990,243 @@ GNode *g_node_map(GNode *node, GNodeMapFunc func, gpointer data)
 
 	return root;
 }
+
+#define HEX_TO_INT(val, hex)			\
+{						\
+	gchar c = hex;				\
+						\
+	if ('0' <= c && c <= '9') {		\
+		val = c - '0';			\
+	} else if ('a' <= c && c <= 'f') {	\
+		val = c - 'a' + 10;		\
+	} else if ('A' <= c && c <= 'F') {	\
+		val = c - 'A' + 10;		\
+	} else {				\
+		val = -1;			\
+	}					\
+}
+
+gboolean get_hex_value(guchar *out, gchar c1, gchar c2)
+{
+	gint hi, lo;
+
+	HEX_TO_INT(hi, c1);
+	HEX_TO_INT(lo, c2);
+
+	if (hi == -1 || lo == -1)
+		return FALSE;
+
+	*out = (hi << 4) + lo;
+	return TRUE;
+}
+
+#define INT_TO_HEX(hex, val)		\
+{					\
+	if ((val) < 10)			\
+		hex = '0' + (val);	\
+	else				\
+		hex = 'A' + (val) - 10;	\
+}
+
+void get_hex_str(gchar *out, guchar ch)
+{
+	gchar hex;
+
+	INT_TO_HEX(hex, ch >> 4);
+	*out++ = hex;
+	INT_TO_HEX(hex, ch & 0x0f);
+	*out++ = hex;
+}
+
+#undef REF_DEBUG
+#ifndef REF_DEBUG
+#define G_PRINT_REF 1 == 1 ? (void) 0 : (void)
+#else
+#define G_PRINT_REF g_print
+#endif
+
+/*!
+ *\brief	Register ref counted pointer. It is based on GBoxed, so should
+ *		work with anything that uses the GType system. The semantics
+ *		are similar to a C++ auto pointer, with the exception that
+ *		C doesn't have automatic closure (calling destructors) when 
+ *		exiting a block scope.
+ *		Use the \ref G_TYPE_AUTO_POINTER macro instead of calling this
+ *		function directly.
+ *
+ *\return	GType A GType type.
+ */
+GType g_auto_pointer_register(void)
+{
+	static GType auto_pointer_type;
+	if (!auto_pointer_type)
+		auto_pointer_type =
+			g_boxed_type_register_static
+				("G_TYPE_AUTO_POINTER",
+				 (GBoxedCopyFunc) g_auto_pointer_copy,
+				 (GBoxedFreeFunc) g_auto_pointer_free);
+	return auto_pointer_type;						     
+}
+
+/*!
+ *\brief	Structure with g_new() allocated pointer guarded by the
+ *		auto pointer
+ */
+typedef struct AutoPointerRef {
+	void	      (*free) (gpointer);
+	gpointer	pointer;
+	glong		cnt;
+} AutoPointerRef;
+
+/*!
+ *\brief	The auto pointer opaque structure that references the
+ *		pointer guard block.
+ */
+typedef struct AutoPointer {
+	AutoPointerRef *ref;
+	gpointer	ptr; /*!< access to protected pointer */
+} AutoPointer;
+
+/*!
+ *\brief	Creates an auto pointer for a g_new()ed pointer. Example:
+ *
+ *\code	
+ *
+ *		... tell gtk_list_store it should use a G_TYPE_AUTO_POINTER
+ *		... when assigning, copying and freeing storage elements
+ *
+ *		gtk_list_store_new(N_S_COLUMNS, 
+ *				   G_TYPE_AUTO_POINTER,
+ *				   -1);
+ *
+ *
+ *		Template *precious_data = g_new0(Template, 1);
+ *		g_pointer protect = g_auto_pointer_new(precious_data);
+ *
+ *		gtk_list_store_set(container, &iter,
+ *				   S_DATA, protect,
+ *				   -1);
+ *
+ *		... the gtk_list_store has copied the pointer and 
+ *		... incremented its reference count, we should free
+ *		... the auto pointer (in C++ a destructor would do
+ *		... this for us when leaving block scope)
+ * 
+ *		g_auto_pointer_free(protect);
+ *
+ *		... gtk_list_store_set() now manages the data. When
+ *		... *explicitly* requesting a pointer from the list 
+ *		... store, don't forget you get a copy that should be 
+ *		... freed with g_auto_pointer_free() eventually.
+ *
+ *\endcode
+ *
+ *\param	pointer Pointer to be guarded.
+ *
+ *\return	GAuto * Pointer that should be used in containers with
+ *		GType support.
+ */
+GAuto *g_auto_pointer_new(gpointer p)
+{
+	AutoPointerRef *ref;
+	AutoPointer    *ptr;
+	
+	if (p == NULL) 
+		return NULL;
+
+	ref = g_new0(AutoPointerRef, 1);
+	ptr = g_new0(AutoPointer, 1);
+
+	ref->pointer = p;
+	ref->free = g_free;
+	ref->cnt = 1;
+
+	ptr->ref = ref;
+	ptr->ptr = p;
+
+	G_PRINT_REF ("XXXX ALLOC(%lx)\n", p);
+
+	return ptr;
+}
+
+/*!
+ *\brief	Allocate an autopointer using the passed \a free function to
+ *		free the guarded pointer
+ */
+GAuto *g_auto_pointer_new_with_free(gpointer p, GFreeFunc free_)
+{
+	AutoPointer *aptr;
+	
+	if (p == NULL)
+		return NULL;
+
+	aptr = g_auto_pointer_new(p);
+	aptr->ref->free = free_;
+	return aptr; 
+}
+
+gpointer g_auto_pointer_get_ptr(GAuto *auto_ptr)
+{
+	if (auto_ptr == NULL) 
+		return NULL;
+	return ((AutoPointer *) auto_ptr)->ptr; 
+}
+
+/*!
+ *\brief	Copies an auto pointer by. It's mostly not necessary
+ *		to call this function directly, unless you copy/assign
+ *		the guarded pointer.
+ *
+ *\param	auto_ptr Auto pointer returned by previous call to 
+ *		g_auto_pointer_new_XXX()
+ *
+ *\return	gpointer An auto pointer
+ */
+GAuto *g_auto_pointer_copy(GAuto *auto_ptr)
+{
+	AutoPointer	*ptr;
+	AutoPointerRef	*ref;
+	AutoPointer	*newp;
+
+	if (auto_ptr == NULL) 
+		return NULL;
+
+	ptr = auto_ptr;
+	ref = ptr->ref;
+	newp = g_new0(AutoPointer, 1);
+
+	newp->ref = ref;
+	newp->ptr = ref->pointer;
+	++(ref->cnt);
+	
+	G_PRINT_REF ("XXXX COPY(%lx) -- REF (%d)\n", ref->pointer, ref->cnt);
+
+	return newp;
+}
+
+/*!
+ *\brief	Free an auto pointer
+ */
+void g_auto_pointer_free(GAuto *auto_ptr)
+{
+	AutoPointer	*ptr;
+	AutoPointerRef	*ref;
+	
+	if (auto_ptr == NULL)
+		return;
+
+	ptr = auto_ptr;
+	ref = ptr->ref;
+
+	if (--(ref->cnt) == 0) {
+		G_PRINT_REF ("XXXX FREE(%lx) -- REF (%d)\n", ref->pointer, ref->cnt);
+		ref->free(ref->pointer);
+		g_free(ref);
+	} else
+		G_PRINT_REF ("XXXX DEREF(%lx) -- REF (%d)\n", ref->pointer, ref->cnt);
+	g_free(ptr);		
+}
+
 
 #ifdef WIN32
 /* -------------------------------------------------------------------------

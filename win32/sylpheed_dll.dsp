@@ -256,10 +256,6 @@ SOURCE=..\src\exportldif.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\gtk\filesel.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\src\filtering.c
 # End Source File
 # Begin Source File
@@ -273,6 +269,10 @@ SOURCE=..\src\folder_item_prefs.c
 # Begin Source File
 
 SOURCE=..\src\foldersel.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\gtk\foldersort.c
 # End Source File
 # Begin Source File
 
@@ -324,6 +324,10 @@ SOURCE=..\src\imap.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\imap_gtk.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\import.c
 # End Source File
 # Begin Source File
@@ -344,7 +348,7 @@ SOURCE=..\src\inc.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\inputdialog.c
+SOURCE=..\src\gtk\inputdialog.c
 # End Source File
 # Begin Source File
 
@@ -440,6 +444,10 @@ SOURCE=..\src\mh.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\mh_gtk.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\mimeview.c
 # End Source File
 # Begin Source File
@@ -456,6 +464,10 @@ SOURCE=..\src\news.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\news_gtk.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\common\nntp.c
 # End Source File
 # Begin Source File
@@ -464,15 +476,11 @@ SOURCE=..\src\noticeview.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\common\partial_download.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\common\passcrypt.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\passphrase.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\pgpmime.c
 # End Source File
 # Begin Source File
 
@@ -544,6 +552,10 @@ SOURCE=..\src\prefs_matcher.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\prefs_msg_colors.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\prefs_spelling.c
 # End Source File
 # Begin Source File
@@ -561,6 +573,10 @@ SOURCE=..\src\prefs_themes.c
 # Begin Source File
 
 SOURCE=..\src\prefs_toolbar.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\prefs_wrapping.c
 # End Source File
 # Begin Source File
 
@@ -592,6 +608,10 @@ SOURCE=..\src\common\progressindicator.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\gtk\quicksearch.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\quote_fmt.c
 # End Source File
 # Begin Source File
@@ -616,23 +636,7 @@ SOURCE=..\src\remotefolder.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\rfc2015.c
-# End Source File
-# Begin Source File
-
-SOURCE="..\src\select-keys.c"
-# End Source File
-# Begin Source File
-
 SOURCE=..\src\send_message.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\common\session.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\sgpgme.c
 # End Source File
 # Begin Source File
 
@@ -708,11 +712,11 @@ SOURCE=..\src\common\sylpheed.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sylpheed.def
+SOURCE=.\sylpheed.rc
 # End Source File
 # Begin Source File
 
-SOURCE=.\sylpheed.rc
+SOURCE=.\sylpheed.def
 # End Source File
 # Begin Source File
 
@@ -752,7 +756,19 @@ SOURCE=..\src\w32_aspell_init.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\common\w32_session.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\gtk\w32_filesel.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\w32_mailcap.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\wizard.c
 # End Source File
 # Begin Source File
 
@@ -928,6 +944,10 @@ SOURCE=..\src\foldersel.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\gtk\foldersort.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\folderutils.h
 # End Source File
 # Begin Source File
@@ -976,6 +996,10 @@ SOURCE=..\src\imap.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\imap_gtk.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\import.h
 # End Source File
 # Begin Source File
@@ -988,7 +1012,7 @@ SOURCE=..\src\inc.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\inputdialog.h
+SOURCE=..\src\gtk\inputdialog.h
 # End Source File
 # Begin Source File
 
@@ -1080,6 +1104,10 @@ SOURCE=..\src\mh.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\mh_gtk.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\mimeview.h
 # End Source File
 # Begin Source File
@@ -1092,6 +1120,10 @@ SOURCE=..\src\news.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\news_gtk.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\common\nntp.h
 # End Source File
 # Begin Source File
@@ -1100,15 +1132,11 @@ SOURCE=..\src\noticeview.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\common\partial_download.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\common\passcrypt.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\passphrase.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\pgpmime.h
 # End Source File
 # Begin Source File
 
@@ -1164,6 +1192,10 @@ SOURCE=..\src\prefs_gtk.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\prefs_msg_colors.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\prefs_spelling.h
 # End Source File
 # Begin Source File
@@ -1181,6 +1213,10 @@ SOURCE=..\src\prefs_themes.h
 # Begin Source File
 
 SOURCE=..\src\prefs_toolbar.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\prefs_wrapping.h
 # End Source File
 # Begin Source File
 
@@ -1212,6 +1248,10 @@ SOURCE=..\src\common\progressindicator.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\gtk\quicksearch.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\quote_fmt.h
 # End Source File
 # Begin Source File
@@ -1236,14 +1276,6 @@ SOURCE=..\src\remotefolder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\rfc2015.h
-# End Source File
-# Begin Source File
-
-SOURCE="..\src\select-keys.h"
-# End Source File
-# Begin Source File
-
 SOURCE=..\src\send_message.h
 # End Source File
 # Begin Source File
@@ -1253,10 +1285,6 @@ SOURCE=..\src\common\session.h
 # Begin Source File
 
 SOURCE=..\src\setup.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\sgpgme.h
 # End Source File
 # Begin Source File
 
@@ -1364,7 +1392,19 @@ SOURCE=..\src\w32_aspell_init.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\gtk\w32_filesel.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\w32_mailcap.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\common\w32_session.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\wizard.h
 # End Source File
 # Begin Source File
 
@@ -1402,6 +1442,10 @@ SOURCE="..\..\..\lib\gtk-win32-2.0.lib"
 # Begin Source File
 
 SOURCE="..\..\..\lib\gdk-win32-2.0.lib"
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\..\lib\gdk_pixbuf-2.0.lib"
 # End Source File
 # Begin Source File
 

@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2003 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2004 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -72,6 +72,7 @@ typedef enum
 	C_KOI8_U,
 	C_ISO_2022_JP,
 	C_ISO_2022_JP_2,
+	C_ISO_2022_JP_3,
 	C_EUC_JP,
 	C_SHIFT_JIS,
 	C_ISO_2022_KR,
@@ -141,6 +142,7 @@ struct _CodeConverter
 #define CS_KOI8_U		"KOI8-U"
 #define CS_ISO_2022_JP		"ISO-2022-JP"
 #define CS_ISO_2022_JP_2	"ISO-2022-JP-2"
+#define CS_ISO_2022_JP_3	"ISO-2022-JP-3"
 #define CS_EUC_JP		"EUC-JP"
 #define CS_EUCJP		"EUCJP"
 #define CS_SHIFT_JIS		"Shift_JIS"
@@ -199,11 +201,9 @@ gchar *conv_codeset_strdup		(const gchar	*inbuf,
 CodeConvFunc conv_get_code_conv_func	(const gchar	*src_charset_str,
 					 const gchar	*dest_charset_str);
 
-#if HAVE_ICONV
 gchar *conv_iconv_strdup		(const gchar	*inbuf,
 					 const gchar	*src_code,
 					 const gchar	*dest_code);
-#endif
 
 const gchar *conv_get_charset_str		(CharSet	 charset);
 CharSet conv_get_charset_from_str		(const gchar	*charset);

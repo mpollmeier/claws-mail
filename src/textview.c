@@ -51,8 +51,7 @@
 #include "account.h"
 #include "mimeview.h"
 #include "alertpanel.h"
-
-typedef struct _RemoteURI	RemoteURI;
+#include "menu.h"
 
 struct _RemoteURI
 {
@@ -98,26 +97,21 @@ static GdkColor error_color = {
 };
 #endif
 
-static GdkColor good_sig_color = {
-	(gulong)0,
-	(gushort)0,
-	(gushort)0xbfff,
-	(gushort)0
-};
 
-static GdkColor nocheck_sig_color = {
-	(gulong)0,
-	(gushort)0,
-	(gushort)0,
-	(gushort)0xcfff
-};
+static GdkCursor *hand_cursor = NULL;
+static GdkCursor *text_cursor = NULL;
 
-static GdkColor bad_sig_color = {
-	(gulong)0,
-	(gushort)0xefff,
-	(gushort)0,
-	(gushort)0
-};
+#define TEXTVIEW_STATUSBAR_PUSH(textview, str)					    \
+{									    \
+	gtk_statusbar_push(GTK_STATUSBAR(textview->messageview->statusbar), \
+			   textview->messageview->statusbar_cid, str);	    \
+}
+
+#define TEXTVIEW_STATUSBAR_POP(textview)						   \
+{									   \
+	gtk_statusbar_pop(GTK_STATUSBAR(textview->messageview->statusbar), \
+			  textview->messageview->statusbar_cid);	   \
+}
 
 static void textview_show_ertf		(TextView	*textview,
 					 FILE		*fp,
@@ -127,8 +121,7 @@ static void textview_add_part		(TextView	*textview,
 static void textview_add_parts		(TextView	*textview,
 					 MimeInfo	*mimeinfo);
 static void textview_write_body		(TextView	*textview,
-					 MimeInfo	*mimeinfo,
-					 const gchar	*charset);
+					 MimeInfo	*mimeinfo);
 static void textview_show_html		(TextView	*textview,
 					 FILE		*fp,
 					 CodeConverter	*conv);
@@ -146,12 +139,40 @@ static GPtrArray *textview_scan_header	(TextView	*textview,
 static void textview_show_header	(TextView	*textview,
 					 GPtrArray	*headers);
 
-static gint textview_key_pressed	(GtkWidget	*widget,
-					 GdkEventKey	*event,
-					 TextView	*textview);
-static gboolean textview_uri_button_pressed(GtkTextTag *tag, GObject *obj,
-					    GdkEvent *event, GtkTextIter *iter,
-					    TextView *textview);
+static gint textview_key_pressed		(GtkWidget	*widget,
+						 GdkEventKey	*event,
+						 TextView	*textview);
+static gboolean textview_motion_notify		(GtkWidget	*widget,
+						 GdkEventMotion	*motion,
+						 TextView	*textview);
+static gboolean textview_leave_notify		(GtkWidget	*widget,
+						 GdkEventCrossing *event,
+						 TextView	*textview);
+static gboolean textview_visibility_notify	(GtkWidget	*widget,
+						 GdkEventVisibility *event,
+						 TextView	*textview);
+static void textview_uri_update			(TextView	*textview,
+						 gint		x,
+						 gint		y);
+static gboolean textview_get_uri_range		(TextView	*textview,
+						 GtkTextIter	*iter,
+						 GtkTextTag	*tag,
+						 GtkTextIter	*start_iter,
+						 GtkTextIter	*end_iter);
+static RemoteURI *textview_get_uri_from_range	(TextView	*textview,
+						 GtkTextIter	*iter,
+						 GtkTextTag	*tag,
+						 GtkTextIter	*start_iter,
+						 GtkTextIter	*end_iter);
+static RemoteURI *textview_get_uri		(TextView	*textview,
+						 GtkTextIter	*iter,
+						 GtkTextTag	*tag);
+static gboolean textview_uri_button_pressed	(GtkTextTag 	*tag,
+						 GObject 	*obj,
+						 GdkEvent 	*event,
+						 GtkTextIter	*iter,
+						 TextView 	*textview);
+
 static void textview_smooth_scroll_do		(TextView	*textview,
 						 gfloat		 old_value,
 						 gfloat		 last_value,
@@ -165,12 +186,19 @@ static gboolean textview_uri_security_check	(TextView	*textview,
 						 RemoteURI	*uri);
 static void textview_uri_list_remove_all	(GSList		*uri_list);
 
+static void open_uri_cb				(TextView 	*textview,
+						 guint		 action,
+						 void		*data);
+static void copy_uri_cb				(TextView 	*textview,
+						 guint		 action,
+						 void		*data);
 
-static void populate_popup(GtkTextView *textview, GtkMenu *menu,
-			   gpointer *dummy)
+static GtkItemFactoryEntry textview_popup_entries[] = 
 {
-	gtk_menu_detach(menu);
-}
+	{N_("/_Open link"),		NULL, open_uri_cb, 0, NULL},
+	{N_("/_Copy link location"),	NULL, copy_uri_cb, 0, NULL},
+};
+
 
 TextView *textview_create(void)
 {
@@ -180,6 +208,9 @@ TextView *textview_create(void)
 	GtkWidget *text;
 	GtkTextBuffer *buffer;
 	GtkClipboard *clipboard;
+	GtkItemFactory *popupfactory;
+	GtkWidget *popupmenu;
+	gint n_entries;
 	PangoFontDescription *font_desc = NULL;
 
 	debug_print("Creating text view...\n");
@@ -194,13 +225,13 @@ TextView *textview_create(void)
 
 	/* create GtkSText widgets for single-byte and multi-byte character */
 	text = gtk_text_view_new();
+	gtk_widget_add_events(text, GDK_LEAVE_NOTIFY_MASK);
 	gtk_widget_show(text);
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(text), FALSE);
-	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text), GTK_WRAP_WORD);
+#ifndef WIN32 /* GTK-2.2 */
+	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text), GTK_WRAP_WORD_CHAR);
+#endif
 	gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(text), FALSE);
-	g_signal_connect(G_OBJECT(text), "populate-popup",
-		 G_CALLBACK(populate_popup), NULL);
-
 
 	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text));
 	clipboard = gtk_clipboard_get(GDK_SELECTION_PRIMARY);
@@ -220,8 +251,22 @@ TextView *textview_create(void)
 
 	gtk_container_add(GTK_CONTAINER(scrolledwin), text);
 
+	if (!hand_cursor)
+		hand_cursor = gdk_cursor_new(GDK_HAND2);
+	if (!text_cursor)
+		text_cursor = gdk_cursor_new(GDK_XTERM);
+
 	g_signal_connect(G_OBJECT(text), "key_press_event",
 			 G_CALLBACK(textview_key_pressed),
+			 textview);
+	g_signal_connect(G_OBJECT(text), "motion_notify_event",
+			 G_CALLBACK(textview_motion_notify),
+			 textview);
+	g_signal_connect(G_OBJECT(text), "leave_notify_event",
+			 G_CALLBACK(textview_leave_notify),
+			 textview);
+	g_signal_connect(G_OBJECT(text), "visibility_notify_event",
+			 G_CALLBACK(textview_visibility_notify),
 			 textview);
 
 	gtk_widget_show(scrolledwin);
@@ -231,6 +276,12 @@ TextView *textview_create(void)
 
 	gtk_widget_show(vbox);
 
+	n_entries = sizeof(textview_popup_entries) /
+		sizeof(textview_popup_entries[0]);
+	popupmenu = menu_create_items(textview_popup_entries, n_entries,
+				      "<UriPopupMenu>", &popupfactory,
+				      textview);
+
 	textview->vbox             = vbox;
 	textview->scrolledwin      = scrolledwin;
 	textview->text             = text;
@@ -238,7 +289,8 @@ TextView *textview_create(void)
 	textview->body_pos         = 0;
 	textview->show_all_headers = FALSE;
 	textview->last_buttonpress = GDK_NOTHING;
-	textview->show_url_msgid   = 0;
+	textview->popup_menu	   = popupmenu;
+	textview->popup_factory	   = popupfactory;
 
 	return textview;
 }
@@ -277,17 +329,9 @@ static void textview_create_tags(GtkTextView *text, TextView *textview)
  	tag = gtk_text_buffer_create_tag(buffer, "link",
 					 "foreground-gdk", &uri_color,
 					 NULL);
-#if USE_GPGME
-	gtk_text_buffer_create_tag(buffer, "good-signature",
-				   "foreground-gdk", &good_sig_color,
+	gtk_text_buffer_create_tag(buffer, "link-hover",
+				   "underline", PANGO_UNDERLINE_SINGLE,
 				   NULL);
-	gtk_text_buffer_create_tag(buffer, "bad-signature",
-				   "foreground-gdk", &bad_sig_color,
-				   NULL);
-	gtk_text_buffer_create_tag(buffer, "nocheck-signature",
-				   "foreground-gdk", &nocheck_sig_color,
-				   NULL);
-#endif /*USE_GPGME  */
 
        g_signal_connect(G_OBJECT(tag), "event",
                          G_CALLBACK(textview_uri_button_pressed), textview);
@@ -295,12 +339,7 @@ static void textview_create_tags(GtkTextView *text, TextView *textview)
 
 void textview_init(TextView *textview)
 {
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
-#if 0
 	gtkut_widget_disable_theme_engine(textview->text);
-#endif
 	textview_update_message_colors();
 	textview_set_all_headers(textview, FALSE);
 	textview_set_font(textview, NULL);
@@ -334,39 +373,14 @@ void textview_show_message(TextView *textview, MimeInfo *mimeinfo,
 			   const gchar *file)
 {
 	FILE *fp;
-	const gchar *charset = NULL;
 
 	if ((fp = fopen(file, "rb")) == NULL) {
 		FILE_OP_ERROR(file, "fopen");
 		return;
 	}
 
-	if (textview->messageview->forced_charset)
-		charset = textview->messageview->forced_charset;
-	else if (prefs_common.force_charset)
-		charset = prefs_common.force_charset;
-	else
-		charset = procmime_mimeinfo_get_parameter(mimeinfo, "charset");
-
-	textview_set_font(textview, charset);
 	textview_clear(textview);
 
-
-/*
-	if (fseek(fp, mimeinfo->offset, SEEK_SET) < 0) perror("fseek");
-	headers = textview_scan_header(textview, fp);
-	if (headers) {
-		GtkTextView *text = GTK_TEXT_VIEW(textview->text);
-		GtkTextBuffer *buffer = gtk_text_view_get_buffer(text);
-		GtkTextIter iter;
-
-		textview_show_header(textview, headers);
-		procheader_header_array_destroy(headers);
-
-		gtk_text_buffer_get_end_iter(buffer, &iter);
-		textview->body_pos = gtk_text_iter_get_offset(&iter);
-	}
-*/
 	textview_add_parts(textview, mimeinfo);
 
 	fclose(fp);
@@ -377,13 +391,12 @@ void textview_show_message(TextView *textview, MimeInfo *mimeinfo,
 void textview_show_part(TextView *textview, MimeInfo *mimeinfo, FILE *fp)
 {
 	GtkTextView *text;
-	const gchar *charset = NULL;
 
 	g_return_if_fail(mimeinfo != NULL);
 	g_return_if_fail(fp != NULL);
 
 	if ((mimeinfo->type == MIMETYPE_MULTIPART) ||
-	    ((mimeinfo->type == MIMETYPE_MESSAGE) && !g_strcasecmp(mimeinfo->subtype, "rfc822"))) {
+	    ((mimeinfo->type == MIMETYPE_MESSAGE) && !g_ascii_strcasecmp(mimeinfo->subtype, "rfc822"))) {
 		textview_clear(textview);
 		textview_add_parts(textview, mimeinfo);
 		return;
@@ -391,40 +404,13 @@ void textview_show_part(TextView *textview, MimeInfo *mimeinfo, FILE *fp)
 
 	if (fseek(fp, mimeinfo->offset, SEEK_SET) < 0)
 		perror("fseek");
-/*
-	headers = textview_scan_header(textview, fp);
-*/
-	if (textview->messageview->forced_charset)
-		charset = textview->messageview->forced_charset;
-	else if (prefs_common.force_charset)
-		charset = prefs_common.force_charset;
-	else
-		charset = procmime_mimeinfo_get_parameter(mimeinfo, "charset");
-
-	textview_set_font(textview, charset);
 
 	textview_clear(textview);
 
-/*
-	if (headers) {
-		GtkTextView *text = GTK_TEXT_VIEW(textview->text);
-		GtkTextBuffer *buffer = gtk_text_view_get_buffer(text);
-		GtkTextIter iter;
-
-		textview_show_header(textview, headers);
-		procheader_header_array_destroy(headers);
-
-		gtk_text_buffer_get_end_iter(buffer, &iter);
-		textview->body_pos = gtk_text_iter_get_offset(&iter);
-		if (!mimeinfo->main) {
-			gtk_text_buffer_insert(buffer, &iter, "\n", 1);
-		}
-	}
-*/
 	if (mimeinfo->type == MIMETYPE_MULTIPART)
 		textview_add_parts(textview, mimeinfo);
 	else
-		textview_write_body(textview, mimeinfo, charset);
+		textview_write_body(textview, mimeinfo);
 
 }
 
@@ -434,9 +420,9 @@ static void textview_add_part(TextView *textview, MimeInfo *mimeinfo)
 	GtkTextBuffer *buffer;
 	GtkTextIter iter;
 	gchar buf[BUFFSIZE];
-	const gchar *charset = NULL;
 	GPtrArray *headers = NULL;
 	const gchar *name;
+	gchar *content_type;
 	gint charcount;
 
 	g_return_if_fail(mimeinfo != NULL);
@@ -447,10 +433,10 @@ static void textview_add_part(TextView *textview, MimeInfo *mimeinfo)
 
 	if (mimeinfo->type == MIMETYPE_MULTIPART) return;
 
-	if ((mimeinfo->type == MIMETYPE_MESSAGE) && !g_strcasecmp(mimeinfo->subtype, "rfc822")) {
+	if ((mimeinfo->type == MIMETYPE_MESSAGE) && !g_ascii_strcasecmp(mimeinfo->subtype, "rfc822")) {
 		FILE *fp;
 
-		fp = fopen(mimeinfo->filename, "rb");
+		fp = fopen(mimeinfo->data.filename, "rb");
 		fseek(fp, mimeinfo->offset, SEEK_SET);
 		headers = textview_scan_header(textview, fp);
 		if (headers) {
@@ -464,54 +450,28 @@ static void textview_add_part(TextView *textview, MimeInfo *mimeinfo)
 	}
 
 	name = procmime_mimeinfo_get_parameter(mimeinfo, "filename");
+	content_type = procmime_get_content_type_str(mimeinfo->type,
+						     mimeinfo->subtype);
 	if (name == NULL)
 		name = procmime_mimeinfo_get_parameter(mimeinfo, "name");
 	if (name != NULL)
-		g_snprintf(buf, sizeof(buf), "\n[%s  %s/%s (%d bytes)]\n",
-			   name,
-			   procmime_get_type_str(mimeinfo->type),
-			   mimeinfo->subtype, mimeinfo->length);
+		g_snprintf(buf, sizeof(buf), "\n[%s  %s (%d bytes)]\n",
+			   name, content_type, mimeinfo->length);
 	else
-		g_snprintf(buf, sizeof(buf), "\n[%s/%s (%d bytes)]\n",
-			   procmime_get_type_str(mimeinfo->type),
-			   mimeinfo->subtype, mimeinfo->length);
+		g_snprintf(buf, sizeof(buf), "\n[%s (%d bytes)]\n",
+			   content_type, mimeinfo->length);
+
+	g_free(content_type);			   
 
 	if (mimeinfo->type != MIMETYPE_TEXT) {
 		gtk_text_buffer_insert(buffer, &iter, buf, -1);
 	} else if (mimeinfo->disposition != DISPOSITIONTYPE_ATTACHMENT) {
 		if (prefs_common.display_header && (charcount > 0))
 			gtk_text_buffer_insert(buffer, &iter, "\n", 1);
-		if (textview->messageview->forced_charset)
-			charset = textview->messageview->forced_charset;
-		else if (prefs_common.force_charset)
-			charset = prefs_common.force_charset;
-		else
-			charset = procmime_mimeinfo_get_parameter(mimeinfo, "charset");
 
-		textview_write_body(textview, mimeinfo, charset);
+		textview_write_body(textview, mimeinfo);
 	}
 }
-
-#if 0
-static gboolean add_parts_func(GNode *node, gpointer data)
-{
-	MimeInfo *mimeinfo = (MimeInfo *) node->data;
-	TextView *textview = (TextView *) data;
-
-	g_return_val_if_fail(mimeinfo != NULL, FALSE);
-
-	textview_add_part(textview, mimeinfo);
-
-	return FALSE;
-}
-
-static void textview_add_parts(TextView *textview, MimeInfo *mimeinfo)
-{
-	g_return_if_fail(mimeinfo != NULL);
-
-	g_node_traverse(mimeinfo->node, G_PRE_ORDER, G_TRAVERSE_ALL, -1, add_parts_func, textview);
-}
-#endif
 
 static void recursive_add_parts(TextView *textview, GNode *node)
 {
@@ -526,7 +486,7 @@ static void recursive_add_parts(TextView *textview, GNode *node)
             (mimeinfo->type != MIMETYPE_MESSAGE))
                 return;
         
-        if (strcasecmp(mimeinfo->subtype, "alternative") == 0) {
+        if (g_ascii_strcasecmp(mimeinfo->subtype, "alternative") == 0) {
                 GNode * prefered_body;
                 int prefered_score;
                 
@@ -538,8 +498,8 @@ static void recursive_add_parts(TextView *textview, GNode *node)
                 prefered_body = NULL;
                 prefered_score = 0;
                 
-                for(iter = g_node_first_child(node) ; iter != NULL ;
-                    iter = g_node_next_sibling(iter)) {
+                for (iter = g_node_first_child(node) ; iter != NULL ;
+                     iter = g_node_next_sibling(iter)) {
                         int score;
                         MimeInfo * submime;
                         
@@ -549,7 +509,7 @@ static void recursive_add_parts(TextView *textview, GNode *node)
                                 score = 2;
                         
                         if (submime->subtype != NULL) {
-                                if (strcasecmp(submime->subtype, "plain") == 0)
+                                if (g_ascii_strcasecmp(submime->subtype, "plain") == 0)
                                         score = 3;
                         }
                         
@@ -564,8 +524,8 @@ static void recursive_add_parts(TextView *textview, GNode *node)
                 }
         }
         else {
-                for(iter = g_node_first_child(node) ; iter != NULL ;
-                    iter = g_node_next_sibling(iter)) {
+                for (iter = g_node_first_child(node) ; iter != NULL ;
+                     iter = g_node_next_sibling(iter)) {
                         recursive_add_parts(textview, iter);
                 }
         }
@@ -629,23 +589,29 @@ void textview_show_mime_part(TextView *textview, MimeInfo *partinfo)
 
 #undef TEXT_INSERT
 
-static void textview_write_body(TextView *textview, MimeInfo *mimeinfo,
-				const gchar *charset)
+static void textview_write_body(TextView *textview, MimeInfo *mimeinfo)
 {
 	FILE *tmpfp;
 	gchar buf[BUFFSIZE];
 	CodeConverter *conv;
+	const gchar *charset;
+	
+	if (textview->messageview->forced_charset)
+		charset = textview->messageview->forced_charset;
+	else
+		charset = procmime_mimeinfo_get_parameter(mimeinfo, "charset");
+
+	textview_set_font(textview, charset);
 
 	conv = conv_code_converter_new(charset);
 
+	procmime_force_encoding(textview->messageview->forced_encoding);
+	
 	textview->is_in_signature = FALSE;
 
-	if(mimeinfo->encoding_type != ENC_BINARY && 
-	   mimeinfo->encoding_type != ENC_7BIT && 
-	   mimeinfo->encoding_type != ENC_8BIT)
-		procmime_decode_content(mimeinfo);
+	procmime_decode_content(mimeinfo);
 
-	if (!g_strcasecmp(mimeinfo->subtype, "html")) {
+	if (!g_ascii_strcasecmp(mimeinfo->subtype, "html")) {
 		gchar *filename;
 		
 		filename = procmime_get_tmp_file_name(mimeinfo);
@@ -656,7 +622,7 @@ static void textview_write_body(TextView *textview, MimeInfo *mimeinfo,
 			unlink(filename);
 		}
 		g_free(filename);
-	} else if (!g_strcasecmp(mimeinfo->subtype, "enriched")) {
+	} else if (!g_ascii_strcasecmp(mimeinfo->subtype, "enriched")) {
 		gchar *filename;
 		
 		filename = procmime_get_tmp_file_name(mimeinfo);
@@ -668,7 +634,7 @@ static void textview_write_body(TextView *textview, MimeInfo *mimeinfo,
 		}
 		g_free(filename);
 	} else {
-		tmpfp = fopen(mimeinfo->filename, "rb");
+		tmpfp = fopen(mimeinfo->data.filename, "rb");
 		fseek(tmpfp, mimeinfo->offset, SEEK_SET);
 		debug_print("Viewing text content of type: %s (length: %d)\n", mimeinfo->subtype, mimeinfo->length);
 		while ((fgets(buf, sizeof(buf), tmpfp) != NULL) && 
@@ -678,6 +644,7 @@ static void textview_write_body(TextView *textview, MimeInfo *mimeinfo,
 	}
 
 	conv_code_converter_destroy(conv);
+	procmime_force_encoding(0);
 }
 
 static void textview_show_html(TextView *textview, FILE *fp,
@@ -697,7 +664,7 @@ static void textview_show_html(TextView *textview, FILE *fp,
 				 * if still inside an <a>, but already parsed past HREF */
 				str = strtok(str, " ");
 				if (str) { 
-					parser->href = strdup(str);
+					parser->href = g_strdup(str);
 					/* the URL may (or not) be followed by the
 					 * referenced text */
 					str = strtok(NULL, "");
@@ -744,7 +711,7 @@ static gboolean get_uri_part(const gchar *start, const gchar *scanpos,
 	/* find end point of URI */
 	for (ep_ = scanpos; *ep_ != '\0'; ep_++) {
 		if (!isgraph(*(const guchar *)ep_) ||
-		    !isascii(*(const guchar *)ep_) ||
+		    !IS_ASCII(*(const guchar *)ep_) ||
 		    strchr("()<>\"", *ep_))
 			break;
 	}
@@ -776,14 +743,14 @@ static gchar *make_uri_string(const gchar *bp, const gchar *ep)
 
 /* valid mail address characters */
 #define IS_RFC822_CHAR(ch) \
-	(isascii(ch) && \
+	(IS_ASCII(ch) && \
 	 (ch) > 32   && \
 	 (ch) != 127 && \
 	 !isspace(ch) && \
 	 !strchr("(),;<>\"", (ch)))
 
 /* alphabet and number within 7bit ASCII */
-#define IS_ASCII_ALNUM(ch)	(isascii(ch) && isalnum(ch))
+#define IS_ASCII_ALNUM(ch)	(IS_ASCII(ch) && isalnum(ch))
 #define IS_QUOTE(ch) ((ch) == '\'' || (ch) == '"')
 
 static GHashTable *create_domain_tab(void)
@@ -860,7 +827,7 @@ static gboolean get_email_part(const gchar *start, const gchar *scanpos,
 	const gchar *last_dot = NULL;
 	const gchar *prelast_dot = NULL;
 	const gchar *last_tld_char = NULL;
-
+	
 	/* the informative part of the email address (describing the name
 	 * of the email address owner) may contain quoted parts. the
 	 * closure stack stores the last encountered quotes. */
@@ -928,8 +895,30 @@ static gboolean get_email_part(const gchar *start, const gchar *scanpos,
 
 	if (!result) return FALSE;
 
+	if (*ep_ && *(bp_ - 1) == '"' && *(ep_) == '"' 
+	&& *(ep_ + 1) == ' ' && *(ep_ + 2) == '<'
+	&& IS_RFC822_CHAR(*(ep_ + 3))) {
+		/* this informative part with an @ in it is 
+		 * followed by the email address */
+		ep_ += 3;
+		
+		/* go to matching '>' (or next non-rfc822 char, like \n) */
+		for (; *ep_ != '>' && *ep != '\0' && IS_RFC822_CHAR(*ep_); ep_++)
+			;
+			
+		/* include the bracket */
+		if (*ep_ == '>') ep_++;
+		
+		/* include the leading quote */		
+		bp_--;
+
+		*ep = ep_;
+		*bp = bp_;
+		return TRUE;
+	}
+
 	/* skip if it's between quotes "'alfons@proteus.demon.nl'" <alfons@proteus.demon.nl> */
-	if (bp_ - 1 > start && IS_QUOTE(*(bp_ - 1)) && IS_QUOTE(*ep_)) 
+	if (bp_ - 1 > start && IS_QUOTE(*(bp_ - 1)) && IS_QUOTE(*ep_))
 		return FALSE;
 
 	/* see if this is <bracketed>; in this case we also scan for the informative part. */
@@ -996,7 +985,7 @@ static gboolean get_email_part(const gchar *start, const gchar *scanpos,
 
 	*ep = ep_;
 	*bp = bp_;
-
+	
 	return result;
 }
 
@@ -1013,6 +1002,19 @@ static gchar *make_email_string(const gchar *bp, const gchar *ep)
 
 	tmp = g_strndup(bp, ep - bp);
 	result = g_strconcat("mailto:", tmp, NULL);
+	g_free(tmp);
+
+	return result;
+}
+
+static gchar *make_http_string(const gchar *bp, const gchar *ep)
+{
+	/* returns an http: URI; */
+	gchar *tmp;
+	gchar *result;
+
+	tmp = g_strndup(bp, ep - bp);
+	result = g_strconcat("http://", tmp, NULL);
 	g_free(tmp);
 
 	return result;
@@ -1062,7 +1064,7 @@ static void textview_make_clickable_parts(TextView *textview,
 		{"http://",  strcasestr, get_uri_part,   make_uri_string},
 		{"https://", strcasestr, get_uri_part,   make_uri_string},
 		{"ftp://",   strcasestr, get_uri_part,   make_uri_string},
-		{"www.",     strcasestr, get_uri_part,   make_uri_string},
+		{"www.",     strcasestr, get_uri_part,   make_http_string},
 		{"mailto:",  strcasestr, get_uri_part,   make_uri_string},
 		{"@",        strcasestr, get_email_part, make_email_string}
 	};
@@ -1118,7 +1120,6 @@ static void textview_make_clickable_parts(TextView *textview,
 		for (last = head.next; last != NULL;
 		     normal_text = last->ep, last = last->next) {
 			RemoteURI *uri;
-
 			uri = g_new(RemoteURI, 1);
 			if (last->bp - normal_text > 0)
 				gtk_text_buffer_insert_with_tags_by_name
@@ -1166,25 +1167,11 @@ static void textview_write_line(TextView *textview, const gchar *str,
 	buffer = gtk_text_view_get_buffer(text);
 	gtk_text_buffer_get_end_iter(buffer, &iter);
 
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
-#if 0
 	if (!conv) {
-		if (textview->text_is_mb)
-			conv_localetodisp(buf, sizeof(buf), str);
-		else
-			strncpy2(buf, str, sizeof(buf));
-	} else if (conv_convert(conv, buf, sizeof(buf), str) < 0)
-		conv_localetodisp(buf, sizeof(buf), str);
-	else if (textview->text_is_mb)
-		conv_unreadable_locale(buf);
-#else
-	if (!conv)
 		strncpy2(buf, str, sizeof(buf));
-	else if (conv_convert(conv, buf, sizeof(buf), str) < 0)
+	} else if (conv_convert(conv, buf, sizeof(buf), str) < 0) {
 		conv_localetodisp(buf, sizeof(buf), str);
-#endif
+	}
 
 	strcrchomp(buf);
 	if (prefs_common.conv_mb_alnum) conv_mb_alnum(buf);
@@ -1290,8 +1277,9 @@ void textview_clear(TextView *textview)
 	GtkTextBuffer *buffer;
 
 	buffer = gtk_text_view_get_buffer(text);
-	gtk_text_buffer_set_text(buffer, "\0", -1);
+	gtk_text_buffer_set_text(buffer, "", -1);
 
+	TEXTVIEW_STATUSBAR_POP(textview);
 	textview_uri_list_remove_all(textview->uri_list);
 	textview->uri_list = NULL;
 
@@ -1374,6 +1362,7 @@ void textview_set_position(TextView *textview, gint pos)
 
 	gtk_text_buffer_get_iter_at_offset(buffer, &iter, pos);
 	gtk_text_buffer_place_cursor(buffer, &iter);
+	gtk_text_view_scroll_to_iter(text, &iter, 0.0, FALSE, 0.0, 0.0);
 }
 
 static GPtrArray *textview_scan_header(TextView *textview, FILE *fp)
@@ -1452,17 +1441,9 @@ static void textview_show_header(TextView *textview, GPtrArray *headers)
 			(buffer, &iter, header->name, -1,
 			 "header_title", "header", NULL);
 		if (header->name[strlen(header->name) - 1] != ' ')
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
-#if 0
-			gtk_stext_insert(text, textview->boldfont,
-					NULL, NULL, " ", 1);
-#else
-			gtk_text_buffer_insert_with_tags_by_name
+		gtk_text_buffer_insert_with_tags_by_name
 				(buffer, &iter, " ", 1,
 				 "header_title", "header", NULL);
-#endif
 
 		if (procheader_headername_equal(header->name, "Subject") ||
 		    procheader_headername_equal(header->name, "From")    ||
@@ -1503,37 +1484,11 @@ static void textview_show_header(TextView *textview, GPtrArray *headers)
 gboolean textview_search_string(TextView *textview, const gchar *str,
 				gboolean case_sens)
 {
-#ifndef _MSC_VER
-#warning FIXME_GTK2 /* currently, these search functions ignores case_sens */
-#endif
-#if 0
-	GtkSText *text = GTK_STEXT(textview->text);
-	gint pos;
-	gint len;
-
-	g_return_val_if_fail(str != NULL, FALSE);
-
-	len = get_mbs_len(str);
-	g_return_val_if_fail(len >= 0, FALSE);
-
-	pos = textview->cur_pos;
-	if (pos < textview->body_pos)
-		pos = textview->body_pos;
-
-	if ((pos = gtkut_stext_find(text, pos, str, case_sens)) != -1) {
-		gtk_editable_set_position(GTK_EDITABLE(text), pos + len);
-		gtk_editable_select_region(GTK_EDITABLE(text), pos, pos + len);
-		textview_set_position(textview, pos + len);
-		return TRUE;
-	}
-
-	return FALSE;
-#else
 	GtkTextView *text = GTK_TEXT_VIEW(textview->text);
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer(text);
 	GtkTextMark *mark;
-	GtkTextIter iter, start, end, *pos;
-	gboolean found;
+	GtkTextIter iter, start, end, real_end, *pos;
+	gboolean found = FALSE;
 	gint insert_offset, selbound_offset;
 
 	/* reset selection */
@@ -1550,69 +1505,51 @@ gboolean textview_search_string(TextView *textview, const gchar *str,
 	/* search */
 	mark = gtk_text_buffer_get_insert(buffer);
 	gtk_text_buffer_get_iter_at_mark(buffer, &iter, mark);
-	found = gtk_text_iter_forward_search(&iter, str,
+	if (case_sens) {
+		found = gtk_text_iter_forward_search(&iter, str,
 					     GTK_TEXT_SEARCH_VISIBLE_ONLY,
 					     &start, &end, NULL);
+	} else {
+		gchar *text = NULL;
+		int i = 0;
+		gtk_text_buffer_get_end_iter(buffer, &real_end);
+		text = gtk_text_buffer_get_text(buffer, &iter, 
+						&real_end, FALSE);
+		
+		while (!found && i++ < strlen(text) - 1) {
+			found = (strncasecmp(text+i, str, strlen(str)) == 0);
+		}
+		
+		i += gtk_text_iter_get_offset(&end);
+		
+		if (found) {
+			gtk_text_buffer_get_iter_at_offset(buffer, &start, i);
+			gtk_text_buffer_get_iter_at_offset(buffer, &end, 
+							   i + strlen(str));
+		}
+		
+		g_free(text);
+	}
+	
 	if (found) {
 		gtk_text_buffer_place_cursor(buffer, &start);
-		gtk_text_buffer_move_mark_by_name(buffer, "selection_bound", &end);
+		gtk_text_buffer_move_mark_by_name(buffer, "selection_bound", 
+						  &end);
 		mark = gtk_text_buffer_get_mark(buffer, "insert");
 		gtk_text_view_scroll_mark_onscreen(text, mark);
 	}
 
 	return found;
-#endif
 }
 
 gboolean textview_search_string_backward(TextView *textview, const gchar *str,
 					 gboolean case_sens)
 {
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
-#if 0
-	GtkSText *text = GTK_STEXT(textview->text);
-	gint pos;
-	wchar_t *wcs;
-	gint len;
-	gint text_len;
-	gboolean found = FALSE;
-
-	g_return_val_if_fail(str != NULL, FALSE);
-
-	wcs = strdup_mbstowcs(str);
-	g_return_val_if_fail(wcs != NULL, FALSE);
-	len = wcslen(wcs);
-	pos = textview->cur_pos;
-	text_len = gtk_stext_get_length(text);
-	if (text_len - textview->body_pos < len) {
-		g_free(wcs);
-		return FALSE;
-	}
-	if (pos <= textview->body_pos || text_len - pos < len)
-		pos = text_len - len;
-
-	for (; pos >= textview->body_pos; pos--) {
-		if (gtk_stext_match_string(text, pos, wcs, len, case_sens)
-		    == TRUE) {
-			gtk_editable_set_position(GTK_EDITABLE(text), pos);
-			gtk_editable_select_region(GTK_EDITABLE(text),
-						   pos, pos + len);
-			textview_set_position(textview, pos - 1);
-			found = TRUE;
-			break;
-		}
-		if (pos == textview->body_pos) break;
-	}
-
-	g_free(wcs);
-	return found;
-#else
 	GtkTextView *text = GTK_TEXT_VIEW(textview->text);
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer(text);
 	GtkTextMark *mark;
-	GtkTextIter iter, start, end, *pos;
-	gboolean found;
+	GtkTextIter iter, start, real_start, end, *pos;
+	gboolean found = FALSE;
 	gint insert_offset, selbound_offset;
 
 	/* reset selection */
@@ -1629,18 +1566,44 @@ gboolean textview_search_string_backward(TextView *textview, const gchar *str,
 	/* search */
 	mark = gtk_text_buffer_get_insert(buffer);
 	gtk_text_buffer_get_iter_at_mark(buffer, &iter, mark);
-	found = gtk_text_iter_backward_search(&iter, str,
+	if (case_sens) {
+		found = gtk_text_iter_backward_search(&iter, str,
 					      GTK_TEXT_SEARCH_VISIBLE_ONLY,
 					      &start, &end, NULL);
+	} else {
+		gchar *text = NULL;
+		int i = 0;
+		if (gtk_text_iter_get_offset(&iter) == 0) 
+			gtk_text_buffer_get_end_iter(buffer, &iter);
+		
+		i = gtk_text_iter_get_offset(&iter) - strlen(str) - 1;
+		gtk_text_buffer_get_start_iter(buffer, &real_start);
+		
+		text = gtk_text_buffer_get_text(buffer, &real_start, 
+					        &iter, FALSE);
+
+		while (!found && i-- > 0) {
+			found = (strncasecmp(text+i, str, strlen(str)) == 0);
+		}
+				
+		if (found) {
+			gtk_text_buffer_get_iter_at_offset(buffer, &start, i);
+			gtk_text_buffer_get_iter_at_offset(buffer, &end, 
+							   i + strlen(str));
+		}
+		
+		g_free(text);
+	}
+		
 	if (found) {
 		gtk_text_buffer_place_cursor(buffer, &end);
-		gtk_text_buffer_move_mark_by_name(buffer, "selection_bound", &start);
+		gtk_text_buffer_move_mark_by_name(buffer, "selection_bound", 
+						  &start);
 		mark = gtk_text_buffer_get_mark(buffer, "insert");
 		gtk_text_view_scroll_mark_onscreen(text, mark);
 	}
 
 	return found;
-#endif
 }
 
 void textview_scroll_one_line(TextView *textview, gboolean up)
@@ -1731,11 +1694,6 @@ static void textview_smooth_scroll_do(TextView *textview,
 		up = TRUE;
 	}
 
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
-	/* gdk_key_repeat_disable(); */
-
 	for (i = step; i <= change_value; i += step) {
 		vadj->value = old_value + (up ? -i : i);
 		g_signal_emit_by_name(G_OBJECT(vadj),
@@ -1744,11 +1702,6 @@ static void textview_smooth_scroll_do(TextView *textview,
 
 	vadj->value = last_value;
 	g_signal_emit_by_name(G_OBJECT(vadj), "value_changed", 0);
-
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
-	/* gdk_key_repeat_restore(); */
 }
 
 static void textview_smooth_scroll_one_line(TextView *textview, gboolean up)
@@ -1827,21 +1780,9 @@ static gboolean textview_smooth_scroll_page(TextView *textview, gboolean up)
 	return TRUE;
 }
 
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
-#if 0
-#define KEY_PRESS_EVENT_STOP() \
-	if (gtk_signal_n_emissions_by_name \
-		(GTK_OBJECT(widget), "key_press_event") > 0) { \
-		g_signal_stop_emission_by_name(G_OBJECT(widget), \
-					       "key_press_event"); \
-	}
-#else
 #define KEY_PRESS_EVENT_STOP() \
 	g_signal_stop_emission_by_name(G_OBJECT(widget), \
 				       "key_press_event");
-#endif
 
 static gint textview_key_pressed(GtkWidget *widget, GdkEventKey *event,
 				 TextView *textview)
@@ -1865,19 +1806,23 @@ static gint textview_key_pressed(GtkWidget *widget, GdkEventKey *event,
 	case GDK_End:
 	case GDK_Control_L:
 	case GDK_Control_R:
-		break;
+		return FALSE;
 	case GDK_space:
 		if (summaryview)
 			summary_pass_key_press_event(summaryview, event);
 		else
-			textview_scroll_page(textview, FALSE);
+			textview_scroll_page
+				(textview,
+				 (event->state &
+				  (GDK_SHIFT_MASK|GDK_MOD1_MASK)) != 0);
 		break;
 	case GDK_BackSpace:
 		textview_scroll_page(textview, TRUE);
 		break;
 	case GDK_Return:
-		textview_scroll_one_line(textview,
-					 (event->state & GDK_MOD1_MASK) != 0);
+		textview_scroll_one_line
+			(textview, (event->state &
+				    (GDK_SHIFT_MASK|GDK_MOD1_MASK)) != 0);
 		break;
 	case GDK_Delete:
 		if (summaryview)
@@ -1909,180 +1854,270 @@ static gint textview_key_pressed(GtkWidget *widget, GdkEventKey *event,
 	return TRUE;
 }
 
-static gint show_url_timeout_cb(gpointer data)
+static gboolean textview_motion_notify(GtkWidget *widget,
+				       GdkEventMotion *event,
+				       TextView *textview)
 {
-	TextView *textview = (TextView *)data;
-	
-	if (textview->messageview->mainwin)
-	  	if (textview->show_url_msgid)
-			gtk_statusbar_remove(GTK_STATUSBAR(
-				textview->messageview->mainwin->statusbar),
-				textview->messageview->mainwin->folderview_cid,
-				textview->show_url_msgid);
-		return FALSE;
+	textview_uri_update(textview, event->x, event->y);
+	gdk_window_get_pointer(widget->window, NULL, NULL, NULL);
+
+	return FALSE;
 }
 
-/*!
- *\brief    Check to see if a web URL has been disguised as a different
- *          URL (possible with HTML email).
- *
- *\param    uri The uri to check
- *
- *\param    textview The TextView the URL is contained in
- *
- *\return   gboolean TRUE if the URL is ok, or if the user chose to open
- *          it anyway, otherwise FALSE          
- */
-static gboolean uri_security_check(RemoteURI *uri, TextView *textview) 
+static gboolean textview_leave_notify(GtkWidget *widget,
+				      GdkEventCrossing *event,
+				      TextView *textview)
 {
-	gchar *clicked_str;
-	gboolean retval = TRUE;
+	textview_uri_update(textview, -1, -1);
 
-	if (g_strncasecmp(uri->uri, "http:", 5) &&
-	    g_strncasecmp(uri->uri, "https:", 6) &&
-	    g_strncasecmp(uri->uri, "www.", 4)) 
-		return retval;
+	return FALSE;
+}
 
-	clicked_str = gtk_editable_get_chars(GTK_EDITABLE(textview->text),
-					     uri->start,
-					     uri->end);
-	if (clicked_str == NULL)
-		return TRUE;
+static gboolean textview_visibility_notify(GtkWidget *widget,
+					   GdkEventVisibility *event,
+					   TextView *textview)
+{
+	gint wx, wy;
+	GdkWindow *window;
 
-	if (strcmp(clicked_str, uri->uri) &&
-	    (!g_strncasecmp(clicked_str, "http:",  5) ||
-	     !g_strncasecmp(clicked_str, "https:", 6) ||
-	     !g_strncasecmp(clicked_str, "www.",   4))) {
-		gchar *str;
-		retval = FALSE;
+	window = gtk_text_view_get_window(GTK_TEXT_VIEW(widget),
+					  GTK_TEXT_WINDOW_TEXT);
 
-		/* allow uri->uri    == http://somewhere.com
-		   and   clicked_str ==        somewhere.com */
-		str = g_strconcat("http://", clicked_str, NULL);
+	/* check if occurred for the text window part */
+	if (window != event->window)
+		return FALSE;
+	
+	gdk_window_get_pointer(widget->window, &wx, &wy, NULL);
+	textview_uri_update(textview, wx, wy);
 
-		if (!g_strcasecmp(str, uri->uri))
-			retval = TRUE;
-		g_free(str);
+	return FALSE;
+}
+
+static void textview_uri_update(TextView *textview, gint x, gint y)
+{
+	GtkTextBuffer *buffer;
+	GtkTextIter start_iter, end_iter;
+	RemoteURI *uri = NULL;
+	
+	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textview->text));
+
+	if (x != -1 && y != -1) {
+		gint bx, by;
+		GtkTextIter iter;
+		GSList *tags;
+		GSList *cur;
+	    
+		gtk_text_view_window_to_buffer_coords(GTK_TEXT_VIEW(textview->text), 
+						      GTK_TEXT_WINDOW_WIDGET,
+						      x, y, &bx, &by);
+		gtk_text_view_get_iter_at_location(GTK_TEXT_VIEW(textview->text),
+						   &iter, bx, by);
+
+		tags = gtk_text_iter_get_tags(&iter);
+		for (cur = tags; cur != NULL; cur = cur->next) {
+			GtkTextTag *tag = cur->data;
+			char *name;
+
+			g_object_get(G_OBJECT(tag), "name", &name, NULL);
+			if (!strcmp(name, "link")
+			    && textview_get_uri_range(textview, &iter, tag,
+						      &start_iter, &end_iter))
+				uri = textview_get_uri_from_range(textview,
+								  &iter, tag,
+								  &start_iter,
+								  &end_iter);
+			g_free(name);
+
+			if (uri)
+				break;
+		}
+		g_slist_free(tags);
+	}
+	
+	if (uri != textview->uri_hover) {
+		GdkWindow *window;
+
+		if (textview->uri_hover)
+			gtk_text_buffer_remove_tag_by_name(buffer,
+							   "link-hover",
+							   &textview->uri_hover_start_iter,
+							   &textview->uri_hover_end_iter);
+		    
+		textview->uri_hover = uri;
+		if (uri) {
+			textview->uri_hover_start_iter = start_iter;
+			textview->uri_hover_end_iter = end_iter;
+		}
+		
+		window = gtk_text_view_get_window(GTK_TEXT_VIEW(textview->text),
+						  GTK_TEXT_WINDOW_TEXT);
+		gdk_window_set_cursor(window, uri ? hand_cursor : text_cursor);
+
+		TEXTVIEW_STATUSBAR_POP(textview);
+
+		if (uri) {
+			char *trimmed_uri;
+
+			gtk_text_buffer_apply_tag_by_name(buffer,
+							  "link-hover",
+							  &start_iter,
+							  &end_iter);
+
+			trimmed_uri = trim_string(uri->uri, 60);
+			TEXTVIEW_STATUSBAR_PUSH(textview, trimmed_uri);
+			g_free(trimmed_uri);
+		}
+	}
+}
+
+static gboolean textview_get_uri_range(TextView *textview,
+				       GtkTextIter *iter,
+				       GtkTextTag *tag,
+				       GtkTextIter *start_iter,
+				       GtkTextIter *end_iter)
+{
+	GtkTextIter _start_iter, _end_iter;
+
+	_end_iter = *iter;
+	if (!gtk_text_iter_forward_to_tag_toggle(&_end_iter, tag)) {
+		debug_print("Can't find end");
+		return FALSE;
 	}
 
-	if (retval == FALSE) {
-		gchar *msg = NULL;
-		AlertValue resp;
+	_start_iter = _end_iter;
+	if (!gtk_text_iter_backward_to_tag_toggle(&_start_iter, tag)) {
+		debug_print("Can't find start.");
+		return FALSE;
+	}
 
-		msg = g_strdup_printf(_("The real URL (%s) is different from\n"
-					"the apparent URL (%s).  \n"
-					"Open it anyway?"),
-					uri->uri, clicked_str);
-		resp = alertpanel(_("Warning"), 
-				  msg,
-				  _("Yes"), 
-				  _("No"),
-				  NULL);
-		g_free(msg);
-		if (resp == G_ALERTDEFAULT)
-			retval = TRUE;
-	} 
-	g_free(clicked_str);
-	return retval;
+	*start_iter = _start_iter;
+	*end_iter = _end_iter;
+
+	return TRUE;
+}
+
+static RemoteURI *textview_get_uri_from_range(TextView *textview,
+					      GtkTextIter *iter,
+					      GtkTextTag *tag,
+					      GtkTextIter *start_iter,
+					      GtkTextIter *end_iter)
+{
+	gint start_pos, end_pos, cur_pos;
+	RemoteURI *uri = NULL;
+	GSList *cur;
+
+	start_pos = gtk_text_iter_get_offset(start_iter);
+	end_pos = gtk_text_iter_get_offset(end_iter);
+	cur_pos = gtk_text_iter_get_offset(iter);
+
+	for (cur = textview->uri_list; cur != NULL; cur = cur->next) {
+		RemoteURI *uri_ = (RemoteURI *)cur->data;
+		if (start_pos == uri_->start &&
+		    end_pos ==  uri_->end) {
+			uri = uri_;
+			break;
+		} else if (start_pos == uri_->start ||
+			   end_pos == uri_->end) {
+			/* in case of contiguous links, textview_get_uri_range
+			 * returns a broader range (start of 1st link to end
+			 * of last link).
+			 * In that case, correct link is the one covering
+			 * current iter.
+			 */
+			if (uri_->start <= cur_pos && cur_pos <= uri_->end) {
+				uri = uri_;
+				break;
+			}
+		} 
+	}
+
+	return uri;
+}
+
+static RemoteURI *textview_get_uri(TextView *textview,
+				   GtkTextIter *iter,
+				   GtkTextTag *tag)
+{
+	GtkTextIter start_iter, end_iter;
+	RemoteURI *uri = NULL;
+
+	if (textview_get_uri_range(textview, iter, tag, &start_iter,
+				   &end_iter))
+		uri = textview_get_uri_from_range(textview, iter, tag,
+						  &start_iter, &end_iter);
+
+	return uri;
 }
 
 static gboolean textview_uri_button_pressed(GtkTextTag *tag, GObject *obj,
 					    GdkEvent *event, GtkTextIter *iter,
 					    TextView *textview)
 {
-	GtkTextIter start_iter, end_iter;
-	gint start_pos, end_pos;
 	GdkEventButton *bevent;
+	RemoteURI *uri = NULL;
 	GSList *cur;
 	gchar *trimmed_uri;
+
+	if (!event)
+		return FALSE;
 
 	if (event->type != GDK_BUTTON_PRESS && event->type != GDK_2BUTTON_PRESS
 		&& event->type != GDK_MOTION_NOTIFY)
 		return FALSE;
 
+	uri = textview_get_uri(textview, iter, tag);
+	if (!uri)
+		return FALSE;
+
 	bevent = (GdkEventButton *) event;
+	
+	/* doubleclick: open compose / add address / browser */
+	if ((event->type == GDK_BUTTON_PRESS && bevent->button == 1) ||
+		bevent->button == 2 || bevent->button == 3) {
+		if (!g_ascii_strncasecmp(uri->uri, "mailto:", 7)) {
+			if (bevent->button == 3) {
+				gchar *fromname, *fromaddress;
+						
+				/* extract url */
+				fromaddress = g_strdup(uri->uri + 7);
+				/* Hiroyuki: please put this function in utils.c! */
+				fromname = procheader_get_fromname(fromaddress);
+				extract_address(fromaddress);
+				g_message("adding from textview %s <%s>", fromname, fromaddress);
+				/* Add to address book - Match */
+				addressbook_add_contact( fromname, fromaddress, NULL );
+						
+				g_free(fromaddress);
+				g_free(fromname);
+			} else {
+				PrefsAccount *account = NULL;
 
-	/* get start and end positions */
-        start_iter = *iter;
-        if(!gtk_text_iter_backward_to_tag_toggle(&start_iter, tag)) {
-		debug_print("Can't find start.");
-		return FALSE;
-	}
-	start_pos = gtk_text_iter_get_offset(&start_iter);
+				if (textview->messageview && textview->messageview->msginfo &&
+				    textview->messageview->msginfo->folder) {
+					FolderItem   *folder_item;
 
-	end_iter = *iter;
-	if(!gtk_text_iter_forward_to_tag_toggle(&end_iter, tag)) {
-		debug_print("Can't find end");
-		return FALSE;
-	}
-	end_pos = gtk_text_iter_get_offset(&end_iter);
-
-	/* search current uri */
-	for (cur = textview->uri_list; cur != NULL; cur = cur->next) {
-		RemoteURI *uri = (RemoteURI *)cur->data;
-
-		if (start_pos != uri->start || end_pos !=  uri->end)
-			continue;
-
-		trimmed_uri = trim_string(uri->uri, 60);
-		/* hover or single click: display url in statusbar */
-		if (event->type == GDK_MOTION_NOTIFY
-		    || (event->type == GDK_BUTTON_PRESS && bevent->button == 1)) {
-			if (textview->messageview->mainwin) {
-				if (textview->show_url_msgid) {
-				  	gtk_timeout_remove(textview->show_url_timeout_tag);
-					gtk_statusbar_remove(GTK_STATUSBAR(
-						textview->messageview->mainwin->statusbar),
-						textview->messageview->mainwin->folderview_cid,
-						textview->show_url_msgid);
-					textview->show_url_msgid = 0;
+					folder_item = textview->messageview->msginfo->folder;
+					if (folder_item->prefs && folder_item->prefs->enable_default_account)
+						account = account_find_from_id(folder_item->prefs->default_account);
 				}
-				textview->show_url_msgid = gtk_statusbar_push(
-						GTK_STATUSBAR(textview->messageview->mainwin->statusbar),
-						textview->messageview->mainwin->folderview_cid,
-						trimmed_uri);
-				textview->show_url_timeout_tag = gtk_timeout_add( 4000, show_url_timeout_cb, textview );
-				gtkut_widget_wait_for_draw(textview->messageview->mainwin->hbox_stat);
+				compose_new(account, uri->uri + 7, NULL);
+			}
+			return TRUE;
+		} else {
+			if (bevent->button == 1 &&
+			    textview_uri_security_check(textview, uri) == TRUE) 
+					open_uri(uri->uri,
+						 prefs_common.uri_cmd);
+			else if (bevent->button == 3) {
+				g_object_set_data(
+					G_OBJECT(textview->popup_menu),
+					"menu_button", uri);
+				gtk_menu_popup(GTK_MENU(textview->popup_menu), 
+					       NULL, NULL, NULL, NULL, 
+					       bevent->button, bevent->time);
 			}
 			return TRUE;
 		}
-		/* doubleclick: open compose / add address / browser */
-		if ((event->type == GDK_2BUTTON_PRESS && bevent->button == 1) ||
-			bevent->button == 2 || bevent->button == 3) {
-			if (!g_strncasecmp(uri->uri, "mailto:", 7))
-				if (bevent->button == 3) {
-					gchar *fromname, *fromaddress;
-						
-					/* extract url */
-					fromaddress = g_strdup(uri->uri + 7);
-					/* Hiroyuki: please put this function in utils.c! */
-					fromname = procheader_get_fromname(fromaddress);
-					extract_address(fromaddress);
-					g_message("adding from textview %s <%s>", fromname, fromaddress);
-					/* Add to address book - Match */
-					addressbook_add_contact( fromname, fromaddress, NULL );
-						
-					g_free(fromaddress);
-					g_free(fromname);
-				} else {
-					PrefsAccount *account = NULL;
-					FolderItem   *folder_item;
-
-					if (textview->messageview && textview->messageview->mainwin 
-					&&  textview->messageview->mainwin->summaryview 
-					&&  textview->messageview->mainwin->summaryview->folder_item) {
-						folder_item = textview->messageview->mainwin->summaryview->folder_item;
-						if (folder_item->prefs && folder_item->prefs->enable_default_account)
-							account = account_find_from_id(folder_item->prefs->default_account);
-					}
-					compose_new(account, uri->uri + 7, NULL);
-				}
-			else
-				if (uri_security_check(uri, textview) == TRUE)
-					open_uri(uri->uri, prefs_common.uri_cmd);
-			return TRUE;
-		}
-		g_free(trimmed_uri);
 	}
 
 	return FALSE;
@@ -2103,12 +2138,19 @@ static gboolean textview_uri_security_check(TextView *textview, RemoteURI *uri)
 {
 	gchar *visible_str;
 	gboolean retval = TRUE;
+	GtkTextBuffer *buffer;
+	GtkTextIter start, end;
 
 	if (is_uri_string(uri->uri) == FALSE)
 		return TRUE;
 
-	visible_str = gtk_editable_get_chars(GTK_EDITABLE(textview->text),
-					     uri->start, uri->end);
+	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textview->text));
+
+	gtk_text_buffer_get_iter_at_offset(buffer, &start, uri->start);
+	gtk_text_buffer_get_iter_at_offset(buffer, &end,   uri->end);
+
+	visible_str = gtk_text_buffer_get_text(buffer, &start, &end, FALSE);
+
 	if (visible_str == NULL)
 		return TRUE;
 
@@ -2130,7 +2172,8 @@ static gboolean textview_uri_security_check(TextView *textview, RemoteURI *uri)
 					"the apparent URL (%s).\n"
 					"Open it anyway?"),
 				      uri->uri, visible_str);
-		aval = alertpanel(_("Warning"), msg, _("Yes"), _("No"), NULL);
+		aval = alertpanel_with_type(_("Warning"), msg, _("Yes"), _("No"), NULL,
+					    NULL, ALERT_WARNING);
 		g_free(msg);
 		if (aval == G_ALERTDEFAULT)
 			retval = TRUE;
@@ -2153,4 +2196,30 @@ static void textview_uri_list_remove_all(GSList *uri_list)
 	}
 
 	g_slist_free(uri_list);
+}
+
+static void open_uri_cb (TextView *textview, guint action, void *data)
+{
+	RemoteURI *uri = g_object_get_data(G_OBJECT(textview->popup_menu),
+					   "menu_button");
+	if (uri == NULL)
+		return;
+
+	if (textview_uri_security_check(textview, uri) == TRUE) 
+		open_uri(uri->uri,
+			 prefs_common.uri_cmd);
+	g_object_set_data(G_OBJECT(textview->popup_menu), "menu_button",
+			  NULL);
+}
+
+static void copy_uri_cb	(TextView *textview, guint action, void *data)
+{
+	RemoteURI *uri = g_object_get_data(G_OBJECT(textview->popup_menu),
+					   "menu_button");
+	if (uri == NULL)
+		return;
+
+	gtk_clipboard_set_text(gtk_clipboard_get(GDK_NONE), uri->uri, -1);
+	g_object_set_data(G_OBJECT(textview->popup_menu), "menu_button",
+			  NULL);
 }

@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2003 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2004 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,11 +57,11 @@
 #include "prefs_account.h"
 #include "gtkutils.h"
 #include "utils.h"
-#include "rfc2015.h"
 #include "send_message.h"
 #include "stock_pixmap.h"
 #include "hooks.h"
 #include "filtering.h"
+#include "partial_download.h"
 
 static GList *messageview_list = NULL;
 
@@ -76,6 +76,14 @@ static gboolean key_pressed		(GtkWidget	*widget,
 static void return_receipt_show		(NoticeView     *noticeview, 
 				         MsgInfo        *msginfo);	
 static void return_receipt_send_clicked (NoticeView	*noticeview, 
+                                         MsgInfo        *msginfo);
+static void partial_recv_show		(NoticeView     *noticeview, 
+				         MsgInfo        *msginfo);	
+static void partial_recv_dload_clicked 	(NoticeView	*noticeview, 
+                                         MsgInfo        *msginfo);
+static void partial_recv_del_clicked 	(NoticeView	*noticeview, 
+                                         MsgInfo        *msginfo);
+static void partial_recv_unmark_clicked (NoticeView	*noticeview, 
                                          MsgInfo        *msginfo);
 static void save_as_cb			(gpointer	 data,
 					 guint		 action,
@@ -97,6 +105,9 @@ static void search_cb			(gpointer	 data,
 					 GtkWidget	*widget);
 
 static void set_charset_cb		(gpointer	 data,
+					 guint		 action,
+					 GtkWidget	*widget);
+static void set_decode_cb		(gpointer	 data,
 					 guint		 action,
 					 GtkWidget	*widget);
 static void view_source_cb		(gpointer	 data,
@@ -196,6 +207,8 @@ static GtkItemFactoryEntry msgview_entries[] =
 	 CODESET_ACTION(C_ISO_8859_5)},
 	{N_("/_View/_Code set/Cyrillic (KOI8-_R)"),
 	 CODESET_ACTION(C_KOI8_R)},
+	{N_("/_View/_Code set/Cyrillic (KOI8-U)"),
+	 CODESET_ACTION(C_KOI8_U)},
 	{N_("/_View/_Code set/Cyrillic (Windows-1251)"),
 	 CODESET_ACTION(C_CP1251)},
 	CODESET_SEPARATOR,
@@ -235,9 +248,25 @@ static GtkItemFactoryEntry msgview_entries[] =
 #undef CODESET_SEPARATOR
 #undef CODESET_ACTION
 
+#define DECODE_SEPARATOR \
+	{N_("/_View/Decode/---"),		NULL, NULL, 0, "<Separator>"}
+#define DECODE_ACTION(action) \
+	 NULL, set_decode_cb, action, "/View/Decode/Auto detect"
+	{N_("/_View/Decode"),		NULL, NULL, 0, "<Branch>"},
+	{N_("/_View/Decode/_Auto detect"),
+	 NULL, set_decode_cb, 0, "<RadioItem>"},
+	{N_("/_View/Decode/---"),		NULL, NULL, 0, "<Separator>"},
+	{N_("/_View/Decode/_8bit"), 		DECODE_ACTION(ENC_8BIT)},
+	{N_("/_View/Decode/_Quoted printable"),	DECODE_ACTION(ENC_QUOTED_PRINTABLE)},
+	{N_("/_View/Decode/_Base64"), 		DECODE_ACTION(ENC_BASE64)},
+	{N_("/_View/Decode/_Uuencode"),		DECODE_ACTION(ENC_X_UUENCODE)},
+
+#undef DECODE_SEPARATOR
+#undef DECODE_ACTION
+
 	{N_("/_View/---"),		NULL, NULL, 0, "<Separator>"},
 	{N_("/_View/Mess_age source"),	NULL, view_source_cb, 0, NULL},
-	{N_("/_View/Show all _header"),	NULL, show_all_header_cb, 0, "<ToggleItem>"},
+	{N_("/_View/Show all _headers"),NULL, show_all_header_cb, 0, "<ToggleItem>"},
 
 	{N_("/_Message"),		NULL, NULL, 0, "<Branch>"},
 	{N_("/_Message/Compose _new message"),
@@ -319,19 +348,22 @@ MessageView *messageview_create(MainWindow *mainwin)
                            GTK_WIDGET_PTR(mimeview), TRUE, TRUE, 0);
 	gtk_widget_show(vbox);
 
-	messageview->vbox       = vbox;
-	messageview->new_window = FALSE;
-	messageview->window     = NULL;
-	messageview->headerview = headerview;
-	messageview->mimeview   = mimeview;
+	messageview->vbox        = vbox;
+	messageview->new_window  = FALSE;
+	messageview->window      = NULL;
+	messageview->headerview  = headerview;
+	messageview->mimeview    = mimeview;
 	messageview->noticeview = noticeview;
 	messageview->mainwin    = mainwin;
+
+	messageview->statusbar     = NULL;
+	messageview->statusbar_cid = 0;
+
 	messageview->msginfo_update_callback_id =
 		hooks_register_hook(MSGINFO_UPDATE_HOOKLIST, messageview_update_msg, (gpointer) messageview);
 
 	return messageview;
 }
-
 
 GList *messageview_get_msgview_list(void)
 {
@@ -354,22 +386,31 @@ void messageview_add_toolbar(MessageView *msgview, GtkWidget *window)
  	GtkWidget *handlebox;
 	GtkWidget *vbox;
 	GtkWidget *menubar;
-	GtkItemFactory *ifactory;
+	GtkWidget *statusbar;
 	guint n_menu_entries;
 
 	vbox = gtk_vbox_new(FALSE, 0);
 	gtk_widget_show(vbox);
 	gtk_container_add(GTK_CONTAINER(window), vbox);	
-	
+
 	n_menu_entries = sizeof(msgview_entries) / sizeof(msgview_entries[0]);
 	menubar = menubar_create(window, msgview_entries,
 				 n_menu_entries, "<MessageView>", msgview);
+	gtk_widget_show(menubar);
 	gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
 
 	handlebox = gtk_handle_box_new();
 	gtk_box_pack_start(GTK_BOX(vbox), handlebox, FALSE, FALSE, 0);
 	msgview->toolbar = toolbar_create(TOOLBAR_MSGVIEW, handlebox,
 					  (gpointer)msgview);
+
+	statusbar = gtk_statusbar_new();
+	gtk_widget_show(statusbar);
+	gtk_box_pack_end(GTK_BOX(vbox), statusbar, FALSE, FALSE, 0);
+	msgview->statusbar = statusbar;
+	msgview->statusbar_cid = gtk_statusbar_get_context_id
+		(GTK_STATUSBAR(statusbar), "Message View");
+
 	msgview->handlebox = handlebox;
 	msgview->menubar   = menubar;
 
@@ -383,13 +424,12 @@ void messageview_add_toolbar(MessageView *msgview, GtkWidget *window)
 
 MessageView *messageview_create_with_new_window(MainWindow *mainwin)
 {
-	GtkWidget *window;
 	MessageView *msgview;
+	GtkWidget *window;
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title(GTK_WINDOW(window), _("Sylpheed - Message View"));
-	gtk_window_set_wmclass(GTK_WINDOW(window), "message_view", "Sylpheed");
-	gtk_window_set_policy(GTK_WINDOW(window), TRUE, TRUE, FALSE);
+	gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
 	gtk_widget_set_size_request(window, prefs_common.msgwin_width,
 				    prefs_common.msgwin_height);
 
@@ -500,8 +540,8 @@ static gint disposition_notification_send(MsgInfo *msginfo)
 				   "Return path: %s\n"
 				   "It is advised to not to send the return "
 				   "receipt."), to, buf);
-		val = alertpanel(_("Warning"), message, _("Send"),
-				_("+Don't Send"), NULL);
+		val = alertpanel_with_type(_("Warning"), message, _("Send"),
+				_("+Don't Send"), NULL, NULL, ALERT_WARNING);
 		g_free(message);				
 		if (val != G_ALERTDEFAULT)
 			return -1;
@@ -603,8 +643,8 @@ static gint disposition_notification_send(MsgInfo *msginfo)
 	fprintf(fp, "Subject: Disposition notification: %s\n", buf);
 
 	/* Message ID */
-	generate_msgid(account->address, buf, sizeof buf);
-	fprintf(fp, "Message-Id: <%s>\n", buf);
+	generate_msgid(buf, sizeof(buf));
+	fprintf(fp, "Message-ID: <%s>\n", buf);
 
 	if (fclose(fp) == EOF) {
 		FILE_OP_ERROR(tmp, "fclose");
@@ -702,11 +742,16 @@ gint messageview_show(MessageView *messageview, MsgInfo *msginfo,
 	textview_set_all_headers(messageview->mimeview->textview, all_headers);
 
 	mimeview_show_message(messageview->mimeview, mimeinfo, file);
+	messageview_set_position(messageview, 0);
 
-	if ((messageview->msginfo->dispositionnotificationto || 
+	if (messageview->msginfo->partial_recv)
+		partial_recv_show(messageview->noticeview, 
+				  messageview->msginfo);
+	else if ((messageview->msginfo->dispositionnotificationto || 
 	     messageview->msginfo->returnreceiptto) &&
 	    !MSG_IS_RETRCPT_SENT(messageview->msginfo->flags))
-		return_receipt_show(messageview->noticeview, messageview->msginfo);
+		return_receipt_show(messageview->noticeview, 
+				    messageview->msginfo);
 	else 
 		noticeview_hide(messageview->noticeview);
 
@@ -739,8 +784,6 @@ void messageview_clear(MessageView *messageview)
 
 void messageview_destroy(MessageView *messageview)
 {
-	GtkWidget *mimeview  = GTK_WIDGET_PTR(messageview->mimeview);
-
 	debug_print("destroy messageview\n");
 	messageview_list = g_list_remove(messageview_list, messageview);
 
@@ -765,35 +808,47 @@ void messageview_destroy(MessageView *messageview)
 
 void messageview_delete(MessageView *msgview)
 {
-	MsgInfo *msginfo = (MsgInfo *) msgview->msginfo;
+	MsgInfo *msginfo = NULL;
 	FolderItem *trash = NULL;
 	PrefsAccount *ac = NULL;
 
-	g_return_if_fail(msginfo != NULL);
+	if (msgview->msginfo && msgview->mainwin && msgview->mainwin->summaryview)
+		msginfo = summary_get_selected_msg(msgview->mainwin->summaryview);
+	
+	/* need a procmsg_msginfo_equal() */
+	if (msginfo && msgview->msginfo && 
+	    msginfo->msgnum == msgview->msginfo->msgnum && 
+	    msginfo->folder == msgview->msginfo->folder) {
+		summary_delete(msgview->mainwin->summaryview);
+	} else {		
+		msginfo = msgview->msginfo;
 
-	/* to get the trash folder, we have to choose either
-	 * the folder's or account's trash default - we prefer
-	 * the one in the account prefs */
-	if (msginfo->folder) {
-		if (NULL != (ac = account_find_from_item(msginfo->folder)))
-			trash = account_get_special_folder(ac, F_TRASH);
-		if (!trash && msginfo->folder->folder)	
-			trash = msginfo->folder->folder->trash;
-		/* if still not found, use the default */
-		if (!trash) 
-			trash =	folder_get_default_trash();
-	}	
+		g_return_if_fail(msginfo != NULL);
 
-	g_return_if_fail(trash   != NULL);
+		/* to get the trash folder, we have to choose either
+		 * the folder's or account's trash default - we prefer
+		 * the one in the account prefs */
+		if (msginfo->folder) {
+			if (NULL != (ac = account_find_from_item(msginfo->folder)))
+				trash = account_get_special_folder(ac, F_TRASH);
+			if (!trash && msginfo->folder->folder)	
+				trash = msginfo->folder->folder->trash;
+			/* if still not found, use the default */
+			if (!trash) 
+				trash =	folder_get_default_trash();
+		}	
 
-	if (prefs_common.immediate_exec)
-		/* TODO: Delete from trash */
-		folder_item_move_msg(trash, msginfo);
-	else {
-		procmsg_msginfo_set_to_folder(msginfo, trash);
-		procmsg_msginfo_set_flags(msginfo, MSG_DELETED, 0);
-		/* NOTE: does not update to next message in summaryview */
-	}
+		g_return_if_fail(trash != NULL);
+
+		if (prefs_common.immediate_exec)
+			/* TODO: Delete from trash */
+			folder_item_move_msg(trash, msginfo);
+		else {
+			procmsg_msginfo_set_to_folder(msginfo, trash);
+			procmsg_msginfo_set_flags(msginfo, MSG_DELETED, 0);
+			/* NOTE: does not update to next message in summaryview */
+		}
+	}		
 }
 
 /* 
@@ -891,6 +946,7 @@ gboolean messageview_search_string_backward(MessageView *messageview,
 	TextView *text;
 
 	text = messageview_get_current_textview(messageview);
+	if (text)	
 		return textview_search_string_backward(text,
 						       str, case_sens);
 	return FALSE;
@@ -905,7 +961,7 @@ void messageview_save_as(MessageView *messageview)
 {
 	gchar *filename = NULL;
 	MsgInfo *msginfo;
-	gchar *src, *dest;
+	gchar *src, *dest, *tmp;
 
 	if (!messageview->msginfo) return;
 	msginfo = messageview->msginfo;
@@ -914,7 +970,7 @@ void messageview_save_as(MessageView *messageview)
 		Xstrdup_a(filename, msginfo->subject, return);
 		subst_for_filename(filename);
 	}
-	dest = filesel_select_file(_("Save as"), filename);
+	dest = filesel_select_file_save(_("Save as"), filename);
 	if (!dest) return;
 	if (is_file_exist(dest)) {
 		AlertValue aval;
@@ -927,9 +983,11 @@ void messageview_save_as(MessageView *messageview)
 
 	src = procmsg_get_message_file(msginfo);
 	if (copy_file(src, dest, TRUE) < 0) {
-		alertpanel_error(_("Can't save the file `%s'."),
-				 g_basename(dest));
+		tmp =  g_path_get_basename(dest);
+		alertpanel_error(_("Can't save the file `%s'."), tmp);
+		g_free(tmp);
 	}
+	g_free(dest);
 	g_free(src);
 }
 
@@ -993,10 +1051,10 @@ void messageview_toggle_view_real(MessageView *messageview)
 
 static void return_receipt_show(NoticeView *noticeview, MsgInfo *msginfo)
 {
-	noticeview_set_text(noticeview, _("This message asks for a return receipt"));
+	noticeview_set_text(noticeview, _("This message asks for a return receipt."));
 	noticeview_set_button_text(noticeview, _("Send receipt"));
 	noticeview_set_button_press_callback(noticeview,
-					     GTK_SIGNAL_FUNC(return_receipt_send_clicked),
+					     G_CALLBACK(return_receipt_send_clicked),
 					     (gpointer) msginfo);
 	noticeview_show(noticeview);
 }
@@ -1025,9 +1083,97 @@ static void return_receipt_send_clicked(NoticeView *noticeview, MsgInfo *msginfo
 	g_free(file);
 }
 
+static void partial_recv_show(NoticeView *noticeview, MsgInfo *msginfo)
+{
+	gchar *text = NULL;
+	gchar *button1 = NULL;
+	gchar *button2 = NULL;
+	void  *button1_cb = NULL;
+	void  *button2_cb = NULL;
+
+	if (!partial_msg_in_uidl_list(msginfo)) {
+		text = g_strdup_printf(_("This message has been partially "
+				"retrieved,\nand has been deleted from the "
+				"server."));
+	} else {
+		switch (msginfo->planned_download) {
+		case POP3_PARTIAL_DLOAD_UNKN:
+			text = g_strdup_printf(_("This message has been "
+					"partially retrieved;\nit is %s."),
+					to_human_readable(
+						(off_t)(msginfo->total_size)));
+			button1 = _("Mark for download");
+			button2 = _("Mark for deletion");
+			button1_cb = partial_recv_dload_clicked;
+			button2_cb = partial_recv_del_clicked;
+			break;
+		case POP3_PARTIAL_DLOAD_DLOAD:
+			text = g_strdup_printf(_("This message has been "
+					"partially retrieved;\nit is %s and "
+					"will be downloaded."),
+					to_human_readable(
+						(off_t)(msginfo->total_size)));
+			button1 = _("Unmark");
+			button1_cb = partial_recv_unmark_clicked;
+			button2 = _("Mark for deletion");
+			button2_cb = partial_recv_del_clicked;
+			break;
+		case POP3_PARTIAL_DLOAD_DELE:
+			text = g_strdup_printf(_("This message has been "
+					"partially retrieved;\nit is %s and "
+					"will be deleted."),
+					to_human_readable(
+						(off_t)(msginfo->total_size)));
+			button1 = _("Mark for download");
+			button1_cb = partial_recv_dload_clicked;
+			button2 = _("Unmark");
+			button2_cb = partial_recv_unmark_clicked;
+			break;
+		default:
+			return;
+		}
+	}
+	
+	noticeview_set_text(noticeview, text);
+	g_free(text);
+	noticeview_set_button_text(noticeview, button1);
+	noticeview_set_button_press_callback(noticeview,
+		     G_CALLBACK(button1_cb), (gpointer) msginfo);
+
+	noticeview_set_2ndbutton_text(noticeview, button2);
+	noticeview_set_2ndbutton_press_callback(noticeview,
+		     G_CALLBACK(button2_cb), (gpointer) msginfo);
+
+	noticeview_show(noticeview);
+}
+
+static void partial_recv_dload_clicked(NoticeView *noticeview, 
+				       MsgInfo *msginfo)
+{
+	if (partial_mark_for_download(msginfo) == 0) {
+		partial_recv_show(noticeview, msginfo);
+	}
+}
+
+static void partial_recv_del_clicked(NoticeView *noticeview, 
+				       MsgInfo *msginfo)
+{
+	if (partial_mark_for_delete(msginfo) == 0) {
+		partial_recv_show(noticeview, msginfo);
+	}
+}
+
+static void partial_recv_unmark_clicked(NoticeView *noticeview, 
+				       MsgInfo *msginfo)
+{
+	if (partial_unmark(msginfo) == 0) {
+		partial_recv_show(noticeview, msginfo);
+	}
+}
+
 static void select_account_cb(GtkWidget *w, gpointer data)
 {
-	*(gint*)data = GPOINTER_TO_INT(gtk_object_get_user_data(GTK_OBJECT(w)));
+	*(gint*)data = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(w), MENU_VAL_ID));
 }
 	
 static PrefsAccount *select_account_from_list(GList *ac_list)
@@ -1040,7 +1186,9 @@ static PrefsAccount *select_account_from_list(GList *ac_list)
 	g_return_val_if_fail(ac_list->data != NULL, NULL);
 	
 	optmenu = gtk_option_menu_new();
-	menu = gtkut_account_menu_new(ac_list, select_account_cb, &account_id);
+	menu = gtkut_account_menu_new(ac_list, 
+			G_CALLBACK(select_account_cb), 
+			&account_id);
 	if (!menu)
 		return NULL;
 	gtk_option_menu_set_menu(GTK_OPTION_MENU(optmenu), menu);
@@ -1079,7 +1227,7 @@ gchar *messageview_get_selection(MessageView *msgview)
 	textview = messageview_get_current_textview(msgview);
 	g_return_val_if_fail(textview != NULL, NULL);
 
-	edit = GTK_EDITABLE(textview->text);
+	edit = GTK_TEXT_VIEW(textview->text);
 	g_return_val_if_fail(edit != NULL, NULL);
 	body_pos = textview->body_pos;
 
@@ -1162,9 +1310,24 @@ static void set_charset_cb(gpointer data, guint action, GtkWidget *widget)
 		charset = conv_get_charset_str((CharSet)action);
 		g_free(messageview->forced_charset);
 		messageview->forced_charset = g_strdup(charset);
+		procmime_force_charset(charset);
+		
 		messageview_show(messageview, messageview->msginfo, FALSE);
 	}
 }
+
+static void set_decode_cb(gpointer data, guint action, GtkWidget *widget)
+{
+	MessageView *messageview = (MessageView *)data;
+	if (GTK_CHECK_MENU_ITEM(widget)->active) {
+		messageview->forced_encoding = (EncodingType)action;
+
+		messageview_show(messageview, messageview->msginfo, FALSE);
+		
+		debug_print("forced encoding: %d\n", action);
+	}
+}
+
 
 static void view_source_cb(gpointer data, guint action, GtkWidget *widget)
 {
@@ -1188,6 +1351,7 @@ static void show_all_header_cb(gpointer data, guint action, GtkWidget *widget)
 	messageview_show(messageview, msginfo,
 			 GTK_CHECK_MENU_ITEM(widget)->active);
 	procmsg_msginfo_free(msginfo);
+	main_window_set_menu_sensitive(messageview->mainwin);
 }
 
 static void compose_cb(gpointer data, guint action, GtkWidget *widget)
@@ -1382,4 +1546,23 @@ static gboolean messageview_update_msg(gpointer source, gpointer data)
 	}
 
 	return FALSE;
+}
+
+void messageview_set_menu_sensitive(MessageView *messageview)
+{
+	GtkItemFactory *ifactory;
+	GtkWidget *menuitem;
+
+	if (!messageview || !messageview->new_window) 
+		return;
+	/* do some smart things */
+	if (!messageview->menubar) return;
+	ifactory = gtk_item_factory_from_widget(messageview->menubar);
+	if (!ifactory) return;
+	if (messageview->mainwin->type == SEPARATE_MESSAGE) {
+		menuitem = gtk_item_factory_get_widget(ifactory, "/View/Show all headers");
+		gtk_check_menu_item_set_active
+			(GTK_CHECK_MENU_ITEM(menuitem),
+			 messageview->mimeview->textview->show_all_headers);
+	}
 }

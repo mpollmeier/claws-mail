@@ -20,10 +20,17 @@
 #ifndef __FILESEL_H__
 #define __FILESEL_H__
 
+#ifdef WIN32
+#include "w32_filesel.h"
+#else
+
 #include <glib.h>
 
-gchar *filesel_select_file(const gchar *title, const gchar *file);
+gchar *filesel_select_file_open(const gchar *title, const gchar *path);
+gchar *filesel_select_file_save(const gchar *title, const gchar *path);
+gchar *filesel_select_file_open_folder(const gchar *title, const gchar *path);
 
-GList *filesel_select_multiple_files(const gchar *title, const gchar *file);
+GList *filesel_select_multiple_files_open(const gchar *title);
 
+#endif /* !WIN32 */
 #endif /* __FILESEL_H__ */

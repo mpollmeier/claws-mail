@@ -103,6 +103,14 @@ void gtkut_button_set_create		(GtkWidget	**bbox,
 					 const gchar	 *label2,
 					 GtkWidget	**button3,
 					 const gchar	 *label3);
+					 
+void gtkut_button_set_create_stock	(GtkWidget	**bbox,
+					 GtkWidget	**button1,
+					 const gchar	 *label1,
+					 GtkWidget	**button2,
+					 const gchar	 *label2,
+					 GtkWidget	**button3,
+					 const gchar	 *label3);
 
 ComboButton *gtkut_combo_button_create	(GtkWidget		*button,
 					 GtkItemFactoryEntry	*entries,
@@ -138,6 +146,7 @@ void gtkut_combo_set_items		(GtkCombo	*combo,
 					 const gchar	*str1, ...);
 
 gchar *gtkut_editable_get_selection	(GtkEditable	*editable);
+void gtkut_editable_disable_im		(GtkEditable	*editable);
 
 void gtkut_container_remove		(GtkContainer	*container,
 					 GtkWidget	*widget);
@@ -156,7 +165,7 @@ void gtkut_widget_set_app_icon		(GtkWidget	*widget);
 void gtkut_widget_set_composer_icon	(GtkWidget	*widget);
 
 GtkWidget *gtkut_account_menu_new	(GList			*ac_list,
-				  	 GtkSignalFunc	 	 callback,
+				  	 GCallback	 	 callback,
 					 gpointer		 data);
 
 void gtkut_set_widget_bgcolor_rgb	(GtkWidget 	*widget,
@@ -180,5 +189,5 @@ gboolean gtkut_text_buffer_is_uri_string(GtkTextBuffer	*text,
 					 guint		 start_pos,
 					 guint		 text_len);
 gchar *gtkut_text_view_get_selection	(GtkTextView	*textview);
-
+GtkWidget *gtkut_get_focused_child	(GtkContainer 	*parent);
 #endif /* __GTKUTILS_H__ */

@@ -98,7 +98,7 @@ static void prefs_spelling_btn_aspell_path_clicked_cb(GtkWidget *widget,
 	gchar *file_path;
 	GtkWidget *new_menu;
 
-	file_path = filesel_select_file(_("Select dictionaries location"),
+	file_path = filesel_select_file_open(_("Select dictionaries location"),
 					prefs_common.aspell_path);
 	if (file_path != NULL) {
 		gchar *tmp_path, *tmp;
@@ -106,7 +106,7 @@ static void prefs_spelling_btn_aspell_path_clicked_cb(GtkWidget *widget,
 #ifdef WIN32
 		subst_char(file_path, '/', G_DIR_SEPARATOR);
 #endif /* WIN32 */
-		tmp_path = g_dirname(file_path);
+		tmp_path = g_path_get_dirname(file_path);
 		tmp = g_strdup_printf("%s%s", tmp_path, G_DIR_SEPARATOR_S);
 		g_free(tmp_path);
 
@@ -278,14 +278,14 @@ void prefs_spelling_create_widget(PrefsPage *_page, GtkWindow *window, gpointer 
 	gtk_entry_set_text(GTK_ENTRY(entry_aspell_path), 
 			   SAFE_STRING(prefs_common.aspell_path));
 
-	gtk_signal_connect(GTK_OBJECT(checkbtn_enable_aspell), "toggled",
-			   GTK_SIGNAL_FUNC(prefs_spelling_checkbtn_enable_aspell_toggle_cb),
-			   prefs_spelling);
-	gtk_signal_connect(GTK_OBJECT(btn_aspell_path), "clicked", 
-			   GTK_SIGNAL_FUNC(prefs_spelling_btn_aspell_path_clicked_cb),
-			   prefs_spelling);
-	gtk_signal_connect(GTK_OBJECT(misspelled_btn), "clicked",
-			   GTK_SIGNAL_FUNC(prefs_spelling_colorsel), prefs_spelling);
+	g_signal_connect(G_OBJECT(checkbtn_enable_aspell), "toggled",
+			 G_CALLBACK(prefs_spelling_checkbtn_enable_aspell_toggle_cb),
+			 prefs_spelling);
+	g_signal_connect(G_OBJECT(btn_aspell_path), "clicked", 
+			 G_CALLBACK(prefs_spelling_btn_aspell_path_clicked_cb),
+			 prefs_spelling);
+	g_signal_connect(G_OBJECT(misspelled_btn), "clicked",
+			 G_CALLBACK(prefs_spelling_colorsel), prefs_spelling);
 
 	gtk_option_menu_set_menu(GTK_OPTION_MENU(optmenu_dictionary),
 				 gtkaspell_dictionary_option_menu_new(prefs_common.aspell_path));
@@ -365,15 +365,35 @@ SpellingPage *prefs_spelling;
 void prefs_spelling_init(void)
 {
 	SpellingPage *page;
+	static gchar *path[3];
+
+	path[0] = _("Compose");
+	path[1] = _("Spell Checker");
+	path[2] = NULL;
 
 	page = g_new0(SpellingPage, 1);
-	page->page.path = _("Compose/Spell Checker");
+	page->page.path = path;
 	page->page.create_widget = prefs_spelling_create_widget;
 	page->page.destroy_widget = prefs_spelling_destroy_widget;
 	page->page.save_page = prefs_spelling_save;
 	page->page.weight = 50.0;
+
 	prefs_gtk_register_page((PrefsPage *) page);
 	prefs_spelling = page;
+	
+	if (!prefs_common.dictionary)
+		prefs_common.dictionary = g_strdup_printf("%s%s",
+						prefs_common.aspell_path,
+						g_getenv("LANG"));
+	if (!strlen(prefs_common.dictionary)
+	||  !strcmp(prefs_common.dictionary,"(None"))
+		prefs_common.dictionary = g_strdup_printf("%s%s",
+						prefs_common.aspell_path,
+						g_getenv("LANG"));
+	if (strcasestr(prefs_common.dictionary,".utf"))
+		*(strcasestr(prefs_common.dictionary,".utf")) = '\0';
+	if (strstr(prefs_common.dictionary,"@"))
+		*(strstr(prefs_common.dictionary,"@")) = '\0';
 }
 
 void prefs_spelling_done(void)

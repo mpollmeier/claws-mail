@@ -18,25 +18,16 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include <config.h>
-#include <string.h>
-#include <libintl.h>
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+#include "intl.h"
 
+#include <string.h>
 #include "eggtrayicon.h"
 
 #include <gdk/gdkx.h>
 #include <X11/Xatom.h>
-
-#ifndef EGG_COMPILATION
-#ifndef _
-#define _(x) dgettext (GETTEXT_PACKAGE, x)
-#define N_(x) x
-#endif
-#else
-#define _(x) x
-#define N_(x) x
-#endif
-
 #define SYSTEM_TRAY_REQUEST_DOCK    0
 #define SYSTEM_TRAY_BEGIN_MESSAGE   1
 #define SYSTEM_TRAY_CANCEL_MESSAGE  2

@@ -292,8 +292,6 @@ gint send_message_smtp(PrefsAccount *ac_prefs, GSList *to_list, FILE *fp)
 	SMTPSession *smtp_session;
 	gushort port;
 	SendProgressDialog *dialog;
-	GtkCList *clist;
-	const gchar *text[3];
 	gchar buf[BUFFSIZE];
 	gint ret = 0;
 
@@ -311,8 +309,7 @@ gint send_message_smtp(PrefsAccount *ac_prefs, GSList *to_list, FILE *fp)
 
 	if (ac_prefs->use_smtp_auth) {
 		smtp_session->forced_auth_type = ac_prefs->smtp_auth_type;
-
-		if (ac_prefs->smtp_userid) {
+		if (ac_prefs->smtp_userid && strlen(ac_prefs->smtp_userid)) {
 			smtp_session->user = g_strdup(ac_prefs->smtp_userid);
 			if (ac_prefs->smtp_passwd)
 				smtp_session->pass =
@@ -372,11 +369,9 @@ gint send_message_smtp(PrefsAccount *ac_prefs, GSList *to_list, FILE *fp)
 	dialog = send_progress_dialog_create();
 	dialog->session = session;
 
-	text[0] = NULL;
-	text[1] = ac_prefs->smtp_server;
-	text[2] = _("Connecting");
-	clist = GTK_CLIST(dialog->dialog->clist);
-	gtk_clist_append(clist, (gchar **)text);
+	progress_dialog_list_set(dialog->dialog, 0, NULL, 
+				 ac_prefs->smtp_server, 
+				 _("Connecting"));
 
 	if (ac_prefs->pop_before_smtp
 	    && (ac_prefs->protocol == A_APOP || ac_prefs->protocol == A_POP3)
@@ -384,7 +379,7 @@ gint send_message_smtp(PrefsAccount *ac_prefs, GSList *to_list, FILE *fp)
 		g_snprintf(buf, sizeof(buf), _("Doing POP before SMTP..."));
 		log_message(buf);
 		progress_dialog_set_label(dialog->dialog, buf);
-		gtk_clist_set_text(clist, 0, 2, _("POP before SMTP"));
+		progress_dialog_list_set_status(dialog->dialog, 0, _("POP before SMTP"));
 		GTK_EVENTS_FLUSH();
 		inc_pop_before_smtp(ac_prefs);
 	}
@@ -418,6 +413,7 @@ gint send_message_smtp(PrefsAccount *ac_prefs, GSList *to_list, FILE *fp)
 		ret = -1;
 	} else if (session->state == SESSION_ERROR ||
 		   session->state == SESSION_EOF ||
+		   session->state == SESSION_TIMEOUT ||
 		   SMTP_SESSION(session)->state == SMTP_ERROR ||
 		   SMTP_SESSION(session)->error_val != SM_OK)
 		ret = -1;
@@ -490,7 +486,7 @@ static gint send_recv_message(Session *session, const gchar *msg, gpointer data)
 	}
 
 	progress_dialog_set_label(dialog->dialog, buf);
-	gtk_clist_set_text(GTK_CLIST(dialog->dialog->clist), 0, 2, state_str);
+	progress_dialog_list_set_status(dialog->dialog, 0, state_str);
 
 	return 0;
 }
@@ -510,7 +506,7 @@ static gint send_send_data_progressive(Session *session, guint cur_len,
 	g_snprintf(buf, sizeof(buf), _("Sending message (%d / %d bytes)"),
 		   cur_len, total_len);
 	progress_dialog_set_label(dialog->dialog, buf);
-	progress_dialog_set_percentage
+	progress_dialog_set_fraction
 		(dialog->dialog, (gfloat)cur_len / (gfloat)total_len);
 
 	return 0;
@@ -536,14 +532,14 @@ static SendProgressDialog *send_progress_dialog_create(void)
 	progress = progress_dialog_create();
 	gtk_window_set_title(GTK_WINDOW(progress->window),
 			     _("Sending message"));
-	gtk_signal_connect(GTK_OBJECT(progress->cancel_btn), "clicked",
-			   GTK_SIGNAL_FUNC(send_cancel_button_cb), dialog);
-	gtk_signal_connect(GTK_OBJECT(progress->window), "delete_event",
-			   GTK_SIGNAL_FUNC(gtk_true), NULL);
+	g_signal_connect(G_OBJECT(progress->cancel_btn), "clicked",
+			 G_CALLBACK(send_cancel_button_cb), dialog);
+	g_signal_connect(G_OBJECT(progress->window), "delete_event",
+			 G_CALLBACK(gtk_true), NULL);
 	gtk_window_set_modal(GTK_WINDOW(progress->window), TRUE);
 	manage_window_set_transient(GTK_WINDOW(progress->window));
 
-	progress_dialog_set_value(progress, 0.0);
+	progress_dialog_get_fraction(progress);
 
 	if (prefs_common.send_dialog_mode == SEND_DIALOG_ALWAYS) {
 		gtk_widget_show_now(progress->window);
@@ -598,13 +594,22 @@ static void send_put_error(Session *session)
 			err_msg = g_strdup(log_msg);
 		break;
 	default:
-		if (session->state == SESSION_ERROR) {
+		switch (session->state) {
+		case SESSION_ERROR:
 			log_msg =
 				_("Error occurred while sending the message.");
 			err_msg = g_strdup(log_msg);
-		} else if (session->state == SESSION_EOF) {
+			break;
+		case SESSION_EOF:
 			log_msg = _("Connection closed by the remote host.");
 			err_msg = g_strdup(log_msg);
+			break;
+		case SESSION_TIMEOUT:
+			log_msg = _("Session timed out.");
+			err_msg = g_strdup(log_msg);
+			break;
+		default:
+			break;
 		}
 		break;
 	}

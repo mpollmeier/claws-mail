@@ -105,7 +105,7 @@ static void export_ldif_message( void ) {
 	gchar *sMsg = NULL;
 	gint pageNum;
 
-	pageNum = gtk_notebook_current_page( GTK_NOTEBOOK(expldif_dlg.notebook) );
+	pageNum = gtk_notebook_get_current_page( GTK_NOTEBOOK(expldif_dlg.notebook) );
 	if( pageNum == PAGE_FILE_INFO ) {
 		sMsg = _( "Please specify output directory and LDIF filename to create." );
 	}
@@ -126,7 +126,7 @@ static void export_ldif_message( void ) {
 static void export_ldif_cancel( GtkWidget *widget, gpointer data ) {
 	gint pageNum;
 
-	pageNum = gtk_notebook_current_page( GTK_NOTEBOOK(expldif_dlg.notebook) );
+	pageNum = gtk_notebook_get_current_page( GTK_NOTEBOOK(expldif_dlg.notebook) );
 	if( pageNum != PAGE_FINISH ) {
 		expldif_dlg.cancelled = TRUE;
 	}
@@ -199,8 +199,8 @@ static gboolean exp_ldif_move_file( void ) {
 		msg = g_strdup_printf( _(
 			"Could not create output directory for LDIF file:\n%s" ),
 			reason );
-		aval = alertpanel( _( "Failed to Create Directory" ),
-			msg, _( "Close" ), NULL, NULL );
+		aval = alertpanel_with_type( _( "Failed to Create Directory" ),
+			msg, _( "Close" ), NULL, NULL, NULL, ALERT_ERROR );
 		g_free( msg );
 		return FALSE;
 	}
@@ -284,16 +284,16 @@ static void exp_ldif_finish_show( void ) {
 static void export_ldif_prev( GtkWidget *widget ) {
 	gint pageNum;
 
-	pageNum = gtk_notebook_current_page( GTK_NOTEBOOK(expldif_dlg.notebook) );
+	pageNum = gtk_notebook_get_current_page( GTK_NOTEBOOK(expldif_dlg.notebook) );
 	if( pageNum == PAGE_DN ) {
 		/* Goto file page stuff */
-		gtk_notebook_set_page(
+		gtk_notebook_set_current_page(
 			GTK_NOTEBOOK(expldif_dlg.notebook), PAGE_FILE_INFO );
 		gtk_widget_set_sensitive( expldif_dlg.btnPrev, FALSE );
 	}
 	else if( pageNum == PAGE_FINISH ) {
 		/* Goto format page */
-		gtk_notebook_set_page(
+		gtk_notebook_set_current_page(
 			GTK_NOTEBOOK(expldif_dlg.notebook), PAGE_DN );
 		gtk_widget_set_sensitive( expldif_dlg.btnNext, TRUE );
 	}
@@ -307,11 +307,11 @@ static void export_ldif_prev( GtkWidget *widget ) {
 static void export_ldif_next( GtkWidget *widget ) {
 	gint pageNum;
 
-	pageNum = gtk_notebook_current_page( GTK_NOTEBOOK(expldif_dlg.notebook) );
+	pageNum = gtk_notebook_get_current_page( GTK_NOTEBOOK(expldif_dlg.notebook) );
 	if( pageNum == PAGE_FILE_INFO ) {
 		/* Goto distinguished name page */
 		if( exp_ldif_move_file() ) {
-			gtk_notebook_set_page(
+			gtk_notebook_set_current_page(
 				GTK_NOTEBOOK(expldif_dlg.notebook), PAGE_DN );
 			gtk_widget_set_sensitive( expldif_dlg.btnPrev, TRUE );
 		}
@@ -320,7 +320,7 @@ static void export_ldif_next( GtkWidget *widget ) {
 	else if( pageNum == PAGE_DN ) {
 		/* Goto finish page */
 		if( exp_ldif_move_dn() ) {
-			gtk_notebook_set_page(
+			gtk_notebook_set_current_page(
 				GTK_NOTEBOOK(expldif_dlg.notebook), PAGE_FINISH );
 			exp_ldif_finish_show();
 			exportldif_save_settings( _exportCtl_ );
@@ -373,10 +373,12 @@ static void exp_ldif_file_select_create( AddressFileSelection *afs ) {
 	fileSelector = gtk_file_selection_new( _("Select LDIF Output File") );
 	gtk_file_selection_hide_fileop_buttons( GTK_FILE_SELECTION(fileSelector) );
 	gtk_file_selection_complete( GTK_FILE_SELECTION(fileSelector), "*.html" );
-	gtk_signal_connect( GTK_OBJECT (GTK_FILE_SELECTION(fileSelector)->ok_button),
-		"clicked", GTK_SIGNAL_FUNC (exp_ldif_file_ok), ( gpointer ) afs );
-	gtk_signal_connect( GTK_OBJECT (GTK_FILE_SELECTION(fileSelector)->cancel_button),
-		"clicked", GTK_SIGNAL_FUNC (exp_ldif_file_cancel), ( gpointer ) afs );
+	g_signal_connect(G_OBJECT(GTK_FILE_SELECTION(fileSelector)->ok_button),
+			 "clicked", 
+			 G_CALLBACK(exp_ldif_file_ok), (gpointer)afs);
+	g_signal_connect(G_OBJECT(GTK_FILE_SELECTION(fileSelector)->cancel_button),
+			 "clicked", 
+			 G_CALLBACK(exp_ldif_file_cancel), (gpointer)afs);
 	afs->fileSelector = fileSelector;
 	afs->cancelled = TRUE;
 }
@@ -460,8 +462,8 @@ static void export_ldif_page_file( gint pageNum, gchar *pageLbl ) {
 	gtk_widget_show_all(vbox);
 
 	/* Button handler */
-	gtk_signal_connect(GTK_OBJECT(btnFile), "clicked",
-			   GTK_SIGNAL_FUNC(exp_ldif_file_select), NULL);
+	g_signal_connect(G_OBJECT(btnFile), "clicked",
+			 G_CALLBACK(exp_ldif_file_select), NULL);
 
 	expldif_dlg.labelBook = labelBook;
 	expldif_dlg.entryLdif = entryLdif;
@@ -710,12 +712,12 @@ static void export_ldif_dialog_create( void ) {
 		_("Export Address Book to LDIF File") );
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	gtk_window_set_modal(GTK_WINDOW(window), TRUE);	
-	gtk_signal_connect(GTK_OBJECT(window), "delete_event",
-			   GTK_SIGNAL_FUNC(export_ldif_delete_event),
-			   NULL );
-	gtk_signal_connect(GTK_OBJECT(window), "key_press_event",
-			   GTK_SIGNAL_FUNC(export_ldif_key_pressed),
-			   NULL );
+	g_signal_connect(G_OBJECT(window), "delete_event",
+			 G_CALLBACK(export_ldif_delete_event),
+			 NULL );
+	g_signal_connect(G_OBJECT(window), "key_press_event",
+			 G_CALLBACK(export_ldif_key_pressed),
+			 NULL );
 
 	vbox = gtk_vbox_new(FALSE, 4);
 	gtk_widget_show(vbox);
@@ -749,12 +751,12 @@ static void export_ldif_dialog_create( void ) {
 	gtk_widget_grab_default(btnNext);
 
 	/* Button handlers */
-	gtk_signal_connect(GTK_OBJECT(btnPrev), "clicked",
-			   GTK_SIGNAL_FUNC(export_ldif_prev), NULL);
-	gtk_signal_connect(GTK_OBJECT(btnNext), "clicked",
-			   GTK_SIGNAL_FUNC(export_ldif_next), NULL);
-	gtk_signal_connect(GTK_OBJECT(btnCancel), "clicked",
-			   GTK_SIGNAL_FUNC(export_ldif_cancel), NULL);
+	g_signal_connect(G_OBJECT(btnPrev), "clicked",
+			 G_CALLBACK(export_ldif_prev), NULL);
+	g_signal_connect(G_OBJECT(btnNext), "clicked",
+			 G_CALLBACK(export_ldif_next), NULL);
+	g_signal_connect(G_OBJECT(btnCancel), "clicked",
+			 G_CALLBACK(export_ldif_cancel), NULL);
 
 	gtk_widget_show_all(vbox);
 
@@ -826,7 +828,7 @@ void addressbook_exp_ldif( AddressCache *cache ) {
 	export_ldif_fill_fields( _exportCtl_ );
 
 	gtk_widget_grab_default(expldif_dlg.btnNext);
-	gtk_notebook_set_page( GTK_NOTEBOOK(expldif_dlg.notebook), PAGE_FILE_INFO );
+	gtk_notebook_set_current_page( GTK_NOTEBOOK(expldif_dlg.notebook), PAGE_FILE_INFO );
 	gtk_widget_set_sensitive( expldif_dlg.btnPrev, FALSE );
 	gtk_widget_set_sensitive( expldif_dlg.btnNext, TRUE );
 

@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2003 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2004 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ static gint smtp_auth(SMTPSession *session);
 static gint smtp_starttls(SMTPSession *session);
 static gint smtp_auth_cram_md5(SMTPSession *session);
 static gint smtp_auth_login(SMTPSession *session);
+static gint smtp_auth_plain(SMTPSession *session);
 
 static gint smtp_ehlo(SMTPSession *session);
 static gint smtp_ehlo_recv(SMTPSession *session, const gchar *msg);
@@ -90,6 +91,8 @@ Session *smtp_session_new(void)
 	session->send_data                 = NULL;
 	session->send_data_len             = 0;
 
+	session->max_message_size          = -1;
+
 	session->avail_auth_type           = 0;
 	session->forced_auth_type          = 0;
 	session->auth_type                 = 0;
@@ -117,18 +120,29 @@ static void smtp_session_destroy(Session *session)
 static gint smtp_from(SMTPSession *session)
 {
 	gchar buf[MSGBUFSIZE];
+	gchar *mail_size = NULL;
 
 	g_return_val_if_fail(session->from != NULL, SM_ERROR);
 
 	session->state = SMTP_FROM;
+	
+	if (session->is_esmtp)
+		mail_size = g_strdup_printf(" SIZE=%d", session->send_data_len);
+	else
+		mail_size = g_strdup("");
+		
 
 	if (strchr(session->from, '<'))
-		g_snprintf(buf, sizeof(buf), "MAIL FROM: %s", session->from);
+		g_snprintf(buf, sizeof(buf), "MAIL FROM:%s%s", session->from,
+			   mail_size);
 	else
-		g_snprintf(buf, sizeof(buf), "MAIL FROM: <%s>", session->from);
+		g_snprintf(buf, sizeof(buf), "MAIL FROM:<%s>%s", session->from,
+			   mail_size);
+
+	g_free(mail_size);
 
 	session_send_msg(SESSION(session), SESSION_MSG_NORMAL, buf);
-	log_print("SMTP> %s\n", buf);
+	log_print("%sSMTP> %s\n", (session->is_esmtp?"E":""), buf);
 
 	return SM_OK;
 }
@@ -148,6 +162,10 @@ static gint smtp_auth(SMTPSession *session)
 		 (session->forced_auth_type == 0 &&
 		  (session->avail_auth_type & SMTPAUTH_LOGIN) != 0))
 		smtp_auth_login(session);
+	else if (session->forced_auth_type == SMTPAUTH_PLAIN ||
+		 (session->forced_auth_type == 0 &&
+		  (session->avail_auth_type & SMTPAUTH_PLAIN) != 0))
+		smtp_auth_plain(session);
 	else {
 		log_warning(_("SMTP AUTH not available\n"));
 		return SM_AUTHFAIL;
@@ -267,14 +285,20 @@ static gint smtp_ehlo_recv(SMTPSession *session, const gchar *msg)
 		const gchar *p = msg;
 		p += 3;
 		if (*p == '-' || *p == ' ') p++;
-		if (g_strncasecmp(p, "AUTH", 4) == 0) {
+		if (g_ascii_strncasecmp(p, "AUTH", 4) == 0) {
 			p += 5;
+			if (strcasestr(p, "PLAIN"))
+				session->avail_auth_type |= SMTPAUTH_PLAIN;
 			if (strcasestr(p, "LOGIN"))
 				session->avail_auth_type |= SMTPAUTH_LOGIN;
 			if (strcasestr(p, "CRAM-MD5"))
 				session->avail_auth_type |= SMTPAUTH_CRAM_MD5;
 			if (strcasestr(p, "DIGEST-MD5"))
 				session->avail_auth_type |= SMTPAUTH_DIGEST_MD5;
+		}
+		if (g_ascii_strncasecmp(p, "SIZE", 4) == 0) {
+			p += 5;
+			session->max_message_size = atoi(p);
 		}
 		return SM_OK;
 	} else if ((msg[0] == '1' || msg[0] == '2' || msg[0] == '3') &&
@@ -304,6 +328,58 @@ static gint smtp_auth_cram_md5(SMTPSession *session)
 
 	session_send_msg(SESSION(session), SESSION_MSG_NORMAL, "AUTH CRAM-MD5");
 	log_print("ESMTP> AUTH CRAM-MD5\n");
+
+	return SM_OK;
+}
+
+static gint smtp_auth_plain(SMTPSession *session)
+{
+	gchar buf[MSGBUFSIZE];
+
+	/* 
+ 	 * +1      +1      +1
+	 * \0<user>\0<pass>\0 
+	 */
+	int b64len = (1 + strlen(session->user) + 1 + strlen(session->pass) + 1);
+	gchar *b64buf = g_malloc(b64len);
+
+	/* use the char *ptr to walk the base64 string with embedded \0 */
+	char  *a = b64buf;
+	int  b64cnt = 0;
+
+	session->state = SMTP_AUTH_PLAIN;
+	session->auth_type = SMTPAUTH_PLAIN;
+
+	memset(buf, 0, sizeof buf);
+
+	/*
+	 * have to construct the string bit by bit. sprintf can't do it in one.
+	 * first field is null, so string is \0<user>\0<password>
+	 */
+	*a = 0;
+	a++;
+
+	g_snprintf (a, b64len - 1, "%s", session->user);
+
+	b64cnt = strlen(session->user)+1;
+	a += b64cnt;
+
+	g_snprintf (a, b64len - b64cnt - 1, "%s", session->pass);
+	b64cnt += strlen(session->pass) + 1;	
+
+	/*
+	 * reuse the char *ptr to offset into the textbuf to meld
+	 * the plaintext ESMTP message and the base64 string value
+	 */
+	strcpy(buf, "AUTH PLAIN ");
+	a = buf + strlen(buf);
+	base64_encode(a, b64buf, b64cnt);
+
+	session_send_msg(SESSION(session), SESSION_MSG_NORMAL, buf);
+
+	log_print("ESMTP> [AUTH PLAIN]\n");
+
+	g_free(b64buf);
 
 	return SM_OK;
 }
@@ -345,9 +421,9 @@ static gint smtp_rcpt(SMTPSession *session)
 	to = (gchar *)session->cur_to->data;
 
 	if (strchr(to, '<'))
-		g_snprintf(buf, sizeof(buf), "RCPT TO: %s", to);
+		g_snprintf(buf, sizeof(buf), "RCPT TO:%s", to);
 	else
-		g_snprintf(buf, sizeof(buf), "RCPT TO: <%s>", to);
+		g_snprintf(buf, sizeof(buf), "RCPT TO:<%s>", to);
 	session_send_msg(SESSION(session), SESSION_MSG_NORMAL, buf);
 	log_print("SMTP> %s\n", buf);
 
@@ -422,6 +498,7 @@ static gint smtp_session_recv_msg(Session *session, const gchar *msg)
 	case SMTP_EHLO:
 	case SMTP_STARTTLS:
 	case SMTP_AUTH:
+	case SMTP_AUTH_PLAIN:
 	case SMTP_AUTH_LOGIN_USER:
 	case SMTP_AUTH_LOGIN_PASS:
 	case SMTP_AUTH_CRAM_MD5:
@@ -475,11 +552,14 @@ static gint smtp_session_recv_msg(Session *session, const gchar *msg)
 
 	switch (smtp_session->state) {
 	case SMTP_READY:
+		if (strstr(msg, "ESMTP"))
+			smtp_session->is_esmtp = TRUE;
 	case SMTP_CONNECTED:
 #if USE_OPENSSL
-		if (smtp_session->user || session->ssl_type != SSL_NONE)
+		if (smtp_session->user || session->ssl_type != SSL_NONE ||
+		    smtp_session->is_esmtp)
 #else
-		if (smtp_session->user)
+		if (smtp_session->user || smtp_session->is_esmtp)
 #endif
 			smtp_ehlo(smtp_session);
 		else
@@ -492,6 +572,17 @@ static gint smtp_session_recv_msg(Session *session, const gchar *msg)
 		smtp_ehlo_recv(smtp_session, msg);
 		if (cont == TRUE)
 			break;
+		if (smtp_session->max_message_size > 0
+		&& smtp_session->max_message_size < 
+		   smtp_session->send_data_len) {
+			log_warning(_("Message is too big "
+			      "(Maximum size is %s)\n"),
+			      to_human_readable(
+			       (off_t)(smtp_session->max_message_size)));
+			smtp_session->state = SMTP_ERROR;
+			smtp_session->error_val = SM_ERROR;
+			return -1;
+		}
 #if USE_OPENSSL
 		if (session->ssl_type == SSL_STARTTLS &&
 		    smtp_session->tls_init_done == FALSE) {
@@ -523,6 +614,7 @@ static gint smtp_session_recv_msg(Session *session, const gchar *msg)
 	case SMTP_AUTH_LOGIN_USER:
 		smtp_auth_login_user_recv(smtp_session, msg);
 		break;
+	case SMTP_AUTH_PLAIN:
 	case SMTP_AUTH_LOGIN_PASS:
 	case SMTP_AUTH_CRAM_MD5:
 		smtp_from(smtp_session);

@@ -25,5 +25,6 @@
 #include "mainwindow.h"
 
 void setup(MainWindow *mainwin);
+gboolean setup_write_mailbox_path(MainWindow *mainwin, const gchar *path);
 
 #endif /* __SETUP_H__ */

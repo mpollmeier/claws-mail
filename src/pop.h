@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2003 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2004 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ struct _MailReceiveData
 {
 	Pop3Session *session;
 	char *data;
+	guint data_len;
 };
 typedef struct _MailReceiveData	MailReceiveData;
 
@@ -60,8 +61,11 @@ typedef enum {
 	POP3_GETSIZE_LIST_RECV,
 	POP3_RETR,
 	POP3_RETR_RECV,
+	POP3_TOP,
+	POP3_TOP_RECV,
 	POP3_DELETE,
 	POP3_LOGOUT,
+	POP3_DONE,
 	POP3_ERROR,
 
 	N_POP3_STATE
@@ -87,12 +91,6 @@ typedef enum {
 
 	/* leave space for more codes */
 
-	PS_UNDEFINED	= 23,	/* something I hadn't thought of */
-	PS_TRANSIENT	= 24,	/* transient failure (internal use) */
-	PS_REFUSED	= 25,	/* mail refused (internal use) */
-	PS_RETAINED	= 26,	/* message retained (internal use) */
-	PS_TRUNCATED	= 27,	/* headers incomplete (internal use) */
-
 	PS_CONTINUE	= 128	/* more responses may follow */
 } Pop3ErrorValue;
 
@@ -107,8 +105,9 @@ struct _Pop3MsgInfo
 	gint size;
 	gchar *uidl;
 	time_t recv_time;
-	guint received : 1;
-	guint deleted  : 1;
+	guint received     : 1;
+	guint deleted      : 1;
+	guint partial_recv : 2;
 };
 
 struct _Pop3Session
@@ -119,6 +118,7 @@ struct _Pop3Session
 	gchar *prev_folder;
 
 	PrefsAccount *ac_prefs;
+	gboolean pop_before_smtp;
 
 	gchar *greeting;
 	gchar *user;
@@ -133,7 +133,8 @@ struct _Pop3Session
 	Pop3MsgInfo *msg;
 
 	GHashTable *uidl_table;
-
+	GHashTable *partial_recv_table;
+	
 	gboolean new_msg_exist;
 	gboolean uidl_is_valid;
 
@@ -143,14 +144,18 @@ struct _Pop3Session
 	gchar *error_msg;
 
 	gpointer data;
+
+	/* virtual method to drop message */
+	gint (*drop_message)	(Pop3Session	*session,
+				 const gchar	*file);
 };
 
 #define POPBUFSIZE	512
-#define IDLEN		128
-
+/* #define IDLEN	128 */
+#define IDLEN		POPBUFSIZE
 
 Session *pop3_session_new	(PrefsAccount	*account);
-GHashTable *pop3_get_uidl_table	(PrefsAccount	*account);
+void pop3_get_uidl_table	(PrefsAccount	*account, Pop3Session *session);
 gint pop3_write_uidl_list	(Pop3Session	*session);
 
 #endif /* __POP_H__ */

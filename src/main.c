@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2003 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2004 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,10 +42,11 @@
 #include <time.h>
 #include <sys/types.h>
 #include <signal.h>
-
-#if USE_GPGME
-#  include <gpgme.h>
-#  include "passphrase.h"
+#include "wizard.h"
+#ifdef HAVE_STARTUP_NOTIFICATION
+# define SN_API_NOT_YET_FROZEN
+# include <libsn/sn-launchee.h>
+# include <gdk/gdkx.h>
 #endif
 
 #include "sylpheed.h"
@@ -59,8 +60,10 @@
 #include "prefs_actions.h"
 #include "prefs_ext_prog.h"
 #include "prefs_fonts.h"
+#include "prefs_msg_colors.h"
 #include "prefs_spelling.h"
 #include "prefs_themes.h"
+#include "prefs_wrapping.h"
 #include "prefs_display_header.h"
 #include "account.h"
 #include "procmsg.h"
@@ -79,11 +82,11 @@
 #include "log.h"
 #include "prefs_toolbar.h"
 #include "plugin.h"
+#include "mh_gtk.h"
+#include "imap_gtk.h"
+#include "news_gtk.h"
+#include "matcher.h"
 
-#if USE_GPGME
-#  include "sgpgme.h"
-#  include "pgpmime.h"
-#endif
 #if USE_OPENSSL
 #  include "ssl.h"
 #endif
@@ -97,6 +100,11 @@
 gchar *prog_version;
 #ifdef CRASH_DIALOG
 gchar *argv0;
+#endif
+
+#ifdef HAVE_STARTUP_NOTIFICATION
+static SnLauncheeContext *sn_context = NULL;
+static SnDisplay *sn_display = NULL;
 #endif
 
 static gint lock_socket = -1;
@@ -177,6 +185,54 @@ _("File `%s' already exists.\n"
 
 static MainWindow *static_mainwindow;
 
+#ifdef HAVE_STARTUP_NOTIFICATION
+static void sn_error_trap_push(SnDisplay *display, Display *xdisplay)
+{
+	gdk_error_trap_push();
+}
+
+static void sn_error_trap_pop(SnDisplay *display, Display *xdisplay)
+{
+	gdk_error_trap_pop();
+}
+
+static void startup_notification_complete(gboolean with_window)
+{
+	Display *xdisplay;
+	GtkWidget *hack = NULL;
+
+	if (with_window) {
+		/* this is needed to make the startup notification leave,
+		 * if we have been launched from a menu.
+		 * We have to display a window, so let it be very little */
+		hack = gtk_window_new(GTK_WINDOW_POPUP);
+		gtk_widget_set_uposition(hack, 0, 0);
+		gtk_widget_set_usize(hack, 1, 1);
+		gtk_widget_show(hack);
+	}
+
+	xdisplay = GDK_DISPLAY();
+	sn_display = sn_display_new(xdisplay,
+				sn_error_trap_push,
+				sn_error_trap_pop);
+	sn_context = sn_launchee_context_new_from_environment(sn_display,
+						 DefaultScreen(xdisplay));
+
+	if (sn_context != NULL)
+	{
+		sn_launchee_context_complete(sn_context);
+		sn_launchee_context_unref(sn_context);
+		sn_display_unref(sn_display);
+	}
+}
+#endif /* HAVE_STARTUP_NOTIFICATION */
+
+void sylpheed_gtk_idle(void) 
+{
+	while(gtk_events_pending())
+		gtk_main_iteration();
+}
+
 #ifdef WIN32
 int main_real(int argc, char *argv[])
 #else
@@ -251,7 +307,13 @@ int main(int argc, char *argv[])
 #endif
 	/* check and create unix domain socket */
 	lock_socket = prohibit_duplicate_launch();
-	if (lock_socket < 0) return 0;
+	if (lock_socket < 0) {
+#ifdef HAVE_STARTUP_NOTIFICATION
+		if(gtk_init_check(&argc, &argv))
+			startup_notification_complete(TRUE);
+#endif
+		return 0;
+	}
 
 	if (cmd.status || cmd.status_full) {
 		puts("0 Sylpheed not running.");
@@ -299,8 +361,6 @@ int main(int argc, char *argv[])
 	gtk_rc_parse(userrc);
 	g_free(userrc);
 
-	gtk_rc_parse("./gtkrc-2.0");
-
 	userrc = g_strconcat(get_rc_dir(), G_DIR_SEPARATOR_S, MENU_RC, NULL);
 	gtk_accel_map_load (userrc);
 	g_free(userrc);
@@ -329,13 +389,11 @@ int main(int argc, char *argv[])
 	prefs_common_init();
 	prefs_common_read_config();
 
-#if USE_GPGME
-	sgpgme_init();
-	pgpmime_init();
-#endif
 	prefs_themes_init();
 	prefs_fonts_init();
 	prefs_ext_prog_init();
+	prefs_wrapping_init();
+	prefs_msg_colors_init();
 #ifdef USE_ASPELL
 #ifdef WIN32
 	w32_aspell_init();
@@ -354,6 +412,11 @@ int main(int argc, char *argv[])
 
 	gtkut_widget_init();
 
+	folderview_initialize();
+	mh_gtk_init();
+	imap_gtk_init();
+	news_gtk_init();
+		
 	mainwin = main_window_create
 		(prefs_common.sep_folder | prefs_common.sep_msg << 1);
 	folderview = mainwin->folderview;
@@ -364,15 +427,21 @@ int main(int argc, char *argv[])
 					lock_socket_input_cb,
 					mainwin);
 
+	prefs_account_init();
 	account_read_config_all();
 
 	if (folder_read_list() < 0) {
-		setup(mainwin);
+		if (!run_wizard(mainwin, TRUE))
+			exit(1);
 		folder_write_list();
 	}
+
 	if (!account_get_list()) {
-		account_edit_open();
-		account_add();
+		if (!run_wizard(mainwin, FALSE))
+			exit(1);
+		account_read_config_all();
+		if(!account_get_list())
+			exit_sylpheed(mainwin);
 	}
 
 	account_set_missing_folder();
@@ -382,7 +451,9 @@ int main(int argc, char *argv[])
 	prefs_matcher_read_config();
 
 	/* make one all-folder processing before using sylpheed */
+	main_window_cursor_wait(mainwin);
 	folder_func_to_all_folders(initial_processing, (gpointer *)mainwin);
+	main_window_cursor_normal(mainwin);
 
 	/* if Sylpheed crashed, rebuild caches */
 #ifdef WIN32
@@ -411,6 +482,27 @@ int main(int argc, char *argv[])
 	if (cmd.online_mode == ONLINE_MODE_ONLINE)
 		main_window_toggle_work_offline(mainwin, FALSE);
 
+	if (cmd.status_folders) {
+		g_ptr_array_free(cmd.status_folders, TRUE);
+		cmd.status_folders = NULL;
+	}
+	if (cmd.status_full_folders) {
+		g_ptr_array_free(cmd.status_full_folders, TRUE);
+		cmd.status_full_folders = NULL;
+	}
+
+	sylpheed_register_idle_function(sylpheed_gtk_idle);
+
+	prefs_toolbar_init();
+
+	plugin_load_all("GTK2");
+	
+	static_mainwindow = mainwin;
+
+#ifdef HAVE_STARTUP_NOTIFICATION
+	startup_notification_complete(FALSE);
+#endif
+
 	if (cmd.receive_all)
 		inc_all_account_mail(mainwin, FALSE, 
 				     prefs_common.newmail_notify_manu);
@@ -431,20 +523,7 @@ int main(int argc, char *argv[])
 	}
 	if (cmd.send)
 		send_queue();
-	if (cmd.status_folders) {
-		g_ptr_array_free(cmd.status_folders, TRUE);
-		cmd.status_folders = NULL;
-	}
-	if (cmd.status_full_folders) {
-		g_ptr_array_free(cmd.status_full_folders, TRUE);
-		cmd.status_full_folders = NULL;
-	}
-
-	prefs_toolbar_init();
-
-	plugin_load_all("GTK");
 	
-	static_mainwindow = mainwin;
 	gtk_main();
 
 	exit_sylpheed(mainwin);
@@ -462,7 +541,6 @@ static void save_all_caches(FolderItem *item, gpointer data)
 static void exit_sylpheed(MainWindow *mainwin)
 {
 	gchar *filename;
-	GList *list, *cur;
 
 	debug_print("shutting down\n");
 
@@ -486,17 +564,11 @@ static void exit_sylpheed(MainWindow *mainwin)
 
 	main_window_get_size(mainwin);
 	main_window_get_position(mainwin);
-	prefs_common_save_config();
-	account_save_config_all();
+	prefs_common_write_config();
+	account_write_config_all();
 	addressbook_export_to_file();
 
 	filename = g_strconcat(get_rc_dir(), G_DIR_SEPARATOR_S, MENU_RC, NULL);
-#ifndef _MSC_VER
-#warning FIXME_GTK2 gtk_item_factory_dump_rc() not existing
-#endif
-#if 0
-	gtk_item_factory_dump_rc(filename, NULL, TRUE);
-#endif
 	gtk_accel_map_save(filename);
 	g_free(filename);
 
@@ -518,19 +590,17 @@ static void exit_sylpheed(MainWindow *mainwin)
 
 	main_window_destroy(mainwin);
 	
-	plugin_unload_all("GTK");
+	plugin_unload_all("GTK2");
 
 	prefs_toolbar_done();
 
 	addressbook_destroy();
 
-#ifdef USE_GPGME
-	pgpmime_done();
-	sgpgme_done();
-#endif
 	prefs_themes_done();
 	prefs_fonts_done();
 	prefs_ext_prog_done();
+	prefs_wrapping_done();
+	prefs_msg_colors_done();
 #ifdef USE_ASPELL       
 	prefs_spelling_done();
 	gtkaspell_checkers_quit();
@@ -631,8 +701,8 @@ static void parse_cmd_opt(int argc, char *argv[])
 		} else if (!strncmp(argv[i], "--offline", 9)) {
 			cmd.online_mode = ONLINE_MODE_OFFLINE;
 		} else if (!strncmp(argv[i], "--help", 6)) {
-			g_print(_("Usage: %s [OPTION]...\n"),
-				g_basename(argv[0]));
+			gchar *base = g_path_get_basename(argv[0]);
+			g_print(_("Usage: %s [OPTION]...\n"), base);
 
 			puts(_("  --compose [address]    open composition window"));
 			puts(_("  --attach file1 [file2]...\n"
@@ -651,6 +721,7 @@ static void parse_cmd_opt(int argc, char *argv[])
 			puts(_("  --version              output version information and exit"));
 			puts(_("  --config-dir           output configuration directory"));
 
+			g_free(base);
 			exit(1);
 #ifndef WIN32
 		} else if (!strncmp(argv[i], "--crash", 7)) {
@@ -695,14 +766,12 @@ static void initial_processing(FolderItem *item, gpointer data)
 	debug_print("%s\n", buf);
 	g_free(buf);
 
-	main_window_cursor_wait(mainwin);
 	
         if (item->prefs->enable_processing)
                 folder_item_apply_processing(item);
 
 	debug_print("done.\n");
 	STATUSBAR_POP(mainwin);
-	main_window_cursor_normal(mainwin);
 }
 
 static void draft_all_messages(void)
@@ -755,7 +824,7 @@ void app_will_exit(GtkWidget *widget, gpointer data)
 	MainWindow *mainwin = data;
 	
 	if (compose_get_compose_list()) {
-		gint val = alertpanel(_("Notice"),
+		gint val = alertpanel(_("Really quit?"),
 			       _("Composing message exists."),
 			       _("Draft them"), _("Discard them"), _("Don't quit"));
 		switch (val) {
@@ -829,6 +898,9 @@ static gint prohibit_duplicate_launch(void)
 	}
 	if (!lockport)
 		lockport = LOCK_PORT ;
+lockport++; /* XXX:TM */
+lockport++; /* XXX:TM */
+lockport++; /* XXX:TM */
 	lock_sock = sock_connect("localhost", lockport);
 	if (!lock_sock) {
 		return fd_open_lock_service(lockport);
@@ -1072,6 +1144,9 @@ static void install_basic_sighandlers()
 #ifdef SIGINT
 	sigaddset(&mask, SIGINT);
 #endif
+#ifdef SIGHUP
+	sigaddset(&mask, SIGHUP);
+#endif
 
 	act.sa_handler = quit_signal_handler;
 	act.sa_mask    = mask;
@@ -1082,6 +1157,9 @@ static void install_basic_sighandlers()
 #endif
 #ifdef SIGINT
 	sigaction(SIGINT, &act, 0);
+#endif	
+#ifdef SIGHUP
+	sigaction(SIGHUP, &act, 0);
 #endif	
 
 	sigprocmask(SIG_UNBLOCK, &mask, 0);

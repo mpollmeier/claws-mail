@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2003 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2004 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,12 +49,15 @@ struct _MessageView
 	HeaderView *headerview;
 	MimeView *mimeview;
 	NoticeView *noticeview;
+	GtkWidget *statusbar;
+	gint statusbar_cid;
 
 	MainWindow *mainwin;
 
 	MsgInfo *msginfo;
 
 	gchar *forced_charset;
+	EncodingType forced_encoding;
 
 	gboolean visible;
 
@@ -104,4 +107,7 @@ void messageview_add_toolbar			(MessageView 	*msgview,
 						 GtkWidget 	*vbox);
 void messageview_reflect_prefs_pixmap_theme	(void);
 gchar *messageview_get_selection		(MessageView 	*msgview);
+
+void messageview_set_menu_sensitive		(MessageView	*msgview);
+
 #endif /* __MESSAGEVIEW_H__ */

@@ -87,7 +87,7 @@ static void message_search_create(MessageView *messageview)
 	gtk_window_set_title (GTK_WINDOW (window),
 			      _("Find in current message"));
 	gtk_widget_set_size_request (window, 450, -1);
-	gtk_window_set_policy(GTK_WINDOW(window), FALSE, TRUE, TRUE);
+	gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
 	gtk_container_set_border_width (GTK_CONTAINER (window), 8);
 	g_signal_connect(G_OBJECT(window), "delete_event",
 			 G_CALLBACK(gtk_widget_hide_on_delete), NULL);
@@ -118,14 +118,11 @@ static void message_search_create(MessageView *messageview)
 	gtk_box_pack_start (GTK_BOX (vbox1), checkbtn_hbox, TRUE, TRUE, 0);
 	gtk_container_set_border_width (GTK_CONTAINER (checkbtn_hbox), 8);
 
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
-	case_checkbtn = gtk_check_button_new_with_label (_("Case sensitive (Broken)"));
+	case_checkbtn = gtk_check_button_new_with_label (_("Case sensitive"));
 	gtk_widget_show (case_checkbtn);
 	gtk_box_pack_start (GTK_BOX (checkbtn_hbox), case_checkbtn,
 			    FALSE, FALSE, 0);
-	gtk_widget_set_sensitive(case_checkbtn, FALSE);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(case_checkbtn), FALSE);
 
 	backward_checkbtn =
 		gtk_check_button_new_with_label (_("Backward search"));
@@ -133,10 +130,10 @@ static void message_search_create(MessageView *messageview)
 	gtk_box_pack_start (GTK_BOX (checkbtn_hbox), backward_checkbtn,
 			    FALSE, FALSE, 0);
 
-	gtkut_button_set_create(&confirm_area,
-				&search_btn, _("Search"),
-				&clear_btn,  _("Clear"),
-				&close_btn,  _("Close"));
+	gtkut_button_set_create_stock(&confirm_area,
+				      &search_btn, GTK_STOCK_FIND,
+				      &clear_btn,  GTK_STOCK_CLEAR,
+				      &close_btn,  GTK_STOCK_CLOSE);
 	gtk_widget_show (confirm_area);
 	gtk_box_pack_start (GTK_BOX (vbox1), confirm_area, FALSE, FALSE, 0);
 	gtk_widget_grab_default(search_btn);
@@ -185,9 +182,8 @@ static void message_search_execute(GtkButton *button, gpointer data)
 		}
 
 		if (all_searched) {
-			alertpanel_message
-				(_("Search failed"),
-				 _("Search string not found."));
+			alertpanel_notice
+				(_("Search string not found."));
 			break;
 		}
 

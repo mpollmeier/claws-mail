@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 2003 Hiroyuki Yamamoto & the Sylpheed-Claws team
+ * Copyright (C) 2003-2004 Hiroyuki Yamamoto & the Sylpheed-Claws team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -117,13 +117,13 @@ typedef struct _CopyInfo {
 static ThemesData *prefs_themes_data;
 
 StockPixmap prefs_themes_icons[PREVIEW_ICONS] = { 
-	STOCK_PIXMAP_MAIL,
+	STOCK_PIXMAP_DIR_CLOSE,
+	STOCK_PIXMAP_MAIL_SEND,
 	STOCK_PIXMAP_MAIL_RECEIVE, 
-	STOCK_PIXMAP_DOWN_ARROW, 
-	STOCK_PIXMAP_MAIL_SEND_QUEUE, 
+	STOCK_PIXMAP_MAIL_ATTACH,
 	STOCK_PIXMAP_BOOK, 
-	STOCK_PIXMAP_MIME_TEXT_HTML, 
-	STOCK_PIXMAP_PRIVACY_PASSED
+	STOCK_PIXMAP_MIME_TEXT_PLAIN, 
+	STOCK_PIXMAP_REPLIED
 };
 
 
@@ -178,44 +178,46 @@ static void prefs_themes_file_stats(const gchar *filename, gpointer data)
 static void prefs_themes_file_remove(const gchar *filename, gpointer data)
 {
 	gchar **status = (gchar **)data;
-	gchar *name;
+	gchar *base;
 	
 	if ((*status) != NULL)
 		return;
 	
-	name = g_basename(filename);
+	base = g_path_get_basename(filename);
 	if (TRUE == is_dir_exist(filename)) {
-		if (!((name[0] == '.') || (name[0] == '.' && name[1] == '.')))
+		if (!((base[0] == '.') || (base[0] == '.' && base[1] == '.')))
 			g_warning("prefs_themes_file_remove(): subdir in theme dir skipped.\n");
 	}
 	else if (0 != unlink(filename)) {
 		(*status) = g_strdup(filename);
 	}
+	g_free(base);
 }
 
 static void prefs_themes_file_install(const gchar *filename, gpointer data)
 {
 	CopyInfo *ci = (CopyInfo *)data;
-	gchar *name;
+	gchar *base;
 	
 	if (ci->status != NULL)
 		return;
 	
-	name = g_basename(filename);
+	base = g_path_get_basename(filename);
 	if (TRUE == is_dir_exist(filename)) {
-		if (!((name[0] == '.') || (name[0] == '.' && name[1] == '.')))
+		if (!((base[0] == '.') || (base[0] == '.' && base[1] == '.')))
 			g_warning("prefs_themes_file_install(): subdir in theme dir skipped.\n");
 	}
 	else {
 		gchar *fulldest;
 		
-		fulldest = g_strconcat(ci->dest, G_DIR_SEPARATOR_S, name, NULL);
+		fulldest = g_strconcat(ci->dest, G_DIR_SEPARATOR_S, base, NULL);
 		
 		if (0 != copy_file(filename, fulldest, FALSE)) {
 			ci->status = g_strdup(filename);
 		}
 		g_free(fulldest);
 	}
+	g_free(base);
 }
 
 static void prefs_themes_foreach_file(const gchar *dirname, const FileFunc func, gpointer data)
@@ -289,9 +291,9 @@ static void prefs_themes_set_themes_menu(GtkOptionMenu *opmenu, const ThemesData
 		
 		item = gtk_menu_item_new_with_label(tname->name);
 		gtk_widget_show(item);
-		gtk_signal_connect(GTK_OBJECT(item), "activate",
-				   GTK_SIGNAL_FUNC(prefs_themes_menu_item_activated_cb),
-				   tname->item->data);
+		g_signal_connect(G_OBJECT(item), "activate",
+				 G_CALLBACK(prefs_themes_menu_item_activated_cb),
+				 tname->item->data);
 		gtk_menu_append(GTK_MENU(menu), item);
 
 		if (tdata->displayed != NULL && tdata->displayed == tpath)
@@ -321,7 +323,7 @@ static void prefs_themes_get_themes_and_names(ThemesData *tdata)
 	tpaths = tdata->themes;
 	while (tpaths != NULL) {
 		ThemeName *name = g_new0(ThemeName, 1);
-		gchar     *sname = g_basename((gchar *)(tpaths->data));
+		gchar *sname = g_path_get_basename((const gchar *)(tpaths->data));
 		
 		if (IS_INTERNAL_THEME(sname))
 			name->name = g_strdup(_("Default internal theme"));
@@ -331,14 +333,20 @@ static void prefs_themes_get_themes_and_names(ThemesData *tdata)
 			
 		tdata->names = g_list_append(tdata->names, name);
 		tpaths = g_list_next(tpaths);
-	}	
+		g_free(sname);	
+	}
 }
 
 void prefs_themes_init(void)
 {
-	ThemesData *tdata;
-	ThemesPage *page;
-	GList      *tpaths;
+	ThemesData   *tdata;
+	ThemesPage   *page;
+	GList        *tpaths;
+	static gchar *path[3];
+
+	path[0] = _("Display");
+	path[1] = _("Themes");
+	path[2] = NULL;
 
 	debug_print("Creating prefereces for themes...\n");
 	
@@ -349,7 +357,7 @@ void prefs_themes_init(void)
 	
 	page = g_new0(ThemesPage, 1);
 	
-	page->page.path = _("Display/Themes");
+	page->page.path = path;
 	page->page.create_widget = prefs_themes_create_widget;
 	page->page.destroy_widget = prefs_themes_destroy_widget;
 	page->page.save_page = prefs_themes_save;
@@ -383,7 +391,6 @@ static void prefs_themes_free_names(ThemesData *tdata)
 void prefs_themes_done(void)
 {
 	ThemesData *tdata = prefs_themes_data;
-	GList      *n;
 
 	debug_print("Finished prefereces for themes.\n");
 	
@@ -417,21 +424,25 @@ static void prefs_themes_btn_remove_clicked_cb(GtkWidget *widget, gpointer data)
 	gchar      *theme_str;
 	gchar      *alert_title = NULL;
 	AlertValue  val = 0;
+	gchar      *tmp = NULL;
 
 	theme_str = tdata->displayed;
 	
+	tmp = g_path_get_basename(theme_str);
+
 	if (IS_SYSTEM_THEME(theme_str)) {
 		if (getuid() != 0) {
 			alertpanel_error(_("Only root can remove system themes"));
 			return;
 		}
-		alert_title = g_strdup_printf(_("Remove system theme '%s'"), 
-					      g_basename(theme_str));
+		alert_title = g_strdup_printf(_("Remove system theme '%s'"), tmp);
 	}
 	if (NULL == alert_title) {
-		alert_title = g_strdup_printf(_("Remove theme '%s'"), 
-					      g_basename(theme_str));
+		alert_title = g_strdup_printf(_("Remove theme '%s'"), tmp);
 	}
+
+	g_free(tmp);
+
 	val = alertpanel(alert_title,
 			 _("Are you sure you want to remove this theme?"),
 			 _("No"), _("Yes"), _("Cancel"));
@@ -458,25 +469,25 @@ static void prefs_themes_btn_remove_clicked_cb(GtkWidget *widget, gpointer data)
 			prefs_themes_get_theme_info(tdata);
 		}
 	}
+	g_free(theme_str);
 }
 
 static void prefs_themes_btn_install_clicked_cb(GtkWidget *widget, gpointer data)
 {
-	struct stat s;
 	gchar      *filename, *source;
-	gchar      *themeinfo, *themename;
+	gchar 	   *themeinfo, *themename;
 	gchar      *alert_title = NULL;
 	CopyInfo   *cinfo;
 	AlertValue  val = 0;
 	ThemesData *tdata = prefs_themes_data;
 	
-	filename = filesel_select_file(_("Select theme folder"), NULL);
+	filename = filesel_select_file_open_folder(_("Select theme folder"), NULL);
 	if (filename == NULL) 
 		return;
 	
 	cinfo = g_new0(CopyInfo, 1);
-	source = g_dirname(filename);
-	themename = g_basename(source);
+	source = g_path_get_dirname(filename);
+	themename = g_path_get_basename(source);
 	debug_print("Installing '%s' theme from %s\n", themename, filename);
 
 	themeinfo = g_strconcat(source, G_DIR_SEPARATOR_S, THEMEINFO_FILE, NULL);
@@ -490,7 +501,7 @@ static void prefs_themes_btn_install_clicked_cb(GtkWidget *widget, gpointer data
 	}
 	if (getuid() == 0) {
 		val = alertpanel(alert_title,
-				 _("Do you want to install theme for system's all users?"),
+				 _("Do you want to install theme for all users?"),
 				 _("Yes"), _("No"), _("Cancel"));
 		switch (val) {
 		case G_ALERTDEFAULT:
@@ -527,17 +538,21 @@ static void prefs_themes_btn_install_clicked_cb(GtkWidget *widget, gpointer data
 	prefs_themes_foreach_file(source, prefs_themes_file_install, cinfo);
 	if (cinfo->status == NULL) {
 		GList *insted;
-		
-		alertpanel_notice(_("Theme installed succesfully"));
+
 		/* update interface to show newly installed theme */
 		prefs_themes_get_themes_and_names(tdata);
 		insted = g_list_find_custom(tdata->themes, 
 					    (gpointer)(cinfo->dest), 
 					    (GCompareFunc)strcmp2);
-		tdata->displayed = (gchar *)(insted->data);
-		prefs_themes_set_themes_menu(GTK_OPTION_MENU(tdata->page->op_menu), tdata);
-		prefs_themes_display_global_stats(tdata);
-		prefs_themes_get_theme_info(tdata);	
+		if (NULL != insted) {
+			alertpanel_notice(_("Theme installed succesfully"));
+			tdata->displayed = (gchar *)(insted->data);
+			prefs_themes_set_themes_menu(GTK_OPTION_MENU(tdata->page->op_menu), tdata);
+			prefs_themes_display_global_stats(tdata);
+			prefs_themes_get_theme_info(tdata);
+		}
+		else
+			alertpanel_error(_("Failed installing theme"));
 	}
 	else
 		alertpanel_error(_("File %s failed\nwhile installing theme."), cinfo->status);
@@ -546,6 +561,7 @@ end_inst:
 	g_free(source);
 	g_free(themeinfo);
 	g_free(cinfo);
+	g_free(themename);
 }
 
 static void prefs_themes_btn_more_clicked_cb(GtkWidget *widget, gpointer data)
@@ -608,7 +624,7 @@ static void prefs_themes_display_theme_info(ThemesData *tdata, const ThemeInfo *
 	for (i = 0; i < PREVIEW_ICONS; ++i) {
 		stock_pixmap_gdk(theme->window, prefs_themes_icons[i], 
 				&(theme->pixmaps[i]), &(theme->masks[i]));
-		gtk_pixmap_set(GTK_PIXMAP(theme->icons[i]),
+		gtk_image_set_from_pixmap(GTK_IMAGE(theme->icons[i]),
 				theme->pixmaps[i], theme->masks[i]);
 	}
 	prefs_common.pixmap_theme_path = save_prefs_path;
@@ -726,7 +742,7 @@ static gchar *prefs_themes_get_theme_stats(const gchar *dirname)
 	dinfo = g_new0(DirInfo, 1);
 	
 	prefs_themes_foreach_file(dirname, prefs_themes_file_stats, dinfo);
-	stats = g_strdup_printf(_("%d files (%d icons), size is %s"), 
+	stats = g_strdup_printf(_("%d files (%d icons), size: %s"), 
 				dinfo->files, dinfo->pixms, to_human_readable(dinfo->bytes));
 	
 	g_free(dinfo);
@@ -756,9 +772,9 @@ static GtkWidget* create_dummy_pixmap(GtkWidget *widget)
 			NULL, dummy_pixmap_xpm);
 	if (gdkpixmap == NULL)
 		g_error ("Couldn't create replacement pixmap.");
-	pixmap = gtk_pixmap_new (gdkpixmap, mask);
-	gdk_pixmap_unref (gdkpixmap);
-	gdk_bitmap_unref (mask);
+	pixmap = gtk_image_new_from_pixmap(gdkpixmap, mask);
+	g_object_unref (gdkpixmap);
+	g_object_unref (mask);
 	return pixmap;
 }
 /* END GLADE CODE */
@@ -779,7 +795,6 @@ static void prefs_themes_create_widget(PrefsPage *page, GtkWindow *window, gpoin
 	GdkColor uri_color[2] = {{0, 0, 0, 0xffff}, {0, 0xffff, 0, 0}};
 	gboolean success[2];
 
-	/* BEGIN GLADE EDITED CODE */
 	GtkWidget *vbox1;
 	GtkWidget *frame1;
 	GtkWidget *vbox2;
@@ -817,9 +832,7 @@ static void prefs_themes_create_widget(PrefsPage *page, GtkWindow *window, gpoin
 	vbox1 = gtk_vbox_new (FALSE, 0);
 	gtk_widget_show (vbox1);
 
-	frame1 = gtk_frame_new (_("Selector"));
-	gtk_widget_show (frame1);
-	gtk_box_pack_start (GTK_BOX (vbox1), frame1, TRUE, TRUE, 0);
+	PACK_FRAME (vbox1, frame1, _("Selector"));
 
 	vbox2 = gtk_vbox_new (FALSE, 0);
 	gtk_widget_show (vbox2);
@@ -827,7 +840,7 @@ static void prefs_themes_create_widget(PrefsPage *page, GtkWindow *window, gpoin
 
 	hbox3 = gtk_hbox_new (FALSE, 0);
 	gtk_widget_show (hbox3);
-	gtk_box_pack_start (GTK_BOX (vbox2), hbox3, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (vbox2), hbox3, FALSE, FALSE, 0);
 	gtk_container_set_border_width (GTK_CONTAINER (hbox3), 5);
 
 	menu_themes = gtk_option_menu_new ();
@@ -876,9 +889,7 @@ static void prefs_themes_create_widget(PrefsPage *page, GtkWindow *window, gpoin
 	gtk_misc_set_alignment (GTK_MISC (label_global_status), 0, 0.5);
 	gtk_misc_set_padding (GTK_MISC (label_global_status), 6, 0);
 
-	frame_info = gtk_frame_new (_("Information"));
-	gtk_widget_show (frame_info);
-	gtk_box_pack_start (GTK_BOX (vbox1), frame_info, TRUE, TRUE, 0);
+	PACK_FRAME(vbox1, frame_info, _("Information"));
 
 	table1 = gtk_table_new (4, 2, FALSE);
 	gtk_widget_show (table1);
@@ -942,9 +953,7 @@ static void prefs_themes_create_widget(PrefsPage *page, GtkWindow *window, gpoin
 			(GtkAttachOptions) (0), 0, 0);
 	gtk_misc_set_alignment (GTK_MISC (label_status), 0, 0.5);
 
-	frame_preview = gtk_frame_new (_("Preview"));
-	gtk_widget_show (frame_preview);
-	gtk_box_pack_start (GTK_BOX (vbox1), frame_preview, TRUE, TRUE, 0);
+	PACK_FRAME(vbox1, frame_preview, _("Preview"));
 
 	hbox1 = gtk_hbox_new (FALSE, 0);
 	gtk_widget_show (hbox1);
@@ -985,9 +994,7 @@ static void prefs_themes_create_widget(PrefsPage *page, GtkWindow *window, gpoin
 	gtk_box_pack_start (GTK_BOX (hbox1), icon_7, TRUE, TRUE, 0);
 	gtk_misc_set_padding (GTK_MISC (icon_7), 0, 5);
 
-	frame_buttons = gtk_frame_new (_("Actions"));
-	gtk_widget_show (frame_buttons);
-	gtk_box_pack_start (GTK_BOX (vbox1), frame_buttons, TRUE, TRUE, 0);
+	PACK_FRAME(vbox1, frame_buttons, _("Actions"));
 
 	hbuttonbox1 = gtk_hbutton_box_new ();
 	gtk_widget_show (hbuttonbox1);
@@ -1007,21 +1014,20 @@ static void prefs_themes_create_widget(PrefsPage *page, GtkWindow *window, gpoin
 	gtk_container_add (GTK_CONTAINER (hbuttonbox1), btn_remove);
 	GTK_WIDGET_SET_FLAGS (btn_remove, GTK_CAN_DEFAULT);
 
-	gtk_signal_connect(GTK_OBJECT (btn_use), "clicked",
-			GTK_SIGNAL_FUNC (prefs_themes_btn_use_clicked_cb),
-			NULL);
-	gtk_signal_connect(GTK_OBJECT(btn_remove), "clicked",
-			GTK_SIGNAL_FUNC(prefs_themes_btn_remove_clicked_cb),
-			NULL);
-	gtk_signal_connect(GTK_OBJECT(btn_install), "clicked",
-			GTK_SIGNAL_FUNC(prefs_themes_btn_install_clicked_cb),
-			NULL);
-	gtk_signal_connect(GTK_OBJECT(btn_more), "clicked",
-			GTK_SIGNAL_FUNC(prefs_themes_btn_more_clicked_cb),
-			NULL);
+	g_signal_connect(G_OBJECT(btn_use), "clicked",
+			 G_CALLBACK(prefs_themes_btn_use_clicked_cb),
+			 NULL);
+	g_signal_connect(G_OBJECT(btn_remove), "clicked",
+			 G_CALLBACK(prefs_themes_btn_remove_clicked_cb),
+			 NULL);
+	g_signal_connect(G_OBJECT(btn_install), "clicked",
+			 G_CALLBACK(prefs_themes_btn_install_clicked_cb),
+			 NULL);
+	g_signal_connect(G_OBJECT(btn_more), "clicked",
+			 G_CALLBACK(prefs_themes_btn_more_clicked_cb),
+			 NULL);
 
 	gtk_widget_grab_default (btn_use);
-	/* END GLADE EDITED CODE */
 
 	prefs_themes->window = GTK_WIDGET(window);
 	

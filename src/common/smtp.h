@@ -58,7 +58,8 @@ typedef enum
 	SMTPAUTH_LOGIN      = 1 << 0,
 	SMTPAUTH_CRAM_MD5   = 1 << 1,
 	SMTPAUTH_DIGEST_MD5 = 1 << 2,
-	SMTPAUTH_TLS_AVAILABLE = 1 << 3
+	SMTPAUTH_TLS_AVAILABLE = 1 << 3,
+	SMTPAUTH_PLAIN      = 1 << 4
 } SMTPAuthType;
 
 typedef enum
@@ -73,6 +74,7 @@ typedef enum
 	SMTP_AUTH_LOGIN_USER,
 	SMTP_AUTH_LOGIN_PASS,
 	SMTP_AUTH_CRAM_MD5,
+	SMTP_AUTH_PLAIN,
 	SMTP_RCPT,
 	SMTP_DATA,
 	SMTP_SEND_DATA,
@@ -107,12 +109,15 @@ struct _SMTPSession
 	guchar *send_data;
 	guint send_data_len;
 
+	gint max_message_size;
+
 	SMTPAuthType avail_auth_type;
 	SMTPAuthType forced_auth_type;
 	SMTPAuthType auth_type;
 
 	SMTPErrorValue error_val;
 	gchar *error_msg;
+	gboolean is_esmtp;
 };
 
 Session *smtp_session_new	(void);

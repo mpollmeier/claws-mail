@@ -232,16 +232,16 @@ static void browse_create( void ) {
 	GtkWidget *statusbar;
 	gint top;
 
-	window = gtk_window_new(GTK_WINDOW_DIALOG);
+	window = gtk_dialog_new();
 	gtk_widget_set_usize( window, BROWSELDAP_WIDTH, BROWSELDAP_HEIGHT );
 	gtk_container_set_border_width( GTK_CONTAINER(window), 0 );
 	gtk_window_set_title( GTK_WINDOW(window), _("Browse Directory Entry") );
 	gtk_window_set_position( GTK_WINDOW(window), GTK_WIN_POS_MOUSE );
 	gtk_window_set_modal( GTK_WINDOW(window), TRUE );
-	gtk_signal_connect( GTK_OBJECT(window), "delete_event",
-			    GTK_SIGNAL_FUNC(browse_delete_event), NULL );
-	gtk_signal_connect( GTK_OBJECT(window), "key_press_event",
-			    GTK_SIGNAL_FUNC(browse_key_pressed), NULL );
+	g_signal_connect(G_OBJECT(window), "delete_event",
+			 G_CALLBACK(browse_delete_event), NULL);
+	g_signal_connect(G_OBJECT(window), "key_press_event",
+			 G_CALLBACK(browse_key_pressed), NULL);
 
 	vbox = gtk_vbox_new(FALSE, 8);
 	gtk_container_add(GTK_CONTAINER(window), vbox);
@@ -281,7 +281,7 @@ static void browse_create( void ) {
 	tree_win = gtk_scrolled_window_new( NULL, NULL );
 	gtk_scrolled_window_set_policy( GTK_SCROLLED_WINDOW(tree_win),
 				        GTK_POLICY_AUTOMATIC,
-				        GTK_POLICY_ALWAYS );
+				        GTK_POLICY_AUTOMATIC );
 	gtk_box_pack_start( GTK_BOX(vlbox), tree_win, TRUE, TRUE, 0 );
 
 	list_entry = gtk_clist_new( N_COLS );
@@ -309,8 +309,8 @@ static void browse_create( void ) {
 	gtk_box_pack_end(GTK_BOX(vbox), hbbox, FALSE, FALSE, 0);
 	gtk_container_set_border_width( GTK_CONTAINER(hbbox), 0 );
 
-	gtk_signal_connect(GTK_OBJECT(close_btn), "clicked",
-			   GTK_SIGNAL_FUNC(browse_close), NULL);
+	g_signal_connect(G_OBJECT(close_btn), "clicked",
+			 G_CALLBACK(browse_close), NULL);
 	gtk_widget_grab_default(close_btn);
 
 	gtk_widget_show_all(vbox);

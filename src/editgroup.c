@@ -229,7 +229,7 @@ static gint edit_group_list_compare_func( GtkCList *clist, gconstpointer ptr1, g
 	if( cell2 ) name2 = cell2->u.text;
 	if( ! name1 ) return ( name2 != NULL );
 	if( ! name2 ) return -1;
-	return strcasecmp( name1, name2 );
+	return g_utf8_collate( name1, name2 );
 }
 
 static void addressbook_edit_group_create( gboolean *cancelled ) {
@@ -323,7 +323,7 @@ static void addressbook_edit_group_create( gboolean *cancelled ) {
 	gtk_box_pack_start(GTK_BOX(vboxl), clist_swin, TRUE, TRUE, 0);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(clist_swin),
 				       GTK_POLICY_AUTOMATIC,
-				       GTK_POLICY_ALWAYS);
+				       GTK_POLICY_AUTOMATIC);
 
 	clist_group = gtk_clist_new_with_titles( GROUP_N_COLS, titles );
 	gtk_container_add( GTK_CONTAINER(clist_swin), clist_group );
@@ -352,7 +352,7 @@ static void addressbook_edit_group_create( gboolean *cancelled ) {
 	gtk_box_pack_start(GTK_BOX(vboxl), clist_swin, TRUE, TRUE, 0);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(clist_swin),
 				       GTK_POLICY_AUTOMATIC,
-				       GTK_POLICY_ALWAYS);
+				       GTK_POLICY_AUTOMATIC);
 
 	clist_avail = gtk_clist_new_with_titles( GROUP_N_COLS, titles );
 	gtk_container_add( GTK_CONTAINER(clist_swin), clist_avail );

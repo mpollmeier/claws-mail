@@ -117,7 +117,7 @@ void prefs_config_parse_one_line(PrefParam *param, const gchar *buf)
 
 	for (i = 0; param[i].name != NULL; i++) {
 		name_len = strlen(param[i].name);
-		if (strncasecmp(buf, param[i].name, name_len))
+		if (g_ascii_strncasecmp(buf, param[i].name, name_len))
 			continue;
 		if (buf[name_len] != '=')
 			continue;
@@ -127,9 +127,6 @@ void prefs_config_parse_one_line(PrefParam *param, const gchar *buf)
 		switch (param[i].type) {
 		case P_STRING:
 		{
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
 			gchar *tmp;
 
 			tmp = *value ?
@@ -138,7 +135,7 @@ void prefs_config_parse_one_line(PrefParam *param, const gchar *buf)
 						    CS_UTF_8)
 				: g_strdup("");
 			if (!tmp) {
-				g_warning("faild to convert character set.");
+				g_warning("failed to convert character set.");
 				tmp = g_strdup(value);
 			}
 			g_free(*((gchar **)param[i].data));
@@ -202,8 +199,8 @@ if (!(func)) \
 	return; \
 } \
 
-void prefs_save_config(PrefParam *param, const gchar *label,
-		       const gchar *rcfile)
+void prefs_write_config(PrefParam *param, const gchar *label,
+		        const gchar *rcfile)
 {
 	FILE *orig_fp;
 	PrefFile *pfile;
@@ -282,9 +279,6 @@ gint prefs_write_param(PrefParam *param, FILE *fp)
 		switch (param[i].type) {
 		case P_STRING:
 		{
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
 			gchar *tmp = NULL;
 
 			if (*((gchar **)param[i].data)) {
@@ -369,9 +363,6 @@ void prefs_set_default(PrefParam *param)
 		if (!param[i].data) continue;
 
 		switch (param[i].type) {
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
 		case P_STRING:
 		case P_PASSWORD:
 			g_free(*((gchar **)param[i].data));
@@ -413,7 +404,7 @@ void prefs_set_default(PrefParam *param)
 			break;
 		case P_BOOL:
 			if (param[i].defval != NULL) {
-				if (!strcasecmp(param[i].defval, "TRUE"))
+				if (!g_ascii_strcasecmp(param[i].defval, "TRUE"))
 					*((gboolean *)param[i].data) = TRUE;
 				else
 					*((gboolean *)param[i].data) =
@@ -486,9 +477,9 @@ void prefs_dialog_create(PrefsDialog *dialog)
 
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_container_set_border_width (GTK_CONTAINER (window), 8);
-	gtk_window_position (GTK_WINDOW(window), GTK_WIN_POS_CENTER);
+	gtk_window_set_position (GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	gtk_window_set_modal (GTK_WINDOW (window), TRUE);
-	gtk_window_set_policy (GTK_WINDOW(window), FALSE, TRUE, FALSE);
+	gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
 
 	vbox = gtk_vbox_new (FALSE, 6);
 	gtk_widget_show(vbox);
@@ -574,11 +565,8 @@ void prefs_set_dialog_to_default(PrefParam *param)
 		switch (tmpparam.type) {
 		case P_STRING:
 		case P_PASSWORD:
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
 			if (tmpparam.defval) {
-				if (!strncasecmp(tmpparam.defval, "ENV_", 4)) {
+				if (!g_ascii_strncasecmp(tmpparam.defval, "ENV_", 4)) {
 					str_data = g_strdup(g_getenv(param[i].defval + 4));
 					tmpparam.data = &str_data;
 					break;
@@ -609,7 +597,7 @@ void prefs_set_dialog_to_default(PrefParam *param)
 			break;
 		case P_BOOL:
 			if (tmpparam.defval) {
-				if (!strcasecmp(tmpparam.defval, "TRUE"))
+				if (!g_ascii_strcasecmp(tmpparam.defval, "TRUE"))
 					bool_data = TRUE;
 				else
 					bool_data = atoi(tmpparam.defval)
@@ -776,7 +764,7 @@ void prefs_set_text(PrefParam *pparam)
 
 		text = GTK_TEXT_VIEW(*pparam->widget);
 		buffer = gtk_text_view_get_buffer(text);
-		gtk_text_buffer_set_text(buffer, "\0", -1);
+		gtk_text_buffer_set_text(buffer, "", -1);
 		gtk_text_buffer_get_start_iter(buffer, &iter);
 		gtk_text_buffer_insert(buffer, &iter, buf, -1);
 		break;

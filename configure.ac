@@ -3,19 +3,23 @@ AC_PREREQ(2.50)
 AC_INIT(src/main.c)
 AC_CONFIG_AUX_DIR(config)
 
-PACKAGE=sylpheed
+PACKAGE=sylpheed-claws
 
 dnl version number
 MAJOR_VERSION=0
 MINOR_VERSION=9
-MICRO_VERSION=9
+MICRO_VERSION=13
 INTERFACE_AGE=0
 BINARY_AGE=0
-EXTRA_VERSION=0
-if test $EXTRA_VERSION -eq 0; then
-    VERSION=${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION}claws
+EXTRA_VERSION=29
+EXTRA_RELEASE=
+EXTRA_GTK2_VERSION=.2
+EXTRA_WIN32_VERSION=.1
+
+if test \( $EXTRA_VERSION -eq 0 \) -o \( "x$EXTRA_RELEASE" != "x" \); then
+    VERSION=${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION}${EXTRA_RELEASE}${EXTRA_GTK2_VERSION}
 else
-    VERSION=${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION}claws${EXTRA_VERSION}
+    VERSION=${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION}cvs${EXTRA_VERSION}${EXTRA_GTK2_VERSION}
 fi
 
 dnl set $target
@@ -77,7 +81,7 @@ AM_PROG_LEX
 AC_PROG_YACC
 AC_PROG_LIBTOOL
 
-SYLPHEED_ACLOCAL_INCLUDE(ac)
+SYLPHEED_ACLOCAL_INCLUDE(m4)
   
 dnl ******************************
 dnl Checks for host
@@ -126,10 +130,8 @@ AM_ICONV
 
 dnl for gettext
 ALL_LINGUAS="bg cs de el en_GB es fr hr hu it ja ko nl pl pt_BR ru sk sr sv zh_CN zh_TW.Big5"
-GETTEXT_PACKAGE=sylpheed
-AC_SUBST(GETTEXT_PACKAGE)
-AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Define text domain.])
-AM_GLIB_GNU_GETTEXT
+AM_GNU_GETTEXT([use-libtool])
+AM_GNU_GETTEXT_VERSION(0.12.1)
 dnl AC_CHECK_FUNC(gettext, AC_CHECK_LIB(intl, gettext))
 localedir='${prefix}/${DATADIRNAME}/locale'
 AC_SUBST(localedir)
@@ -278,9 +280,26 @@ else
 fi
 
 dnl Check for OpenSSL
-AM_PATH_OPENSSL
+AC_ARG_ENABLE(openssl,
+	[  --enable-openssl    Attempt to use OpenSSL for SSL support.],
+	[ac_cv_enable_openssl=$enableval], [ac_cv_enable_openssl=yes])
+if test x"$ac_cv_enable_openssl" = xyes; then
+	PKG_CHECK_MODULES(OPENSSL, openssl >= 0.9.7, :, ac_cv_enable_openssl=no)
+	if test x$ac_cv_enable_openssl = xyes; then
+		AC_DEFINE(USE_OPENSSL, 1, Define if you want OpenSSL support)
+	fi
+fi
+AC_SUBST(OPENSSL_CFLAGS)
+AC_SUBST(OPENSSL_LIBS)
 
-dnl Key for password encryption
+dnl password encryption
+OLDLIBS=$LIBS
+LIBS=
+AC_SEARCH_LIBS(encrypt, crypt, [], AC_MSG_ERROR(['encrypt'-function not found.]))
+CRYPT_LIBS=$LIBS
+AC_SUBST(CRYPT_LIBS)
+LIBS=$OLDLIBS
+
 AC_ARG_WITH(passcrypt-key, [  --with-passcrypt-key=KEY     Key used to encode passwords (8 byte string)],
 	    with_passcrypt_key="$withval", with_passcrypt_key="passkey0")
 AC_SUBST(PASSCRYPT_KEY, $with_passcrypt_key)
@@ -298,25 +317,8 @@ dnl ** GTK user interface **
 dnl ************************
 
 dnl Checks for GTK
-AM_PATH_GTK_2_0(2.0.0,,
+AM_PATH_GTK_2_0(2.4.0,,
 	AC_MSG_ERROR(Test for GTK failed. See the file 'INSTALL' for help.))
-
-dnl check if gdk / gtk was compiled with USE_XIM
-AC_MSG_CHECKING([whether GTK was compiled with XIM support])
-CFLAGS_SAVE="$CFLAGS"
-LDFLAGS_SAVE="$LDFLAGS"
-CFLAGS="$CFLAGS `$GTK_CONFIG --cflags`"
-LDFLAGS="$LDFLAGS `$GTK_CONFIG --libs`"
-AC_CACHE_VAL(ac_cv_use_xim, [
-	AC_TRY_LINK_FUNC([gdk_ic_attr_new],
-			 ac_cv_use_xim=yes, ac_cv_use_xim=no)
-])
-AC_MSG_RESULT($ac_cv_use_xim)
-if test $ac_cv_use_xim = yes; then
-	AC_DEFINE(USE_XIM, 1, Whether GTK was compiled with XIM support or not)
-fi
-CFLAGS="$CFLAGS_SAVE"
-LDFLAGS="$LDFLAGS_SAVE"
 
 dnl GNU/Aspell is used for spell checking
 AC_ARG_ENABLE(aspell,
@@ -365,13 +367,40 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+dnl check for pthread support
+AC_ARG_ENABLE(pthread,
+	[  --disable-pthread           Disable pthread support],
+	[ac_cv_enable_pthread=$enableval], [ac_cv_enable_pthread=yes])
+AC_MSG_CHECKING([whether to use pthread])
+if test x$ac_cv_enable_pthread = xno; then
+	AC_MSG_RESULT(no)
+else
+	AC_MSG_RESULT(yes)
+
+	AC_CHECK_LIB(pthread, pthread_create, :, ac_cv_enable_pthread=no)
+	AC_CHECK_HEADERS(pthread.h, :, ac_cv_enable_pthread=no)
+
+	if test x$ac_cv_enable_pthread = xyes; then
+		AC_DEFINE(USE_PTHREAD, 1, Define if you have pthread)
+		PTHREAD_LIBS="-lpthread"
+	fi
+
+fi
+AC_SUBST(PTHREAD_LIBS)
+
 dnl for LDAP support in addressbook
 dnl no check for libraries; dynamically loaded
 AC_ARG_ENABLE(ldap,
 	[  --enable-ldap           Enable LDAP support [default=no]],
 	[ac_cv_enable_ldap=$enableval], [ac_cv_enable_ldap=no])
 AC_MSG_CHECKING([whether to use LDAP])
-if test "$ac_cv_enable_ldap" = yes; then
+if test x"$ac_cv_enable_ldap" = xno; then
+	AC_MSG_RESULT(no)
+elif test x"$ac_cv_enable_ldap" = xyes -a x"$ac_cv_enable_pthread" = xno; then
+	AC_MSG_RESULT(no - LDAP support needs pthread support)
+
+	ac_cv_enable_ldap=no
+else
 	AC_MSG_RESULT(yes)
 
 	dnl check for available libraries, and pull them in
@@ -381,11 +410,7 @@ if test "$ac_cv_enable_ldap" = yes; then
 	AC_CHECK_LIB(lber, ber_get_tag, LDAP_LIBS="$LDAP_LIBS -llber",,
 		     $LDAP_LIBS)
 
-	dnl we need libpthread for sylpheed ldap,  until we find
-	dnl a better way to handle ldap requests asynchronously...
-	AC_CHECK_LIB(pthread, pthread_create, LDAP_LIBS="$LDAP_LIBS -lpthread")
-
-	AC_CHECK_HEADERS(ldap.h lber.h pthread.h,
+	AC_CHECK_HEADERS(ldap.h lber.h,
 			 [ ac_cv_enable_ldap=yes ],
 			 [ ac_cv_enable_ldap=no ])
 
@@ -394,19 +419,28 @@ if test "$ac_cv_enable_ldap" = yes; then
 			     [ ac_cv_enable_ldap=yes ],
 			     [ ac_cv_enable_ldap=no ],
 			     $LDAP_LIBS)
+
+		AC_CHECK_LIB(ldap, ldap_start_tls_s,
+	     		     [ ac_cv_have_tls=yes ],
+	     		     [ ac_cv_have_tls=no ])
+
 	fi
 
 	AC_MSG_CHECKING([whether ldap library is available])
 	AC_MSG_RESULT($ac_cv_enable_ldap)
+
+	AC_MSG_CHECKING([whether TLS library is available])
+	AC_MSG_RESULT($ac_cv_have_tls)
 
 	if test "$ac_cv_enable_ldap" = yes; then
 		CFLAGS="$CFLAGS `$GLIB_CONFIG --cflags gthread`"
 		LDAP_LIBS="$LDAP_LIBS -lldap `$GLIB_CONFIG --libs gthread`"
 		AC_DEFINE(USE_LDAP, 1, Define if you want LDAP support in addressbook.)
 		AC_SUBST(LDAP_LIBS)
+		if test "$ac_cv_have_tls" = yes; then
+			AC_DEFINE(USE_LDAP_TLS, 1, Define if you want LDAP TLS support in addressbook.)
+		fi
 	fi
-else
-	AC_MSG_RESULT(no)
 fi
 
 dnl for JPilot support in addressbook
@@ -437,18 +471,25 @@ else
 	AC_MSG_RESULT(no)
 fi
 
-dnl GPGME is used to support OpenPGP 
-AC_ARG_ENABLE(gpgme,
-	[  --enable-gpgme          Enable GnuPG support using GPGME [default=no]],
-	[ac_cv_enable_gpgme=$enableval], [ac_cv_enable_gpgme=no])
-AC_MSG_CHECKING([whether to use GPGME])
-if test $ac_cv_enable_gpgme = yes; then
-	AC_MSG_RESULT(yes)
-	AM_PATH_GPGME(0.3.10, AC_DEFINE(USE_GPGME, 1, Define if you use GPGME to support OpenPGP.),
-		      [use_gpgme=no
-		       ac_cv_enable_gpgme=no])
-else
-	AC_MSG_RESULT(no)
+dnl #######################################################################
+dnl # Check for startup notification
+dnl #######################################################################
+AC_ARG_ENABLE(startup-notification, [  --disable-startup-notification    compile without startup notification support],,enable_startup_notification=yes)
+
+if test "x$enable_startup_notification" = "xyes"; then
+	PKG_CHECK_MODULES(STARTUP_NOTIFICATION, libstartup-notification-1.0 >= 0.5,
+	[
+		AC_DEFINE(HAVE_STARTUP_NOTIFICATION, 1, [Define if we're using libstartup-notification.])
+		echo "Building with libstartup-notification"
+		enable_startup_notification=yes
+	],
+	[
+		echo "Building without libstartup-notification"
+		enable_startup_notification=no
+	])
+
+	AC_SUBST(STARTUP_NOTIFICATION_CFLAGS)
+	AC_SUBST(STARTUP_NOTIFICATION_LIBS)
 fi
 
 dnl *************************
@@ -476,20 +517,33 @@ if test x"$ac_cv_enable_spamassassin_plugin" = xyes; then
 fi
 AM_CONDITIONAL(BUILD_SPAMASSASSIN_PLUGIN, test x"$ac_cv_enable_spamassassin_plugin" = xyes)
 
+dnl --- PGP/MIME ---
+AC_ARG_ENABLE(pgpmime-plugin,
+	[  --disable-pgpmime-plugin           Do not build PGP/MIME plugin],
+	[ac_cv_enable_pgpmime_plugin=$enableval], [ac_cv_enable_pgpmime_plugin=yes])
+if test x"$ac_cv_enable_pgpmime_plugin" = xyes; then
+	AM_PATH_GPGME(0.3.10, AC_DEFINE(USE_GPGME, 1, Define if you use GPGME to support OpenPGP.),
+		      [ac_cv_enable_pgpmime_plugin=no])
+	if test x"$ac_cv_enable_pgpmime_plugin" = xyes; then
+		PLUGINS="pgpmime $PLUGINS"
+	fi
+fi
+AM_CONDITIONAL(BUILD_PGPMIME_PLUGIN, test x"$ac_cv_enable_pgpmime_plugin" = xyes)
+
 dnl --- MathML Viewer ---
 AC_ARG_ENABLE(mathml-viewer-plugin,
 	[  --disable-mathml-viewer-plugin    Do not build MathML-Viewer plugin],
 	[ac_cv_enable_mathml_viewer_plugin=$enableval], [ac_cv_enable_mathml_viewer_plugin=yes])
 if test x"$ac_cv_enable_mathml_viewer_plugin" = xyes; then
-	PKG_CHECK_MODULES(GTK_MATH_VIEW, gtkmathview >= 0.4.2 gtkmathview < 0.5, :, ac_cv_enable_mathml_viewer_plugin=no)
+	PKG_CHECK_MODULES(GTK_MATH_VIEW, gtkmathview >= 0.5, :, ac_cv_enable_mathml_viewer_plugin=no)
 
 	if test x"$ac_cv_enable_mathml_viewer_plugin" = xyes; then
-		AC_SUBST(GTK_MATH_VIEW_CFLAGS)
-		AC_SUBST(GTK_MATH_VIEW_LIBS)
 
 		PLUGINS="mathml-viewer $PLUGINS"
 	fi
 fi
+AC_SUBST(GTK_MATH_VIEW_CFLAGS)
+AC_SUBST(GTK_MATH_VIEW_LIBS)
 AM_CONDITIONAL(BUILD_MATHML_VIEWER_PLUGIN, test x"$ac_cv_enable_mathml_viewer_plugin" = xyes)
 
 dnl --- Image Viewer ---
@@ -546,13 +600,13 @@ if test x"$ac_cv_enable_clamav_plugin" = xyes; then
 	AC_CHECK_HEADERS(clamav.h, :, ac_cv_enable_clamav_plugin=no)
 	if test x"$ac_cv_enable_clamav_plugin" = xyes; then
 		CLAMAV_LIBS="${clamav_lib}"
-		AC_SUBST(CLAMAV_LIBS)
 
 		PLUGINS="clamav $PLUGINS"
 	else
 		AC_MSG_NOTICE([clamav library not found, will not build clamav plugin])
 	fi
 fi
+AC_SUBST(CLAMAV_LIBS)
 AM_CONDITIONAL(BUILD_CLAMAV_PLUGIN, test x"$ac_cv_enable_clamav_plugin" = xyes)
 
 dnl ****************************
@@ -562,7 +616,8 @@ dnl ****************************
 AC_OUTPUT([
 Makefile
 sylpheed.spec
-ac/Makefile
+intl/Makefile
+m4/Makefile
 po/Makefile.in
 src/common/version.h
 src/Makefile
@@ -578,6 +633,7 @@ src/plugins/image_viewer/Makefile
 src/plugins/trayicon/Makefile
 src/plugins/trayicon/libeggtrayicon/Makefile
 src/plugins/clamav/Makefile
+src/plugins/pgpmime/Makefile
 doc/Makefile
 doc/faq/Makefile
 doc/faq/de/Makefile
@@ -601,7 +657,6 @@ dnl Output the configuration summary
 echo ""
 echo "$PACKAGE $VERSION"
 echo ""
-echo "GnuPG         : $ac_cv_enable_gpgme"
 echo "JPilot        : $ac_cv_enable_jpilot"
 echo "LDAP          : $ac_cv_enable_ldap"
 echo "OpenSSL       : $ac_cv_enable_openssl"

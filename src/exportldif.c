@@ -318,7 +318,7 @@ static gchar *exportldif_find_dn(
 		UserAttribute *attrib = node->data;
 
 		node = g_list_next( node );
-		if( g_strcasecmp( attrib->name, LDIF_TAG_DN ) == 0 ) {
+		if( g_utf8_collate( attrib->name, LDIF_TAG_DN ) == 0 ) {
 			retVal = g_strdup( attrib->value );
 			break;
 		}
@@ -536,10 +536,12 @@ static void exportldif_build_filespec( ExportLdifCtl *ctl ) {
  */
 void exportldif_parse_filespec( ExportLdifCtl *ctl, gchar *fileSpec ) {
 	gchar *t;
+	gchar *base = g_path_get_basename(fileSpec);
 
 	ctl->fileLdif =
-		mgu_replace_string( ctl->fileLdif, g_basename( fileSpec ) );
-	t = g_dirname( fileSpec );
+		mgu_replace_string( ctl->fileLdif, base );
+	g_free(base);
+	t = g_path_get_dirname( fileSpec );
 	ctl->dirOutput = mgu_replace_string( ctl->dirOutput, t );
 	g_free( t );
 	ctl->path = mgu_replace_string( ctl->path, fileSpec );

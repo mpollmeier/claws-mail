@@ -227,7 +227,7 @@ void sslcertwindow_show_cert(SSLCertificate *cert)
 	gchar *buf;
 	
 	buf = g_strdup_printf(_("SSL certificate for %s"), cert->host);
-	alertpanel_with_widget(buf, NULL, _("OK"), NULL, NULL, cert_widget);
+	alertpanel_with_type(buf, NULL, _("OK"), NULL, NULL, cert_widget, ALERT_NOTICE);
 	g_free(buf);
 }
 
@@ -277,10 +277,10 @@ gboolean sslcertwindow_ask_new_cert(SSLCertificate *cert)
 	button = gtk_toggle_button_new_with_label(_("View certificate"));
 	gtk_box_pack_start(GTK_BOX(vbox), button, FALSE, FALSE, 0);
 	cert_widget = cert_presenter(cert);
-	gtk_signal_connect(GTK_OBJECT(button), "toggled",
-			   GTK_SIGNAL_FUNC(toggle_cert_cb), cert_widget);
+	g_signal_connect(G_OBJECT(button), "toggled",
+			 G_CALLBACK(toggle_cert_cb), cert_widget);
 
-	val = alertpanel_with_widget(_("Unknown SSL Certificate"), NULL, _("Accept and save"), _("Cancel connection"), NULL, vbox);
+	val = alertpanel_with_type(_("Unknown SSL Certificate"), NULL, _("Accept and save"), _("Cancel connection"), NULL, vbox, ALERT_QUESTION);
 	
 	return (val == G_ALERTDEFAULT);
 }
@@ -329,10 +329,10 @@ gboolean sslcertwindow_ask_changed_cert(SSLCertificate *old_cert, SSLCertificate
 	
 	button = gtk_toggle_button_new_with_label(_("View certificates"));
 	gtk_box_pack_start(GTK_BOX(vbox2), button, FALSE, FALSE, 0);
-	gtk_signal_connect(GTK_OBJECT(button), "toggled",
-			   GTK_SIGNAL_FUNC(toggle_cert_cb), vbox);
+	g_signal_connect(G_OBJECT(button), "toggled",
+			 G_CALLBACK(toggle_cert_cb), vbox);
 
-	val = alertpanel_with_widget(_("Changed SSL Certificate"), NULL, _("Accept and save"), _("Cancel connection"), NULL, vbox2);
+	val = alertpanel_with_type(_("Changed SSL Certificate"), NULL, _("Accept and save"), _("Cancel connection"), NULL, vbox2, ALERT_WARNING);
 	
 	return (val == G_ALERTDEFAULT);
 }

@@ -91,7 +91,6 @@ static void about_create(void)
 	gtk_window_set_title(GTK_WINDOW(window), _("About"));
 	gtk_container_set_border_width(GTK_CONTAINER(window), 8);
 	gtk_widget_set_size_request(window, 518, 358);
-	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	g_signal_connect(G_OBJECT(window), "delete_event",
 			 G_CALLBACK(gtk_widget_hide_on_delete), NULL);
 	g_signal_connect(G_OBJECT(window), "key_press_event",
@@ -144,9 +143,6 @@ static void about_create(void)
 #if HAVE_LIBCOMPFACE
 		   " compface"
 #endif
-#if USE_GPGME
-		   " GnuPG"
-#endif
 #if USE_OPENSSL
 		   " OpenSSL"
 #endif
@@ -165,7 +161,7 @@ static void about_create(void)
 	gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 0);
 
 	label = gtk_label_new
-		("Copyright (C) 1999-2003 Hiroyuki Yamamoto <hiro-y@kcn.ne.jp>");
+		("Copyright (C) 1999-2004 Hiroyuki Yamamoto <hiro-y@kcn.ne.jp>");
 	gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 0);
 
 	hbox = gtk_hbox_new(FALSE, 0);
@@ -195,7 +191,7 @@ static void about_create(void)
 
 	scrolledwin = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledwin),
-				       GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
+				       GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 	gtk_box_pack_start(GTK_BOX(vbox), scrolledwin, TRUE, TRUE, 0);
 
 	text = gtk_text_view_new();
@@ -205,11 +201,6 @@ static void about_create(void)
 
 	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text));
 	gtk_text_buffer_get_iter_at_offset(buffer, &iter, 0);
-
-#if USE_GPGME
-	gtk_text_buffer_insert(buffer, &iter,
-		_("GPGME is copyright 2001 by Werner Koch <dd9jn@gnu.org>\n\n"), -1);
-#endif /* USE_GPGME */
 
 	gtk_text_buffer_insert(buffer, &iter,
 		_("This program is free software; you can redistribute it and/or modify "
@@ -229,8 +220,8 @@ static void about_create(void)
 		  "Foundation, Inc., 59 Temple Place - Suite 330, Boston, "
 		  "MA 02111-1307, USA."), -1);
 
-	gtkut_button_set_create(&confirm_area, &ok_button, _("OK"),
-				NULL, NULL, NULL, NULL);
+	gtkut_button_set_create_stock(&confirm_area, &ok_button, GTK_STOCK_OK,
+				      NULL, NULL, NULL, NULL);
 	gtk_box_pack_end(GTK_BOX(vbox), confirm_area, FALSE, FALSE, 0);
 	gtk_widget_grab_default(ok_button);
 	g_signal_connect_closure

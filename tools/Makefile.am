@@ -11,23 +11,28 @@ EXTRA_TOOLS = \
 	google_search.pl \
 	kmail2sylpheed.pl \
 	kmail2sylpheed_v2.pl \
-	launch_firebird \
 	maildir2sylpheed.pl \
 	multiwebsearch.pl \
-	newscache_clean.pl \
+	nautilus2sylpheed.sh \
 	outlook2sylpheed.pl \
 	sylpheed-switcher \
 	sylprint.pl \
 	sylprint.rc \
 	tb2sylpheed \
+	textviewer.sh \
         update-po \
 	uudec \
-	vcard2xml.py
+	vcard2xml.py \
+	kdeservicemenu/install.sh \
+	kdeservicemenu/sylpheed-kdeservicemenu.pl
 
 EXTRA_DIST = \
 	README \
 	README.sylprint \
 	multiwebsearch.conf \
+	kdeservicemenu/README \
+	kdeservicemenu/template_sylpheed-attach-files.desktop \
+	kdeservicemenu/template_sylpheed-compress-attach.desktop \
 	$(EXTRA_TOOLS)
 
 MAKE_EXE = chmod u+x $(EXTRA_TOOLS)

@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2003 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2004 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,16 +26,14 @@
 #include <gtk/gtkwidget.h>
 #include <gtk/gtkmenu.h>
 #include <gtk/gtkmenubar.h>
-#include <gtk/gtkitemfactory.h>
 #include <gtk/gtkcheckmenuitem.h>
+#include <gtk/gtkitemfactory.h>
 #include <gtk/gtkbutton.h>
 #include <gtk/gtkwindow.h>
 
 #include "intl.h"
 #include "menu.h"
 #include "utils.h"
-
-static gchar *menu_translate(const gchar *path, gpointer data);
 
 static void menu_item_add_accel( GtkWidget *widget, guint accel_signal_id, GtkAccelGroup *accel_group,
 				 guint accel_key, GdkModifierType accel_mods, GtkAccelFlags accel_flags,
@@ -90,7 +88,7 @@ GtkWidget *popupmenu_create(GtkWidget *window, GtkItemFactoryEntry *entries,
 	return gtk_item_factory_get_widget(factory, path);
 }
 
-static gchar *menu_translate(const gchar *path, gpointer data)
+gchar *menu_translate(const gchar *path, gpointer data)
 {
 	gchar *retval;
 
@@ -107,84 +105,6 @@ static void factory_print_func(gpointer data, gchar *string)
 	g_string_append_c(out_str, '\n');
 }
 
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
-#if 0
-GString *menu_factory_get_rc(const gchar *path)
-{
-	GString *string;
-	GtkPatternSpec *pspec;
-	gchar pattern[256];
-
-	pspec = g_new(GtkPatternSpec, 1);
-	g_snprintf(pattern, sizeof(pattern), "%s*", path);
-	gtk_pattern_spec_init(pspec, pattern);
-	string = g_string_new("");
-	gtk_item_factory_dump_items(pspec, FALSE, factory_print_func,
-				    string);
-	gtk_pattern_spec_free_segs(pspec);
-
-	return string;
-}
-
-void menu_factory_clear_rc(const gchar *rc_str)
-{
-	GString *string;
-	gchar *p;
-	gchar *start, *end;
-	guint pos = 0;
-
-	string = g_string_new(rc_str);
-	while ((p = strstr(string->str + pos, "(menu-path \"")) != NULL) {
-		pos = p + 12 - string->str;
-		p = strchr(p + 12, '"');
-		if (!p) continue;
-		start = strchr(p + 1, '"');
-		if (!start) continue;
-		end = strchr(start + 1, '"');
-		if (!end) continue;
-		pos = start + 1 - string->str;
-		if (end > start + 1)
-			g_string_erase(string, pos, end - (start + 1));
-	}
-
-	gtk_item_factory_parse_rc_string(string->str);
-	g_string_free(string, TRUE);
-}
-
-void menu_factory_copy_rc(const gchar *src_path, const gchar *dest_path)
-{
-	GString *string;
-	gint src_path_len;
-	gint dest_path_len;
-	gchar *p;
-	guint pos = 0;
-
-	string = menu_factory_get_rc(src_path);
-	src_path_len = strlen(src_path);
-	dest_path_len = strlen(dest_path);
-
-	while ((p = strstr(string->str + pos, src_path)) != NULL) {
-		pos = p - string->str;
-		g_string_erase(string, pos, src_path_len);
-		g_string_insert(string, pos, dest_path);
-		pos += dest_path_len;
-	}
-
-	pos = 0;
-	while ((p = strchr(string->str + pos, ';')) != NULL) {
-		pos = p - string->str;
-		if (pos == 0 || *(p - 1) == '\n')
-			g_string_erase(string, pos, 1);
-	}
-
-	menu_factory_clear_rc(string->str);
-	gtk_item_factory_parse_rc_string(string->str);
-	g_string_free(string, TRUE);
-}
-#endif
-
 void menu_set_sensitive(GtkItemFactory *ifactory, const gchar *path,
 			gboolean sensitive)
 {
@@ -193,10 +113,8 @@ void menu_set_sensitive(GtkItemFactory *ifactory, const gchar *path,
 	g_return_if_fail(ifactory != NULL);
 
 	widget = gtk_item_factory_get_item(ifactory, path);
-	if(widget == NULL) {
-		debug_print("unknown menu entry %s\n", path);
-		return;
-	}
+	g_return_if_fail(widget != NULL);
+
 	gtk_widget_set_sensitive(widget, sensitive);
 }
 
@@ -208,25 +126,21 @@ void menu_set_sensitive_all(GtkMenuShell *menu_shell, gboolean sensitive)
 		gtk_widget_set_sensitive(GTK_WIDGET(cur->data), sensitive);
 }
 
-void menu_set_toggle(GtkItemFactory *ifactory, const gchar *path,
-			gboolean active)
+void menu_set_active(GtkItemFactory *ifactory, const gchar *path,
+		     gboolean is_active)
 {
 	GtkWidget *widget;
 
 	g_return_if_fail(ifactory != NULL);
 
 	widget = gtk_item_factory_get_item(ifactory, path);
-	gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(widget), active);
-}
+	g_return_if_fail(widget != NULL);
 
-void menu_toggle_toggle(GtkItemFactory *ifactory, const gchar *path)
-{
-	GtkWidget *widget;
-	
-	g_return_if_fail(ifactory != NULL);
-	
-	widget = gtk_item_factory_get_item(ifactory, path);
-	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(widget), !((GTK_CHECK_MENU_ITEM(widget))->active));
+	if (!GTK_IS_CHECK_MENU_ITEM(widget)) {
+		debug_print("%s not check_menu_item\n", path);
+		return;
+	}	
+	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(widget), is_active);
 }
 
 void menu_button_position(GtkMenu *menu, gint *x, gint *y, gboolean *push_in,
@@ -235,6 +149,10 @@ void menu_button_position(GtkMenu *menu, gint *x, gint *y, gboolean *push_in,
         GtkWidget *widget;
         gint wheight;
         gint wx, wy;
+	GtkRequisition mreq;
+	GdkScreen *screen;
+	GdkRectangle monitor;
+	gint monitor_num;
 
 	g_return_if_fail(x && y);
  	g_return_if_fail(GTK_IS_BUTTON(user_data));
@@ -245,9 +163,18 @@ void menu_button_position(GtkMenu *menu, gint *x, gint *y, gboolean *push_in,
         wheight = widget->requisition.height;
         wx = widget->allocation.x;
         wy = widget->allocation.y;
-         
-        *y = *y + wy + wheight;
+        
+	gtk_widget_size_request(GTK_WIDGET(menu), &mreq);
+	screen = gtk_widget_get_screen (widget);
+	monitor_num = gdk_screen_get_monitor_at_point (screen, *x, *y);
+	gdk_screen_get_monitor_geometry (screen, monitor_num, 
+					 &monitor);
+
         *x = *x + wx;
+        *y = *y + wy + wheight;
+	
+	if (*y + mreq.height >= monitor.height)
+		*y -= mreq.height;
 }
 
 gint menu_find_option_menu_index(GtkOptionMenu *optmenu, gpointer data,
@@ -276,6 +203,17 @@ gint menu_find_option_menu_index(GtkOptionMenu *optmenu, gpointer data,
 	return -1;
 }
 
+gpointer menu_get_option_menu_active_user_data(GtkOptionMenu *optmenu)
+{
+	GtkWidget *menu;
+	GtkWidget *menuitem;
+
+	menu = gtk_option_menu_get_menu(optmenu);
+	menuitem = gtk_menu_get_active(GTK_MENU(menu));
+
+	return g_object_get_data(G_OBJECT(menuitem), MENU_VAL_ID);
+}
+
 /* call backs for accelerator changes on selected menu items */
 static void menu_item_add_accel( GtkWidget *widget, guint accel_signal_id, GtkAccelGroup *accel_group,
 				 guint accel_key, GdkModifierType accel_mods, GtkAccelFlags accel_flags,
@@ -286,7 +224,7 @@ static void menu_item_add_accel( GtkWidget *widget, guint accel_signal_id, GtkAc
 #endif
 #if 0
 	GtkWidget *connected = GTK_WIDGET(user_data);	
-	if (gtk_signal_n_emissions_by_name(GTK_OBJECT(widget),"add_accelerator") > 1 ) return;
+	if (gtk_signal_n_emissions_by_name(G_OBJECT(widget),"add_accelerator") > 1 ) return;
 	gtk_widget_remove_accelerators(connected,"activate",FALSE);
 	/* lock _this_ widget */
 	gtk_accel_group_lock_entry(accel_group,accel_key,accel_mods);
@@ -309,7 +247,7 @@ static void menu_item_remove_accel(GtkWidget *widget, GtkAccelGroup *accel_group
 #if 0
 	GtkWidget *wid = GTK_WIDGET(user_data);
 
-	if (gtk_signal_n_emissions_by_name(GTK_OBJECT(widget),
+	if (gtk_signal_n_emissions_by_name(G_OBJECT(widget),
 	    "remove_accelerator") > 2 )
 		return;
 	gtk_widget_remove_accelerators(wid,"activate",FALSE);
@@ -318,10 +256,15 @@ static void menu_item_remove_accel(GtkWidget *widget, GtkAccelGroup *accel_group
 
 static void connect_accel_change_signals(GtkWidget* widget, GtkWidget *wid2) 
 {
-	gtk_signal_connect_after(GTK_OBJECT(widget), "add_accelerator", 
-				 G_CALLBACK(menu_item_add_accel), wid2);
-	gtk_signal_connect_after(GTK_OBJECT(widget), "remove_accelerator", 
-				 G_CALLBACK(menu_item_remove_accel), wid2);
+#ifndef _MSC_VER
+#warning FIXME_GTK2
+#endif /* _MSC_VER */
+#if 0
+	g_signal_connect_after(G_OBJECT(widget), "add_accelerator", 
+			       G_CALLBACK(menu_item_add_accel), wid2);
+	g_signal_connect_after(G_OBJECT(widget), "remove_accelerator", 
+			       G_CALLBACK(menu_item_remove_accel), wid2);
+#endif
 }
 
 void menu_connect_identical_items(void)
@@ -346,24 +289,26 @@ void menu_connect_identical_items(void)
 		{"<Main>/Message/Copy...",			"<SummaryView>/Copy..."},
 		{"<Main>/Message/Delete",			"<SummaryView>/Delete"},
 		{"<Main>/Message/Cancel a news message",	"<SummaryView>/Cancel a news message"},
-		{"<Main>/Tools/Execute",			"<SummaryView>/Execute"},
 		{"<Main>/Message/Mark/Mark",			"<SummaryView>/Mark/Mark"},
 		{"<Main>/Message/Mark/Unmark",			"<SummaryView>/Mark/Unmark"},
 		{"<Main>/Message/Mark/Mark as unread",		"<SummaryView>/Mark/Mark as unread"},
 		{"<Main>/Message/Mark/Mark as read",		"<SummaryView>/Mark/Mark as read"},
 		{"<Main>/Message/Mark/Mark all read",		"<SummaryView>/Mark/Mark all read"},
 		{"<Main>/Tools/Add sender to address book",	"<SummaryView>/Add sender to address book"},
-		{"<Main>/Tools/Create filter rule/Automatically",	"<SummaryView>/Create filter rule/Automatically"},
+		{"<Main>/Tools/Create filter rule/Automatically",	
+								"<SummaryView>/Create filter rule/Automatically"},
 		{"<Main>/Tools/Create filter rule/by From",	"<SummaryView>/Create filter rule/by From"},
 		{"<Main>/Tools/Create filter rule/by To",	"<SummaryView>/Create filter rule/by To"},
 		{"<Main>/Tools/Create filter rule/by Subject",	"<SummaryView>/Create filter rule/by Subject"},
+		{"<Main>/Tools/Create processing rule/Automatically",
+								"<SummaryView>/Create processing rule/Automatically"},
+		{"<Main>/Tools/Create processing rule/by From",	"<SummaryView>/Create processing rule/by From"},
+		{"<Main>/Tools/Create processing rule/by To",	"<SummaryView>/Create processing rule/by To"},
+		{"<Main>/Tools/Create processing rule/by Subject",
+								"<SummaryView>/Create processing rule/by Subject"},
 		{"<Main>/View/Open in new window",		"<SummaryView>/View/Open in new window"},
 		{"<Main>/View/Message source",			"<SummaryView>/View/Source"},
 		{"<Main>/View/Show all headers",		"<SummaryView>/View/All header"},
-		{"<Main>/File/Save as...",			"<SummaryView>/Save as..."},
-		{"<Main>/File/Print...",			"<SummaryView>/Print..."},
-		{"<Main>/Edit/Select all",			"<SummaryView>/Select all"},
-		{"<Main>/Edit/Select thread",			"<SummaryView>/Select thread"}		 
 	};
 
 	const gint numpairs = sizeof pairs / sizeof pairs[0];
@@ -393,12 +338,12 @@ void menu_select_by_data(GtkMenu *menu, gpointer data)
 	
 	g_return_if_fail(menu != NULL);
 
-	children = gtk_container_children(GTK_CONTAINER(menu));
+	children = gtk_container_get_children(GTK_CONTAINER(menu));
 
 	for (cur = children; cur != NULL; cur = g_list_next(cur)) {
-		GtkObject *child = GTK_OBJECT(cur->data);
+		GObject *child = G_OBJECT(cur->data);
 
-		if (gtk_object_get_user_data(child) == data) {
+		if (g_object_get_data(child, MENU_VAL_ID) == data) {
 			select_item = GTK_WIDGET(child);
 		}
 	}

@@ -60,10 +60,17 @@
 #include "folderview.h"
 #include "stock_pixmap.h"
 #include "quote_fmt.h"
+#include "prefswindow.h"
+
+enum {
+	DATEFMT_FMT,
+	DATEFMT_TXT,
+	N_DATEFMT_COLUMNS
+};
 
 PrefsCommon prefs_common;
 
-static PrefsDialog dialog;
+GtkWidget *notebook;
 
 static struct Receive {
 	GtkWidget *checkbtn_incext;
@@ -89,7 +96,6 @@ static struct Receive {
 
 static struct Send {
 	GtkWidget *checkbtn_savemsg;
-	GtkWidget *checkbtn_queuemsg;
 	GtkWidget *optmenu_senddialog;
 
 	GtkWidget *optmenu_charset;
@@ -103,11 +109,6 @@ static struct Compose {
 	GtkWidget *checkbtn_autoextedit;
 	GtkWidget *spinbtn_undolevel;
 	GtkObject *spinbtn_undolevel_adj;
-	GtkWidget *spinbtn_linewrap;
-	GtkObject *spinbtn_linewrap_adj;
-	GtkWidget *checkbtn_wrapquote;
-	GtkWidget *checkbtn_autowrap;
-	GtkWidget *checkbtn_wrapatsend;
 
 	GtkWidget *checkbtn_reply_account_autosel;
 	GtkWidget *checkbtn_forward_account_autosel;
@@ -116,8 +117,6 @@ static struct Compose {
 	GtkWidget *checkbtn_default_reply_list;
 	GtkWidget *checkbtn_forward_as_attachment;
 	GtkWidget *checkbtn_redirect_keep_from;
-	GtkWidget *checkbtn_smart_wrapping;
-	GtkWidget *checkbtn_block_cursor;
 	GtkWidget *checkbtn_reply_with_quote;
 	
 	GtkWidget *checkbtn_autosave;
@@ -149,8 +148,6 @@ static struct Display {
 } display;
 
 static struct Message {
-	GtkWidget *chkbtn_enablecol;
-	GtkWidget *button_edit_col;
 	GtkWidget *chkbtn_mbalnum;
 	GtkWidget *chkbtn_disphdrpane;
 	GtkWidget *chkbtn_disphdr;
@@ -165,17 +162,6 @@ static struct Message {
 
 	GtkWidget *chkbtn_attach_desc;
 } message;
-
-#if USE_GPGME
-static struct Privacy {
-	GtkWidget *checkbtn_auto_check_signatures;
-	GtkWidget *checkbtn_store_passphrase;
-	GtkWidget *spinbtn_store_passphrase;
-	GtkObject *spinbtn_store_passphrase_adj;
-	GtkWidget *checkbtn_passphrase_grab;
-	GtkWidget *checkbtn_gpg_warning;
-} privacy;
-#endif
 
 static struct Interface {
 	/* GtkWidget *checkbtn_emacs; */
@@ -205,22 +191,10 @@ static struct Other {
 	GtkObject *spinbtn_iotimeout_adj;
 } other;
 
-static struct MessageColorButtons {
-	GtkWidget *quote_level1_btn;
-	GtkWidget *quote_level2_btn;
-	GtkWidget *quote_level3_btn;
-	GtkWidget *uri_btn;
-	GtkWidget *tgt_folder_btn;
-	GtkWidget *signature_btn;
-} color_buttons;
-
 static struct KeybindDialog {
 	GtkWidget *window;
 	GtkWidget *combo;
 } keybind;
-
-static GtkWidget *quote_color_win;
-static GtkWidget *color_dialog;
 
 static void prefs_common_charset_set_data_from_optmenu	   (PrefParam *pparam);
 static void prefs_common_charset_set_optmenu		   (PrefParam *pparam);
@@ -289,9 +263,6 @@ static PrefParam param[] = {
 	{"save_message", "TRUE", &prefs_common.savemsg, P_BOOL,
 	 &p_send.checkbtn_savemsg,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
-	{"queue_message", "FALSE", &prefs_common.queue_msg, P_BOOL,
-	 &p_send.checkbtn_queuemsg,
-	 prefs_set_data_from_toggle, prefs_set_toggle},
 	{"send_dialog_mode", "0", &prefs_common.send_dialog_mode, P_ENUM,
 	 &p_send.optmenu_senddialog,
 	 prefs_common_send_dialog_set_data_from_optmenu,
@@ -323,26 +294,15 @@ static PrefParam param[] = {
 	{"undo_level", "50", &prefs_common.undolevels, P_INT,
 	 &compose.spinbtn_undolevel,
 	 prefs_set_data_from_spinbtn, prefs_set_spinbtn},
-	{"block_cursor", "FALSE", &prefs_common.block_cursor,
-	 P_BOOL, &compose.checkbtn_block_cursor,
-	 prefs_set_data_from_toggle, prefs_set_toggle},
 
 	{"linewrap_length", "72", &prefs_common.linewrap_len, P_INT,
-	 &compose.spinbtn_linewrap,
-	 prefs_set_data_from_spinbtn, prefs_set_spinbtn},
-	{"linewrap_quotation", "FALSE", &prefs_common.linewrap_quote, P_BOOL,
-	 &compose.checkbtn_wrapquote,
-	 prefs_set_data_from_toggle, prefs_set_toggle},
-	{"linewrap_auto", "FALSE", &prefs_common.autowrap, P_BOOL,
-	 &compose.checkbtn_autowrap,
-	 prefs_set_data_from_toggle, prefs_set_toggle},
-	{"linewrap_before_sending", "FALSE",
-	 &prefs_common.linewrap_at_send, P_BOOL,
-	 &compose.checkbtn_wrapatsend,
-	 prefs_set_data_from_toggle, prefs_set_toggle},
-        {"smart_wrapping", "TRUE", &prefs_common.smart_wrapping,
-	 P_BOOL, &compose.checkbtn_smart_wrapping,
-	 prefs_set_data_from_toggle, prefs_set_toggle},
+	 NULL, NULL, NULL},
+	{"linewrap_quotation", "TRUE", &prefs_common.linewrap_quote, P_BOOL,
+	 NULL, NULL, NULL},
+	{"linewrap_auto", "TRUE", &prefs_common.autowrap, P_BOOL,
+	 NULL, NULL, NULL},
+	{"linewrap_before_sending", "FALSE", &prefs_common.linewrap_at_send, P_BOOL, 
+	 NULL, NULL, NULL},
         {"autosave", "FALSE", &prefs_common.autosave,
 	 P_BOOL, &compose.checkbtn_autosave,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
@@ -556,7 +516,7 @@ static PrefParam param[] = {
 	 NULL, NULL, NULL},
 	{"folderview_width", "179", &prefs_common.folderview_width, P_INT,
 	 NULL, NULL, NULL},
-	{"folderview_height", "600", &prefs_common.folderview_height, P_INT,
+	{"folderview_height", "450", &prefs_common.folderview_height, P_INT,
 	 NULL, NULL, NULL},
 	{"folderview_visible", "TRUE", &prefs_common.folderview_visible, P_BOOL,
 	 NULL, NULL, NULL},
@@ -572,7 +532,7 @@ static PrefParam param[] = {
 
 	{"summaryview_width", "600", &prefs_common.summaryview_width, P_INT,
 	 NULL, NULL, NULL},
-	{"summaryview_height", "173", &prefs_common.summaryview_height, P_INT,
+	{"summaryview_height", "157", &prefs_common.summaryview_height, P_INT,
 	 NULL, NULL, NULL},
 
 	{"main_messagewin_x", "256", &prefs_common.main_msgwin_x, P_INT,
@@ -581,7 +541,7 @@ static PrefParam param[] = {
 	 NULL, NULL, NULL},
 	{"messageview_width", "600", &prefs_common.msgview_width, P_INT,
 	 NULL, NULL, NULL},
-	{"messageview_height", "540", &prefs_common.msgview_height, P_INT,
+	{"messageview_height", "300", &prefs_common.msgview_height, P_INT,
 	 NULL, NULL, NULL},
 	{"messageview_visible", "TRUE", &prefs_common.msgview_visible, P_BOOL,
 	 NULL, NULL, NULL},
@@ -620,8 +580,7 @@ static PrefParam param[] = {
 	 NULL, NULL, NULL},
 	/* Message */
 	{"enable_color", "TRUE", &prefs_common.enable_color, P_BOOL,
-	 &message.chkbtn_enablecol,
-	 prefs_set_data_from_toggle, prefs_set_toggle},
+	 NULL, NULL, NULL},
 
 	{"quote_level1_color", "179", &prefs_common.quote_level1_col, P_COLOR,
 	 NULL, NULL, NULL},
@@ -671,6 +630,8 @@ static PrefParam param[] = {
 	{"attach_desc", "TRUE", &prefs_common.attach_desc, P_BOOL,
 	 &message.chkbtn_attach_desc,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
+	{"attach_save_directory", NULL,
+	 &prefs_common.attach_save_dir, P_STRING, NULL, NULL, NULL},
 
 	/* MIME viewer */
 	{"mime_image_viewer", "display '%s'",
@@ -679,29 +640,6 @@ static PrefParam param[] = {
 	 &prefs_common.mime_audio_player, P_STRING, NULL, NULL, NULL},
 	{"mime_open_command", "gedit '%s'",
 	 &prefs_common.mime_open_cmd, P_STRING, NULL, NULL, NULL},
-
-#if USE_GPGME
-	/* Privacy */
-	{"auto_check_signatures", "TRUE",
-	 &prefs_common.auto_check_signatures, P_BOOL,
-	 &privacy.checkbtn_auto_check_signatures,
-	 prefs_set_data_from_toggle, prefs_set_toggle},
-	{"store_passphrase", "FALSE", &prefs_common.store_passphrase, P_BOOL,
-	 &privacy.checkbtn_store_passphrase,
-	 prefs_set_data_from_toggle, prefs_set_toggle},
-	{"store_passphrase_timeout", "0",
-	 &prefs_common.store_passphrase_timeout, P_INT,
-	 &privacy.spinbtn_store_passphrase,
-	 prefs_set_data_from_spinbtn, prefs_set_spinbtn},
-#ifndef __MINGW32__
-	{"passphrase_grab", "FALSE", &prefs_common.passphrase_grab, P_BOOL,
-	 &privacy.checkbtn_passphrase_grab,
-	 prefs_set_data_from_toggle, prefs_set_toggle},
-#endif /* __MINGW32__ */
-	{"gpg_warning", "TRUE", &prefs_common.gpg_warning, P_BOOL,
-	 &privacy.checkbtn_gpg_warning,
-	 prefs_set_data_from_toggle, prefs_set_toggle},
-#endif /* USE_GPGME */
 
 	/* Interface */
 	{"separate_folder", "FALSE", &prefs_common.sep_folder, P_BOOL,
@@ -722,6 +660,9 @@ static PrefParam param[] = {
 	 &prefs_common.mark_as_read_on_new_window,
 	 P_BOOL, &Xinterface.checkbtn_mark_as_read_on_newwin,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
+	{"mark_as_read_delay", "0",
+	 &prefs_common.mark_as_read_delay, P_INT, 
+	 NULL, NULL, NULL},
 	{"open_inbox_on_inc", "FALSE", &prefs_common.open_inbox_on_inc,
 	 P_BOOL, &Xinterface.checkbtn_openinbox,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
@@ -758,7 +699,7 @@ static PrefParam param[] = {
 	 P_BOOL, &other.checkbtn_addaddrbyclick,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
 
-	{"confirm_on_exit", "TRUE", &prefs_common.confirm_on_exit, P_BOOL,
+	{"confirm_on_exit", "FALSE", &prefs_common.confirm_on_exit, P_BOOL,
 	 &other.checkbtn_confonexit,
 	 prefs_set_data_from_toggle, prefs_set_toggle},
 	{"clean_trash_on_exit", "FALSE", &prefs_common.clean_on_exit, P_BOOL,
@@ -780,6 +721,8 @@ static PrefParam param[] = {
 	{"work_offline", "FALSE", &prefs_common.work_offline, P_BOOL,
 	 NULL, NULL, NULL},
 	{"summary_quicksearch_type", "0", &prefs_common.summary_quicksearch_type, P_INT,
+	 NULL, NULL, NULL},
+	{"summary_quicksearch_sticky", "1", &prefs_common.summary_quicksearch_sticky, P_INT,
 	 NULL, NULL, NULL},
 
 	{"io_timeout_secs", "60", &prefs_common.io_timeout_secs,
@@ -816,9 +759,6 @@ static void prefs_spelling_create	(void);
 static void prefs_quote_create		(void);
 static void prefs_display_create	(void);
 static void prefs_message_create	(void);
-#if USE_GPGME
-static void prefs_privacy_create	(void);
-#endif
 static void prefs_interface_create	(void);
 static void prefs_other_create		(void);
 
@@ -834,32 +774,12 @@ static gboolean date_format_on_delete		(GtkWidget	*dialogwidget,
 						 GtkWidget     **widget);
 static void date_format_entry_on_change		(GtkEditable	*editable,
 						 GtkLabel	*example);
-static void date_format_select_row		(GtkWidget	*date_format_list,
-						 gint		 row,
-						 gint		 column,
-						 GdkEventButton	*event,
-						 GtkWidget	*date_format);
+static void date_format_select_row	        (GtkTreeView *list_view,
+						 GtkTreePath *path,
+						 GtkTreeViewColumn *column,
+						 GtkWidget *date_format);
 static GtkWidget *date_format_create            (GtkButton      *button,
                                                  void           *data);
-
-static void prefs_quote_colors_dialog		(void);
-static void prefs_quote_colors_dialog_create	(void);
-static gboolean prefs_quote_colors_key_pressed	(GtkWidget	*widget,
-						 GdkEventKey	*event,
-						 gpointer	 data);
-static void quote_color_set_dialog		(GtkWidget	*widget,
-						 gpointer	 data);
-static void quote_colors_set_dialog_ok		(GtkWidget	*widget,
-						 gpointer	 data);
-static void quote_colors_set_dialog_cancel	(GtkWidget	*widget,
-						 gpointer	 data);
-static gboolean quote_colors_set_dialog_key_pressed	(GtkWidget	*widget,
-							 GdkEventKey	*event,
-							 gpointer	 data);
-static void set_button_bg_color			(GtkWidget	*widget,
-						 gint		 color);
-static void prefs_enable_message_color_toggled	(void);
-static void prefs_recycle_colors_toggled	(GtkWidget	*widget);
 
 static void prefs_keybind_select		(void);
 static gint prefs_keybind_deleted		(GtkWidget	*widget,
@@ -871,19 +791,67 @@ static gboolean prefs_keybind_key_pressed	(GtkWidget	*widget,
 static void prefs_keybind_cancel		(void);
 static void prefs_keybind_apply_clicked		(GtkWidget	*widget);
 
-static gint prefs_common_deleted	(GtkWidget	*widget,
-					 GdkEventAny	*event,
-					 gpointer	 data);
-static gboolean prefs_common_key_pressed(GtkWidget	*widget,
-					 GdkEventKey	*event,
-					 gpointer	 data);
-static void prefs_common_ok		(void);
 static void prefs_common_apply		(void);
-static void prefs_common_cancel		(void);
+
+typedef struct CommonPage
+{
+        PrefsPage page;
+ 
+        GtkWidget *vbox;
+} CommonPage;
+
+static CommonPage common_page;
+
+static void create_widget_func(PrefsPage * _page,
+                                           GtkWindow * window,
+                                           gpointer data)
+{
+	CommonPage *page = (CommonPage *) _page;
+	GtkWidget *vbox;
+
+	vbox = gtk_vbox_new(FALSE, 6);
+	gtk_widget_show(vbox);
+
+	if (notebook == NULL)
+		prefs_common_create();
+	gtk_box_pack_start (GTK_BOX (vbox), notebook, TRUE, TRUE, 0);
+	gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), 0);
+
+	prefs_set_dialog(param);
+
+	page->vbox = vbox;
+
+	page->page.widget = vbox;
+}
+
+static void destroy_widget_func(PrefsPage *_page)
+{
+	CommonPage *page = (CommonPage *) _page;
+
+	gtk_container_remove(GTK_CONTAINER (page->vbox), notebook);
+}
+
+static void save_func(PrefsPage * _page)
+{
+	prefs_common_apply();
+}
 
 void prefs_common_init(void) 
 {
+        static gchar *path[2];
+
 	prefs_common.disphdr_list = NULL;
+            
+        path[0] = _("Common");
+        path[2] = NULL;
+        
+        common_page.page.path = path;
+	common_page.page.weight = 1000.0;
+        common_page.page.create_widget = create_widget_func;
+        common_page.page.destroy_widget = destroy_widget_func;
+        common_page.page.save_page = save_func;
+
+        prefs_gtk_register_page((PrefsPage *) &common_page);
 }
 
 #ifdef WIN32
@@ -898,43 +866,56 @@ PrefsCommon *prefs_common_get(void)
 	return &prefs_common;
 }
 
-void prefs_common_read_config(void)
+/*
+ * Read history list from the specified history file
+ */
+GList *prefs_common_read_history(const gchar *history) 
 {
 	FILE *fp;
 	gchar *path;
 	gchar buf[PREFSBUFSIZE];
+	GList *tmp = NULL;
 
-	prefs_read_config(param, "Common", COMMON_RC);
-
-	path = g_strconcat(get_rc_dir(), G_DIR_SEPARATOR_S, COMMAND_HISTORY,
+	path = g_strconcat(get_rc_dir(), G_DIR_SEPARATOR_S, history,
 			   NULL);
 	if ((fp = fopen(path, "rb")) == NULL) {
 		if (ENOENT != errno) FILE_OP_ERROR(path, "fopen");
 		g_free(path);
-		return;
+		return NULL;
 	}
 	g_free(path);
 	while (fgets(buf, sizeof(buf), fp) != NULL) {
 		g_strstrip(buf);
 		if (buf[0] == '\0') continue;
-		prefs_common.mime_open_cmd_history =
-			add_history(prefs_common.mime_open_cmd_history, buf);
+		tmp = add_history(tmp, buf);
 	}
 	fclose(fp);
 
-	prefs_common.mime_open_cmd_history =
-		g_list_reverse(prefs_common.mime_open_cmd_history);
+	tmp = g_list_reverse(tmp);
+
+	return tmp;
 }
 
-void prefs_common_save_config(void)
+void prefs_common_read_config(void)
+{
+	prefs_read_config(param, "Common", COMMON_RC);
+
+	prefs_common.mime_open_cmd_history =
+		prefs_common_read_history(COMMAND_HISTORY);
+	prefs_common.summary_quicksearch_history =
+		prefs_common_read_history(QUICKSEARCH_HISTORY);
+}
+
+/*
+ * Save history list to the specified history file
+ */
+void prefs_common_save_history(const gchar *history, GList *list)
 {
 	GList *cur;
 	FILE *fp;
 	gchar *path;
 
-	prefs_save_config(param, "Common", COMMON_RC);
-
-	path = g_strconcat(get_rc_dir(), G_DIR_SEPARATOR_S, COMMAND_HISTORY,
+	path = g_strconcat(get_rc_dir(), G_DIR_SEPARATOR_S, history,
 			   NULL);
 	if ((fp = fopen(path, "wb")) == NULL) {
 		FILE_OP_ERROR(path, "fopen");
@@ -942,8 +923,7 @@ void prefs_common_save_config(void)
 		return;
 	}
 
-	for (cur = prefs_common.mime_open_cmd_history;
-	     cur != NULL; cur = cur->next) {
+	for (cur = list; cur != NULL; cur = cur->next) {
 		fputs((gchar *)cur->data, fp);
 		fputc('\n', fp);
 	}
@@ -952,24 +932,14 @@ void prefs_common_save_config(void)
 	g_free(path);
 }
 
-void prefs_common_open(void)
+void prefs_common_write_config(void)
 {
-	if (prefs_rc_is_readonly(COMMON_RC))
-		return;
+	prefs_write_config(param, "Common", COMMON_RC);
 
-	inc_lock();
-
-	if (!dialog.window) {
-		prefs_common_create();
-	}
-
-	manage_window_set_transient(GTK_WINDOW(dialog.window));
-	gtk_notebook_set_current_page(GTK_NOTEBOOK(dialog.notebook), 0);
-	gtk_widget_grab_focus(dialog.ok_btn);
-
-	prefs_set_dialog(param);
-
-	gtk_widget_show(dialog.window);
+	prefs_common_save_history(COMMAND_HISTORY, 
+		prefs_common.mime_open_cmd_history);
+	prefs_common_save_history(QUICKSEARCH_HISTORY, 
+		prefs_common.summary_quicksearch_history);
 }
 
 static void prefs_common_create(void)
@@ -978,46 +948,35 @@ static void prefs_common_create(void)
 
 	debug_print("Creating common preferences window...\n");
 
-	prefs_dialog_create(&dialog);
-	gtk_window_set_title (GTK_WINDOW(dialog.window),
-			      _("Common Preferences"));
-	g_signal_connect (G_OBJECT(dialog.window), "delete_event",
-			  G_CALLBACK(prefs_common_deleted), NULL);
-	g_signal_connect (G_OBJECT(dialog.window), "key_press_event",
-			  G_CALLBACK(prefs_common_key_pressed), NULL);
-	MANAGE_WINDOW_SIGNALS_CONNECT(dialog.window);
+	notebook = gtk_notebook_new ();
+	gtk_widget_show(notebook);
+	gtk_container_set_border_width (GTK_CONTAINER (notebook), 2);
+	/* GTK_WIDGET_UNSET_FLAGS (notebook, GTK_CAN_FOCUS); */
+	gtk_notebook_set_scrollable (GTK_NOTEBOOK (notebook), TRUE);
+	
+	gtk_notebook_popup_enable (GTK_NOTEBOOK (notebook));
 
-	g_signal_connect (G_OBJECT(dialog.ok_btn), "clicked",
-			  G_CALLBACK(prefs_common_ok), NULL);
-	g_signal_connect (G_OBJECT(dialog.apply_btn), "clicked",
-			  G_CALLBACK(prefs_common_apply), NULL);
-	gtk_signal_connect_object (GTK_OBJECT(dialog.cancel_btn), "clicked",
-				   GTK_SIGNAL_FUNC(prefs_common_cancel),
-				   GTK_OBJECT(dialog.window));
+	gtk_widget_ref(notebook);
 
 	/* create all widgets on notebook */
 	prefs_receive_create();
-	SET_NOTEBOOK_LABEL(dialog.notebook, _("Receive"),   page++);
+	SET_NOTEBOOK_LABEL(notebook, _("Receive"),   page++);
 	prefs_send_create();
-	SET_NOTEBOOK_LABEL(dialog.notebook, _("Send"),      page++);
+	SET_NOTEBOOK_LABEL(notebook, _("Send"),      page++);
 	prefs_compose_create();
-	SET_NOTEBOOK_LABEL(dialog.notebook, _("Compose"),   page++);
+	SET_NOTEBOOK_LABEL(notebook, _("Compose"),   page++);
 	prefs_quote_create();
-	SET_NOTEBOOK_LABEL(dialog.notebook, _("Quote"),   page++);
+	SET_NOTEBOOK_LABEL(notebook, _("Quote"),     page++);
 	prefs_display_create();
-	SET_NOTEBOOK_LABEL(dialog.notebook, _("Display"),   page++);
+	SET_NOTEBOOK_LABEL(notebook, _("Display"),   page++);
 	prefs_message_create();
-	SET_NOTEBOOK_LABEL(dialog.notebook, _("Message"),   page++);
-#if USE_GPGME
-	prefs_privacy_create();
-	SET_NOTEBOOK_LABEL(dialog.notebook, _("Privacy"),   page++);
-#endif
+	SET_NOTEBOOK_LABEL(notebook, _("Message"),   page++);
 	prefs_interface_create();
-	SET_NOTEBOOK_LABEL(dialog.notebook, _("Interface"), page++);
+	SET_NOTEBOOK_LABEL(notebook, _("Interface"), page++);
 	prefs_other_create();
-	SET_NOTEBOOK_LABEL(dialog.notebook, _("Other"),     page++);
+	SET_NOTEBOOK_LABEL(notebook, _("Other"),     page++);
 
-	gtk_widget_show_all(dialog.window);
+	gtk_widget_show_all(notebook);
 }
 
 static void prefs_receive_create(void)
@@ -1058,7 +1017,7 @@ static void prefs_receive_create(void)
 
 	vbox1 = gtk_vbox_new (FALSE, VSPACING);
 	gtk_widget_show (vbox1);
-	gtk_container_add (GTK_CONTAINER (dialog.notebook), vbox1);
+	gtk_container_add (GTK_CONTAINER (notebook), vbox1);
 	gtk_container_set_border_width (GTK_CONTAINER (vbox1), VBOX_BORDER);
 
 	PACK_FRAME(vbox1, frame_incext, _("External program"));
@@ -1228,7 +1187,6 @@ static void prefs_send_create(void)
 	GtkWidget *vbox2;
 	GtkWidget *hbox1;
 	GtkWidget *checkbtn_savemsg;
-	GtkWidget *checkbtn_queuemsg;
 	GtkWidget *label_outcharset;
 	GtkWidget *optmenu_charset;
 	GtkWidget *optmenu_menu;
@@ -1244,7 +1202,7 @@ static void prefs_send_create(void)
 
 	vbox1 = gtk_vbox_new (FALSE, VSPACING);
 	gtk_widget_show (vbox1);
-	gtk_container_add (GTK_CONTAINER (dialog.notebook), vbox1);
+	gtk_container_add (GTK_CONTAINER (notebook), vbox1);
 	gtk_container_set_border_width (GTK_CONTAINER (vbox1), VBOX_BORDER);
 
 	vbox2 = gtk_vbox_new (FALSE, 0);
@@ -1253,8 +1211,6 @@ static void prefs_send_create(void)
 
 	PACK_CHECK_BUTTON (vbox2, checkbtn_savemsg,
 			   _("Save sent messages to Sent folder"));
-	PACK_CHECK_BUTTON (vbox2, checkbtn_queuemsg,
-			   _("Queue messages that fail to send"));
 
 	hbox_senddialog = gtk_hbox_new (FALSE, 8);
 	gtk_box_pack_start (GTK_BOX (vbox1), hbox_senddialog, FALSE, FALSE, 0);
@@ -1383,7 +1339,6 @@ static void prefs_send_create(void)
 	gtk_box_pack_start (GTK_BOX (vbox1), hbox1, FALSE, FALSE, 0);
 
 	p_send.checkbtn_savemsg  = checkbtn_savemsg;
-	p_send.checkbtn_queuemsg = checkbtn_queuemsg;
 	p_send.optmenu_senddialog = optmenu_senddialog;
 
 	p_send.optmenu_charset = optmenu_charset;
@@ -1419,25 +1374,12 @@ static void prefs_compose_create(void)
 	GtkObject *spinbtn_undolevel_adj;
 	GtkWidget *spinbtn_undolevel;
 
-	GtkWidget *vbox_linewrap;
-
- 	GtkWidget *hbox3;
-	GtkWidget *hbox4;
 	GtkWidget *hbox5;
-	GtkWidget *label_linewrap;
-	GtkObject *spinbtn_linewrap_adj;
-	GtkWidget *spinbtn_linewrap;
-	GtkWidget *checkbtn_wrapquote;
-	GtkWidget *checkbtn_autowrap;
-	GtkWidget *checkbtn_wrapatsend;
 
 	GtkWidget *checkbtn_default_reply_list;
 
 	GtkWidget *checkbtn_forward_as_attachment;
 	GtkWidget *checkbtn_redirect_keep_from;
-	GtkWidget *checkbtn_smart_wrapping;
-	GtkWidget *checkbtn_block_cursor;
-	GtkWidget *frame_msgwrap;
 
 	GtkWidget *hbox_autosave;
 	GtkWidget *checkbtn_autosave;
@@ -1446,7 +1388,7 @@ static void prefs_compose_create(void)
 	
 	vbox1 = gtk_vbox_new (FALSE, VSPACING);
 	gtk_widget_show (vbox1);
-	gtk_container_add (GTK_CONTAINER (dialog.notebook), vbox1);
+	gtk_container_add (GTK_CONTAINER (notebook), vbox1);
 	gtk_container_set_border_width (GTK_CONTAINER (vbox1), VBOX_BORDER);
 
         /* Account autoselection */
@@ -1480,9 +1422,6 @@ static void prefs_compose_create(void)
 
 	PACK_CHECK_BUTTON (hbox5, checkbtn_forward_as_attachment,
 			   _("Forward as attachment"));
-
-	PACK_CHECK_BUTTON (hbox5, checkbtn_block_cursor,
-			  _("Block cursor"));
 
 	PACK_CHECK_BUTTON (vbox2, checkbtn_redirect_keep_from,
 			   _("Keep the original 'From' header when redirecting"));
@@ -1520,49 +1459,6 @@ static void prefs_compose_create(void)
 	gtk_widget_set_size_request (spinbtn_undolevel, 64, -1);
 	gtk_spin_button_set_numeric (GTK_SPIN_BUTTON (spinbtn_undolevel), TRUE);
 
-        /* line-wrapping */
-	PACK_FRAME(vbox1, frame_msgwrap, _("Message wrapping"));
-
-	vbox_linewrap = gtk_vbox_new (FALSE, VSPACING_NARROW);
-	gtk_widget_show (vbox_linewrap);
-	gtk_container_add (GTK_CONTAINER (frame_msgwrap), vbox_linewrap);
-	gtk_container_set_border_width (GTK_CONTAINER (vbox_linewrap), 8);
-
-	hbox3 = gtk_hbox_new (FALSE, 8);
-	gtk_widget_show (hbox3);
-	gtk_box_pack_start (GTK_BOX (vbox_linewrap), hbox3, FALSE, FALSE, 0);
-
-
-	label_linewrap = gtk_label_new (_("Wrap messages at"));
-	gtk_widget_show (label_linewrap);
-	gtk_box_pack_start (GTK_BOX (hbox3), label_linewrap, FALSE, FALSE, 0);
-
-	spinbtn_linewrap_adj = gtk_adjustment_new (72, 20, 1024, 1, 10, 10);
-	spinbtn_linewrap = gtk_spin_button_new
-		(GTK_ADJUSTMENT (spinbtn_linewrap_adj), 1, 0);
-	gtk_widget_show (spinbtn_linewrap);
-	gtk_box_pack_start (GTK_BOX (hbox3), spinbtn_linewrap, FALSE, FALSE, 0);
-	gtk_widget_set_size_request (spinbtn_linewrap, 64, -1);
-	gtk_spin_button_set_numeric (GTK_SPIN_BUTTON (spinbtn_linewrap), TRUE);
-
-	label_linewrap = gtk_label_new (_("characters"));
-	gtk_widget_show (label_linewrap);
-	gtk_box_pack_start (GTK_BOX (hbox3), label_linewrap, FALSE, FALSE, 0);
-
-	hbox4 = gtk_hbox_new (FALSE, VSPACING);
-	gtk_widget_show (hbox4);
-	gtk_box_pack_start (GTK_BOX (vbox_linewrap), hbox4, FALSE, FALSE, 0);
-
-	PACK_CHECK_BUTTON (hbox4, checkbtn_wrapquote, _("Wrap quotation"));
-
-	PACK_CHECK_BUTTON (hbox4, checkbtn_autowrap, _("Wrap on input"));
-
-	PACK_CHECK_BUTTON
-		(hbox4, checkbtn_wrapatsend, _("Wrap before sending"));
-
-	PACK_CHECK_BUTTON (vbox_linewrap, checkbtn_smart_wrapping,
-			   _("Smart wrapping (EXPERIMENTAL)"));
-	
        /*
 	compose.checkbtn_quote   = checkbtn_quote;
 	compose.entry_quotemark  = entry_quotemark;
@@ -1578,12 +1474,6 @@ static void prefs_compose_create(void)
 	compose.spinbtn_undolevel     = spinbtn_undolevel;
 	compose.spinbtn_undolevel_adj = spinbtn_undolevel_adj;
 
-	compose.spinbtn_linewrap      = spinbtn_linewrap;
-	compose.spinbtn_linewrap_adj  = spinbtn_linewrap_adj;
-	compose.checkbtn_wrapquote    = checkbtn_wrapquote;
-	compose.checkbtn_autowrap     = checkbtn_autowrap;
-	compose.checkbtn_wrapatsend   = checkbtn_wrapatsend;
-
 	compose.checkbtn_autosave     = checkbtn_autosave;
 	compose.entry_autosave_length = entry_autosave_length;
 	
@@ -1591,10 +1481,6 @@ static void prefs_compose_create(void)
 		checkbtn_forward_as_attachment;
 	compose.checkbtn_redirect_keep_from =
 		checkbtn_redirect_keep_from;
-	compose.checkbtn_smart_wrapping = 
-		checkbtn_smart_wrapping;
-	compose.checkbtn_block_cursor   =
-		checkbtn_block_cursor;
 	compose.checkbtn_default_reply_list = checkbtn_default_reply_list;
 }
 
@@ -1622,7 +1508,7 @@ static void prefs_quote_create(void)
 
 	vbox1 = gtk_vbox_new (FALSE, VSPACING);
 	gtk_widget_show (vbox1);
-	gtk_container_add (GTK_CONTAINER (dialog.notebook), vbox1);
+	gtk_container_add (GTK_CONTAINER (notebook), vbox1);
 	gtk_container_set_border_width (GTK_CONTAINER (vbox1), VBOX_BORDER);
 
 	/* reply */
@@ -1658,7 +1544,7 @@ static void prefs_quote_create(void)
 	gtk_box_pack_start (GTK_BOX (vbox_quote), scrolledwin_quotefmt, TRUE, TRUE, 0);
 	gtk_scrolled_window_set_policy
 		(GTK_SCROLLED_WINDOW (scrolledwin_quotefmt),
-		 GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
+		 GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 
 	text_quotefmt = gtk_text_view_new ();
 	gtk_widget_show (text_quotefmt);
@@ -1698,7 +1584,7 @@ static void prefs_quote_create(void)
 	gtk_box_pack_start (GTK_BOX (vbox_quote), scrolledwin_quotefmt, TRUE, TRUE, 0);
 	gtk_scrolled_window_set_policy
 		(GTK_SCROLLED_WINDOW (scrolledwin_quotefmt),
-		 GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
+		 GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 
 	text_fw_quotefmt = gtk_text_view_new ();
 	gtk_widget_show (text_fw_quotefmt);
@@ -1776,7 +1662,7 @@ static void prefs_display_create(void)
 
 	vbox1 = gtk_vbox_new (FALSE, VSPACING);
 	gtk_widget_show (vbox1);
-	gtk_container_add (GTK_CONTAINER (dialog.notebook), vbox1);
+	gtk_container_add (GTK_CONTAINER (notebook), vbox1);
 	gtk_container_set_border_width (GTK_CONTAINER (vbox1), VBOX_BORDER);
 
 	vbox2 = gtk_vbox_new (FALSE, 0);
@@ -1887,8 +1773,6 @@ static void prefs_message_create(void)
 	GtkWidget *vbox2;
 	GtkWidget *vbox3;
 	GtkWidget *hbox1;
-	GtkWidget *chkbtn_enablecol;
-	GtkWidget *button_edit_col;
 	GtkWidget *chkbtn_mbalnum;
 	GtkWidget *chkbtn_disphdrpane;
 	GtkWidget *chkbtn_disphdr;
@@ -1912,30 +1796,12 @@ static void prefs_message_create(void)
 
 	vbox1 = gtk_vbox_new (FALSE, VSPACING);
 	gtk_widget_show (vbox1);
-	gtk_container_add (GTK_CONTAINER (dialog.notebook), vbox1);
+	gtk_container_add (GTK_CONTAINER (notebook), vbox1);
 	gtk_container_set_border_width (GTK_CONTAINER (vbox1), VBOX_BORDER);
 
 	vbox2 = gtk_vbox_new (FALSE, 0);
 	gtk_widget_show (vbox2);
 	gtk_box_pack_start (GTK_BOX (vbox1), vbox2, FALSE, FALSE, 0);
-
-	hbox1 = gtk_hbox_new (FALSE, 8);
-	gtk_widget_show (hbox1);
-	gtk_box_pack_start (GTK_BOX (vbox2), hbox1, FALSE, TRUE, 0);
-
-	PACK_CHECK_BUTTON (hbox1, chkbtn_enablecol,
-			   _("Enable coloration of message"));
-	g_signal_connect(G_OBJECT(chkbtn_enablecol), "toggled",
-			 G_CALLBACK(prefs_enable_message_color_toggled),
-			 NULL);
-
-	button_edit_col = gtk_button_new_with_label (_(" Edit... "));
-	gtk_widget_show (button_edit_col);
-	gtk_box_pack_end (GTK_BOX (hbox1), button_edit_col, FALSE, TRUE, 0);
-	g_signal_connect (G_OBJECT (button_edit_col), "clicked",
-			  G_CALLBACK(prefs_quote_colors_dialog), NULL);
-
-	SET_TOGGLE_SENSITIVITY(chkbtn_enablecol, button_edit_col);
 
 	PACK_CHECK_BUTTON
 		(vbox2, chkbtn_mbalnum,
@@ -1993,7 +1859,7 @@ static void prefs_message_create(void)
 	gtk_box_pack_start (GTK_BOX (hbox_linespc), label_linespc,
 			    FALSE, FALSE, 0);
 
-	PACK_CHECK_BUTTON(hbox1, chkbtn_headspc, _("Leave space on head"));
+	PACK_CHECK_BUTTON(hbox1, chkbtn_headspc, _("Indent text"));
 
 	PACK_FRAME(vbox1, frame_scr, _("Scroll"));
 
@@ -2041,9 +1907,6 @@ static void prefs_message_create(void)
 	PACK_CHECK_BUTTON(vbox3, chkbtn_attach_desc,
 			  _("Show attachment descriptions (rather than names)"));
 
-
-	message.chkbtn_enablecol   = chkbtn_enablecol;
-	message.button_edit_col    = button_edit_col;
 	message.chkbtn_mbalnum     = chkbtn_mbalnum;
 	message.chkbtn_disphdrpane = chkbtn_disphdrpane;
 	message.chkbtn_disphdr     = chkbtn_disphdr;
@@ -2057,108 +1920,6 @@ static void prefs_message_create(void)
 
 	message.chkbtn_attach_desc  = chkbtn_attach_desc;
 }
-
-#if USE_GPGME
-static void prefs_privacy_create(void)
-{
-	GtkWidget *vbox1;
-	GtkWidget *vbox2;
-	GtkWidget *vbox3;
-	GtkWidget *hbox1;
-	GtkWidget *hbox_spc;
-	GtkWidget *label;
-	GtkWidget *checkbtn_auto_check_signatures;
-	GtkWidget *checkbtn_store_passphrase;
-	GtkObject *spinbtn_store_passphrase_adj;
-	GtkWidget *spinbtn_store_passphrase;
-	GtkTooltips *store_tooltip;
-	GtkWidget *checkbtn_passphrase_grab;
-	GtkWidget *checkbtn_gpg_warning;
-
-	vbox1 = gtk_vbox_new (FALSE, VSPACING);
-	gtk_widget_show (vbox1);
-	gtk_container_add (GTK_CONTAINER (dialog.notebook), vbox1);
-	gtk_container_set_border_width (GTK_CONTAINER (vbox1), VBOX_BORDER);
-
-	vbox2 = gtk_vbox_new (FALSE, 0);
-	gtk_widget_show (vbox2);
-	gtk_box_pack_start (GTK_BOX (vbox1), vbox2, FALSE, FALSE, 0);
-
-	PACK_CHECK_BUTTON (vbox2, checkbtn_auto_check_signatures,
-			   _("Automatically check signatures"));
-
-	PACK_CHECK_BUTTON (vbox2, checkbtn_store_passphrase,
-			   _("Store passphrase in memory temporarily"));
-
-	vbox3 = gtk_vbox_new (FALSE, 0);
-	gtk_widget_show (vbox3);
-	gtk_box_pack_start (GTK_BOX (vbox2), vbox3, FALSE, FALSE, 0);
-
-	hbox1 = gtk_hbox_new (FALSE, 8);
-	gtk_widget_show (hbox1);
-	gtk_box_pack_start (GTK_BOX (vbox3), hbox1, FALSE, FALSE, 0);
-
-	hbox_spc = gtk_hbox_new (FALSE, 0);
-	gtk_widget_show (hbox_spc);
-	gtk_box_pack_start (GTK_BOX (hbox1), hbox_spc, FALSE, FALSE, 0);
-	gtk_widget_set_size_request (hbox_spc, 12, -1);
-
-	label = gtk_label_new (_("Expire after"));
-	gtk_widget_show (label);
-	gtk_box_pack_start (GTK_BOX (hbox1), label, FALSE, FALSE, 0);
-
-	store_tooltip = gtk_tooltips_new();
-
-	spinbtn_store_passphrase_adj = gtk_adjustment_new (0, 0, 1440, 1, 5, 5);
-	spinbtn_store_passphrase = gtk_spin_button_new
-		(GTK_ADJUSTMENT (spinbtn_store_passphrase_adj), 1, 0);
-	gtk_widget_show (spinbtn_store_passphrase);
-	gtk_tooltips_set_tip(GTK_TOOLTIPS(store_tooltip), spinbtn_store_passphrase,
-			     _("Setting to '0' will store the passphrase"
-			       " for the whole session"),
-			     NULL);
- 	gtk_box_pack_start (GTK_BOX (hbox1), spinbtn_store_passphrase, FALSE, FALSE, 0);
-	gtk_spin_button_set_numeric (GTK_SPIN_BUTTON (spinbtn_store_passphrase),
-				     TRUE);
-	gtk_widget_set_size_request (spinbtn_store_passphrase, 64, -1);
-
-	label = gtk_label_new (_("minute(s) "));
-	gtk_widget_show (label);
-	gtk_box_pack_start (GTK_BOX (hbox1), label, FALSE, FALSE, 0);
-
-	hbox1 = gtk_hbox_new (FALSE, 8);
-	gtk_widget_show (hbox1);
-	gtk_box_pack_start (GTK_BOX (vbox3), hbox1, FALSE, FALSE, 0);
-
-	hbox_spc = gtk_hbox_new (FALSE, 0);
-	gtk_widget_show (hbox_spc);
-	gtk_box_pack_start (GTK_BOX (hbox1), hbox_spc, FALSE, FALSE, 0);
-	gtk_widget_set_size_request (hbox_spc, 12, -1);
-
-	SET_TOGGLE_SENSITIVITY (checkbtn_store_passphrase, vbox3);
-
-#ifndef __MINGW32__
-	PACK_CHECK_BUTTON (vbox2, checkbtn_passphrase_grab,
-			   _("Grab input while entering a passphrase"));
-#endif
-
-	PACK_CHECK_BUTTON
-		(vbox2, checkbtn_gpg_warning,
-		 _("Display warning on startup if GnuPG doesn't work"));
-
-	hbox1 = gtk_hbox_new (FALSE, 8);
-	gtk_widget_show (hbox1);
-	gtk_box_pack_start (GTK_BOX (vbox1), hbox1, FALSE, FALSE, 0);
-
-	privacy.checkbtn_auto_check_signatures
-					     = checkbtn_auto_check_signatures;
-	privacy.checkbtn_store_passphrase    = checkbtn_store_passphrase;
-	privacy.spinbtn_store_passphrase     = spinbtn_store_passphrase;
-	privacy.spinbtn_store_passphrase_adj = spinbtn_store_passphrase_adj;
-	privacy.checkbtn_passphrase_grab     = checkbtn_passphrase_grab;
-	privacy.checkbtn_gpg_warning         = checkbtn_gpg_warning;
-}
-#endif /* USE_GPGME */
 
 static void prefs_interface_create(void)
 {
@@ -2184,7 +1945,7 @@ static void prefs_interface_create(void)
 
 	vbox1 = gtk_vbox_new (FALSE, VSPACING);
 	gtk_widget_show (vbox1);
-	gtk_container_add (GTK_CONTAINER (dialog.notebook), vbox1);
+	gtk_container_add (GTK_CONTAINER (notebook), vbox1);
 	gtk_container_set_border_width (GTK_CONTAINER (vbox1), VBOX_BORDER);
 
 	vbox2 = gtk_vbox_new (FALSE, 0);
@@ -2311,7 +2072,7 @@ static void prefs_other_create(void)
 #endif
 	vbox1 = gtk_vbox_new (FALSE, VSPACING);
 	gtk_widget_show (vbox1);
-	gtk_container_add (GTK_CONTAINER (dialog.notebook), vbox1);
+	gtk_container_add (GTK_CONTAINER (notebook), vbox1);
 	gtk_container_set_border_width (GTK_CONTAINER (vbox1), VBOX_BORDER);
 
 	PACK_FRAME (vbox1, frame_addr, _("Address book"));
@@ -2353,8 +2114,6 @@ static void prefs_other_create(void)
 	gtk_tooltips_set_tip(GTK_TOOLTIPS(loglength_tooltip), loglength_entry,
 			     _("0 to stop logging in the log window"),
 			     NULL);
-	gtk_box_pack_start (GTK_BOX (hbox_cliplog), loglength_label,
-			    FALSE, TRUE, 0);
 	SET_TOGGLE_SENSITIVITY(checkbtn_cliplog, loglength_entry);
 
 #if 0
@@ -2516,8 +2275,9 @@ static void date_format_entry_on_change(GtkEditable *editable,
 	g_free(text);
 }
 
-static void date_format_select_row(GtkWidget *date_format_list, gint row,
-				   gint column, GdkEventButton *event,
+static void date_format_select_row(GtkTreeView *list_view,
+				   GtkTreePath *path,
+				   GtkTreeViewColumn *column,
 				   GtkWidget *date_format)
 {
 	gint cur_pos;
@@ -2525,21 +2285,25 @@ static void date_format_select_row(GtkWidget *date_format_list, gint row,
 	const gchar *old_format;
 	gchar *new_format;
 	GtkWidget *datefmt_sample;
+	GtkTreeIter iter;
+	GtkTreeModel *model;
+	
+	g_return_if_fail(date_format != NULL);
 
 	/* only on double click */
-	if (!event || event->type != GDK_2BUTTON_PRESS) return;
+	datefmt_sample = GTK_WIDGET(g_object_get_data(G_OBJECT(date_format), 
+						      "datefmt_sample"));
 
-
-	datefmt_sample = GTK_WIDGET(gtk_object_get_data
-				    (GTK_OBJECT(date_format), "datefmt_sample"));
-
-	g_return_if_fail(date_format_list != NULL);
-	g_return_if_fail(date_format != NULL);
 	g_return_if_fail(datefmt_sample != NULL);
 
-	/* get format from clist */
-	gtk_clist_get_text(GTK_CLIST(date_format_list), row, 0, &format);
+	model = gtk_tree_view_get_model(list_view);
 
+	/* get format from list */
+	if (!gtk_tree_model_get_iter(model, &iter, path))
+		return;
+
+	gtk_tree_model_get(model, &iter, DATEFMT_FMT, &format, -1);		
+	
 	cur_pos = gtk_editable_get_position(GTK_EDITABLE(datefmt_sample));
 	old_format = gtk_entry_get_text(GTK_ENTRY(datefmt_sample));
 
@@ -2560,9 +2324,10 @@ static void date_format_select_row(GtkWidget *date_format_list, gint row,
 static GtkWidget *date_format_create(GtkButton *button, void *data)
 {
 	static GtkWidget *datefmt_win = NULL;
+
 	GtkWidget *vbox1;
 	GtkWidget *scrolledwindow1;
-	GtkWidget *datefmt_clist;
+	GtkWidget *datefmt_list_view;
 	GtkWidget *table;
 	GtkWidget *label1;
 	GtkWidget *label2;
@@ -2571,6 +2336,7 @@ static GtkWidget *date_format_create(GtkButton *button, void *data)
 	GtkWidget *ok_btn;
 	GtkWidget *cancel_btn;
 	GtkWidget *datefmt_entry;
+	GtkListStore *store;
 
 	struct {
 		gchar *fmt;
@@ -2602,6 +2368,10 @@ static GtkWidget *date_format_create(GtkButton *button, void *data)
 	const gint TIME_FORMAT_ELEMS =
 		sizeof time_format / sizeof time_format[0];
 
+	GtkCellRenderer *renderer;
+	GtkTreeViewColumn *column;
+	GtkTreeSelection *selection;
+
 	time_format[0].txt  = _("the full abbreviated weekday name");
 	time_format[1].txt  = _("the full weekday name");
 	time_format[2].txt  = _("the abbreviated month name");
@@ -2624,6 +2394,21 @@ static GtkWidget *date_format_create(GtkButton *button, void *data)
 
 	if (datefmt_win) return datefmt_win;
 
+	store = gtk_list_store_new(N_DATEFMT_COLUMNS,
+				   G_TYPE_STRING,
+				   G_TYPE_STRING,
+				   -1);
+
+	for (i = 0; i < TIME_FORMAT_ELEMS; i++) {
+		GtkTreeIter iter;
+
+		gtk_list_store_append(store, &iter);
+		gtk_list_store_set(store, &iter,
+				   DATEFMT_FMT, time_format[i].fmt,
+				   DATEFMT_TXT, time_format[i].txt,
+				   -1);
+	}
+
 	datefmt_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_container_set_border_width(GTK_CONTAINER(datefmt_win), 8);
 	gtk_window_set_title(GTK_WINDOW(datefmt_win), _("Date format"));
@@ -2641,23 +2426,32 @@ static GtkWidget *date_format_create(GtkButton *button, void *data)
 	gtk_widget_show(scrolledwindow1);
 	gtk_box_pack_start(GTK_BOX(vbox1), scrolledwindow1, TRUE, TRUE, 0);
 
-	titles[0] = _("Specifier");
-	titles[1] = _("Description");
-	datefmt_clist = gtk_clist_new_with_titles(2, titles);
-	gtk_widget_show(datefmt_clist);
-	gtk_container_add(GTK_CONTAINER(scrolledwindow1), datefmt_clist);
+	datefmt_list_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
+	g_object_unref(G_OBJECT(store));
+	gtk_tree_view_set_rules_hint(GTK_TREE_VIEW(datefmt_list_view), TRUE);
+	gtk_widget_show(datefmt_list_view);
+	gtk_container_add(GTK_CONTAINER(scrolledwindow1), datefmt_list_view);
+
+	renderer = gtk_cell_renderer_text_new();
+	column = gtk_tree_view_column_new_with_attributes
+			(_("Specifier"), renderer, "text", DATEFMT_FMT,
+			 NULL);
+	gtk_tree_view_append_column(GTK_TREE_VIEW(datefmt_list_view), column);
+	
+	renderer = gtk_cell_renderer_text_new();
+	column = gtk_tree_view_column_new_with_attributes
+			(_("Description"), renderer, "text", DATEFMT_TXT,
+			 NULL);
+	gtk_tree_view_append_column(GTK_TREE_VIEW(datefmt_list_view), column);
+	
 	/* gtk_clist_set_column_width(GTK_CLIST(datefmt_clist), 0, 80); */
-	gtk_clist_set_selection_mode(GTK_CLIST(datefmt_clist),
-				     GTK_SELECTION_BROWSE);
+	selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(datefmt_list_view));
+	gtk_tree_selection_set_mode(selection, GTK_SELECTION_BROWSE);
 
-	for (i = 0; i < TIME_FORMAT_ELEMS; i++) {
-		gchar *text[2];
-		/* phoney casting necessary because of gtk... */
-		text[0] = (gchar *)time_format[i].fmt;
-		text[1] = (gchar *)time_format[i].txt;
-		gtk_clist_append(GTK_CLIST(datefmt_clist), text);
-	}
-
+	g_signal_connect(G_OBJECT(datefmt_list_view), "row_activated", 
+			 G_CALLBACK(date_format_select_row),
+			 datefmt_win);
+	
 	table = gtk_table_new(2, 2, FALSE);
 	gtk_widget_show(table);
 	gtk_box_pack_start(GTK_BOX(vbox1), table, FALSE, FALSE, 0);
@@ -2696,8 +2490,8 @@ static GtkWidget *date_format_create(GtkButton *button, void *data)
 	gtk_label_set_justify(GTK_LABEL(label3), GTK_JUSTIFY_LEFT);
 	gtk_misc_set_alignment(GTK_MISC(label3), 0, 0.5);
 
-	gtkut_button_set_create(&confirm_area, &ok_btn, _("OK"),
-				&cancel_btn, _("Cancel"), NULL, NULL);
+	gtkut_button_set_create_stock(&confirm_area, &ok_btn, GTK_STOCK_OK,
+				      &cancel_btn, GTK_STOCK_CANCEL, NULL, NULL);
 	gtk_widget_grab_default(ok_btn);
 	gtk_widget_show(confirm_area);
 
@@ -2724,10 +2518,6 @@ static GtkWidget *date_format_create(GtkButton *button, void *data)
 			 G_CALLBACK(date_format_entry_on_change),
 			 label3);
 
-	g_signal_connect(G_OBJECT(datefmt_clist), "select_row",
-			 G_CALLBACK(date_format_select_row),
-			 datefmt_win);
-
 	gtk_window_set_position(GTK_WINDOW(datefmt_win), GTK_WIN_POS_CENTER);
 	gtk_window_set_modal(GTK_WINDOW(datefmt_win), TRUE);
 
@@ -2737,336 +2527,6 @@ static GtkWidget *date_format_create(GtkButton *button, void *data)
 	gtk_widget_grab_focus(ok_btn);
 
 	return datefmt_win;
-}
-
-void prefs_quote_colors_dialog(void)
-{
-	if (!quote_color_win)
-		prefs_quote_colors_dialog_create();
-	gtk_widget_show(quote_color_win);
-	manage_window_set_transient(GTK_WINDOW(quote_color_win));
-
-	gtk_main();
-	gtk_widget_hide(quote_color_win);
-
-	textview_update_message_colors();
-	main_window_reflect_prefs_all();
-}
-
-static void prefs_quote_colors_dialog_create(void)
-{
-	GtkWidget *window;
-	GtkWidget *vbox;
-	GtkWidget *table;
-	GtkWidget *quotelevel1_label;
-	GtkWidget *quotelevel2_label;
-	GtkWidget *quotelevel3_label;
-	GtkWidget *uri_label;
-	GtkWidget *signature_label;
-	GtkWidget *tgt_folder_label;
-	GtkWidget *hbbox;
-	GtkWidget *ok_btn;
-	GtkWidget *recycle_colors_btn;
-	GtkWidget *frame_colors;
-
-	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	gtk_container_set_border_width(GTK_CONTAINER(window), 2);
-	gtk_window_set_title(GTK_WINDOW(window), _("Set message colors"));
-	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
-	gtk_window_set_modal(GTK_WINDOW(window), TRUE);
-	gtk_window_set_policy(GTK_WINDOW(window), FALSE, FALSE, FALSE);
-
-	vbox = gtk_vbox_new (FALSE, VSPACING);
-	gtk_container_add (GTK_CONTAINER (window), vbox);
-	gtk_container_set_border_width (GTK_CONTAINER (vbox), 8);
-	PACK_FRAME(vbox, frame_colors, _("Colors"));
-
-	table = gtk_table_new (5, 2, FALSE);
-	gtk_container_add (GTK_CONTAINER (frame_colors), table);
-	gtk_container_set_border_width (GTK_CONTAINER (table), 8);
-	gtk_table_set_row_spacings (GTK_TABLE (table), 2);
-	gtk_table_set_col_spacings (GTK_TABLE (table), 5);
-
-
-	color_buttons.quote_level1_btn = gtk_button_new();
-	gtk_table_attach (GTK_TABLE (table), color_buttons.quote_level1_btn,
-			  0, 1, 0, 1, 0, 0, 0, 0);
-	gtk_widget_set_size_request (color_buttons.quote_level1_btn, 40, 30);
-	gtk_container_set_border_width
-		(GTK_CONTAINER (color_buttons.quote_level1_btn), 5);
-
-	color_buttons.quote_level2_btn = gtk_button_new();
-	gtk_table_attach (GTK_TABLE (table), color_buttons.quote_level2_btn,
-			  0, 1, 1, 2, 0, 0, 0, 0);
-	gtk_widget_set_size_request (color_buttons.quote_level2_btn, 40, 30);
-	gtk_container_set_border_width (GTK_CONTAINER (color_buttons.quote_level2_btn), 5);
-
-	color_buttons.quote_level3_btn = gtk_button_new_with_label ("");
-	gtk_table_attach (GTK_TABLE (table), color_buttons.quote_level3_btn,
-			  0, 1, 2, 3, 0, 0, 0, 0);
-	gtk_widget_set_size_request (color_buttons.quote_level3_btn, 40, 30);
-	gtk_container_set_border_width
-		(GTK_CONTAINER (color_buttons.quote_level3_btn), 5);
-
-	color_buttons.uri_btn = gtk_button_new_with_label ("");
-	gtk_table_attach (GTK_TABLE (table), color_buttons.uri_btn,
-			  0, 1, 3, 4, 0, 0, 0, 0);
-	gtk_widget_set_size_request (color_buttons.uri_btn, 40, 30);
-	gtk_container_set_border_width (GTK_CONTAINER (color_buttons.uri_btn), 5);
-
-	color_buttons.tgt_folder_btn = gtk_button_new_with_label ("");
-	gtk_table_attach (GTK_TABLE (table), color_buttons.tgt_folder_btn,
-			  0, 1, 4, 5, 0, 0, 0, 0);
-	gtk_widget_set_size_request (color_buttons.tgt_folder_btn, 40, 30);
-	gtk_container_set_border_width (GTK_CONTAINER (color_buttons.tgt_folder_btn), 5);
-
-	color_buttons.signature_btn = gtk_button_new_with_label ("");
-	gtk_table_attach (GTK_TABLE (table), color_buttons.signature_btn,
-			  0, 1, 5, 6, 0, 0, 0, 0);
-	gtk_widget_set_size_request (color_buttons.signature_btn, 40, 30);
-	gtk_container_set_border_width (GTK_CONTAINER (color_buttons.signature_btn), 5);
-
-	quotelevel1_label = gtk_label_new (_("Quoted Text - First Level"));
-	gtk_table_attach (GTK_TABLE (table), quotelevel1_label, 1, 2, 0, 1,
-			  (GTK_EXPAND | GTK_FILL), 0, 0, 0);
-	gtk_label_set_justify (GTK_LABEL (quotelevel1_label), GTK_JUSTIFY_LEFT);
-	gtk_misc_set_alignment (GTK_MISC (quotelevel1_label), 0, 0.5);
-
-	quotelevel2_label = gtk_label_new (_("Quoted Text - Second Level"));
-	gtk_table_attach (GTK_TABLE (table), quotelevel2_label, 1, 2, 1, 2,
-			  (GTK_EXPAND | GTK_FILL), 0, 0, 0);
-	gtk_label_set_justify (GTK_LABEL (quotelevel2_label), GTK_JUSTIFY_LEFT);
-	gtk_misc_set_alignment (GTK_MISC (quotelevel2_label), 0, 0.5);
-
-	quotelevel3_label = gtk_label_new (_("Quoted Text - Third Level"));
-	gtk_table_attach (GTK_TABLE (table), quotelevel3_label, 1, 2, 2, 3,
-			  (GTK_EXPAND | GTK_FILL), 0, 0, 0);
-	gtk_label_set_justify (GTK_LABEL (quotelevel3_label), GTK_JUSTIFY_LEFT);
-	gtk_misc_set_alignment (GTK_MISC (quotelevel3_label), 0, 0.5);
-
-	uri_label = gtk_label_new (_("URI link"));
-	gtk_table_attach (GTK_TABLE (table), uri_label, 1, 2, 3, 4,
-			  (GTK_EXPAND | GTK_FILL), 0, 0, 0);
-	gtk_label_set_justify (GTK_LABEL (uri_label), GTK_JUSTIFY_LEFT);
-	gtk_misc_set_alignment (GTK_MISC (uri_label), 0, 0.5);
-
-	tgt_folder_label = gtk_label_new (_("Target folder"));
-	gtk_table_attach (GTK_TABLE (table), tgt_folder_label, 1, 2, 4, 5,
-			  (GTK_EXPAND | GTK_FILL), 0, 0, 0);
-	gtk_label_set_justify (GTK_LABEL (tgt_folder_label), GTK_JUSTIFY_LEFT);
-	gtk_misc_set_alignment (GTK_MISC (tgt_folder_label), 0, 0.5);
-
-	signature_label = gtk_label_new (_("Signatures"));
-	gtk_table_attach (GTK_TABLE (table), signature_label, 1, 2, 5, 6,
-			  (GTK_EXPAND | GTK_FILL), 0, 0, 0);
-	gtk_label_set_justify (GTK_LABEL (signature_label), GTK_JUSTIFY_LEFT);
-	gtk_misc_set_alignment (GTK_MISC (signature_label), 0, 0.5);
-
-	PACK_CHECK_BUTTON (vbox, recycle_colors_btn,
-			   _("Recycle quote colors"));
-
-	gtkut_button_set_create(&hbbox, &ok_btn, _("OK"),
-				NULL, NULL, NULL, NULL);
-	gtk_box_pack_end(GTK_BOX(vbox), hbbox, FALSE, FALSE, 0);
-
-	gtk_widget_grab_default(ok_btn);
-	MANAGE_WINDOW_SIGNALS_CONNECT(window);
-	g_signal_connect(G_OBJECT(window), "delete_event",
-			 G_CALLBACK(gtk_main_quit), NULL);
-	g_signal_connect(G_OBJECT(window), "key_press_event",
-			 G_CALLBACK(prefs_quote_colors_key_pressed),
-			 NULL);
-
-	g_signal_connect(G_OBJECT(color_buttons.quote_level1_btn), "clicked",
-			 G_CALLBACK(quote_color_set_dialog), "LEVEL1");
-	g_signal_connect(G_OBJECT(color_buttons.quote_level2_btn), "clicked",
-			 G_CALLBACK(quote_color_set_dialog), "LEVEL2");
-	g_signal_connect(G_OBJECT(color_buttons.quote_level3_btn), "clicked",
-			 G_CALLBACK(quote_color_set_dialog), "LEVEL3");
-	g_signal_connect(G_OBJECT(color_buttons.uri_btn), "clicked",
-			 G_CALLBACK(quote_color_set_dialog), "URI");
-	g_signal_connect(G_OBJECT(color_buttons.tgt_folder_btn), "clicked",
-			 G_CALLBACK(quote_color_set_dialog), "TGTFLD");
-	g_signal_connect(G_OBJECT(color_buttons.signature_btn), "clicked",
-			 G_CALLBACK(quote_color_set_dialog), "SIGNATURE");
-	g_signal_connect(G_OBJECT(recycle_colors_btn), "toggled",
-			 G_CALLBACK(prefs_recycle_colors_toggled), NULL);
-	g_signal_connect(G_OBJECT(ok_btn), "clicked",
-			 G_CALLBACK(gtk_main_quit), NULL);
-
-	/* show message button colors and recycle options */
-	set_button_bg_color(color_buttons.quote_level1_btn,
-			    prefs_common.quote_level1_col);
-	set_button_bg_color(color_buttons.quote_level2_btn,
-			    prefs_common.quote_level2_col);
-	set_button_bg_color(color_buttons.quote_level3_btn,
-			    prefs_common.quote_level3_col);
-	set_button_bg_color(color_buttons.uri_btn,
-			    prefs_common.uri_col);
-	set_button_bg_color(color_buttons.tgt_folder_btn,
-			    prefs_common.tgt_folder_col);
-	set_button_bg_color(color_buttons.signature_btn,
-			    prefs_common.signature_col);
-	gtk_toggle_button_set_active((GtkToggleButton *)recycle_colors_btn,
-				     prefs_common.recycle_quote_colors);
-
-	gtk_widget_show_all(vbox);
-	quote_color_win = window;
-}
-
-static gboolean prefs_quote_colors_key_pressed(GtkWidget *widget,
-					       GdkEventKey *event, gpointer data)
-{
-	if (event && event->keyval == GDK_Escape)
-		gtk_main_quit();
-	return FALSE;
-}
-
-static void quote_color_set_dialog(GtkWidget *widget, gpointer data)
-{
-	gchar *type = (gchar *)data;
-	gchar *title = NULL;
-	gdouble color[4] = {0.0, 0.0, 0.0, 0.0};
-	gint rgbvalue = 0;
-	GtkColorSelectionDialog *dialog;
-
-	if(g_strcasecmp(type, "LEVEL1") == 0) {
-		title = _("Pick color for quotation level 1");
-		rgbvalue = prefs_common.quote_level1_col;
-	} else if(g_strcasecmp(type, "LEVEL2") == 0) {
-		title = _("Pick color for quotation level 2");
-		rgbvalue = prefs_common.quote_level2_col;
-	} else if(g_strcasecmp(type, "LEVEL3") == 0) {
-		title = _("Pick color for quotation level 3");
-		rgbvalue = prefs_common.quote_level3_col;
-	} else if(g_strcasecmp(type, "URI") == 0) {
-		title = _("Pick color for URI");
-		rgbvalue = prefs_common.uri_col;
-	} else if(g_strcasecmp(type, "TGTFLD") == 0) {
-		title = _("Pick color for target folder");
-		rgbvalue = prefs_common.tgt_folder_col;
-	} else if(g_strcasecmp(type, "SIGNATURE") == 0) {
-		title = _("Pick color for signatures");
-		rgbvalue = prefs_common.signature_col;
-	} else {   /* Should never be called */
-		g_warning("Unrecognized datatype '%s' in quote_color_set_dialog\n", type);
-		return;
-	}
-
-	color_dialog = gtk_color_selection_dialog_new(title);
-	gtk_window_set_position(GTK_WINDOW(color_dialog), GTK_WIN_POS_CENTER);
-	gtk_window_set_modal(GTK_WINDOW(color_dialog), TRUE);
-	gtk_window_set_policy(GTK_WINDOW(color_dialog), FALSE, FALSE, FALSE);
-	manage_window_set_transient(GTK_WINDOW(color_dialog));
-
-	g_signal_connect(G_OBJECT(GTK_COLOR_SELECTION_DIALOG(color_dialog)->ok_button),
-			 "clicked", G_CALLBACK(quote_colors_set_dialog_ok), data);
-	g_signal_connect(G_OBJECT(GTK_COLOR_SELECTION_DIALOG(color_dialog)->cancel_button),
-			 "clicked", G_CALLBACK(quote_colors_set_dialog_cancel), data);
-	g_signal_connect(G_OBJECT(color_dialog), "key_press_event",
-			 G_CALLBACK(quote_colors_set_dialog_key_pressed),
-			 data);
-
-	/* preselect the previous color in the color selection dialog */
-	color[0] = (gdouble) ((rgbvalue & 0xff0000) >> 16) / 255.0;
-	color[1] = (gdouble) ((rgbvalue & 0x00ff00) >>  8) / 255.0;
-	color[2] = (gdouble)  (rgbvalue & 0x0000ff)        / 255.0;
-	dialog = GTK_COLOR_SELECTION_DIALOG(color_dialog);
-	gtk_color_selection_set_color
-		(GTK_COLOR_SELECTION(dialog->colorsel), color);
-
-	gtk_widget_show(color_dialog);
-}
-
-static void quote_colors_set_dialog_ok(GtkWidget *widget, gpointer data)
-{
-	GtkColorSelection *colorsel = (GtkColorSelection *)
-						((GtkColorSelectionDialog *)color_dialog)->colorsel;
-	gdouble color[4];
-	gint red, green, blue, rgbvalue;
-	gchar *type = (gchar *)data;
-
-	gtk_color_selection_get_color(colorsel, color);
-
-	red      = (gint) (color[0] * 255.0);
-	green    = (gint) (color[1] * 255.0);
-	blue     = (gint) (color[2] * 255.0);
-	rgbvalue = (gint) ((red * 0x10000) | (green * 0x100) | blue);
-
-#if 0
-	fprintf(stderr, "redc = %f, greenc = %f, bluec = %f\n", color[0], color[1], color[2]);
-	fprintf(stderr, "red = %d, green = %d, blue = %d\n", red, green, blue);
-	fprintf(stderr, "Color is %x\n", rgbvalue);
-#endif
-
-	if (g_strcasecmp(type, "LEVEL1") == 0) {
-		prefs_common.quote_level1_col = rgbvalue;
-		set_button_bg_color(color_buttons.quote_level1_btn, rgbvalue);
-	} else if (g_strcasecmp(type, "LEVEL2") == 0) {
-		prefs_common.quote_level2_col = rgbvalue;
-		set_button_bg_color(color_buttons.quote_level2_btn, rgbvalue);
-	} else if (g_strcasecmp(type, "LEVEL3") == 0) {
-		prefs_common.quote_level3_col = rgbvalue;
-		set_button_bg_color(color_buttons.quote_level3_btn, rgbvalue);
-	} else if (g_strcasecmp(type, "URI") == 0) {
-		prefs_common.uri_col = rgbvalue;
-		set_button_bg_color(color_buttons.uri_btn, rgbvalue);
-	} else if (g_strcasecmp(type, "TGTFLD") == 0) {
-		prefs_common.tgt_folder_col = rgbvalue;
-		set_button_bg_color(color_buttons.tgt_folder_btn, rgbvalue);
-		folderview_set_target_folder_color(prefs_common.tgt_folder_col);
-	} else if (g_strcasecmp(type, "SIGNATURE") == 0) {
-		prefs_common.signature_col = rgbvalue;
-		set_button_bg_color(color_buttons.signature_btn, rgbvalue);
-	} else
-		fprintf( stderr, "Unrecognized datatype '%s' in quote_color_set_dialog_ok\n", type );
-
-	gtk_widget_destroy(color_dialog);
-}
-
-static void quote_colors_set_dialog_cancel(GtkWidget *widget, gpointer data)
-{
-	gtk_widget_destroy(color_dialog);
-}
-
-static gboolean quote_colors_set_dialog_key_pressed(GtkWidget *widget,
-						    GdkEventKey *event,
-						    gpointer data)
-{
-	gtk_widget_destroy(color_dialog);
-	return FALSE;
-}
-
-static void set_button_bg_color(GtkWidget *widget, gint rgbvalue)
-{
-	GtkStyle *newstyle;
-	GdkColor color;
-
-	gtkut_convert_int_to_gdk_color(rgbvalue, &color);
-	newstyle = gtk_style_copy(gtk_widget_get_default_style());
-	newstyle->bg[GTK_STATE_NORMAL]   = color;
-	newstyle->bg[GTK_STATE_PRELIGHT] = color;
-	newstyle->bg[GTK_STATE_ACTIVE]   = color;
-
-	gtk_widget_set_style(GTK_WIDGET(widget), newstyle);
-}
-
-static void prefs_enable_message_color_toggled(void)
-{
-	gboolean is_active;
-
-	is_active = gtk_toggle_button_get_active
-		(GTK_TOGGLE_BUTTON(message.chkbtn_enablecol));
-	gtk_widget_set_sensitive(message.button_edit_col, is_active);
-	prefs_common.enable_color = is_active;
-}
-
-static void prefs_recycle_colors_toggled(GtkWidget *widget)
-{
-	gboolean is_active;
-
-	is_active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
-	prefs_common.recycle_quote_colors = is_active;
 }
 
 static void prefs_keybind_select(void)
@@ -3085,7 +2545,7 @@ static void prefs_keybind_select(void)
 	gtk_window_set_title (GTK_WINDOW (window), _("Key bindings"));
 	gtk_window_set_position (GTK_WINDOW (window), GTK_WIN_POS_CENTER);
 	gtk_window_set_modal (GTK_WINDOW (window), TRUE);
-	gtk_window_set_policy (GTK_WINDOW (window), FALSE, FALSE, FALSE);
+	gtk_window_set_resizable(GTK_WINDOW (window), FALSE);
 	manage_window_set_transient (GTK_WINDOW (window));
 
 	vbox1 = gtk_vbox_new (FALSE, VSPACING);
@@ -3125,8 +2585,8 @@ static void prefs_keybind_select(void)
 	hbox1 = gtk_hbox_new (FALSE, 8);
 	gtk_box_pack_start (GTK_BOX (vbox1), hbox1, FALSE, FALSE, 0);
 
-	gtkut_button_set_create (&confirm_area, &ok_btn, _("OK"),
-				 &cancel_btn, _("Cancel"), NULL, NULL);
+	gtkut_button_set_create_stock (&confirm_area, &ok_btn, GTK_STOCK_OK,
+				       &cancel_btn, GTK_STOCK_CANCEL, NULL, NULL);
 	gtk_box_pack_end (GTK_BOX (hbox1), confirm_area, FALSE, FALSE, 0);
 	gtk_widget_grab_default (ok_btn);
 
@@ -3198,7 +2658,7 @@ static void prefs_keybind_apply_clicked(GtkWidget *widget)
 	gint n_menurc;
 
 	static struct KeyBind default_menurc[] = {
-		{"<Main>/File/Empty trash",			""},
+		{"<Main>/File/Empty all Trash folders",		""},
 		{"<Main>/File/Save as...",			"<control>S"},
 		{"<Main>/File/Print...",			""},
 		{"<Main>/File/Exit",				"<control>Q"},
@@ -3208,8 +2668,7 @@ static void prefs_keybind_apply_clicked(GtkWidget *widget)
 		{"<Main>/Edit/Find in current message...",	"<control>F"},
 		{"<Main>/Edit/Search folder...",		"<shift><control>F"},
 
-		{"<Main>/View/Expand Summary View",		"V"},
-		{"<Main>/View/Expand Message View",		"<shift>V"},
+		{"<Main>/View/Show or hide/Message View",	"V"},
 		{"<Main>/View/Thread view",			"<control>T"},
 		{"<Main>/View/Go to/Prev message",		"P"},
 		{"<Main>/View/Go to/Next message",		"N"},
@@ -3217,12 +2676,13 @@ static void prefs_keybind_apply_clicked(GtkWidget *widget)
 		{"<Main>/View/Go to/Next unread message",	"<shift>N"},
 		{"<Main>/View/Go to/Other folder...",		"G"},
 		{"<Main>/View/Open in new window",		"<control><alt>N"},
-		{"<Main>/View/View source",			"<control>U"},
+		{"<Main>/View/Message source",			"<control>U"},
 		{"<Main>/View/Show all headers",		"<control>H"},
-		{"<Main>/View/Update",				"<control><alt>U"},
+		{"<Main>/View/Update summary",			"<control><alt>U"},
 
-		{"<Main>/Message/Receive/Get new mail",		"<control>I"},
-		{"<Main>/Message/Receive/Get from all accounts",	"<shift><control>I"},
+		{"<Main>/Message/Receive/Get from current account",
+								"<control>I"},
+		{"<Main>/Message/Receive/Get from all accounts","<shift><control>I"},
 		{"<Main>/Message/Compose an email message",	"<control>M"},
 		{"<Main>/Message/Reply",			"<control>R"},
 		{"<Main>/Message/Reply to/all",			"<shift><control>R"},
@@ -3242,7 +2702,7 @@ static void prefs_keybind_apply_clicked(GtkWidget *widget)
 		{"<Main>/Tools/Execute",			"X"},
 		{"<Main>/Tools/Log window",			"<shift><control>L"},
 
-		{"<Compose>/File/Close",				"<control>W"},
+		{"<Compose>/Message/Close",				"<control>W"},
 		{"<Compose>/Edit/Select all",				"<control>A"},
 		{"<Compose>/Edit/Advanced/Move a word backward",	""},
 		{"<Compose>/Edit/Advanced/Move a word forward",		""},
@@ -3252,7 +2712,7 @@ static void prefs_keybind_apply_clicked(GtkWidget *widget)
 	};
 
 	static struct KeyBind mew_wl_menurc[] = {
-		{"<Main>/File/Empty trash",			"<shift>D"},
+		{"<Main>/File/Empty all Trash folders",			"<shift>D"},
 		{"<Main>/File/Save as...",			"Y"},
 		{"<Main>/File/Print...",			"<shift>numbersign"},
 		{"<Main>/File/Exit",				"<shift>Q"},
@@ -3262,8 +2722,7 @@ static void prefs_keybind_apply_clicked(GtkWidget *widget)
 		{"<Main>/Edit/Find in current message...",	"<control>F"},
 		{"<Main>/Edit/Search folder...",		"<control>S"},
 
-		{"<Main>/View/Expand Summary View",		""},
-		{"<Main>/View/Expand Message View",		""},
+		{"<Main>/View/Show or hide/Message View",	""},
 		{"<Main>/View/Thread view",			"<shift>T"},
 		{"<Main>/View/Go to/Prev message",		"P"},
 		{"<Main>/View/Go to/Next message",		"N"},
@@ -3271,12 +2730,13 @@ static void prefs_keybind_apply_clicked(GtkWidget *widget)
 		{"<Main>/View/Go to/Next unread message",	"<shift>N"},
 		{"<Main>/View/Go to/Other folder...",		"G"},
 		{"<Main>/View/Open in new window",		"<control><alt>N"},
-		{"<Main>/View/View source",			"<control>U"},
+		{"<Main>/View/Message source",			"<control>U"},
 		{"<Main>/View/Show all headers",		"<shift>H"},
-		{"<Main>/View/Update",				"<shift>S"},
+		{"<Main>/View/Update summary",			"<shift>S"},
 
-		{"<Main>/Message/Receive/Get new mail",		"<control>I"},
-		{"<Main>/Message/Receive/Get from all accounts",	"<shift><control>I"},
+		{"<Main>/Message/Receive/Get from current account",
+								"<control>I"},
+		{"<Main>/Message/Receive/Get from all accounts","<shift><control>I"},
 		{"<Main>/Message/Compose an email message",	"W"},
 		{"<Main>/Message/Reply",			"<control>R"},
 		{"<Main>/Message/Reply to/all",			"<shift>A"},
@@ -3296,7 +2756,7 @@ static void prefs_keybind_apply_clicked(GtkWidget *widget)
 		{"<Main>/Tools/Execute",			"X"},
 		{"<Main>/Tools/Log window",			"<shift><control>L"},
 
-		{"<Compose>/File/Close",				"<alt>W"},
+		{"<Compose>/Message/Close",				"<alt>W"},
 		{"<Compose>/Edit/Select all",				""},
 		{"<Compose>/Edit/Advanced/Move a word backward,"	"<alt>B"},
 		{"<Compose>/Edit/Advanced/Move a word forward",		"<alt>F"},
@@ -3306,7 +2766,7 @@ static void prefs_keybind_apply_clicked(GtkWidget *widget)
 	};
 
 	static struct KeyBind mutt_menurc[] = {
-		{"<Main>/File/Empty trash",			""},
+		{"<Main>/File/Empty all Trash folders",		""},
 		{"<Main>/File/Save as...",			"S"},
 		{"<Main>/File/Print...",			"P"},
 		{"<Main>/File/Exit",				"Q"},
@@ -3316,7 +2776,7 @@ static void prefs_keybind_apply_clicked(GtkWidget *widget)
 		{"<Main>/Edit/Find in current message...",	"<control>F"},
 		{"<Main>/Edit/Search messages...",		"slash"},
 
-		{"<Main>/View/Toggle summary view",		"V"},
+		{"<Main>/View/Show or hide/Message view",	"V"},
 		{"<Main>/View/Thread view",			"<control>T"},
 		{"<Main>/View/Go to/Prev message",		""},
 		{"<Main>/View/Go to/Next message",		""},
@@ -3324,12 +2784,13 @@ static void prefs_keybind_apply_clicked(GtkWidget *widget)
 		{"<Main>/View/Go to/Next unread message",	""},
 		{"<Main>/View/Go to/Other folder...",		"C"},
 		{"<Main>/View/Open in new window",		"<control><alt>N"},
-		{"<Main>/View/View source",			"<control>U"},
+		{"<Main>/View/Message source",			"<control>U"},
 		{"<Main>/View/Show all headers",		"<control>H"},
-		{"<Main>/View/Update",				"<control><alt>U"},
+		{"<Main>/View/Update summary",				"<control><alt>U"},
 
-		{"<Main>/Message/Receive/Get new mail",			"<control>I"},
-		{"<Main>/Message/Receive/Get from all accounts",	"<shift><control>I"},
+		{"<Main>/Message/Receive/Get from current account",
+								"<control>I"},
+		{"<Main>/Message/Receive/Get from all accounts","<shift><control>I"},
 		{"<Main>/Message/Compose an email message",		"M"},
 		{"<Main>/Message/Reply",			"R"},
 		{"<Main>/Message/Reply to/all",			"G"},
@@ -3349,7 +2810,7 @@ static void prefs_keybind_apply_clicked(GtkWidget *widget)
 		{"<Main>/Tools/Execute",			"X"},
 		{"<Main>/Tools/Log window",			"<shift><control>L"},
 
-		{"<Compose>/File/Close",				"<alt>W"},
+		{"<Compose>/Message/Close",				"<alt>W"},
 		{"<Compose>/Edit/Select all",				""},
 		{"<Compose>/Edit/Advanced/Move a word backward",	"<alt>B"},
 		{"<Compose>/Edit/Advanced/Move a word forward",		"<alt>F"},
@@ -3359,7 +2820,7 @@ static void prefs_keybind_apply_clicked(GtkWidget *widget)
 	};
 
 	static struct KeyBind old_sylpheed_menurc[] = {
-		{"<Main>/File/Empty trash",			""},
+		{"<Main>/File/Empty all Trash folders",		""},
 		{"<Main>/File/Save as...",			""},
 		{"<Main>/File/Print...",			"<alt>P"},
 		{"<Main>/File/Exit",				"<alt>Q"},
@@ -3369,8 +2830,7 @@ static void prefs_keybind_apply_clicked(GtkWidget *widget)
 		{"<Main>/Edit/Find in current message...",	"<control>F"},
 		{"<Main>/Edit/Search folder...",		"<control>S"},
 
-		{"<Main>/View/Expand Summary View",		""},
-		{"<Main>/View/Expand Message View",		""},
+		{"<Main>/View/Show or hide/Message View",	""},
 		{"<Main>/View/Thread view",			"<control>T"},
 		{"<Main>/View/Go to/Prev message",		"P"},
 		{"<Main>/View/Go to/Next message",		"N"},
@@ -3378,12 +2838,13 @@ static void prefs_keybind_apply_clicked(GtkWidget *widget)
 		{"<Main>/View/Go to/Next unread message",	"<shift>N"},
 		{"<Main>/View/Go to/Other folder...",		"<alt>G"},
 		{"<Main>/View/Open in new window",		"<shift><control>N"},
-		{"<Main>/View/View source",			"<control>U"},
+		{"<Main>/View/Message source",			"<control>U"},
 		{"<Main>/View/Show all headers",		"<control>H"},
-		{"<Main>/View/Update",				"<alt>U"},
+		{"<Main>/View/Update summary",			"<alt>U"},
 
-		{"<Main>/Message/Receive/Get new mail",			"<alt>I"},
-		{"<Main>/Message/Receive/Get from all accounts",	"<shift><alt>I"},
+		{"<Main>/Message/Receive/Get from current account",
+								"<alt>I"},
+		{"<Main>/Message/Receive/Get from all accounts","<shift><alt>I"},
 		{"<Main>/Message/Compose an email message",	"<alt>N"},
 		{"<Main>/Message/Reply",			"<alt>R"},
 		{"<Main>/Message/Reply to/all",			"<shift><alt>R"},
@@ -3403,7 +2864,7 @@ static void prefs_keybind_apply_clicked(GtkWidget *widget)
 		{"<Main>/Tools/Execute",			"<alt>X"},
 		{"<Main>/Tools/Log window",			"<alt>L"},
 
-		{"<Compose>/File/Close",				"<alt>W"},
+		{"<Compose>/Message/Close",				"<alt>W"},
 		{"<Compose>/Edit/Select all",				""},
 		{"<Compose>/Edit/Advanced/Move a word backward",	"<alt>B"},
 		{"<Compose>/Edit/Advanced/Move a word forward",		"<alt>F"},
@@ -3566,29 +3027,6 @@ static void prefs_common_send_dialog_set_optmenu(PrefParam *pparam)
 	gtk_menu_item_activate(GTK_MENU_ITEM(menuitem));
 }
 
-static gint prefs_common_deleted(GtkWidget *widget, GdkEventAny *event,
-				 gpointer data)
-{
-	prefs_common_cancel();
-	return TRUE;
-}
-
-static gboolean prefs_common_key_pressed(GtkWidget *widget, GdkEventKey *event,
-					 gpointer data)
-{
-	if (event && event->keyval == GDK_Escape)
-		prefs_common_cancel();
-	return FALSE;
-}
-
-static void prefs_common_ok(void)
-{
-	prefs_common_apply();
-	gtk_widget_hide(dialog.window);
-
-	inc_unlock();
-}
-
 static void prefs_common_apply(void)
 {
 	MainWindow *mainwindow;
@@ -3596,7 +3034,7 @@ static void prefs_common_apply(void)
 	prefs_set_data_from_dialog(param);
 	sock_set_io_timeout(prefs_common.io_timeout_secs);
 	main_window_reflect_prefs_all_real(FALSE);
-	prefs_common_save_config();
+	prefs_common_write_config();
 
 	mainwindow = mainwindow_get_mainwindow();
 	log_window_set_clipping(mainwindow->logwin, prefs_common.cliplog,
@@ -3643,12 +3081,13 @@ static void prefs_nextunreadmsgdialog_set_optmenu(PrefParam *pparam)
 	gtk_menu_item_activate(GTK_MENU_ITEM(menuitem));
 }
 
+/*
 static void prefs_common_cancel(void)
 {
 	gtk_widget_hide(dialog.window);
 	inc_unlock();
 }
-
+*/
 
 /* static void prefs_recvdialog_set_data_from_optmenu(PrefParam *pparam)
 {

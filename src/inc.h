@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2003 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2004 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,9 @@
 
 #include <glib.h>
 #include <time.h>
+#ifndef WIN32
+#include <sys/time.h>
+#endif /* WIN32 */
 
 #include "mainwindow.h"
 #include "progressdialog.h"
@@ -47,6 +50,7 @@ typedef enum
 	INC_IO_ERROR,
 	INC_SOCKET_ERROR,
 	INC_EOF,
+	INC_TIMEOUT,
 	INC_CANCEL
 } IncState;
 
@@ -58,6 +62,9 @@ struct _IncProgressDialog
 
 	gboolean show_dialog;
 
+	struct timeval progress_tv;
+	struct timeval folder_tv;
+
 	GList *queue_list;	/* list of IncSession */
 	gint cur_row;
 };
@@ -66,6 +73,8 @@ struct _IncSession
 {
 	Session *session;
 	IncState inc_state;
+
+	gint cur_total_bytes;
 
 	gpointer data;
 };
@@ -80,8 +89,6 @@ void inc_all_account_mail	(MainWindow	*mainwin,
 				 gboolean	 autocheck,
 				 gboolean 	 notify);
 void inc_progress_update	(Pop3Session	*session);
-gint inc_drop_message		(const gchar	*file,
-				 Pop3Session	*session);
 
 void inc_pop_before_smtp	(PrefsAccount 	*acc);
 

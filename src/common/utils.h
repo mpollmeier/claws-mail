@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2003 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2004 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #endif
 
 #include <glib.h>
+#include <glib-object.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -171,11 +172,25 @@
 
 #endif /* WIN32 */
 
+#define AUTORELEASE_STR(str, iffail) \
+{ \
+	gchar *__str; \
+	Xstrdup_a(__str, str, iffail); \
+	g_free(str); \
+	str = __str; \
+}
+
 #define FILE_OP_ERROR(file, func) \
 { \
 	fprintf(stderr, "%s: ", file); \
 	perror(func); \
 }
+
+#define IS_ASCII(c) (((guchar) c) <= 0177 ? 1 : 0)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef gpointer (*GNodeMapFunc)	(gpointer nodedata, gpointer data);
 
@@ -202,6 +217,18 @@ guint str_case_hash		(gconstpointer	 key);
 
 void ptr_array_free_strings	(GPtrArray	*array);
 
+typedef gboolean (*StrFindFunc) (const gchar	*haystack,
+				 const gchar	*needle);
+
+gboolean str_find		(const gchar	*haystack,
+				 const gchar	*needle);
+gboolean str_case_find		(const gchar	*haystack,
+				 const gchar	*needle);
+gboolean str_find_equal		(const gchar	*haystack,
+				 const gchar	*needle);
+gboolean str_case_find_equal	(const gchar	*haystack,
+				 const gchar	*needle);
+
 /* number-string conversion */
 gint to_number			(const gchar *nstr);
 gchar *itos_buf			(gchar	     *nstr,
@@ -222,6 +249,10 @@ gchar *strtailchomp	(gchar		*str,
 gchar *strcrchomp	(gchar		*str);
 gchar *strcasestr	(const gchar	*haystack,
 			 const gchar	*needle);
+gpointer my_memmem	(gconstpointer	 haystack,
+			 size_t		 haystacklen,
+			 gconstpointer	 needle,
+			 size_t		 needlelen);
 gchar *strncpy2		(gchar		*dest,
 			 const gchar	*src,
 			 size_t		 n);
@@ -411,6 +442,10 @@ gint copy_file			(const gchar	*src,
 gint move_file			(const gchar	*src,
 				 const gchar	*dest,
 				 gboolean	 overwrite);
+gint copy_file_part_to_fp	(FILE		*fp,
+				 off_t		 offset,
+				 size_t		 length,
+				 FILE		*dest_fp);
 gint copy_file_part		(FILE		*fp,
 				 off_t		 offset,
 				 size_t		 length,
@@ -472,25 +507,35 @@ const gchar * line_has_quote_char	(const gchar *str,
 const gchar * line_has_quote_char_last	(const gchar *str,
 					 const gchar *quote_chars);
 
-/* used in extended search */
-gchar * expand_search_string	(const gchar *str);
-
 guint g_stricase_hash	(gconstpointer gptr);
 gint g_stricase_equal	(gconstpointer gptr1, gconstpointer gptr2);
 gint g_int_compare	(gconstpointer a, gconstpointer b);
 
-gchar *generate_msgid		(const gchar *address, gchar *buf, gint len);
+gchar *generate_msgid		(gchar *buf, gint len);
 gchar *generate_mime_boundary	(const gchar *prefix);
 
 gint quote_cmd_argument(gchar * result, guint size,
 			const gchar * path);
 GNode *g_node_map(GNode *node, GNodeMapFunc func, gpointer data);
 
+gboolean get_hex_value(guchar *out, gchar c1, gchar c2);
+void get_hex_str(gchar *out, guchar ch);
+
+/* auto pointer for containers that support GType system */
+
+#define G_TYPE_AUTO_POINTER	g_auto_pointer_register()
+typedef struct AutoPointer	GAuto;
+GType g_auto_pointer_register		(void);
+GAuto *g_auto_pointer_new		(gpointer pointer);
+GAuto *g_auto_pointer_new_with_free	(gpointer p, 
+					 GFreeFunc free);
+gpointer g_auto_pointer_get_ptr		(GAuto *auto_ptr);
+GAuto *g_auto_pointer_copy		(GAuto *auto_ptr);
+void g_auto_pointer_free		(GAuto *auto_ptr);
+
 #ifdef WIN32
 #undef isspace
 #define isspace iswspace
-#endif
-
 gchar *w32_parse_path(gchar *const);
 gchar *get_installed_dir(void);
 void translate_strs(gchar *str, gchar *str_src, gchar *str_dst);
@@ -510,5 +555,10 @@ static gint mswin_helper_timeout_cb(gpointer *data);
 
 gchar *w32_get_exec_dir();
 gchar *w32_move_to_exec_dir(const gchar *filename);
+#endif
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __UTILS_H__ */

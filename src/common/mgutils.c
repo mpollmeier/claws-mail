@@ -380,7 +380,7 @@ gboolean mgu_slist_test_unq_nc( GSList *list, gchar *str ) {
 		if( strlen( str ) > 0 ) {
 			node = list;
 			while( node ) {
-				if( g_strcasecmp( str, node->data ) == 0 )
+				if( g_utf8_collate( str, node->data ) == 0 )
 					return FALSE;
 				node = g_slist_next( node );
 			}
@@ -404,7 +404,7 @@ gboolean mgu_list_test_unq_nc( GList *list, gchar *str ) {
 		if( strlen( str ) > 0 ) {
 			node = list;
 			while( node ) {
-				if( g_strcasecmp( str, node->data ) == 0 )
+				if( g_utf8_collate( str, node->data ) == 0 )
 					return FALSE;
 				node = g_list_next( node );
 			}

@@ -442,7 +442,7 @@ static gint exporthtml_compare_name(
 	if( item2 ) name2 = ADDRITEM_NAME( item2 );
 	if( ! name1 ) return ( name2 != NULL );
 	if( ! name2 ) return -1;
-	return strcasecmp( name1, name2 );
+	return g_utf8_collate( name1, name2 );
 }
 
 /*
@@ -458,7 +458,7 @@ static gint exporthtml_compare_email(
 	if( email2 ) name2 = email2->address;
 	if( ! name1 ) return ( name2 != NULL );
 	if( ! name2 ) return -1;
-	return strcasecmp( name1, name2 );
+	return g_utf8_collate( name1, name2 );
 }
 
 /*
@@ -474,7 +474,7 @@ static gint exporthtml_compare_attrib(
 	if( attr2 ) name2 = attr2->name;
 	if( ! name1 ) return ( name2 != NULL );
 	if( ! name2 ) return -1;
-	return strcasecmp( name1, name2 );
+	return g_utf8_collate( name1, name2 );
 }
 
 /*
@@ -1055,10 +1055,12 @@ static void exporthtml_build_filespec( ExportHtmlCtl *ctl ) {
  */
 void exporthtml_parse_filespec( ExportHtmlCtl *ctl, gchar *fileSpec ) {
 	gchar *t;
+	gchar *base = g_path_get_basename(fileSpec);
 
 	ctl->fileHtml =
-		mgu_replace_string( ctl->fileHtml, g_basename( fileSpec ) );
-	t = g_dirname( fileSpec );
+		mgu_replace_string( ctl->fileHtml, base );
+	g_free(base);
+	t = g_path_get_dirname( fileSpec );
 	ctl->dirOutput = mgu_replace_string( ctl->dirOutput, t );
 	g_free( t );
 	ctl->path = mgu_replace_string( ctl->path, fileSpec );

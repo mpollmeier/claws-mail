@@ -64,9 +64,8 @@ static void description_create(DescriptionWindow * dwindow)
 	gtk_window_set_title(GTK_WINDOW(dwindow->window),
 			     gettext(dwindow->title));
 	gtk_container_set_border_width(GTK_CONTAINER(dwindow->window), 8);
-	gtk_window_set_position(GTK_WINDOW(dwindow->window), GTK_WIN_POS_CENTER);
 	gtk_window_set_modal(GTK_WINDOW(dwindow->window), TRUE);
-	gtk_window_set_policy(GTK_WINDOW(dwindow->window), FALSE, TRUE, FALSE);
+	gtk_window_set_resizable(GTK_WINDOW(dwindow->window), TRUE);
 
 	/* Check number of lines to be show */
 	sz = 0;
@@ -118,8 +117,8 @@ static void description_create(DescriptionWindow * dwindow)
 		line++;
 	}
 
-	gtkut_button_set_create(&hbbox, &ok_btn, _("OK"),
-				NULL, NULL, NULL, NULL);
+	gtkut_button_set_create_stock(&hbbox, &ok_btn, GTK_STOCK_OK,
+				      NULL, NULL, NULL, NULL);
 	gtk_widget_show(hbbox);
 
 	vbox = gtk_vbox_new(FALSE, 0);
@@ -135,14 +134,12 @@ static void description_create(DescriptionWindow * dwindow)
 				  1, 2, i, i+1);
 */
 	gtk_widget_grab_default(ok_btn);
-	gtk_signal_connect(GTK_OBJECT(ok_btn), "clicked",
-			   GTK_SIGNAL_FUNC(gtk_main_quit), NULL);
-	gtk_signal_connect
-		(GTK_OBJECT(dwindow->window), "key_press_event",
-		 GTK_SIGNAL_FUNC(description_window_key_pressed),
-		 NULL);
-	gtk_signal_connect(GTK_OBJECT(dwindow->window), "delete_event",
-			   GTK_SIGNAL_FUNC(gtk_main_quit), NULL);
+	g_signal_connect(G_OBJECT(ok_btn), "clicked",
+			 G_CALLBACK(gtk_main_quit), NULL);
+	g_signal_connect(G_OBJECT(dwindow->window), "key_press_event",
+		 	 G_CALLBACK(description_window_key_pressed), NULL);
+	g_signal_connect(G_OBJECT(dwindow->window), "delete_event",
+			 G_CALLBACK(gtk_main_quit), NULL);
 
 	gtk_widget_show_all(table);
 }

@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2003 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2004 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,6 +59,7 @@
 #define ACTIONS_RC		"actionsrc"
 #define RENDERER_RC		"rendererrc"
 #define COMMAND_HISTORY		"command_history"
+#define QUICKSEARCH_HISTORY	"quicksearch_history"
 #define TEMPLATE_DIR		"templates"
 #define TMP_DIR			"tmp"
 #define NEWSGROUP_LIST		".newsgroup_list"
@@ -76,8 +77,7 @@
 #define FOLDER_LIST		"folderlist.xml"
 #define CACHE_FILE		".sylpheed_cache"
 #define MARK_FILE		".sylpheed_mark"
-/* #warning FIXME_GTK2 */
-#define CACHE_VERSION		2020
+#define CACHE_VERSION		23
 #define MARK_VERSION		2
 
 #define DEFAULT_SIGNATURE	".signature"
@@ -88,8 +88,9 @@
 #define DEFAULT_SENDMAIL_CMD	"/usr/sbin/sendmail -t -i"
 #ifdef WIN32
 #define DEFAULT_BROWSER_CMD	"?p\\mozilla.org\\Mozilla\\mozilla.exe -remote openURL \"%s\""
+#define DEFAULT_BROWSER_CMD_UNX	"mozilla-firefox -remote 'openURL(%s,new-window)'"
 #else
-#define DEFAULT_BROWSER_CMD	"mozilla -remote 'openURL(%s, new-window)'"
+#define DEFAULT_BROWSER_CMD	"mozilla-firefox -remote 'openURL(%s,new-window)'"
 #endif
 
 #ifdef _PATH_MAILDIR
@@ -120,34 +121,62 @@
 #define MAX_ENTRY_LENGTH		8191
 #define COLOR_DIM			35000
 #define UI_REFRESH_INTERVAL		50000	/* usec */
-#define SESSION_TIMEOUT			60	/* sec */
+#define FOLDER_UPDATE_INTERVAL		1500	/* msec */
+#define PROGRESS_UPDATE_INTERVAL	200	/* msec */
+#define SESSION_TIMEOUT_INTERVAL	60	/* sec */
 #define MAX_HISTORY_SIZE		16
 
+#ifndef WIN32
 #define NORMAL_FONT prefs_common.normalfont
 #define BOLD_FONT   prefs_common.boldfont
 #define SMALL_FONT	prefs_common.smallfont
+#endif
 
 #define DEFAULT_PIXMAP_THEME	"INTERNAL_DEFAULT"
 #define PIXMAP_THEME_DIR		"themes"
 
 #ifdef WIN32
-# define LOCK_PORT			54321
-# define W32_MAILCAP_NAME "mailcap.win32"
+#  define LOCK_PORT		54321
+ 
+#  define COMMON_WIN_RC		"sylpheedwinrc"
+#  define ACCOUNT_WIN_RC	"accountwinrc"
+#  define ACTIONS_WIN_RC	"actionswinrc"
+#  define W32_MAILCAP_NAME	"mailcap.win32"
+#  define W32_PLUGINDIR		"\\bin\\plugins"
 
-# define F_EXISTS	00 /* Existence only            */
-# define W_OK		02 /* Write permission          */
-# define R_OK		04 /* Read permission           */
-# define F_OK		06 /* Read and write permission */
+#ifdef jpWIN32
+#  define NORMAL_FONT		"-*-*-normal-r-normal--12-*-*-*-m-*-jisx0208.1983-0," \
+				"-*-*-normal-r-normal--12-*-*-*-*-*-*-*"
+#  define BOLD_FONT		"-*-*-bold-r-normal--12-*-*-*-m-*-jisx0208.1983-0," \
+				"-*-*-bold-r-normal--12-*-*-*-*-*-*-*"
+#  define SMALL_FONT		"-*-*-normal-r-normal--10-*-*-*-m-*-jisx0208.1983-0," \
+				"-*-*-normal-r-normal--10-*-*-*-*-*-*-*"
+/* Added */
+#  define DEFAULT_MESSAGE_FONT	"-*-*-normal-r-normal--12-*-*-*-m-*-jisx0208.1983-0," \
+				"-*-*-normal-r-normal--12-*-*-*-*-*-*-*"
+#  define DEFAULT_SPACING_FONT	"-*-*-normal-r-normal--6-*-*-*-m-*-jisx0208.1983-0," \
+				"-*-*-normal-r-normal--6-*-*-*-*-*-*-*"
+#endif /* jpWIN32 ---------------------------------------------------------- */
+#  define NORMAL_FONT		"-*-Arial-normal-r-normal-*-*-110-*-*-p-*-*-*"
+#  define BOLD_FONT		"-*-Arial-bold-r-normal-*-*-110-*-*-p-*-*-*"
+#  define SMALL_FONT		"-*-Arial-normal-r-normal-*-*-110-*-*-p-*-*-*"
+/* Added */
+#  define DEFAULT_MESSAGE_FONT	"-*-Courier New-normal-r-normal-*-*-120-*-*-m-*-*-*"
+#  define DEFAULT_SPACING_FONT	"-*-Arial-normal-r-normal-*-*-110-*-*-p-*-*-*"
 
-# define S_IRGRP	_S_IREAD
-# define S_IWGRP	_S_IWRITE
-# define S_IXGRP	_S_IEXEC
-# define S_IRWXG	(_S_IREAD|_S_IWRITE|_S_IEXEC)
-# define S_IROTH	_S_IREAD
-# define S_IWOTH	_S_IWRITE
-# define S_IXOTH	_S_IEXEC
-# define S_IRWXO	(_S_IREAD|_S_IWRITE|_S_IEXEC)
+#  define F_EXISTS		00 /* Existence only            */
+#  define W_OK			02 /* Write permission          */
+#  define R_OK			04 /* Read permission           */
+#  define F_OK			06 /* Read and write permission */
+
+#  define S_IRGRP		_S_IREAD
+#  define S_IWGRP		_S_IWRITE
+#  define S_IXGRP		_S_IEXEC
+#  define S_IRWXG		(_S_IREAD|_S_IWRITE|_S_IEXEC)
+#  define S_IROTH		_S_IREAD
+#  define S_IWOTH		_S_IWRITE
+#  define S_IXOTH		_S_IEXEC
+#  define S_IRWXO		(_S_IREAD|_S_IWRITE|_S_IEXEC)
 #endif /* WIN32 */
-
 
 #endif /* __DEFS_H__ */

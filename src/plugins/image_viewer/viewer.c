@@ -110,7 +110,7 @@ static void image_viewer_load_file(ImageViewer *imageviewer, const gchar *imgfil
 
 		pixbuf_scaled = gdk_pixbuf_scale_simple
 			(pixbuf, new_width, new_height, GDK_INTERP_BILINEAR);
-		gdk_pixbuf_unref(pixbuf);
+		g_object_unref(pixbuf);
 		pixbuf = pixbuf_scaled;
 	}
 
@@ -123,63 +123,12 @@ static void image_viewer_load_file(ImageViewer *imageviewer, const gchar *imgfil
 			(GTK_SCROLLED_WINDOW(imageviewer->scrolledwin),
 			 imageviewer->image);
 	} else
-		gtk_pixmap_set(GTK_PIXMAP(imageviewer->image), pixmap, mask);
+		gtk_pixmap_set(imageviewer->image, pixmap, mask);
 
 	gtk_widget_show(imageviewer->image);
 
-	gdk_pixbuf_unref(pixbuf);
+	g_object_unref(pixbuf);
 }
-#else
-#if HAVE_GDK_IMLIB
-static void image_viewer_load_file(ImageViewer *imageviewer, const gchar *imgfile)
-{
-	GdkImlibImage *im;
-	gint avail_width;
-	gint avail_height;
-	gint new_width;
-	gint new_height;
-
-	debug_print("image_viewer_show_mimepart\n");
-
-	im = gdk_imlib_load_image(imgfile);
-	if (!im) {
-		g_warning("Can't load the image.");	
-		return;
-	}
-
-	if (imageviewer->resize_img) {
-		avail_width = imageviewer->notebook->parent->allocation.width;
-		avail_height = imageviewer->notebook->parent->allocation.height;
-		if (avail_width > 8) avail_width -= 8;
-		if (avail_height > 8) avail_height -= 8;
-
-		image_viewer_get_resized_size(im->rgb_width, im->rgb_height,
-				 avail_width, avail_height,
-				 &new_width, &new_height);
-	} else {
-		new_width = im->rgb_width;
-		new_height = im->rgb_height;
-	}
-
-	gdk_imlib_render(im, new_width, new_height);
-
-	if (!imageviewer->image) {
-		imageviewer->image = gtk_pixmap_new(gdk_imlib_move_image(im),
-						    gdk_imlib_move_mask(im));
-
-		gtk_scrolled_window_add_with_viewport
-			(GTK_SCROLLED_WINDOW(imageviewer->scrolledwin),
-			 imageviewer->image);
-	} else
-		gtk_pixmap_set(GTK_PIXMAP(imageviewer->image),
-			       gdk_imlib_move_image(im),
-			       gdk_imlib_move_mask(im));      
-
-	gtk_widget_show(imageviewer->image);
-
-	gdk_imlib_destroy_image(im);
-}
-#endif /* HAVE_GDK_IMLIB */
 #endif /* HAVE_GDK_PIXBUF */
 
 static void image_viewer_set_notebook_page(MimeViewer *_mimeviewer)
@@ -187,14 +136,17 @@ static void image_viewer_set_notebook_page(MimeViewer *_mimeviewer)
 	ImageViewer *imageviewer = (ImageViewer *) _mimeviewer;
 
 	if (!imageviewerprefs.display_img)
-		gtk_notebook_set_page(GTK_NOTEBOOK(imageviewer->notebook), 0);
+		gtk_notebook_set_current_page(GTK_NOTEBOOK(imageviewer->notebook), 0);
 	else
-		gtk_notebook_set_page(GTK_NOTEBOOK(imageviewer->notebook), 1);
+		gtk_notebook_set_current_page(GTK_NOTEBOOK(imageviewer->notebook), 1);
 }
 
 static void image_viewer_load_image(ImageViewer *imageviewer)
 {
 	gchar *imgfile;
+
+	if (imageviewer->mimeinfo == NULL)
+		return;
 
 	imgfile = procmime_get_tmp_file_name(imageviewer->mimeinfo);
 	if (procmime_get_part(imgfile, imageviewer->mimeinfo) < 0) {
@@ -257,7 +209,7 @@ static void image_viewer_destroy_viewer(MimeViewer *_mimeviewer)
 	debug_print("image_viewer_destroy_viewer\n");
 
 	image_viewer_clear_viewer(_mimeviewer);
-	gtk_widget_unref(imageviewer->notebook);
+	g_object_unref(imageviewer->notebook);
 	g_free(imageviewer);
 }
 
@@ -287,7 +239,7 @@ static void image_viewer_get_resized_size(gint w, gint h, gint aw, gint ah,
 
 static void load_cb(GtkButton *button, ImageViewer *imageviewer)
 {
-	gtk_notebook_set_page(GTK_NOTEBOOK(imageviewer->notebook), 1);
+	gtk_notebook_set_current_page(GTK_NOTEBOOK(imageviewer->notebook), 1);
 	image_viewer_load_image(imageviewer);
 }
 
@@ -417,12 +369,12 @@ MimeViewer *image_viewer_create(void)
 
 	gtk_widget_ref(notebook);
 
-	gtk_signal_connect(GTK_OBJECT(load_button), "released",
-			   GTK_SIGNAL_FUNC(load_cb), imageviewer);
-	gtk_signal_connect(GTK_OBJECT(scrolledwin), "button-press-event",
-			   GTK_SIGNAL_FUNC(scrolledwin_button_cb), imageviewer);
-	gtk_signal_connect(GTK_OBJECT(scrolledwin), "size-allocate",
-			   GTK_SIGNAL_FUNC(scrolledwin_resize_cb), imageviewer);
+	g_signal_connect(G_OBJECT(load_button), "released",
+			 G_CALLBACK(load_cb), imageviewer);
+	g_signal_connect(G_OBJECT(scrolledwin), "button-press-event",
+			 G_CALLBACK(scrolledwin_button_cb), imageviewer);
+	g_signal_connect(G_OBJECT(scrolledwin), "size-allocate",
+			 G_CALLBACK(scrolledwin_resize_cb), imageviewer);
 
 	image_viewer_set_notebook_page((MimeViewer *)imageviewer);
 

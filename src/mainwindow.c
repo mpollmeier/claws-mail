@@ -88,6 +88,8 @@
 #include "progressindicator.h"
 #include "localfolder.h"
 #include "filtering.h"
+#include "folderutils.h"
+#include "foldersort.h"
 
 #define AC_LABEL_WIDTH	240
 
@@ -117,7 +119,7 @@ static void toolbar_child_detached		(GtkWidget	*widget,
 						 GtkWidget	*child,
 						 gpointer	 data);
 
-static void ac_label_button_pressed		(GtkWidget	*widget,
+static gboolean ac_label_button_pressed		(GtkWidget	*widget,
 						 GdkEventButton	*event,
 						 gpointer	 data);
 static void ac_menu_popup_closed		(GtkMenuShell	*menu_shell,
@@ -143,21 +145,15 @@ static void message_window_size_allocate_cb	(GtkWidget	*widget,
 						 GtkAllocation	*allocation,
 						 gpointer	 data);
 
-static void new_folder_cb	 (MainWindow	*mainwin,
-				  guint		 action,
-				  GtkWidget	*widget);
-static void rename_folder_cb	 (MainWindow	*mainwin,
-				  guint		 action,
-				  GtkWidget	*widget);
-static void delete_folder_cb	 (MainWindow	*mainwin,
-				  guint		 action,
-				  GtkWidget	*widget);
 static void update_folderview_cb (MainWindow	*mainwin,
 				  guint		 action,
 				  GtkWidget	*widget);
 static void add_mailbox_cb	 (MainWindow	*mainwin,
 				  guint		 action,
 				  GtkWidget	*widget);
+static void foldersort_cb	 (MainWindow 	*mainwin,
+				  guint		 action,
+                        	  GtkWidget 	*widget);
 static void import_mbox_cb	 (MainWindow	*mainwin,
 				  guint		 action,
 				  GtkWidget	*widget);
@@ -221,10 +217,6 @@ static void show_all_header_cb		(MainWindow	*mainwin,
 					 guint		 action,
 					 GtkWidget	*widget);
 
-static void reedit_cb			(MainWindow	*mainwin,
-					 guint		 action,
-					 GtkWidget	*widget);
-
 static void move_to_cb			(MainWindow	*mainwin,
 					 guint		 action,
 					 GtkWidget	*widget);
@@ -255,11 +247,20 @@ static void mark_as_read_cb		(MainWindow	*mainwin,
 static void mark_all_read_cb		(MainWindow	*mainwin,
 					 guint		 action,
 					 GtkWidget	*widget);
+
+static void reedit_cb			(MainWindow	*mainwin,
+					 guint		 action,
+					 GtkWidget	*widget);
+
 static void add_address_cb		(MainWindow	*mainwin,
 					 guint		 action,
 					 GtkWidget	*widget);
 
 static void set_charset_cb		(MainWindow	*mainwin,
+					 guint		 action,
+					 GtkWidget	*widget);
+
+static void set_decode_cb		(MainWindow	*mainwin,
 					 guint		 action,
 					 GtkWidget	*widget);
 
@@ -291,6 +292,9 @@ static void attract_by_subject_cb(MainWindow	*mainwin,
 				  GtkWidget	*widget);
 
 static void delete_duplicated_cb (MainWindow	*mainwin,
+				  guint		 action,
+				  GtkWidget	*widget);
+static void delete_duplicated_all_cb (MainWindow	*mainwin,
 				  guint		 action,
 				  GtkWidget	*widget);
 static void filter_cb		 (MainWindow	*mainwin,
@@ -433,19 +437,15 @@ gboolean mainwindow_progressindicator_hook	(gpointer 	 source,
 static GtkItemFactoryEntry mainwin_entries[] =
 {
 	{N_("/_File"),				NULL, NULL, 0, "<Branch>"},
-	{N_("/_File/_Folder"),			NULL, NULL, 0, "<Branch>"},
-	{N_("/_File/_Folder/Create _new folder..."),
-						NULL, new_folder_cb, 0, NULL},
-	{N_("/_File/_Folder/_Rename folder..."),NULL, rename_folder_cb, 0, NULL},
-	{N_("/_File/_Folder/_Delete folder"),	NULL, delete_folder_cb, 0, NULL},
-	{N_("/_File/_Folder/---"),			NULL, NULL, 0, "<Separator>"},
-	{N_("/_File/_Folder/_Check for new messages in all folders"),
-						NULL, update_folderview_cb, 0, NULL},
 	{N_("/_File/_Add mailbox"),		NULL, NULL, 0, "<Branch>"},
 	{N_("/_File/_Add mailbox/MH..."),	NULL, add_mailbox_cb, 0, NULL},
+	{N_("/_File/---"),			NULL, NULL, 0, "<Separator>"},
+	{N_("/_File/Change folder order"),	NULL, foldersort_cb,  0, NULL},
+	{N_("/_File/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_File/_Import mbox file..."),	NULL, import_mbox_cb, 0, NULL},
 	{N_("/_File/_Export to mbox file..."),	NULL, export_mbox_cb, 0, NULL},
-	{N_("/_File/Empty _trash"),		"<shift>D", empty_trash_cb, 0, NULL},
+	{N_("/_File/---"),			NULL, NULL, 0, "<Separator>"},
+	{N_("/_File/Empty all _Trash folders"),	"<shift>D", empty_trash_cb, 0, NULL},
 	{N_("/_File/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_File/_Save as..."),		"<control>S", save_as_cb, 0, NULL},
 	{N_("/_File/_Print..."),		NULL, print_cb, 0, NULL},
@@ -580,6 +580,8 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	 CODESET_ACTION(C_ISO_8859_5)},
 	{N_("/_View/_Code set/Cyrillic (KOI8-_R)"),
 	 CODESET_ACTION(C_KOI8_R)},
+	{N_("/_View/_Code set/Cyrillic (KOI8-U)"),
+	 CODESET_ACTION(C_KOI8_U)},
 	{N_("/_View/_Code set/Cyrillic (Windows-1251)"),
 	 CODESET_ACTION(C_WINDOWS_1251)},
 	CODESET_SEPARATOR,
@@ -638,6 +640,22 @@ static GtkItemFactoryEntry mainwin_entries[] =
 #undef CODESET_SEPARATOR
 #undef CODESET_ACTION
 
+#define DECODE_SEPARATOR \
+	{N_("/_View/Decode/---"),		NULL, NULL, 0, "<Separator>"}
+#define DECODE_ACTION(action) \
+	 NULL, set_decode_cb, action, "/View/Decode/Auto detect"
+	{N_("/_View/Decode"),		NULL, NULL, 0, "<Branch>"},
+	{N_("/_View/Decode/_Auto detect"),
+	 NULL, set_decode_cb, 0, "<RadioItem>"},
+	{N_("/_View/Decode/---"),		NULL, NULL, 0, "<Separator>"},
+	{N_("/_View/Decode/_8bit"), 		DECODE_ACTION(ENC_8BIT)},
+	{N_("/_View/Decode/_Quoted printable"),	DECODE_ACTION(ENC_QUOTED_PRINTABLE)},
+	{N_("/_View/Decode/_Base64"), 		DECODE_ACTION(ENC_BASE64)},
+	{N_("/_View/Decode/_Uuencode"),		DECODE_ACTION(ENC_X_UUENCODE)},
+
+#undef DECODE_SEPARATOR
+#undef DECODE_ACTION
+
 	{N_("/_View/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_View/Open in new _window"),	"<control><alt>N", open_msg_cb, 0, NULL},
 	{N_("/_View/Mess_age source"),		"<control>U", view_source_cb, 0, NULL},
@@ -669,8 +687,6 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_Message/_Forward"),		"<control><alt>F", main_window_reply_cb, COMPOSE_FORWARD, NULL},
 	{N_("/_Message/Redirect"),		NULL, main_window_reply_cb, COMPOSE_REDIRECT, NULL},
 	{N_("/_Message/---"),			NULL, NULL, 0, "<Separator>"},
-	{N_("/_Message/Re-_edit"),		NULL, reedit_cb, 0, NULL},
-	{N_("/_Message/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_Message/M_ove..."),		"<control>O", move_to_cb, 0, NULL},
 	{N_("/_Message/_Copy..."),		"<shift><control>O", copy_to_cb, 0, NULL},
 	{N_("/_Message/_Delete"),		"<control>D", delete_cb,  0, NULL},
@@ -684,6 +700,8 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_Message/_Mark/Mark as rea_d"),
 						NULL, mark_as_read_cb, 0, NULL},
 	{N_("/_Message/_Mark/Mark all _read"),	NULL, mark_all_read_cb, 0, NULL},
+	{N_("/_Message/---"),			NULL, NULL, 0, "<Separator>"},
+	{N_("/_Message/Re-_edit"),		NULL, reedit_cb, 0, NULL},
 
 	{N_("/_Tools"),				NULL, NULL, 0, "<Branch>"},
 	{N_("/_Tools/_Address book..."),	"<shift><control>A", addressbook_open_cb, 0, NULL},
@@ -695,7 +713,10 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_Tools/_Harvest addresses/from _Messages..."),
 						NULL, addr_harvest_msg_cb, 0, NULL},
 	{N_("/_Tools/---"),			NULL, NULL, 0, "<Separator>"},
-	{N_("/_Tools/_Filter messages"),		NULL, filter_cb, 0, NULL},
+	{N_("/_Tools/_Filter all messages in folder"),
+						NULL, filter_cb, 0, NULL},
+	{N_("/_Tools/Filter _selected messages"),
+						NULL, filter_cb, 1, NULL},
 	{N_("/_Tools/_Create filter rule"),	NULL, NULL, 0, "<Branch>"},
 	{N_("/_Tools/_Create filter rule/_Automatically"),
 						NULL, create_filter_cb, FILTER_BY_AUTO, NULL},
@@ -717,8 +738,14 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_Tools/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_Tools/Actio_ns"),		NULL, NULL, 0, "<Branch>"},
 	{N_("/_Tools/---"),			NULL, NULL, 0, "<Separator>"},
+	{N_("/_Tools/_Check for new messages in all folders"),
+						NULL, update_folderview_cb, 0, NULL},
 	{N_("/_Tools/Delete du_plicated messages"),
+						NULL, NULL, 0, "<Branch>"},
+	{N_("/_Tools/Delete du_plicated messages/In selected folder"),
 						NULL, delete_duplicated_cb,   0, NULL},
+	{N_("/_Tools/Delete du_plicated messages/In all folders"),
+						NULL, delete_duplicated_all_cb,   0, NULL},
 	{N_("/_Tools/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_Tools/E_xecute"),		"X", execute_summary_cb, 0, NULL},
 #ifdef USE_OPENSSL
@@ -739,8 +766,8 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_Configuration/_Edit accounts..."),
 						NULL, account_edit_open, 0, NULL},
 	{N_("/_Configuration/---"),		NULL, NULL, 0, "<Separator>"},
-	{N_("/_Configuration/_Common preferences..."),
-						NULL, prefs_common_open_cb, 0, NULL},
+	{N_("/_Configuration/_Preferences..."),
+						NULL, prefs_open_cb, 0, NULL},
 	{N_("/_Configuration/Pre-processing..."),
 						NULL, prefs_pre_processing_open_cb, 0, NULL},
 	{N_("/_Configuration/Post-processing..."),
@@ -749,7 +776,6 @@ static GtkItemFactoryEntry mainwin_entries[] =
 						NULL, prefs_filtering_open_cb, 0, NULL},
 	{N_("/_Configuration/_Templates..."),	NULL, prefs_template_open_cb, 0, NULL},
 	{N_("/_Configuration/_Actions..."),	NULL, prefs_actions_open_cb, 0, NULL},
-	{N_("/_Configuration/_Other Preferences..."),  NULL, prefs_open_cb, 0, NULL},
 	{N_("/_Configuration/Plugins..."),  	NULL, plugins_open_cb, 0, NULL},
 
 	{N_("/_Help"),				NULL, NULL, 0, "<Branch>"},
@@ -764,6 +790,24 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_Help/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_Help/_About"),			NULL, about_show, 0, NULL}
 };
+
+static gboolean main_window_accel_activate (GtkAccelGroup *accelgroup,
+                                            GObject *arg1,
+                                            guint value,
+                                            GdkModifierType mod,
+                                            gpointer user_data) 
+{
+	MainWindow *mainwin = (MainWindow *)user_data;
+
+	if (mainwin->summaryview &&
+	    mainwin->summaryview->quicksearch &&
+	    quicksearch_has_focus(mainwin->summaryview->quicksearch) &&
+	    (mod == 0 || mod == GDK_SHIFT_MASK)) {
+		quicksearch_pass_key(mainwin->summaryview->quicksearch, value, mod);
+		return TRUE;
+	}
+	return FALSE;
+}
 
 MainWindow *main_window_create(SeparateType type)
 {
@@ -798,6 +842,7 @@ MainWindow *main_window_create(SeparateType type)
 	GtkWidget *menuitem;
 	gint i;
 	guint n_menu_entries;
+	gboolean hide_messageview = FALSE;
 
 	static GdkGeometry geometry;
 
@@ -807,8 +852,7 @@ MainWindow *main_window_create(SeparateType type)
 	/* main window */
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title(GTK_WINDOW(window), PROG_VERSION);
-	gtk_window_set_policy(GTK_WINDOW(window), TRUE, TRUE, FALSE);
-	gtk_window_set_wmclass(GTK_WINDOW(window), "main_window", "Sylpheed");
+	gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
 
 	if (!geometry.min_height) {
 		geometry.min_width = 320;
@@ -850,10 +894,10 @@ MainWindow *main_window_create(SeparateType type)
 	handlebox = gtk_handle_box_new();
 	gtk_widget_show(handlebox);
 	gtk_box_pack_start(GTK_BOX(vbox), handlebox, FALSE, FALSE, 0);
-	gtk_signal_connect(GTK_OBJECT(handlebox), "child_attached",
-			   GTK_SIGNAL_FUNC(toolbar_child_attached), mainwin);
-	gtk_signal_connect(GTK_OBJECT(handlebox), "child_detached",
-			   GTK_SIGNAL_FUNC(toolbar_child_detached), mainwin);
+	g_signal_connect(G_OBJECT(handlebox), "child_attached",
+			 G_CALLBACK(toolbar_child_attached), mainwin);
+	g_signal_connect(G_OBJECT(handlebox), "child_detached",
+			 G_CALLBACK(toolbar_child_detached), mainwin);
 
 	/* link window to mainwin->window to avoid gdk warnings */
 	mainwin->window       = window;
@@ -912,7 +956,7 @@ MainWindow *main_window_create(SeparateType type)
 			     ac_button, _("Select account"), NULL);
 	gtk_button_set_relief(GTK_BUTTON(ac_button), GTK_RELIEF_NONE);
 	GTK_WIDGET_UNSET_FLAGS(ac_button, GTK_CAN_FOCUS);
-	gtk_widget_set_size_request(ac_button, -1, 1);
+	gtk_widget_set_size_request(ac_button, -1, 0);
 	gtk_box_pack_end(GTK_BOX(hbox_stat), ac_button, FALSE, FALSE, 0);
 	g_signal_connect(G_OBJECT(ac_button), "button_press_event",
 			 G_CALLBACK(ac_label_button_pressed), mainwin);
@@ -937,22 +981,22 @@ MainWindow *main_window_create(SeparateType type)
 	summaryview->messageview = messageview;
 	summaryview->window      = window;
 
-	mainwin->vbox         = vbox;
-	mainwin->menubar      = menubar;
-	mainwin->menu_factory = ifactory;
-	mainwin->handlebox    = handlebox;
-	mainwin->vbox_body    = vbox_body;
-	mainwin->hbox_stat    = hbox_stat;
-	mainwin->statusbar    = statusbar;
-	mainwin->progressbar  = progressbar;
-	mainwin->statuslabel  = statuslabel;
-	mainwin->ac_button    = ac_button;
-	mainwin->ac_label     = ac_label;
-	
-	mainwin->online_switch     = online_switch;
+	messageview->statusbar   = statusbar;
+	mainwin->vbox           = vbox;
+	mainwin->menubar        = menubar;
+	mainwin->menu_factory   = ifactory;
+	mainwin->handlebox      = handlebox;
+	mainwin->vbox_body      = vbox_body;
+	mainwin->hbox_stat      = hbox_stat;
+	mainwin->statusbar      = statusbar;
+	mainwin->progressbar    = progressbar;
+	mainwin->statuslabel    = statuslabel;
+	mainwin->online_switch  = online_switch;
+	mainwin->online_pixmap  = online_pixmap;
+	mainwin->offline_pixmap = offline_pixmap;
+	mainwin->ac_button      = ac_button;
+	mainwin->ac_label       = ac_label;
 	mainwin->offline_switch    = offline_switch;
-	mainwin->online_pixmap	   = online_pixmap;
-	mainwin->offline_pixmap    = offline_pixmap;
 	
 	/* set context IDs for status bar */
 	mainwin->mainwin_cid = gtk_statusbar_get_context_id
@@ -963,6 +1007,8 @@ MainWindow *main_window_create(SeparateType type)
 		(GTK_STATUSBAR(statusbar), "Summary View");
 	mainwin->messageview_cid = gtk_statusbar_get_context_id
 		(GTK_STATUSBAR(statusbar), "Message View");
+
+	messageview->statusbar_cid = mainwin->messageview_cid;
 
 	/* allocate colors for summary view and folder view */
 	summaryview->color_marked.red = summaryview->color_marked.green = 0;
@@ -996,7 +1042,8 @@ MainWindow *main_window_create(SeparateType type)
 	debug_print("done.\n");
 
 	messageview->visible = prefs_common.msgview_visible;
-
+	hide_messageview = !messageview->visible;
+	
 	main_window_set_widgets(mainwin, type);
 
 	g_signal_connect(G_OBJECT(window), "size_allocate",
@@ -1033,14 +1080,6 @@ MainWindow *main_window_create(SeparateType type)
 	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem),
 				       prefs_common.show_statusbar);
 	
-	gtk_widget_hide(GTK_WIDGET(mainwin->summaryview->hbox_search));
-	
-	if (prefs_common.show_searchbar) {
-		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mainwin->summaryview->toggle_search), TRUE);
-		if (prefs_common.summary_quicksearch_type != S_SEARCH_EXTENDED)
-			gtk_widget_hide(summaryview->search_description);
-	}
-
 	/* set account selection menu */
 	ac_menu = gtk_item_factory_get_widget
 		(ifactory, "/Configuration/Change current account");
@@ -1054,12 +1093,16 @@ MainWindow *main_window_create(SeparateType type)
 	main_window_update_actions_menu(mainwin);
 
 	/* attach accel groups to main window */
-#define	ADD_MENU_ACCEL_GROUP_TO_WINDOW(menu,win)	\
-	gtk_window_add_accel_group			\
-		(GTK_WINDOW(win), 			\
-		 gtk_item_factory_from_widget(menu)->accel_group)		 
+#define	ADD_MENU_ACCEL_GROUP_TO_WINDOW(menu,win)			\
+	gtk_window_add_accel_group					\
+		(GTK_WINDOW(win), 					\
+		 gtk_item_factory_from_widget(menu)->accel_group); 	\
+	g_signal_connect(G_OBJECT(gtk_item_factory_from_widget(menu)->accel_group), \
+			"accel_activate", 				\
+		       	G_CALLBACK(main_window_accel_activate), mainwin);
+			 
 	
-	ADD_MENU_ACCEL_GROUP_TO_WINDOW(summaryview->popupmenu,mainwin->window);
+	ADD_MENU_ACCEL_GROUP_TO_WINDOW(summaryview->popupmenu, mainwin->window);
 	
 	/* connect the accelerators for equivalent 
 	   menu items in different menus             */
@@ -1095,6 +1138,9 @@ MainWindow *main_window_create(SeparateType type)
 	/* init work_offline */
 	if (prefs_common.work_offline)
 		online_switch_clicked (GTK_BUTTON(online_switch), mainwin);
+
+	if (mainwin->type == SEPARATE_NONE && hide_messageview)
+		main_window_toggle_message_view(mainwin);
 
 	return mainwin;
 }
@@ -1250,9 +1296,9 @@ static void main_window_set_account_selector_menu(MainWindow *mainwin,
 			 ? ac_prefs->account_name : _("Untitled"));
 		gtk_widget_show(menuitem);
 		gtk_menu_append(GTK_MENU(mainwin->ac_menu), menuitem);
-		gtk_signal_connect(GTK_OBJECT(menuitem), "activate",
-				   GTK_SIGNAL_FUNC(account_selector_menu_cb),
-				   ac_prefs);
+		g_signal_connect(G_OBJECT(menuitem), "activate",
+				 G_CALLBACK(account_selector_menu_cb),
+				 ac_prefs);
 	}
 }
 
@@ -1291,9 +1337,9 @@ static void main_window_set_account_receive_menu(MainWindow *mainwin,
 			 : _("Untitled"));
 		gtk_widget_show(menuitem);
 		gtk_menu_append(GTK_MENU(menu), menuitem);
-		gtk_signal_connect(GTK_OBJECT(menuitem), "activate",
-				   GTK_SIGNAL_FUNC(account_receive_menu_cb),
-				   ac_prefs);
+		g_signal_connect(G_OBJECT(menuitem), "activate",
+				 G_CALLBACK(account_receive_menu_cb),
+				 ac_prefs);
 	}
 }
 
@@ -1504,7 +1550,7 @@ void main_window_get_size(MainWindow *mainwin)
 		prefs_common.msgview_height = allocation->height;
 	}
 
-	debug_print("summaryview size: %d x %d\n",
+/*	debug_print("summaryview size: %d x %d\n",
 		    prefs_common.summaryview_width,
 		    prefs_common.summaryview_height);
 	debug_print("folderview size: %d x %d\n",
@@ -1512,7 +1558,7 @@ void main_window_get_size(MainWindow *mainwin)
 		    prefs_common.folderview_height);
 	debug_print("messageview size: %d x %d\n",
 		    prefs_common.msgview_width,
-		    prefs_common.msgview_height);
+		    prefs_common.msgview_height); */
 }
 
 void main_window_get_position(MainWindow *mainwin)
@@ -1547,15 +1593,13 @@ void main_window_get_position(MainWindow *mainwin)
 
 void main_window_progress_on(MainWindow *mainwin)
 {
-	gtk_progress_set_show_text(GTK_PROGRESS(mainwin->progressbar), TRUE);
-	gtk_progress_set_format_string(GTK_PROGRESS(mainwin->progressbar), "");
+	gtk_progress_bar_set_text(GTK_PROGRESS_BAR(mainwin->progressbar), "");
 }
 
 void main_window_progress_off(MainWindow *mainwin)
 {
-	gtk_progress_set_show_text(GTK_PROGRESS(mainwin->progressbar), FALSE);
-	gtk_progress_bar_update(GTK_PROGRESS_BAR(mainwin->progressbar), 0.0);
-	gtk_progress_set_format_string(GTK_PROGRESS(mainwin->progressbar), "");
+	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(mainwin->progressbar), 0.0);
+	gtk_progress_bar_set_text(GTK_PROGRESS_BAR(mainwin->progressbar), "");
 }
 
 void main_window_progress_set(MainWindow *mainwin, gint cur, gint total)
@@ -1563,8 +1607,8 @@ void main_window_progress_set(MainWindow *mainwin, gint cur, gint total)
 	gchar buf[32];
 
 	g_snprintf(buf, sizeof(buf), "%d / %d", cur, total);
-	gtk_progress_set_format_string(GTK_PROGRESS(mainwin->progressbar), buf);
-	gtk_progress_bar_update(GTK_PROGRESS_BAR(mainwin->progressbar),
+	gtk_progress_bar_set_text(GTK_PROGRESS_BAR(mainwin->progressbar), buf);
+	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(mainwin->progressbar),
 				(cur == 0 && total == 0) ? 0 :
 				(gfloat)cur / (gfloat)total);
 }
@@ -1591,7 +1635,7 @@ void main_window_empty_trash(MainWindow *mainwin, gboolean confirm)
 		manage_window_focus_in(mainwin->window, NULL, NULL);
 	}
 
-	procmsg_empty_trash();
+	procmsg_empty_all_trash();
 
 	if (mainwin->summaryview->folder_item &&
 	    mainwin->summaryview->folder_item->stype == F_TRASH)
@@ -1615,8 +1659,8 @@ void main_window_add_mailbox(MainWindow *mainwin)
 		return;
 	}
 	folder = folder_new(folder_get_class_from_string("mh"), 
-			    !strcmp(path, "Mail") ? _("Mailbox") : g_basename(path),
-			    path);
+			    !strcmp(path, "Mail") ? _("Mailbox") : 
+			    g_path_get_basename(path), path);
 	g_free(path);
 
 	if (folder->klass->create_tree(folder) < 0) {
@@ -1711,12 +1755,12 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 		gchar *const entry;
 		SensitiveCond cond;
 	} entry[] = {
-		{"/File/Folder"                               , M_UNLOCKED},
 		{"/File/Add mailbox"                          , M_UNLOCKED},
 
                 {"/File/Add mailbox/MH..."   		      , M_UNLOCKED},
+		{"/File/Change folder order"	      	      , M_UNLOCKED},
 		{"/File/Export to mbox file..."               , M_UNLOCKED},
-		{"/File/Empty trash"                          , M_UNLOCKED},
+		{"/File/Empty all Trash folders"              , M_UNLOCKED},
 		{"/File/Work offline"	       		      , M_UNLOCKED},
 
 		{"/File/Save as...", M_TARGET_EXIST|M_UNLOCKED},
@@ -1756,20 +1800,21 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 		{"/Message/Follow-up and reply to", M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST|M_NEWS},
 		{"/Message/Forward"               , M_HAVE_ACCOUNT|M_TARGET_EXIST},
         	{"/Message/Redirect"		  , M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
-		{"/Message/Re-edit"		  , M_HAVE_ACCOUNT|M_ALLOW_REEDIT},
 		{"/Message/Move..."		  , M_TARGET_EXIST|M_ALLOW_DELETE|M_UNLOCKED},
 		{"/Message/Copy..."		  , M_TARGET_EXIST|M_EXEC|M_UNLOCKED},
 		{"/Message/Delete" 		  , M_TARGET_EXIST|M_ALLOW_DELETE|M_UNLOCKED|M_NOT_NEWS},
 		{"/Message/Cancel a news message" , M_TARGET_EXIST|M_ALLOW_DELETE|M_UNLOCKED|M_NEWS},
 		{"/Message/Mark"   		  , M_TARGET_EXIST},
+		{"/Message/Re-edit"              , M_HAVE_ACCOUNT|M_ALLOW_REEDIT},
 
-		{"/Tools/Add sender to address book", M_SINGLE_TARGET_EXIST},
-		{"/Tools/Harvest addresses"	    , M_UNLOCKED},
-		{"/Tools/Filter messages"           , M_MSG_EXIST|M_EXEC|M_UNLOCKED},
-		{"/Tools/Create filter rule"        , M_SINGLE_TARGET_EXIST|M_UNLOCKED},
-		{"/Tools/Actions"                   , M_TARGET_EXIST|M_UNLOCKED},
-		{"/Tools/Execute"                   , M_DELAY_EXEC},
-		{"/Tools/Delete duplicated messages", M_MSG_EXIST|M_ALLOW_DELETE|M_UNLOCKED},
+		{"/Tools/Add sender to address book"   , M_SINGLE_TARGET_EXIST},
+		{"/Tools/Harvest addresses"	       , M_UNLOCKED},
+		{"/Tools/Filter all messages in folder", M_MSG_EXIST|M_EXEC|M_UNLOCKED},
+		{"/Tools/Filter selected messages"     , M_TARGET_EXIST|M_EXEC|M_UNLOCKED},
+		{"/Tools/Create filter rule"           , M_SINGLE_TARGET_EXIST|M_UNLOCKED},
+		{"/Tools/Actions"                      , M_TARGET_EXIST|M_UNLOCKED},
+		{"/Tools/Execute"                      , M_DELAY_EXEC},
+		{"/Tools/Delete duplicated messages/In selected folder"   , M_MSG_EXIST|M_ALLOW_DELETE|M_UNLOCKED},
 
 		{"/Configuration", M_UNLOCKED},
 
@@ -1960,10 +2005,7 @@ static void main_window_set_widgets(MainWindow *mainwin, SeparateType type)
 		folderwin = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 		gtk_window_set_title(GTK_WINDOW(folderwin),
 				     _("Sylpheed - Folder View"));
-		gtk_window_set_wmclass(GTK_WINDOW(folderwin),
-				       "folder_view", "Sylpheed");
-		gtk_window_set_policy(GTK_WINDOW(folderwin),
-				      TRUE, TRUE, FALSE);
+		gtk_window_set_resizable(GTK_WINDOW(folderwin), TRUE);
 		gtk_window_move(GTK_WINDOW(folderwin), prefs_common.folderwin_x,
 				prefs_common.folderwin_y);
 		gtk_container_set_border_width(GTK_CONTAINER(folderwin),
@@ -1981,12 +2023,13 @@ static void main_window_set_widgets(MainWindow *mainwin, SeparateType type)
 		messagewin = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 		gtk_window_set_title(GTK_WINDOW(messagewin),
 				     _("Sylpheed - Message View"));
-		gtk_window_set_wmclass(GTK_WINDOW(messagewin),
-				       "message_view", "Sylpheed");
-		gtk_window_set_policy(GTK_WINDOW(messagewin),
-				      TRUE, TRUE, FALSE);
-		gtk_window_move(GTK_WINDOW(messagewin), prefs_common.main_msgwin_x,
+		gtk_window_set_resizable(GTK_WINDOW(messagewin), TRUE);
+		gtk_window_move(GTK_WINDOW(messagewin), 
+				prefs_common.main_msgwin_x,
 				prefs_common.main_msgwin_y);
+		gtk_widget_set_size_request(messagewin, 
+					    prefs_common.msgwin_width,
+					    prefs_common.msgwin_height);
 		gtk_container_set_border_width(GTK_CONTAINER(messagewin),
 					       BORDER_WIDTH);
 		g_signal_connect(G_OBJECT(messagewin), "delete_event",
@@ -1994,6 +2037,9 @@ static void main_window_set_widgets(MainWindow *mainwin, SeparateType type)
 				 mainwin);
 		if (messageview_is_visible(mainwin->messageview))
 			gtk_widget_show(messagewin);
+	} else {
+		mainwin->messageview->statusbar = mainwin->statusbar;
+		mainwin->messageview->statusbar_cid = mainwin->messageview_cid;
 	}
 
 	gtk_widget_set_size_request(GTK_WIDGET_PTR(mainwin->folderview),
@@ -2127,10 +2173,6 @@ static void main_window_set_widgets(MainWindow *mainwin, SeparateType type)
 	else 
 		gtk_widget_hide(mainwin->messageview->mimeview->ctree_mainbox);
 
-	/* rehide quick search if necessary */
-	if (!prefs_common.show_searchbar)
-		gtk_widget_hide(mainwin->summaryview->hbox_search);
-	
 	mainwin->type = type;
 
 
@@ -2224,7 +2266,7 @@ static void toolbar_child_detached(GtkWidget *widget, GtkWidget *child,
 	gtk_widget_set_usize(child, -1, -1);
 }
 
-static void ac_label_button_pressed(GtkWidget *widget, GdkEventButton *event,
+static gboolean ac_label_button_pressed(GtkWidget *widget, GdkEventButton *event,
 				    gpointer data)
 {
 	MainWindow *mainwin = (MainWindow *)data;
@@ -2288,6 +2330,9 @@ static gint message_window_close_cb(GtkWidget *widget, GdkEventAny *event,
 		(mainwin->menu_factory, "/View/Show or hide/Message view");
 	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), FALSE);
 
+	mainwin->messageview->statusbar = mainwin->statusbar;
+	mainwin->messageview->statusbar_cid = mainwin->messageview_cid;
+
 	return TRUE;
 }
 
@@ -2331,22 +2376,10 @@ static void update_folderview_cb(MainWindow *mainwin, guint action,
 	folderview_check_new_all();
 }
 
-static void new_folder_cb(MainWindow *mainwin, guint action,
-			  GtkWidget *widget)
+static void foldersort_cb(MainWindow *mainwin, guint action,
+                           GtkWidget *widget)
 {
-	folderview_new_folder(mainwin->folderview);
-}
-
-static void rename_folder_cb(MainWindow *mainwin, guint action,
-			     GtkWidget *widget)
-{
-	folderview_rename_folder(mainwin->folderview);
-}
-
-static void delete_folder_cb(MainWindow *mainwin, guint action,
-			     GtkWidget *widget)
-{
-	folderview_delete_folder(mainwin->folderview);
+	foldersort_open();
 }
 
 static void import_mbox_cb(MainWindow *mainwin, guint action,
@@ -2596,11 +2629,6 @@ static void show_all_header_cb(MainWindow *mainwin, guint action,
 				     GTK_CHECK_MENU_ITEM(widget)->active);
 }
 
-static void reedit_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
-{
-	summary_reedit(mainwin->summaryview);
-}
-
 static void mark_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
 {
 	summary_mark(mainwin->summaryview);
@@ -2629,6 +2657,11 @@ static void mark_all_read_cb(MainWindow *mainwin, guint action,
 	summary_mark_all_read(mainwin->summaryview);
 }
 
+static void reedit_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
+{
+	summary_reedit(mainwin->summaryview);
+}
+
 static void add_address_cb(MainWindow *mainwin, guint action,
 			   GtkWidget *widget)
 {
@@ -2642,12 +2675,26 @@ static void set_charset_cb(MainWindow *mainwin, guint action,
 
 	if (GTK_CHECK_MENU_ITEM(widget)->active) {
 		str = conv_get_charset_str((CharSet)action);
-		g_free(prefs_common.force_charset);
-		prefs_common.force_charset = str ? g_strdup(str) : NULL;
-
+		
+		g_free(mainwin->messageview->forced_charset);
+		mainwin->messageview->forced_charset = str ? g_strdup(str) : NULL;
+		procmime_force_charset(str);
+		
 		summary_redisplay_msg(mainwin->summaryview);
 		
 		debug_print("forced charset: %s\n", str ? str : "Auto-Detect");
+	}
+}
+
+static void set_decode_cb(MainWindow *mainwin, guint action,
+			   GtkWidget *widget)
+{
+	if (GTK_CHECK_MENU_ITEM(widget)->active) {
+		mainwin->messageview->forced_encoding = (EncodingType)action;
+		
+		summary_redisplay_msg(mainwin->summaryview);
+		
+		debug_print("forced encoding: %d\n", action);
 	}
 }
 
@@ -2655,7 +2702,7 @@ static void hide_read_messages (MainWindow *mainwin, guint action,
 				GtkWidget *widget)
 {
 	if (!mainwin->summaryview->folder_item
-	    || gtk_object_get_data(GTK_OBJECT(widget), "dont_toggle"))
+	    || g_object_get_data(G_OBJECT(widget), "dont_toggle"))
 		return;
 	summary_toggle_show_read_messages(mainwin->summaryview);
 }
@@ -2706,6 +2753,7 @@ static void sort_summary_cb(MainWindow *mainwin, guint action,
 		summary_sort(mainwin->summaryview, (FolderSortKey)action,
 			     GTK_CHECK_MENU_ITEM(menuitem)->active
 			     ? SORT_ASCENDING : SORT_DESCENDING);
+		item->sort_key = action;
 	}
 }
 
@@ -2730,12 +2778,52 @@ static void attract_by_subject_cb(MainWindow *mainwin, guint action,
 static void delete_duplicated_cb(MainWindow *mainwin, guint action,
 				 GtkWidget *widget)
 {
-	summary_delete_duplicated(mainwin->summaryview);
+	FolderItem *item;
+
+	item = folderview_get_selected_item(mainwin->folderview);
+	if (item) {
+		main_window_cursor_wait(mainwin);
+		STATUSBAR_PUSH(mainwin, _("Deleting duplicated messages..."));
+
+		folderutils_delete_duplicates(item, prefs_common.immediate_exec ?
+					      DELETE_DUPLICATES_REMOVE : DELETE_DUPLICATES_SETFLAG);
+
+		STATUSBAR_POP(mainwin);
+		main_window_cursor_normal(mainwin);
+	}
+}
+
+struct DelDupsData
+{
+	guint	dups;
+	guint	folders;
+};
+
+static void deldup_all(FolderItem *item, gpointer _data)
+{
+	struct DelDupsData *data = _data;
+	gint result;
+	
+	result = folderutils_delete_duplicates(item, DELETE_DUPLICATES_REMOVE);
+	if (result >= 0) {
+		data->dups += result;
+		data->folders += 1;
+	}
+}
+
+static void delete_duplicated_all_cb(MainWindow *mainwin, guint action,
+				 GtkWidget *widget)
+{
+	struct DelDupsData data = {0, 0};
+
+	folder_func_to_all_folders(deldup_all, &data);
+	alertpanel_notice(_("Deleted %d duplicate message(s) in %d folders.\n"),
+			  data.dups, data.folders);
 }
 
 static void filter_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
 {
-	summary_filter(mainwin->summaryview);
+	summary_filter(mainwin->summaryview, (gboolean)action);
 }
 
 static void execute_summary_cb(MainWindow *mainwin, guint action,
@@ -2867,7 +2955,7 @@ static void create_processing_cb(MainWindow *mainwin, guint action,
 static void prefs_common_open_cb(MainWindow *mainwin, guint action,
 				 GtkWidget *widget)
 {
-	prefs_common_open();
+	/* prefs_common_open(); */
 }
 
 static void prefs_pre_processing_open_cb(MainWindow *mainwin, guint action,
@@ -3004,14 +3092,18 @@ gboolean mainwindow_key_pressed (GtkWidget *widget, GdkEventKey *event,
 {
 	MainWindow *mainwin = (MainWindow*) data;
 	
-	if (!mainwin || !event) return;
-		
+	if (!mainwin || !event) 
+		return FALSE;
+
+	if (quicksearch_has_focus(mainwin->summaryview->quicksearch))
+		return FALSE;
+
 	switch (event->keyval) {
 	case GDK_Q:             /* Quit */
 		BREAK_ON_MODIFIER_KEY();
 
 		app_exit_cb(mainwin, 0, NULL);
-		return;
+		return FALSE;
 	case GDK_space:
 		if (mainwin->folderview && mainwin->summaryview
 		    && !mainwin->summaryview->displayed) {
@@ -3069,10 +3161,12 @@ gboolean mainwindow_progressindicator_hook(gpointer source, gpointer userdata)
 	switch (data->cmd) {
 	case PROGRESS_COMMAND_START:
 	case PROGRESS_COMMAND_STOP:
-		gtk_progress_set_percentage(GTK_PROGRESS(mainwin->progressbar), 0.0);
+		gtk_progress_bar_set_fraction
+			(GTK_PROGRESS_BAR(mainwin->progressbar), 0.0);
 		break;
 	case PROGRESS_COMMAND_SET_PERCENTAGE:
-		gtk_progress_set_percentage(GTK_PROGRESS(mainwin->progressbar), data->value);
+		gtk_progress_bar_set_fraction
+			(GTK_PROGRESS_BAR(mainwin->progressbar), data->value);
 		break;		
 	}
 	while (gtk_events_pending()) gtk_main_iteration ();

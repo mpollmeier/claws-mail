@@ -29,10 +29,6 @@
 #include <gtk/gtkbutton.h>
 #include <gtk/gtkctree.h>
 #include <gtk/gtkcombo.h>
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
-/* #include <gtk/gtkthemes.h> */
 #include <gtk/gtkbindings.h>
 #include <gtk/gtkitemfactory.h>
 #include <stdlib.h>
@@ -110,6 +106,38 @@ void gtkut_button_set_create(GtkWidget **bbox,
 
 	if (button3) {
 		*button3 = gtk_button_new_with_label(label3);
+		GTK_WIDGET_SET_FLAGS(*button3, GTK_CAN_DEFAULT);
+		gtk_box_pack_start(GTK_BOX(*bbox), *button3, TRUE, TRUE, 0);
+		gtk_widget_show(*button3);
+	}
+}
+
+void gtkut_button_set_create_stock(GtkWidget **bbox,
+				   GtkWidget **button1, const gchar *label1,
+				   GtkWidget **button2, const gchar *label2,
+				   GtkWidget **button3, const gchar *label3)
+{
+	g_return_if_fail(bbox != NULL);
+	g_return_if_fail(button1 != NULL);
+
+	*bbox = gtk_hbutton_box_new();
+	gtk_button_box_set_layout(GTK_BUTTON_BOX(*bbox), GTK_BUTTONBOX_END);
+	gtk_box_set_spacing(GTK_BOX(*bbox), 5);
+
+	*button1 = gtk_button_new_from_stock(label1);
+	GTK_WIDGET_SET_FLAGS(*button1, GTK_CAN_DEFAULT);
+	gtk_box_pack_start(GTK_BOX(*bbox), *button1, TRUE, TRUE, 0);
+	gtk_widget_show(*button1);
+
+	if (button2) {
+		*button2 = gtk_button_new_from_stock(label2);
+		GTK_WIDGET_SET_FLAGS(*button2, GTK_CAN_DEFAULT);
+		gtk_box_pack_start(GTK_BOX(*bbox), *button2, TRUE, TRUE, 0);
+		gtk_widget_show(*button2);
+	}
+
+	if (button3) {
+		*button3 = gtk_button_new_from_stock(label3);
 		GTK_WIDGET_SET_FLAGS(*button3, GTK_CAN_DEFAULT);
 		gtk_box_pack_start(GTK_BOX(*bbox), *button3, TRUE, TRUE, 0);
 		gtk_widget_show(*button3);
@@ -197,20 +225,20 @@ ComboButton *gtkut_combo_button_create(GtkWidget *button,
 					&combo->factory, data);
 	combo->data = data;
 
-	gtk_signal_connect(GTK_OBJECT(combo->button), "size_request",
-			   GTK_SIGNAL_FUNC(combo_button_size_request), combo);
-	gtk_signal_connect(GTK_OBJECT(combo->button), "enter",
-			   GTK_SIGNAL_FUNC(combo_button_enter), combo);
-	gtk_signal_connect(GTK_OBJECT(combo->button), "leave",
-			   GTK_SIGNAL_FUNC(combo_button_leave), combo);
-	gtk_signal_connect(GTK_OBJECT(combo->arrow), "enter",
-			   GTK_SIGNAL_FUNC(combo_button_enter), combo);
-	gtk_signal_connect(GTK_OBJECT(combo->arrow), "leave",
-			   GTK_SIGNAL_FUNC(combo_button_leave), combo);
-	gtk_signal_connect(GTK_OBJECT(combo->arrow), "button_press_event",
-			   GTK_SIGNAL_FUNC(combo_button_arrow_pressed), combo);
-	gtk_signal_connect(GTK_OBJECT(combo->arrow), "destroy",
-			   GTK_SIGNAL_FUNC(combo_button_destroy), combo);
+	g_signal_connect(G_OBJECT(combo->button), "size_request",
+			 G_CALLBACK(combo_button_size_request), combo);
+	g_signal_connect(G_OBJECT(combo->button), "enter",
+			 G_CALLBACK(combo_button_enter), combo);
+	g_signal_connect(G_OBJECT(combo->button), "leave",
+			 G_CALLBACK(combo_button_leave), combo);
+	g_signal_connect(G_OBJECT(combo->arrow), "enter",
+			 G_CALLBACK(combo_button_enter), combo);
+	g_signal_connect(G_OBJECT(combo->arrow), "leave",
+			 G_CALLBACK(combo_button_leave), combo);
+	g_signal_connect(G_OBJECT(combo->arrow), "button_press_event",
+			 G_CALLBACK(combo_button_arrow_pressed), combo);
+	g_signal_connect(G_OBJECT(combo->arrow), "destroy",
+			 G_CALLBACK(combo_button_destroy), combo);
 
 	return combo;
 }
@@ -412,6 +440,22 @@ gchar *gtkut_editable_get_selection(GtkEditable *editable)
 		return NULL;
 }
 
+void gtkut_editable_disable_im(GtkEditable *editable)
+{
+	g_return_if_fail(editable != NULL);
+
+#if USE_XIM
+	if (editable->ic) {
+		gdk_ic_destroy(editable->ic);
+		editable->ic = NULL;
+	}
+	if (editable->ic_attr) {
+		gdk_ic_attr_destroy(editable->ic_attr);
+		editable->ic_attr = NULL;
+	}
+#endif
+}
+
 /*
  * Walk through the widget tree and disclaim the selection from all currently
  * realized GtkEditable widgets.
@@ -595,7 +639,7 @@ void gtkut_widget_set_composer_icon(GtkWidget *widget)
 }
 
 GtkWidget *gtkut_account_menu_new(GList			*ac_list,
-				  GtkSignalFunc		 callback,
+				  GCallback		 callback,
 				  gpointer		 data)
 {
 	GList *cur_ac;
@@ -623,9 +667,8 @@ GtkWidget *gtkut_account_menu_new(GList			*ac_list,
 		MENUITEM_ADD(menu, menuitem, name, account->account_id);
 		g_free(name);
 		if (callback != NULL)
-			gtk_signal_connect(GTK_OBJECT(menuitem), "activate",
-					   callback,
-					   data);
+			g_signal_connect(G_OBJECT(menuitem), "activate",
+					 callback, data);
 	}
 	return menu;
 }
@@ -643,10 +686,6 @@ void gtkut_set_widget_bgcolor_rgb(GtkWidget *widget, guint rgbvalue)
 	gtk_widget_set_style(widget, newstyle);
 }
   
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
-#if 1 /* FIXME_GTK2 */
 gboolean gtkut_text_buffer_match_string(GtkTextBuffer *textbuf, gint pos, gunichar *wcs,
 					gint len, gboolean case_sens)
 {
@@ -794,4 +833,54 @@ gchar *gtkut_text_view_get_selection(GtkTextView *textview)
 	else
 		return NULL;
 }
-#endif /* FIXME_GTK2 */
+
+/*!
+ *\brief	Tries to find a focused child using a lame strategy
+ */
+GtkWidget *gtkut_get_focused_child(GtkContainer *parent)
+{
+	GtkWidget *result = NULL;
+	GList *child_list = NULL;
+	GList *c;
+
+	g_return_val_if_fail(parent, NULL);
+
+	/* Get children list and see which has the focus. */
+	child_list = gtk_container_get_children(parent);
+	if (!child_list)
+		return NULL;
+
+	for (c = child_list; c != NULL; c = g_list_next(c)) {
+		if (c->data && GTK_IS_WIDGET(c->data)) {
+			if (GTK_WIDGET_HAS_FOCUS(GTK_WIDGET(c->data))) {
+				result = GTK_WIDGET(c->data);
+				break;
+			}
+		}
+	}
+	
+	/* See if the returned widget is a container itself; if it is,
+	 * see if one of its children is focused. If the focused 
+	 * container has no focused child, it is itself a focusable 
+	 * child, and has focus. */
+	if (result && GTK_IS_CONTAINER(result)) {
+		GtkWidget *tmp =  gtkut_get_focused_child(GTK_CONTAINER(result)); 
+		
+		if (tmp) 
+			result = tmp;
+	} else {
+		/* Try the same for each container in the chain */
+		for (c = child_list; c != NULL && !result; c = g_list_next(c)) {
+			if (c->data && GTK_IS_WIDGET(c->data) 
+			&&  GTK_IS_CONTAINER(c->data)) {
+				result = gtkut_get_focused_child
+					(GTK_CONTAINER(c->data));
+			}
+		}
+	
+	}
+	
+	g_list_free(child_list);
+		
+	return result;
+}

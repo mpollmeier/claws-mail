@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2003 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2004 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -728,6 +728,9 @@ static gboolean sock_connect_async_cb(GIOChannel *source,
 	gint len;
 	SockInfo *sockinfo;
 
+	if (conn_data->io_tag == 0 && conn_data->channel == NULL)
+		return FALSE;
+
 	fd = g_io_channel_unix_get_fd(source);
 
 	conn_data->io_tag = 0;
@@ -899,7 +902,7 @@ static gboolean sock_get_address_info_async_cb(GIOChannel *source,
 	SockLookupData *lookup_data = (SockLookupData *)data;
 	GList *addr_list = NULL;
 	SockAddrData *addr_data;
-	guint bytes_read;
+	gsize bytes_read;
 	gint ai_member[4];
 	struct sockaddr *addr;
 
@@ -1154,8 +1157,6 @@ static SockInfo *sockinfo_from_fd(const gchar *hostname,
 	sockinfo->port = port;
 	sockinfo->state = CONN_ESTABLISHED;
 
-	usleep(100000);
-
 	return sockinfo;
 }
 
@@ -1187,6 +1188,11 @@ gint fd_read(gint fd, gchar *buf, gint len)
 gint ssl_read(SSL *ssl, gchar *buf, gint len)
 {
 	gint ret;
+
+	if (SSL_pending(ssl) == 0) {
+		if (fd_check_io(SSL_get_rfd(ssl), G_IO_IN) < 0)
+			return -1;
+	}
 
 	ret = SSL_read(ssl, buf, len);
 
@@ -1514,6 +1520,11 @@ gint sock_puts(SockInfo *sock, const gchar *buf)
 gint ssl_peek(SSL *ssl, gchar *buf, gint len)
 {
 	gint ret;
+
+	if (SSL_pending(ssl) == 0) {
+		if (fd_check_io(SSL_get_rfd(ssl), G_IO_IN) < 0)
+			return -1;
+	}
 
 	ret = SSL_peek(ssl, buf, len);
 

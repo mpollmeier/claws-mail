@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2003 Hiroyuki Yamamoto & The Sylpheed Claws Team
+ * Copyright (C) 1999-2004 Hiroyuki Yamamoto & The Sylpheed Claws Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -108,7 +108,7 @@ struct _ChildInfo
 };
 
 static void action_update_menu		(GtkItemFactory	*ifactory,
-					 const gchar	*branch_path,
+					 gchar		*branch_path,
 					 gpointer	 callback,
 					 gpointer	 data);
 static void compose_actions_execute_cb	(Compose	*compose,
@@ -355,19 +355,30 @@ static gchar *parse_action_cmd(gchar *action, MsgInfo *msginfo,
 static gboolean parse_append_filename(GString *cmd, MsgInfo *msginfo)
 {
 	gchar *filename;
+	gchar *p, *q;
+	gchar escape_ch[] = "\\ ";
 
 	g_return_val_if_fail(msginfo, FALSE);
 
 	filename = procmsg_get_message_file(msginfo);
 
-	if (filename) {
-		g_string_append(cmd, filename);
-		g_free(filename);
-	} else {
+	if (!filename) {
 		alertpanel_error(_("Could not get message file %d"),
 				 msginfo->msgnum);
 		return FALSE;
 	}
+
+	p = filename;
+	while ((q = strpbrk(p, "$\"`'\\ \t*?[]&|;<>()!#~")) != NULL) {
+		escape_ch[1] = *q;
+		*q = '\0';
+		g_string_append(cmd, p);
+		g_string_append(cmd, escape_ch);
+		p = q + 1;
+	}
+	g_string_append(cmd, p);
+
+	g_free(filename);
 
 	return TRUE;
 }
@@ -426,7 +437,7 @@ void actions_execute(gpointer data,
 }
 
 void action_update_mainwin_menu(GtkItemFactory *ifactory,
-				const gchar *branch_path,
+				gchar *branch_path,
 				MainWindow *mainwin)
 {
 	action_update_menu(ifactory, branch_path,
@@ -434,7 +445,7 @@ void action_update_mainwin_menu(GtkItemFactory *ifactory,
 }
 
 void action_update_msgview_menu(GtkItemFactory *ifactory,
-				const gchar *branch_path,
+				gchar *branch_path,
 				MessageView *msgview)
 {
 	action_update_menu(ifactory, branch_path,
@@ -442,7 +453,7 @@ void action_update_msgview_menu(GtkItemFactory *ifactory,
 }
 
 void action_update_compose_menu(GtkItemFactory *ifactory, 
-				const gchar *branch_path,
+				gchar *branch_path,
 				Compose *compose)
 {
 	action_update_menu(ifactory, branch_path,
@@ -450,7 +461,7 @@ void action_update_compose_menu(GtkItemFactory *ifactory,
 }
 
 static void action_update_menu(GtkItemFactory *ifactory, 
-			       const gchar *branch_path,
+			       gchar *branch_path,
 			       gpointer callback, gpointer data)
 {
 	GtkWidget *menuitem;
@@ -481,7 +492,7 @@ static void action_update_menu(GtkItemFactory *ifactory,
 		action_p = strstr(action, ": ");
 		if (action_p && action_p[2] &&
 		    action_get_type(&action_p[2]) != ACTION_ERROR) {
-			action_p[0] = 0x00;
+			action_p[0] = '\0';
 			menu_path = g_strdup_printf("%s/%s", branch_path,
 						    action);
 			ifentry.path = menu_path;
@@ -784,10 +795,11 @@ static ChildInfo *fork_child(gchar *cmd, const gchar *msg_str,
 			     Children *children)
 {
 	gint chld_in[2], chld_out[2], chld_err[2], chld_status[2];
-	gchar *cmdline[4];
+	gchar *cmdline[4], *ret_str;
 	pid_t pid, gch_pid;
 	ChildInfo *child_info;
 	gint sync;
+	gssize by_written = 0, by_read = 0;
 #ifdef WIN32
 	gchar **child_argv, **tmp_argv;
 	GError *error=NULL;
@@ -875,6 +887,7 @@ static ChildInfo *fork_child(gchar *cmd, const gchar *msg_str,
 	}
 
 	debug_print("Forking child and grandchild.\n");
+	debug_print("Executing: /bin/sh -c %s\n", cmd);
 
 	pid = fork();
 	if (pid == 0) { /* Child */
@@ -915,11 +928,18 @@ static ChildInfo *fork_child(gchar *cmd, const gchar *msg_str,
 
 			cmdline[0] = "sh";
 			cmdline[1] = "-c";
-			cmdline[2] = cmd;
-			cmdline[3] = 0;
+			ret_str = g_locale_from_utf8(cmd, strlen(cmd),
+						     &by_read, &by_written,
+						     NULL);
+			if (ret_str && by_written)
+				cmdline[2] = ret_str;
+			else
+				cmdline[2] = cmd;
+			cmdline[3] = NULL;
 			execvp("/bin/sh", cmdline);
 
 			perror("execvp");
+			g_free(ret_str);
 			_exit(1);
 		} else if (gch_pid < (pid_t) 0) { /* Fork error */
 			if (sync)
@@ -1005,7 +1025,13 @@ static ChildInfo *fork_child(gchar *cmd, const gchar *msg_str,
 		return child_info;
 
 	if ((children->action_type & ACTION_PIPE_IN) && msg_str) {
-		write(chld_in[1], msg_str, strlen(msg_str));
+		ret_str = g_locale_from_utf8(msg_str, strlen(msg_str),
+					     &by_read, &by_written, NULL);
+		if (ret_str && by_written) {
+			write(chld_in[1], ret_str, strlen(ret_str));
+			g_free(ret_str);
+		} else
+			write(chld_in[1], msg_str, strlen(msg_str));
 		if (!(children->action_type &
 		      (ACTION_USER_IN | ACTION_USER_HIDDEN_IN)))
 			close(chld_in[1]);
@@ -1092,8 +1118,9 @@ static void hide_io_dialog_cb(GtkWidget *w, gpointer data)
 	Children *children = (Children *)data;
 
 	if (!children->nb) {
-		gtk_signal_disconnect_by_data(GTK_OBJECT(children->dialog),
-					      children);
+		g_signal_handlers_disconnect_matched
+			(G_OBJECT(children->dialog), G_SIGNAL_MATCH_DATA,
+			 0, 0, NULL, NULL, children);
 		gtk_widget_destroy(children->dialog);
 #ifndef WIN32 /* process still running */
 		free_children(children);
@@ -1161,10 +1188,17 @@ static void update_io_dialog(Children *children)
 	debug_print("Updating actions input/output dialog.\n");
 
 	if (children->progress_bar) {
-		gtk_progress_configure(GTK_PROGRESS(children->progress_bar),
-				children->initial_nb -children->nb,
-				0.0, children->initial_nb);
-	}
+		gchar *text;
+		
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(children->progress_bar),
+					      (gdouble) (children->initial_nb - children->nb) /
+					      (gdouble) children->initial_nb);
+		text = g_strdup_printf("%s %d/%d", _("Completed"), 
+				       children->initial_nb - children->nb,
+				       children->initial_nb);
+		gtk_progress_bar_set_text(GTK_PROGRESS_BAR(children->progress_bar), text);
+		g_free(text);
+	}					      
 
 	if (!children->nb) {
 		gtk_widget_set_sensitive(children->abort_btn, FALSE);
@@ -1184,14 +1218,13 @@ static void update_io_dialog(Children *children)
 		ChildInfo *child_info;
 		GtkTextBuffer *textbuf;
 		GtkTextIter iter, start_iter, end_iter;
-		GdkFont *font;
 
-		font = gtk_object_get_data(GTK_OBJECT(children->dialog), 
-					   "s_txtfont");
 		gtk_widget_show(children->scrolledwin);
-		textbuf = gtk_text_view_get_buffer (GTK_TEXT_VIEW(text));
-		gtk_text_buffer_get_start_iter (textbuf, &start_iter);
-		gtk_text_buffer_get_end_iter (textbuf, &end_iter);
+		textbuf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text));
+		gtk_text_buffer_get_start_iter(textbuf, &start_iter);
+		gtk_text_buffer_get_end_iter(textbuf, &end_iter);
+		gtk_text_buffer_delete(textbuf, &start_iter, &end_iter);
+		gtk_text_buffer_get_start_iter(textbuf, &start_iter);
 		iter = start_iter;
 		for (cur = children->list; cur; cur = cur->next) {
 			child_info = (ChildInfo *)cur->data;
@@ -1228,7 +1261,7 @@ static void create_io_dialog(Children *children)
 	GtkWidget *progress_bar = NULL;
 	GtkWidget *abort_button;
 	GtkWidget *close_button;
-	GdkFont   *output_font;
+	PangoFontDescription *text_font;
 
 	debug_print("Creating action IO dialog\n");
 
@@ -1256,12 +1289,20 @@ static void create_io_dialog(Children *children)
 
 	scrolledwin = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledwin),
-				       GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
+				       GTK_POLICY_AUTOMATIC, 
+				       GTK_POLICY_AUTOMATIC);
 	gtk_box_pack_start(GTK_BOX(vbox), scrolledwin, TRUE, TRUE, 0);
 	gtk_widget_set_size_request(scrolledwin, 480, 200);
 	gtk_widget_hide(scrolledwin);
 
 	text = gtk_text_view_new();
+	if (prefs_common.textfont) {
+		if (NULL != (text_font = pango_font_description_from_string
+				(prefs_common.textfont))) {
+			gtk_widget_modify_font(text, text_font);
+			pango_font_description_free(text_font);
+		}			
+	}			
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(text), FALSE);
 	gtk_container_add(GTK_CONTAINER(scrolledwin), text);
 	gtk_widget_show(text);
@@ -1279,7 +1320,7 @@ static void create_io_dialog(Children *children)
 			gtk_entry_set_visibility(GTK_ENTRY(entry), FALSE);
 		gtk_widget_show(entry);
 
-		send_button = gtk_button_new_with_label(_(" Send "));
+		send_button = gtk_button_new_from_stock(GTK_STOCK_EXECUTE);
 		g_signal_connect(G_OBJECT(send_button), "clicked",
 				 G_CALLBACK(send_input), children);
 		gtk_box_pack_start(GTK_BOX(input_hbox), send_button, FALSE,
@@ -1291,26 +1332,22 @@ static void create_io_dialog(Children *children)
 	}
 
 	if (children->initial_nb > 1) {
+		gchar * text;
+		
 		progress_bar = gtk_progress_bar_new();
-		gtk_progress_bar_set_bar_style(GTK_PROGRESS_BAR(progress_bar),
-				GTK_PROGRESS_CONTINUOUS);
 		gtk_progress_bar_set_orientation(GTK_PROGRESS_BAR(progress_bar),
 				GTK_PROGRESS_LEFT_TO_RIGHT);
-		gtk_progress_set_activity_mode(GTK_PROGRESS(progress_bar), 
-				FALSE);
-		gtk_progress_set_format_string(GTK_PROGRESS(progress_bar),
-				_("Completed %v/%u"));
-		gtk_progress_set_show_text(GTK_PROGRESS(progress_bar), TRUE);
-		gtk_progress_configure(GTK_PROGRESS(progress_bar),
-				children->initial_nb -children->nb,
-				0.0, children->initial_nb);
-
+		text = g_strdup_printf("%s 0/%d\n", _("Completed"), 
+		                       children->initial_nb);
+		gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress_bar),
+					  text);
+		g_free(text);
 		gtk_box_pack_start(GTK_BOX(vbox), progress_bar, FALSE, FALSE, 0);
 		gtk_widget_show(progress_bar);
 	}
 
-	gtkut_button_set_create(&hbox, &abort_button, _("Abort"),
-				&close_button, _("Close"), NULL, NULL);
+	gtkut_button_set_create_stock(&hbox, &abort_button, GTK_STOCK_STOP,
+				      &close_button, GTK_STOCK_CLOSE, NULL, NULL);
 	g_signal_connect(G_OBJECT(abort_button), "clicked",
 			 G_CALLBACK(kill_children_cb), children);
 	g_signal_connect(G_OBJECT(close_button), "clicked",
@@ -1331,15 +1368,6 @@ static void create_io_dialog(Children *children)
 	children->abort_btn    = abort_button;
 	children->close_btn    = close_button;
 
-#ifndef _MSC_VER
-#warning FIXME_GTK2 convert to Pango / FontDesc?
-#endif
-#if 0
-	output_font = gtkut_font_load_from_fontset(prefs_common.textfont);
-	gtk_object_set_data_full(GTK_OBJECT(dialog), "s_txtfont",
-				 output_font, 
-				 (GtkDestroyNotify)gdk_font_unref); 
-#endif
 	gtk_widget_show(dialog);
 }
 
@@ -1377,8 +1405,9 @@ static void catch_input(gpointer data, gint source, GdkInputCondition cond)
 {
 	Children *children = (Children *)data;
 	ChildInfo *child_info = (ChildInfo *)children->list->data;
-	gchar *input;
+	gchar *input, *ret_str;
 	gint c, count, len;
+	gssize by_read = 0, by_written = 0;
 
 	debug_print("Sending input to grand child.\n");
 	if (!(cond && GDK_INPUT_WRITE))
@@ -1391,6 +1420,13 @@ static void catch_input(gpointer data, gint source, GdkInputCondition cond)
 
 	input = gtk_editable_get_chars(GTK_EDITABLE(children->input_entry),
 				       0, -1);
+	ret_str = g_locale_from_utf8(input, strlen(input), &by_read,
+				     &by_written, NULL);
+	if (ret_str && by_written) {
+		g_free(input);
+		input = ret_str;
+	}
+
 	len = strlen(input);
 	count = 0;
 
@@ -1445,7 +1481,18 @@ static void catch_output(gpointer data, gint source, GdkInputCondition cond)
 #endif
 			if (c == 0)
 				break;
-			gtk_text_buffer_insert(textbuf, &iter2, buf, c);
+			else {
+				gssize by_read = 0, by_written = 0;
+				gchar *ret_str = g_locale_to_utf8(buf, c, &by_read,
+								  &by_written, NULL);
+								  
+				if (ret_str && by_written) {
+					gtk_text_buffer_insert(textbuf, &iter2, 
+							       ret_str, by_written);
+					g_free(ret_str);
+				} else
+					gtk_text_buffer_insert(textbuf, &iter2, buf, c);
+			}				
 		}
 		if (child_info->children->is_selection) {
 			gtk_text_buffer_place_cursor(textbuf, &iter1);
@@ -1454,17 +1501,24 @@ static void catch_output(gpointer data, gint source, GdkInputCondition cond)
 		}
 	} else {
 #ifdef WIN32
-		gchar *p_buf;
-
 		g_io_channel_read(channel, buf, sizeof(buf) - 1, &c);
-		memmove(buf, p_buf, c);
-		g_free(p_buf);
-		/* child_info sometimes overwritten */
 #else
 		c = read(source, buf, sizeof(buf) - 1);
 #endif
-		for (i = 0; i < c; i++)
-			g_string_append_c(child_info->output, buf[i]);
+		
+		if (c > 0) {
+			gssize by_read = 0, by_written = 0;
+			gchar *ret_str = g_locale_to_utf8(buf, c, &by_read,
+							  &by_written, NULL);
+							  
+			if (ret_str && by_written) {
+				g_string_append_len(child_info->output,
+						    ret_str, by_written);
+				g_free(ret_str);						    
+			} else
+				g_string_append_len(child_info->output, buf, c);
+		}
+		
 		if (c > 0)
 			child_info->new_out = TRUE;
 	}

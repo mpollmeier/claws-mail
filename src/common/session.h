@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2003 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2004 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,10 @@
 #ifndef __SESSION_H__
 #define __SESSION_H__
 
+#ifdef WIN32
+#include "w32_session.h"
+#else
+
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif
@@ -27,12 +31,8 @@
 #include <glib.h>
 
 #include <time.h>
-#ifdef WIN32
-# include "w32lib.h"
-#else
 #include <sys/time.h>
 #include <unistd.h>
-#endif
 
 #include "socket.h"
 
@@ -47,7 +47,7 @@ typedef enum {
 	SESSION_IMAP,
 	SESSION_NEWS,
 	SESSION_SMTP,
-	SESSION_POP3
+	SESSION_POP3,
 } SessionType;
 
 typedef enum {
@@ -55,6 +55,7 @@ typedef enum {
 	SESSION_SEND,
 	SESSION_RECV,
 	SESSION_EOF,
+	SESSION_TIMEOUT,
 	SESSION_ERROR,
 	SESSION_DISCONNECTED
 } SessionState;
@@ -111,21 +112,20 @@ struct _Session
 
 	gint io_tag;
 
-#ifdef WIN32 /* 093claws19 not synced */
-	GString *read_buf;
-#else
 	gchar read_buf[SESSION_BUFFSIZE];
 	gchar *read_buf_p;
 	gint read_buf_len;
 
 	GString *read_msg_buf;
-#endif
 	GByteArray *read_data_buf;
 	gchar *read_data_terminator;
 
 	gchar *write_buf;
 	gchar *write_buf_p;
 	gint write_buf_len;
+
+	guint timeout_tag;
+	guint timeout_interval;
 
 	gpointer data;
 
@@ -163,6 +163,11 @@ gint session_disconnect		(Session	*session);
 void session_destroy		(Session	*session);
 gboolean session_is_connected	(Session	*session);
 
+void session_set_access_time	(Session	*session);
+
+void session_set_timeout	(Session	*session,
+				 guint		 interval);
+
 void session_set_recv_message_notify	(Session	*session,
 					 RecvMsgNotify	 notify_func,
 					 gpointer	 data);
@@ -196,4 +201,5 @@ gint session_recv_data	(Session	*session,
 			 guint		 size,
 			 const gchar	*terminator);
 
+#endif /* !WIN32 */
 #endif /* __SESSION_H__ */

@@ -61,8 +61,7 @@ LogWindow *log_window_create(void)
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title(GTK_WINDOW(window), _("Protocol log"));
-	gtk_window_set_wmclass(GTK_WINDOW(window), "log_window", "Sylpheed");
-	gtk_window_set_policy(GTK_WINDOW(window), TRUE, TRUE, FALSE);
+	gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
 	gtk_widget_set_size_request(window, 520, 400);
 	g_signal_connect(G_OBJECT(window), "delete_event",
 			 G_CALLBACK(gtk_widget_hide_on_delete), NULL);
@@ -74,7 +73,7 @@ LogWindow *log_window_create(void)
 
 	scrolledwin = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledwin),
-				       GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
+				       GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 	gtk_container_add(GTK_CONTAINER(window), scrolledwin);
 	gtk_widget_show(scrolledwin);
 
@@ -211,6 +210,9 @@ static gboolean log_window_append(gpointer source, gpointer data)
 
 	if (logwindow->clip)
 	       log_window_clip (GTK_WIDGET (text), logwindow->clip_length);
+
+	gtk_text_buffer_get_iter_at_offset(buffer, &iter, -1);
+	gtk_text_view_scroll_to_iter(text, &iter, 0, TRUE, 0, 0);
 
 	return FALSE;
 }

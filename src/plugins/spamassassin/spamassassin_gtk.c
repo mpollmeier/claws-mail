@@ -36,6 +36,8 @@
 #include "prefs_gtk.h"
 #include "foldersel.h"
 #include "spamassassin.h"
+#include "statusbar.h"
+#include "menu.h"
 
 struct SpamAssassinPage
 {
@@ -111,7 +113,7 @@ static void show_transport(struct SpamAssassinPage *page, struct Transport *tran
 	default:
 		break;
 	}
-	gtk_notebook_set_page(GTK_NOTEBOOK(page->transport_notebook), transport->page);
+	gtk_notebook_set_current_page(GTK_NOTEBOOK(page->transport_notebook), transport->page);
 }
 
 static void transport_sel_cb(GtkMenuItem *menuitem, gpointer data)
@@ -119,7 +121,7 @@ static void transport_sel_cb(GtkMenuItem *menuitem, gpointer data)
 	struct SpamAssassinPage *page = (struct SpamAssassinPage *) data;
 	struct Transport *transport;
 
-	transport = (struct Transport *) gtk_object_get_user_data(GTK_OBJECT(menuitem));
+	transport = (struct Transport *) g_object_get_data(G_OBJECT(menuitem), MENU_VAL_ID);
 	show_transport(page, transport);
 }
 
@@ -348,7 +350,8 @@ static void spamassassin_create_widget_func(PrefsPage * _page,
 
 	config = spamassassin_get_config();
 
-	gtk_signal_connect(GTK_OBJECT(button4), "released", GTK_SIGNAL_FUNC(foldersel_cb), page);
+	g_signal_connect(G_OBJECT(button4), "released", 
+			 G_CALLBACK(foldersel_cb), page);
 
 	if (config->hostname != NULL)
 		gtk_entry_set_text(GTK_ENTRY(hostname), config->hostname);
@@ -375,9 +378,9 @@ static void spamassassin_create_widget_func(PrefsPage * _page,
 		GtkWidget *menuitem;
 
 		menuitem = gtk_menu_item_new_with_label(gettext(transports[i].name));
-		gtk_object_set_user_data(GTK_OBJECT(menuitem), &transports[i]);
-		gtk_signal_connect(GTK_OBJECT(menuitem), "activate",
-				   GTK_SIGNAL_FUNC(transport_sel_cb), page);
+		g_object_set_data(G_OBJECT(menuitem), MENU_VAL_ID, &transports[i]);
+		g_signal_connect(G_OBJECT(menuitem), "activate",
+				 G_CALLBACK(transport_sel_cb), page);
 		gtk_widget_show(menuitem);
 		gtk_menu_append(GTK_MENU(transport_menu), menuitem);
 
@@ -436,10 +439,17 @@ static void spamassassin_save_func(PrefsPage *_page)
 	spamassassin_save_config();
 }
 
+static void gtk_message_callback(gchar *message)
+{
+	statusbar_print_all(message);
+}
+
 static struct SpamAssassinPage spamassassin_page;
 
 gint plugin_init(gchar **error)
 {
+	static gchar *path[3];
+
 	if ((sylpheed_get_version() > VERSION_NUMERIC)) {
 		*error = g_strdup("Your sylpheed version is newer than the version the plugin was built with");
 		return -1;
@@ -449,14 +459,19 @@ gint plugin_init(gchar **error)
 		*error = g_strdup("Your sylpheed version is too old");
 		return -1;
 	}
+    
+	path[0] = _("Filtering");
+	path[1] = _("SpamAssassin");
+	path[2] = NULL;
 
-	spamassassin_page.page.path = _("Filtering/SpamAssassin");
+	spamassassin_page.page.path = path;
 	spamassassin_page.page.create_widget = spamassassin_create_widget_func;
 	spamassassin_page.page.destroy_widget = spamassassin_destroy_widget_func;
 	spamassassin_page.page.save_page = spamassassin_save_func;
 	spamassassin_page.page.weight = 35.0;
 
 	prefs_gtk_register_page((PrefsPage *) &spamassassin_page);
+	spamassassin_set_message_callback(gtk_message_callback);
 
 	debug_print("SpamAssassin GTK plugin loaded\n");
 	return 0;	
@@ -464,6 +479,7 @@ gint plugin_init(gchar **error)
 
 void plugin_done(void)
 {
+	spamassassin_set_message_callback(NULL);
 	prefs_gtk_unregister_page((PrefsPage *) &spamassassin_page);
 
 	debug_print("SpamAssassin GTK plugin unloaded\n");
@@ -492,5 +508,5 @@ const gchar *plugin_desc(void)
 
 const gchar *plugin_type(void)
 {
-	return "GTK";
+	return "GTK2";
 }

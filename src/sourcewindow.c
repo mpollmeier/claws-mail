@@ -56,15 +56,24 @@ SourceWindow *source_window_create(void)
 	GtkWidget *text;
 	static PangoFontDescription *font_desc = NULL;
 
+	static GdkGeometry geometry;
+	
 	debug_print("Creating source window...\n");
 	sourcewin = g_new0(SourceWindow, 1);
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title(GTK_WINDOW(window), _("Source of the message"));
-	gtk_window_set_wmclass(GTK_WINDOW(window), "source_window", "Sylpheed");
-	gtk_window_set_policy(GTK_WINDOW(window), TRUE, TRUE, FALSE);
+	gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
 	gtk_widget_set_size_request(window, prefs_common.sourcewin_width,
 				    prefs_common.sourcewin_height);
+	
+	if (!geometry.min_height) {
+		geometry.min_width = 400;
+		geometry.min_height = 320;
+	}
+	gtk_window_set_geometry_hints(GTK_WINDOW(window), NULL, &geometry,
+				      GDK_HINT_MIN_SIZE);
+
 	g_signal_connect(G_OBJECT(window), "size_allocate",
 			 G_CALLBACK(source_window_size_alloc_cb),
 			 sourcewin);
@@ -77,11 +86,14 @@ SourceWindow *source_window_create(void)
 
 	scrolledwin = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledwin),
-				       GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
+				       GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 	gtk_container_add(GTK_CONTAINER(window), scrolledwin);
 	gtk_widget_show(scrolledwin);
 
 	text = gtk_text_view_new();
+#ifndef WIN32 /* GTK-2.2 */
+	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text), GTK_WRAP_WORD_CHAR);
+#endif
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(text), FALSE);
 	if (!font_desc && prefs_common.textfont)
 		font_desc = pango_font_description_from_string
@@ -151,13 +163,22 @@ void source_window_append(SourceWindow *sourcewin, const gchar *str)
 
 	len = strlen(str) + 1;
 	Xalloca(out, len, return);
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
+	
 	conv_localetodisp(out, len, str);
-
-	gtk_text_buffer_get_iter_at_offset(buffer, &iter, -1);
-	gtk_text_buffer_insert(buffer, &iter, out, -1);
+	if (!g_utf8_validate(out, -1, NULL)) {
+		gchar *buf;
+		gint buflen;
+		const gchar *src_codeset, *dest_codeset;
+		src_codeset = conv_get_current_charset_str();
+		dest_codeset = CS_UTF_8;
+		buf = conv_codeset_strdup(out, src_codeset, dest_codeset);
+		gtk_text_buffer_get_iter_at_offset(buffer, &iter, -1);
+		gtk_text_buffer_insert(buffer, &iter, buf, -1);
+		g_free(buf);
+	} else {
+		gtk_text_buffer_get_iter_at_offset(buffer, &iter, -1);
+		gtk_text_buffer_insert(buffer, &iter, out, -1);
+	}
 }
 
 static void source_window_size_alloc_cb(GtkWidget *widget,
@@ -194,6 +215,11 @@ static gboolean key_pressed(GtkWidget *widget, GdkEventKey *event,
 			gtk_editable_copy_clipboard(GTK_EDITABLE(sourcewin->text));
 		break;
 #endif
+	case GDK_W:
+	case GDK_w:
+		if ((event->state & GDK_CONTROL_MASK) != 0)
+			gtk_widget_destroy(sourcewin->window);
+		break;
 	case GDK_Escape:
 		gtk_widget_destroy(sourcewin->window);
 		break;

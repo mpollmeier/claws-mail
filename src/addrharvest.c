@@ -203,7 +203,8 @@ static HeaderEntry *addrharvest_find(
 		HeaderEntry *entry;
 
 		entry = node->data;
-		if( g_strcasecmp( entry->header, name ) == 0 ) {
+		if (g_ascii_strncasecmp(entry->header, name,
+					strlen(entry->header)) == 0 ) {
 			retVal = entry;
 			break;
 		}
@@ -552,11 +553,12 @@ static void addrharvest_parse_address(
 			mgu_str_ltc2space( buffer, '(', ')' );
 			g_strstrip( buffer );
 
-			if( g_strcasecmp( buffer, email ) == 0 ) {
+			if( g_ascii_strcasecmp( buffer, email ) == 0 ) {
 				name = "";
 			}
 			else {
 				name = buffer;
+				conv_unmime_header_overwrite(name);
 			}
 
 			/* Insert into address book */
@@ -588,7 +590,7 @@ static gboolean addrharvest_check_hdr( GList *listHdr, gchar *buf ) {
 		node = listHdr;
 		while( node ) {
 			nhdr = node->data;
-			if( g_strcasecmp( nhdr, hdr ) == 0 ) {
+			if (g_ascii_strncasecmp(nhdr, hdr, strlen(nhdr)) == 0 ) {
 				retVal = TRUE;
 				break;
 			}

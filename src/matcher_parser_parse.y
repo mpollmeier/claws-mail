@@ -44,7 +44,6 @@ static MatcherProp *prop;
 static GSList *matchers_list = NULL;
 
 static MatcherList *cond;
-static gint score = 0;
 static GSList *action_list = NULL;
 static FilteringAction *action = NULL;
 
@@ -74,7 +73,7 @@ void matcher_parser_start_parsing(FILE *f)
  
 void * matcher_parser_scan_string(const char * str);
  
-FilteringProp *matcher_parser_get_filtering(const gchar *str)
+FilteringProp *matcher_parser_get_filtering(gchar *str)
 {
 	void *bufstate;
 
@@ -112,7 +111,7 @@ static gboolean check_quote_symetry(gchar *str)
 	return !(ret % 2);
 }
 
-MatcherList *matcher_parser_get_cond(const gchar *str)
+MatcherList *matcher_parser_get_cond(gchar *str)
 {
 	void *bufstate;
 
@@ -134,7 +133,7 @@ MatcherList *matcher_parser_get_cond(const gchar *str)
 	return cond;
 }
 
-GSList *matcher_parser_get_action_list(const gchar *str)
+GSList *matcher_parser_get_action_list(gchar *str)
 {
 	void *bufstate;
 
@@ -156,7 +155,7 @@ GSList *matcher_parser_get_action_list(const gchar *str)
 	return action_list;
 }
 
-MatcherProp *matcher_parser_get_prop(const gchar *str)
+MatcherProp *matcher_parser_get_prop(gchar *str)
 {
 	MatcherList *list;
 	MatcherProp *prop;
@@ -225,6 +224,7 @@ int matcher_parserwrap(void)
 %token MATCHER_NOT_MESSAGE  MATCHER_BODY_PART  MATCHER_NOT_BODY_PART
 %token MATCHER_TEST  MATCHER_NOT_TEST  MATCHER_MATCHCASE  MATCHER_MATCH
 %token MATCHER_REGEXPCASE  MATCHER_REGEXP  MATCHER_SCORE  MATCHER_MOVE
+%token MATCHER_ANY_IN_ADDRESSBOOK MATCHER_ALL_IN_ADDRESSBOOK
 %token MATCHER_COPY  MATCHER_DELETE  MATCHER_MARK  MATCHER_UNMARK
 %token MATCHER_LOCK MATCHER_UNLOCK
 %token MATCHER_EXECUTE
@@ -234,6 +234,7 @@ int matcher_parserwrap(void)
 %token MATCHER_COLOR MATCHER_SCORE_EQUAL MATCHER_REDIRECT 
 %token MATCHER_SIZE_GREATER MATCHER_SIZE_SMALLER MATCHER_SIZE_EQUAL
 %token MATCHER_LOCKED MATCHER_NOT_LOCKED
+%token MATCHER_PARTIAL MATCHER_NOT_PARTIAL
 %token MATCHER_COLORLABEL MATCHER_NOT_COLORLABEL
 %token MATCHER_IGNORE_THREAD MATCHER_NOT_IGNORE_THREAD
 %token MATCHER_CHANGE_SCORE MATCHER_SET_SCORE
@@ -395,6 +396,14 @@ MATCHER_MATCHCASE
 {
 	match_type = MATCHTYPE_REGEXP;
 }
+| MATCHER_ANY_IN_ADDRESSBOOK
+{
+	match_type = MATCHTYPE_ANY_IN_ADDRESSBOOK;
+}
+| MATCHER_ALL_IN_ADDRESSBOOK
+{
+	match_type = MATCHTYPE_ALL_IN_ADDRESSBOOK;
+}
 ;
 
 condition:
@@ -532,6 +541,20 @@ MATCHER_ALL
 	gint criteria = 0;
 
 	criteria = MATCHCRITERIA_NOT_LOCKED;
+	prop = matcherprop_new(criteria, NULL, 0, NULL, 0);
+}
+| MATCHER_PARTIAL
+{
+	gint criteria = 0;
+
+	criteria = MATCHCRITERIA_PARTIAL;
+	prop = matcherprop_new(criteria, NULL, 0, NULL, 0);
+}
+| MATCHER_NOT_PARTIAL
+{
+	gint criteria = 0;
+
+	criteria = MATCHCRITERIA_NOT_PARTIAL;
 	prop = matcherprop_new(criteria, NULL, 0, NULL, 0);
 }
 | MATCHER_COLORLABEL MATCHER_INTEGER

@@ -31,10 +31,6 @@
 #  include <locale.h>
 #endif
 
-#if HAVE_ICONV
-#  include <iconv.h>
-#endif
-
 #include "intl.h"
 #include "codeconv.h"
 #include "unmime.h"
@@ -54,7 +50,7 @@ typedef enum
 	JIS_AUXKANJI
 } JISState;
 
-#define SUBST_CHAR	'_'
+#define SUBST_CHAR	0x5f;
 #define ESC		'\033'
 
 #define iseuckanji(c) \
@@ -249,7 +245,7 @@ void conv_euctojis(gchar *outbuf, gint outlen, const gchar *inbuf)
 	JISState state = JIS_ASCII;
 
 	while (*in != '\0') {
-		if (isascii(*in)) {
+		if (IS_ASCII(*in)) {
 			K_OUT();
 			*out++ = *in++;
 		} else if (iseuckanji(*in)) {
@@ -261,7 +257,7 @@ void conv_euctojis(gchar *outbuf, gint outlen, const gchar *inbuf)
 				K_OUT();
 				*out++ = SUBST_CHAR;
 				in++;
-				if (*in != '\0' && !isascii(*in)) {
+				if (*in != '\0' && !IS_ASCII(*in)) {
 					*out++ = SUBST_CHAR;
 					in++;
 				}
@@ -297,7 +293,7 @@ void conv_euctojis(gchar *outbuf, gint outlen, const gchar *inbuf)
 			} else {
 				K_OUT();
 				in++;
-				if (*in != '\0' && !isascii(*in)) {
+				if (*in != '\0' && !IS_ASCII(*in)) {
 					*out++ = SUBST_CHAR;
 					in++;
 				}
@@ -310,10 +306,10 @@ void conv_euctojis(gchar *outbuf, gint outlen, const gchar *inbuf)
 				*out++ = *in++ & 0x7f;
 			} else {
 				K_OUT();
-				if (*in != '\0' && !isascii(*in)) {
+				if (*in != '\0' && !IS_ASCII(*in)) {
 					*out++ = SUBST_CHAR;
 					in++;
-					if (*in != '\0' && !isascii(*in)) {
+					if (*in != '\0' && !IS_ASCII(*in)) {
 						*out++ = SUBST_CHAR;
 						in++;
 					}
@@ -336,7 +332,7 @@ void conv_sjistoeuc(gchar *outbuf, gint outlen, const gchar *inbuf)
 	guchar *out = outbuf;
 
 	while (*in != '\0') {
-		if (isascii(*in)) {
+		if (IS_ASCII(*in)) {
 			*out++ = *in++;
 		} else if (issjiskanji1(*in)) {
 			if (issjiskanji2(*(in + 1))) {
@@ -359,7 +355,7 @@ void conv_sjistoeuc(gchar *outbuf, gint outlen, const gchar *inbuf)
 			} else {
 				*out++ = SUBST_CHAR;
 				in++;
-				if (*in != '\0' && !isascii(*in)) {
+				if (*in != '\0' && !IS_ASCII(*in)) {
 					*out++ = SUBST_CHAR;
 					in++;
 				}
@@ -516,7 +512,7 @@ void conv_unreadable_eucjp(gchar *str)
 	register guchar *p = str;
 
 	while (*p != '\0') {
-		if (isascii(*p)) {
+		if (IS_ASCII(*p)) {
 			/* convert CR+LF -> LF */
 			if (*p == '\r' && *(p + 1) == '\n')
 				memmove(p, p + 1, strlen(p));
@@ -530,7 +526,7 @@ void conv_unreadable_eucjp(gchar *str)
 				/* substitute unprintable code */
 				*p++ = SUBST_CHAR;
 				if (*p != '\0') {
-					if (isascii(*p))
+					if (IS_ASCII(*p))
 						p++;
 					else
 						*p++ = SUBST_CHAR;
@@ -562,7 +558,7 @@ void conv_unreadable_8bit(gchar *str)
 		/* convert CR+LF -> LF */
 		if (*p == '\r' && *(p + 1) == '\n')
 			memmove(p, p + 1, strlen(p));
-		else if (!isascii(*p)) *p = SUBST_CHAR;
+		else if (!IS_ASCII(*p)) *p = SUBST_CHAR;
 		p++;
 	}
 }
@@ -575,7 +571,23 @@ void conv_unreadable_latin(gchar *str)
 		/* convert CR+LF -> LF */
 		if (*p == '\r' && *(p + 1) == '\n')
 			memmove(p, p + 1, strlen(p));
-		else if ((*p & 0xff) >= 0x7f && (*p & 0xff) <= 0x9f)
+		else if ((*p & 0xff) >= 0x7f)
+			*p = SUBST_CHAR;
+		p++;
+	}
+}
+
+void conv_unreadable_utf8(gchar *str)
+{
+	register guchar *p = str;
+
+	while (*p != '\0') {
+		/* convert CR+LF -> LF */
+
+		if (*p == '\r' && *(p + 1) == '\n')
+			memmove(p, p + 1, strlen(p));
+		else if (((*p & 0xff) >= 0x7f) 
+			 || *p == 0xfc)
 			*p = SUBST_CHAR;
 		p++;
 	}
@@ -603,6 +615,9 @@ void conv_unreadable_locale(gchar *str)
 		break;
 	case C_EUC_JP:
 		conv_unreadable_eucjp(str);
+		break;
+	case C_UTF_8:
+		conv_unreadable_utf8(str);
 		break;
 	default:
 		break;
@@ -685,7 +700,7 @@ CharSet conv_guess_ja_encoding(const gchar *str)
 			if (guessed == C_US_ASCII)
 				return C_ISO_2022_JP;
 			p += 2;
-		} else if (isascii(*p)) {
+		} else if (IS_ASCII(*p)) {
 			p++;
 		} else if (iseuckanji(*p) && iseuckanji(*(p + 1))) {
 			if (*p >= 0xfd && *p <= 0xfe)
@@ -735,34 +750,32 @@ void conv_euctodisp(gchar *outbuf, gint outlen, const gchar *inbuf)
 	conv_unreadable_eucjp(outbuf);
 }
 
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
-#if 0
-void conv_anytodisp(gchar *outbuf, gint outlen, const gchar *inbuf)
-{
-	conv_anytoeuc(outbuf, outlen, inbuf);
-	conv_unreadable_eucjp(outbuf);
-}
-#else
 void conv_anytodisp(gchar *outbuf, gint outlen, const gchar *inbuf)
 {
 	conv_anytoutf8(outbuf, outlen, inbuf);
 }
-#endif
 
+#ifndef _MSC_VER
+#warning FIXME_GTK2
+#endif /* _MSC_VER */
 void conv_ustodisp(gchar *outbuf, gint outlen, const gchar *inbuf)
 {
 	strncpy2(outbuf, inbuf, outlen);
 	conv_unreadable_8bit(outbuf);
 }
 
+#ifndef _MSC_VER
+#warning FIXME_GTK2
+#endif /* _MSC_VER */
 void conv_latintodisp(gchar *outbuf, gint outlen, const gchar *inbuf)
 {
 	strncpy2(outbuf, inbuf, outlen);
 	conv_unreadable_latin(outbuf);
 }
 
+#ifndef _MSC_VER
+#warning FIXME_GTK2
+#endif /* _MSC_VER */
 void conv_localetodisp(gchar *outbuf, gint outlen, const gchar *inbuf)
 {
 	strncpy2(outbuf, inbuf, outlen);
@@ -779,9 +792,6 @@ CodeConverter *conv_code_converter_new(const gchar *charset)
 	CodeConverter *conv;
 
 	conv = g_new0(CodeConverter, 1);
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
 	conv->code_conv_func = conv_get_code_conv_func(charset, CS_UTF_8);
 	conv->charset_str = g_strdup(charset);
 	conv->charset = conv_get_charset_from_str(charset);
@@ -798,15 +808,11 @@ void conv_code_converter_destroy(CodeConverter *conv)
 gint conv_convert(CodeConverter *conv, gchar *outbuf, gint outlen,
 		  const gchar *inbuf)
 {
-#if HAVE_ICONV
 	if (conv->code_conv_func != conv_noconv)
 		conv->code_conv_func(outbuf, outlen, inbuf);
 	else {
 		gchar *str;
 
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
 		str = conv_iconv_strdup(inbuf, conv->charset_str, CS_UTF_8);
 		if (!str)
 			return -1;
@@ -814,9 +820,6 @@ gint conv_convert(CodeConverter *conv, gchar *outbuf, gint outlen,
 			strncpy2(outbuf, str, outlen);
 		}
 	}
-#else /* !HAVE_ICONV */
-	conv->code_conv_func(outbuf, outlen, inbuf);
-#endif
 
 	return 0;
 }
@@ -838,11 +841,7 @@ gchar *conv_codeset_strdup(const gchar *inbuf,
 		return g_realloc(buf, strlen(buf) + 1);
 	}
 
-#if HAVE_ICONV
 	return conv_iconv_strdup(inbuf, src_code, dest_code);
-#else
-	return g_strdup(inbuf);
-#endif /* HAVE_ICONV */
 }
 
 CodeConvFunc conv_get_code_conv_func(const gchar *src_charset_str,
@@ -877,6 +876,7 @@ CodeConvFunc conv_get_code_conv_func(const gchar *src_charset_str,
 	switch (src_charset) {
 	case C_ISO_2022_JP:
 	case C_ISO_2022_JP_2:
+	case C_ISO_2022_JP_3:
 		if (dest_charset == C_AUTO &&
 		    conv_get_current_charset() == C_EUC_JP)
 			code_conv = conv_jistodisp;
@@ -921,8 +921,9 @@ CodeConvFunc conv_get_code_conv_func(const gchar *src_charset_str,
 		if (dest_charset == C_AUTO &&
 		    conv_get_current_charset() == C_EUC_JP)
 			code_conv = conv_euctodisp;
-		else if (dest_charset == C_ISO_2022_JP ||
-			 dest_charset == C_ISO_2022_JP_2)
+		else if (dest_charset == C_ISO_2022_JP   ||
+			 dest_charset == C_ISO_2022_JP_2 ||
+			 dest_charset == C_ISO_2022_JP_3)
 			code_conv = conv_euctojis;
 		break;
 	default:
@@ -932,98 +933,39 @@ CodeConvFunc conv_get_code_conv_func(const gchar *src_charset_str,
 	return code_conv;
 }
 
-#if HAVE_ICONV
 gchar *conv_iconv_strdup(const gchar *inbuf,
-			 const gchar *src_code, const gchar *dest_code)
+			 const gchar *isrc_code, const gchar *idest_code)
 {
-	iconv_t cd;
-	const gchar *inbuf_p;
+	/* presumably GLib 2's function handles the conversion details,
+	 * whether iconv is sitting below, or something else */
 	gchar *outbuf;
-	gchar *outbuf_p;
-	size_t in_size;
-	size_t in_left;
-	size_t out_size;
-	size_t out_left;
-	size_t n_conv;
-	size_t len;
-
-	if (!src_code)
-		src_code = conv_get_outgoing_charset_str();
-	if (!dest_code)
-		dest_code = conv_get_current_charset_str();
+	gsize read_len, written_len;
+	gchar *src_code = (char *)conv_get_outgoing_charset_str();
+	gchar *dest_code = (char *)conv_get_current_charset_str();
+	
+	if (isrc_code)
+		src_code = (char *)isrc_code;
+	if (idest_code)
+		dest_code = (char *)idest_code;
 
 	/* don't convert if current codeset is US-ASCII */
-	if (!strcasecmp(dest_code, CS_US_ASCII))
+	if (!g_ascii_strcasecmp(dest_code, CS_US_ASCII))
 		return g_strdup(inbuf);
 
 	/* don't convert if src and dest codeset are identical */
-	if (!strcasecmp(src_code, dest_code))
+	if (!g_ascii_strcasecmp(src_code, dest_code))
 		return g_strdup(inbuf);
 
-	cd = iconv_open(dest_code, src_code);
-	if (cd == (iconv_t)-1)
-		return NULL;
+	/* FIXME: unchecked inbuf? Can't see at this level. */
+	outbuf = g_convert(inbuf, strlen(inbuf), dest_code, src_code,
+		           &read_len, &written_len, NULL);
 
-	inbuf_p = inbuf;
-	in_size = strlen(inbuf);
-	in_left = in_size;
-	out_size = (in_size + 1) * 2;
-	outbuf = g_malloc(out_size);
-	outbuf_p = outbuf;
-	out_left = out_size;
-
-#define EXPAND_BUF()				\
-{						\
-	len = outbuf_p - outbuf;		\
-	out_size *= 2;				\
-	outbuf = g_realloc(outbuf, out_size);	\
-	outbuf_p = outbuf + len;		\
-	out_left = out_size - len;		\
+	if (outbuf == NULL)
+		g_warning(_("Valid locale type set? (Currently: %s to %s)\n"),
+			  src_code, dest_code);
+	
+	return outbuf;			   
 }
-
-	while ((n_conv = iconv(cd, (ICONV_CONST gchar **)&inbuf_p, &in_left,
-			       &outbuf_p, &out_left)) == (size_t)-1) {
-		if (EILSEQ == errno) {
-			inbuf_p++;
-			in_left--;
-			if (out_left == 0) {
-				EXPAND_BUF();
-			}
-			*outbuf_p++ = SUBST_CHAR;
-			out_left--;
-		} else if (EINVAL == errno) {
-			break;
-		} else if (E2BIG == errno) {
-			EXPAND_BUF();
-		} else {
-			g_warning("conv_iconv_strdup(): %s\n",
-				  g_strerror(errno));
-			break;
-		}
-	}
-
-	while ((n_conv = iconv(cd, NULL, NULL, &outbuf_p, &out_left)) ==
-	       (size_t)-1) {
-		if (E2BIG == errno) {
-			EXPAND_BUF();
-		} else {
-			g_warning("conv_iconv_strdup(): %s\n",
-				  g_strerror(errno));
-			break;
-		}
-	}
-
-#undef EXPAND_BUF
-
-	len = outbuf_p - outbuf;
-	outbuf = g_realloc(outbuf, len + 1);
-	outbuf[len] = '\0';
-
-	iconv_close(cd);
-
-	return outbuf;
-}
-#endif /* HAVE_ICONV */
 
 static const struct {
 	CharSet charset;
@@ -1071,6 +1013,7 @@ static const struct {
 	{C_KOI8_U,		CS_KOI8_U},
 	{C_ISO_2022_JP,		CS_ISO_2022_JP},
 	{C_ISO_2022_JP_2,	CS_ISO_2022_JP_2},
+	{C_ISO_2022_JP_3,	CS_ISO_2022_JP_3},
 	{C_EUC_JP,		CS_EUC_JP},
 	{C_EUC_JP,		CS_EUCJP},
 	{C_SHIFT_JIS,		CS_SHIFT_JIS},
@@ -1120,6 +1063,7 @@ static const struct {
 	{"ru_RU"	, C_ISO_8859_5	, C_KOI8_R},
 	{"tg_TJ"	, C_KOI8_T	, C_KOI8_T},
 	{"ru_UA"	, C_KOI8_U	, C_KOI8_U},
+	{"uk_UA.CP1251"	, C_WINDOWS_1251, C_KOI8_U},
 	{"uk_UA"	, C_KOI8_U	, C_KOI8_U},
 
 	{"be_BY"	, C_WINDOWS_1251, C_WINDOWS_1251},
@@ -1379,14 +1323,14 @@ CharSet conv_get_current_charset(void)
 
 		/* "ja_JP.EUC" matches with "ja_JP.eucJP", "ja_JP.EUC" and
 		   "ja_JP". "ja_JP" matches with "ja_JP.xxxx" and "ja" */
-		if (!strncasecmp(cur_locale, locale_table[i].locale,
+		if (!g_ascii_strncasecmp(cur_locale, locale_table[i].locale,
 				 strlen(locale_table[i].locale))) {
 			cur_charset = locale_table[i].charset;
 			return cur_charset;
 		} else if ((p = strchr(locale_table[i].locale, '_')) &&
 			 !strchr(p + 1, '.')) {
 			if (strlen(cur_locale) == 2 &&
-			    !strncasecmp(cur_locale, locale_table[i].locale, 2)) {
+			    !g_ascii_strncasecmp(cur_locale, locale_table[i].locale, 2)) {
 				cur_charset = locale_table[i].charset;
 				return cur_charset;
 			}
@@ -1437,28 +1381,19 @@ CharSet conv_get_outgoing_charset(void)
 	for (i = 0; i < sizeof(locale_table) / sizeof(locale_table[0]); i++) {
 		const gchar *p;
 
-		if (!strncasecmp(cur_locale, locale_table[i].locale,
+		if (!g_ascii_strncasecmp(cur_locale, locale_table[i].locale,
 				 strlen(locale_table[i].locale))) {
 			out_charset = locale_table[i].out_charset;
 			break;
 		} else if ((p = strchr(locale_table[i].locale, '_')) &&
 			 !strchr(p + 1, '.')) {
 			if (strlen(cur_locale) == 2 &&
-			    !strncasecmp(cur_locale, locale_table[i].locale, 2)) {
+			    !g_ascii_strncasecmp(cur_locale, locale_table[i].locale, 2)) {
 				out_charset = locale_table[i].out_charset;
 				break;
 			}
 		}
 	}
-
-#if !HAVE_ICONV
-	/* encoding conversion without iconv() is only supported
-	   on Japanese locale for now */
-	if (out_charset == C_ISO_2022_JP)
-		return out_charset;
-	else
-		return conv_get_current_charset();
-#endif
 
 	return out_charset;
 }
@@ -1491,6 +1426,7 @@ gboolean conv_is_multibyte_encoding(CharSet encoding)
 	case C_EUC_CN:
 	case C_ISO_2022_JP:
 	case C_ISO_2022_JP_2:
+	case C_ISO_2022_JP_3:
 	case C_ISO_2022_KR:
 	case C_ISO_2022_CN:
 	case C_SHIFT_JIS:
@@ -1506,14 +1442,22 @@ gboolean conv_is_multibyte_encoding(CharSet encoding)
 
 const gchar *conv_get_current_locale(void)
 {
-	const gchar *cur_locale;
+	static const gchar *cur_locale = NULL;
 #ifdef WIN32
 	static gchar *gtklocale=NULL;
 #endif
 
+	if (cur_locale != NULL)
+		return cur_locale;
+	
 	cur_locale = g_getenv("LC_ALL");
-	if (!cur_locale) cur_locale = g_getenv("LC_CTYPE");
-	if (!cur_locale) cur_locale = g_getenv("LANG");
+	if (!cur_locale || !strlen(cur_locale)) 
+		cur_locale = g_getenv("LC_CTYPE");
+	if (!cur_locale || !strlen(cur_locale)) 
+		cur_locale = g_getenv("LANG");
+	if (!cur_locale || !strlen(cur_locale)) 
+		cur_locale = setlocale(LC_CTYPE, NULL);
+
 #ifdef WIN32
 	if (!cur_locale) {
 		if (!gtklocale)
@@ -1521,12 +1465,11 @@ const gchar *conv_get_current_locale(void)
 		cur_locale = gtklocale;
 	}
 #endif
-	if (!cur_locale) cur_locale = setlocale(LC_CTYPE, NULL);
-
-#ifndef WIN32
-	debug_print("current locale: %s\n",
-		    cur_locale ? cur_locale : "(none)");
-#endif
+	if (cur_locale && strlen(cur_locale)) {
+		gchar *tmp = g_strdup(cur_locale);
+		cur_locale = g_strdup(tmp);
+		g_free(tmp);
+	}
 
 	return cur_locale;
 }
@@ -1538,6 +1481,8 @@ void conv_unmime_header_overwrite(gchar *str)
 	CharSet cur_charset;
 	const gchar *locale;
 
+	g_return_if_fail(str != NULL);
+	
 	cur_charset = conv_get_current_charset();
 
 #ifndef _MSC_VER
@@ -1562,15 +1507,10 @@ void conv_unmime_header_overwrite(gchar *str)
 void conv_unmime_header(gchar *outbuf, gint outlen, const gchar *str,
 			const gchar *charset)
 {
-	CharSet cur_charset;
 	const gchar *locale;
 
-	cur_charset = conv_get_current_charset();
-
-#ifndef _MSC_VER
-#warning FIXME_GTK2
-#endif
-/* Should we always ensure to convert? */
+	memset(outbuf, 0, outlen);
+	
 	locale = conv_get_current_locale();
 
 	if (locale && !strncasecmp(locale, "ja", 2)) {
@@ -1581,16 +1521,29 @@ void conv_unmime_header(gchar *outbuf, gint outlen, const gchar *str,
 		Xalloca(buf, buflen, return);
 		conv_anytodisp(buf, buflen, str);
 		unmime_header(outbuf, buf);
-	} else
+	} else {
+		gchar *tmp = NULL;
 		unmime_header(outbuf, str);
+		if (outbuf && !g_utf8_validate(outbuf, -1, NULL)) {
+			if (strcmp(conv_get_current_charset_str(), CS_UTF_8))
+				tmp = conv_codeset_strdup(outbuf,
+					conv_get_current_charset_str(),
+					CS_UTF_8);
+
+			if (tmp) {
+				strncpy(outbuf, tmp, outlen-1);
+				g_free(tmp);
+			} else {
+				conv_localetodisp(outbuf, outlen, str);
+			}
+		} 
+	}
 }
 
 #define MAX_LINELEN		76
 #define MAX_HARD_LINELEN	996
 #define MIMESEP_BEGIN		"=?"
 #define MIMESEP_END		"?="
-
-#define B64LEN(len)	((len) / 3 * 4 + ((len) % 3 ? 4 : 0))
 
 #define LBREAK_IF_REQUIRED(cond, is_plain_text)				\
 {									\
@@ -1625,7 +1578,8 @@ void conv_encode_header(gchar *dest, gint len, const gchar *src,
 	const guchar *srcp = src;
 	guchar *destp = dest;
 	gboolean use_base64;
-
+	gchar *testbuf;
+	
 	if (MB_CUR_MAX > 1) {
 		use_base64 = TRUE;
 		mimesep_enc = "?B?";
@@ -1634,13 +1588,19 @@ void conv_encode_header(gchar *dest, gint len, const gchar *src,
 		mimesep_enc = "?Q?";
 	}
 
-	cur_encoding = conv_get_current_charset_str();
-	if (!strcmp(cur_encoding, CS_US_ASCII))
-		cur_encoding = CS_ISO_8859_1;
+	cur_encoding = CS_UTF_8; /* gtk2 */
+
 	out_encoding = conv_get_outgoing_charset_str();
 	if (!strcmp(out_encoding, CS_US_ASCII))
 		out_encoding = CS_ISO_8859_1;
 
+	testbuf = conv_codeset_strdup(src, cur_encoding, out_encoding);
+	
+	if (testbuf != NULL) 
+		g_free(testbuf);
+	else
+		out_encoding = CS_UTF_8;
+	
 	mimestr_len = strlen(MIMESEP_BEGIN) + strlen(out_encoding) +
 		strlen(mimesep_enc) + strlen(MIMESEP_END);
 

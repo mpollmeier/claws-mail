@@ -222,7 +222,7 @@ static gboolean addrgather_dlg_harvest() {
 	addrgather_dlg_status_show( _("Addresses gathered successfully.") );
 
 	/* Display summary page */
-	gtk_notebook_set_page(
+	gtk_notebook_set_current_page(
 		GTK_NOTEBOOK(addrgather_dlg.notebook), PAGE_FINISH );
 	gtk_widget_set_sensitive( addrgather_dlg.btnOk, FALSE );
 	gtk_widget_grab_default( addrgather_dlg.btnCancel );
@@ -439,7 +439,7 @@ static void addrgather_page_finish( gint pageNum, gchar *pageLbl ) {
 	gtk_container_add( GTK_CONTAINER(vbox), clistSWin );
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(clistSWin),
 				       GTK_POLICY_AUTOMATIC,
-				       GTK_POLICY_ALWAYS);
+				       GTK_POLICY_AUTOMATIC);
 
 	clistCount = gtk_clist_new_with_titles( FIELDS_N_COLS, titles );
 	gtk_container_add( GTK_CONTAINER(clistSWin), clistCount );
@@ -476,10 +476,10 @@ static void addrgather_dlg_create( void ) {
 	gtk_container_set_border_width(GTK_CONTAINER(window), 0);
 	gtk_window_set_position( GTK_WINDOW(window), GTK_WIN_POS_CENTER );
 	gtk_window_set_modal( GTK_WINDOW(window), TRUE );	
-	gtk_signal_connect( GTK_OBJECT(window), "delete_event",
-		GTK_SIGNAL_FUNC( addrgather_dlg_delete_event ), NULL );
-	gtk_signal_connect( GTK_OBJECT(window), "key_press_event",
-		GTK_SIGNAL_FUNC( addrgather_dlg_key_pressed ), NULL );
+	g_signal_connect(G_OBJECT(window), "delete_event",
+			 G_CALLBACK(addrgather_dlg_delete_event), NULL);
+	g_signal_connect(G_OBJECT(window), "key_press_event",
+			 G_CALLBACK(addrgather_dlg_key_pressed), NULL);
 
 	vbox = gtk_vbox_new( FALSE, 8 );
 	gtk_container_add( GTK_CONTAINER(window), vbox );
@@ -510,10 +510,10 @@ static void addrgather_dlg_create( void ) {
 	gtk_container_set_border_width( GTK_CONTAINER(hbbox), 0 );
 
 	/* Signal handlers */
-	gtk_signal_connect( GTK_OBJECT(btnOk), "clicked",
-		GTK_SIGNAL_FUNC(addrgather_dlg_ok), NULL );
-	gtk_signal_connect( GTK_OBJECT(btnCancel), "clicked",
-		GTK_SIGNAL_FUNC(addrgather_dlg_cancel), NULL );
+	g_signal_connect(G_OBJECT(btnOk), "clicked",
+			 G_CALLBACK(addrgather_dlg_ok), NULL);
+	g_signal_connect(G_OBJECT(btnCancel), "clicked",
+			 G_CALLBACK(addrgather_dlg_cancel), NULL);
 
 	gtk_widget_show_all( vbox );
 	addrgather_dlg.window     = window;
@@ -557,7 +557,7 @@ AddressBookFile *addrgather_dlg_execute(
 
 	errFlag = TRUE;
 	if( folderItem && folderItem->path ) {
-		gtk_notebook_set_page(
+		gtk_notebook_set_current_page(
 			GTK_NOTEBOOK(addrgather_dlg.notebook), PAGE_FIELDS );
 		addrgather_dlg.folderPath = folder_item_get_path( folderItem );
 
@@ -571,7 +571,7 @@ AddressBookFile *addrgather_dlg_execute(
 			gtk_toggle_button_set_active(
 				GTK_TOGGLE_BUTTON(addrgather_dlg.checkHeader[i]),
 				FALSE );
-			if( g_strcasecmp( _harv_headerNames_[i], HEADER_FROM ) == 0 ) {
+			if( g_utf8_collate( _harv_headerNames_[i], HEADER_FROM ) == 0 ) {
 				gtk_toggle_button_set_active(
 					GTK_TOGGLE_BUTTON(addrgather_dlg.checkHeader[i]),
 					TRUE );
@@ -604,7 +604,7 @@ AddressBookFile *addrgather_dlg_execute(
 	gtk_widget_show( addrgather_dlg.window );
 
 	if( errFlag ) {
-		gtk_notebook_set_page(
+		gtk_notebook_set_current_page(
 			GTK_NOTEBOOK(addrgather_dlg.notebook), PAGE_WARNING );
 		gtk_widget_set_sensitive( addrgather_dlg.btnOk, FALSE );
 		gtk_widget_grab_default( addrgather_dlg.btnCancel );
