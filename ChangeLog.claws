@@ -1,3 +1,56 @@
+2002-08-28 [paul]	0.8.2claws2
+
+	* sync with 0.8.2cvs4
+		see ChangeLog 2002-08-27 and 2002-08-28
+
+2002-08-28 [colin]	0.8.2claws1
+
+	* src/summary_search.c
+		Added "AND search"
+
+2002-08-28 [jens]	0.8.2claws
+
+	*po/de.po
+		Updated German translations
+
+2002-08-27 [melvin]	0.8.2claws
+
+	* po/fr.po
+		Updated French translations
+
+2002-08-27 [paul] 	0.8.2claws
+
+	* sync with 0.8.2 main release
+
+	* po/en_GB.po
+	  po/es.po
+	  po/it.po
+	  po/pl.po
+	  po/pt_BR.po
+	  po/sr.po
+		updated message catalogs submitted by
+		Ricardo Mones Lastra, Alessandro Maestri,
+		Witold Wladyslaw Wojciech Wilk, Fabio Jr.
+		Beneditto and Urke MMI	
+
+2002-08-27 [hoa]	0.8.1claws123
+
+	* src/mainwindow.[ch]
+	* src/summaryview.[ch]
+		removed the "filter setting" menu option.
+		add a "cancel a news message" menu option.
+
+2002-08-26 [martin]	0.8.1claws122
+
+	* ChangeLog.claws
+		changed string under 0.8.1claws79 changed by myself
+		i'm sorry alfons :(
+
+2002-08-26 [martin]	0.8.1claws121
+
+	* src/crash.c
+		added kill command to debuggerrc to start crash dialog
+
 2002-08-26 [paul]	0.8.1claws120
 
 	* sync with 0.8.1cvs31
@@ -261,7 +314,7 @@
 		o add "Set default" button
 		o align label and text + combo widgets
 
-2002-08-20 [hoa]	0.8.1claws84
+2002-08-20 [hoa]	0.8.1claws83bis
 
 	* src/imap.c
 		fixed a bug in imap_fetch_msginfo() in case there is no
