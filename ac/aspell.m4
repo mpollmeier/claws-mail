@@ -1,5 +1,5 @@
 dnl Autoconf macros for libaspell
-dnl $Id: aspell.m4,v 1.8 2002-10-31 15:50:55 mhadasht Exp $
+dnl $Id: aspell.m4,v 1.9 2002-12-01 12:40:19 reboot Exp $
 
 # Configure paths for ASPELL
 # Shamelessly stolen from the one of GPGME by Werner Koch 
@@ -88,7 +88,7 @@ main ()
  return 0;
 }
         ],, no_aspell=yes,[echo $ac_n "cross compiling; assumed OK... $ac_c"])
-	rm -f conftest.c
+        rm -f conf.aspelltest
 	if test "x$no_aspell" = x ; then
            AC_MSG_RESULT(yes)
            AC_MSG_CHECKING(for GNU/aspell dictionaries location)
@@ -100,7 +100,6 @@ main ()
            ac_save_LIBS="$LIBS"
            CFLAGS="$CFLAGS $ASPELL_CFLAGS"
            LIBS="$LIBS $ASPELL_LIBS"
-           rm -f conf.aspelltest
            AC_TRY_RUN([
 #include <stdio.h>
 #include <stdlib.h>
