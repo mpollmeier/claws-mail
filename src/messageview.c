@@ -83,7 +83,8 @@ MessageView *messageview_create(void)
 	imageview->messageview = messageview;
 
 	mimeview = mimeview_create();
-	mimeview->textview = textview;
+	mimeview->textview = textview_create();
+	mimeview->textview->messageview = messageview;
 	mimeview->imageview = imageview;
 	mimeview->messageview = messageview;
 
@@ -97,6 +98,7 @@ MessageView *messageview_create(void)
 	gtk_widget_ref(GTK_WIDGET_PTR(textview));
 	gtk_widget_ref(GTK_WIDGET_PTR(imageview));
 	gtk_widget_ref(GTK_WIDGET_PTR(mimeview));
+	gtk_widget_ref(GTK_WIDGET_PTR(mimeview->textview));
 
 	messageview->vbox       = vbox;
 	messageview->new_window = FALSE;
@@ -396,6 +398,7 @@ void messageview_show(MessageView *messageview, MsgInfo *msginfo,
 	procmsg_msginfo_free(tmpmsginfo);
 
 	textview_set_all_headers(messageview->textview, all_headers);
+	textview_set_all_headers(messageview->mimeview->textview, all_headers);
 
 	if (mimeinfo->mime_type != MIME_TEXT) {
 		messageview_change_view_type(messageview, MVIEW_MIME);
@@ -413,7 +416,6 @@ static void messageview_change_view_type(MessageView *messageview,
 					 MessageType type)
 {
 	TextView *textview = messageview->textview;
-	ImageView *imageview = messageview->imageview;
 	MimeView *mimeview = messageview->mimeview;
 
 	if (messageview->type == type) return;
@@ -426,19 +428,14 @@ static void messageview_change_view_type(MessageView *messageview,
 				   GTK_WIDGET_PTR(mimeview), TRUE, TRUE, 0);
 		gtk_container_add(GTK_CONTAINER(mimeview->vbox),
 				  GTK_WIDGET_PTR(textview));
-		mimeview->type = MIMEVIEW_TEXT;
 	} else if (type == MVIEW_TEXT) {
 		gtkut_container_remove
 			(GTK_CONTAINER(GTK_WIDGET_PTR(messageview)),
 			 GTK_WIDGET_PTR(mimeview));
 
-		if (mimeview->vbox == GTK_WIDGET_PTR(textview)->parent) {
+		if (mimeview->vbox == GTK_WIDGET_PTR(textview)->parent)
 			gtkut_container_remove(GTK_CONTAINER(mimeview->vbox),
 			 		       GTK_WIDGET_PTR(textview));
-		} else {
-			gtkut_container_remove(GTK_CONTAINER(mimeview->vbox),
-			  		       GTK_WIDGET_PTR(imageview));
-		}
 
 		gtk_box_pack_start(GTK_BOX(messageview->vbox),
 				   GTK_WIDGET_PTR(textview), TRUE, TRUE, 0);
@@ -513,36 +510,13 @@ void messageview_select_all(MessageView *messageview)
 
 void messageview_set_position(MessageView *messageview, gint pos)
 {
-	switch (messageview->type) {
-	case MVIEW_TEXT:
-		textview_set_position(messageview->textview, pos);
-		break;
-	case MVIEW_MIME:
-		if (messageview->mimeview->type == MIMEVIEW_TEXT)
-			textview_set_position(messageview->mimeview->textview, pos);
-		break;
-	default:
-		break;
-	}
+	textview_set_position(messageview->textview, pos);
 }
 
 gboolean messageview_search_string(MessageView *messageview, const gchar *str,
 				   gboolean case_sens)
 {
-	switch (messageview->type) {
-	case MVIEW_TEXT:
-		return textview_search_string(messageview->textview,
-					str, case_sens);
-	case MVIEW_MIME:
-		if (messageview->mimeview->type == MIMEVIEW_TEXT)
-			return textview_search_string(messageview->mimeview->textview,
-						str, case_sens);
-		else
-			return FALSE;
-	default:
-		return FALSE;
-	}
-		
+	return textview_search_string(messageview->textview, str, case_sens);
 	return FALSE;
 }
 
@@ -550,22 +524,9 @@ gboolean messageview_search_string_backward(MessageView *messageview,
 					    const gchar *str,
 					    gboolean case_sens)
 {
-	switch (messageview->type) {
-	case MVIEW_TEXT:
-		return textview_search_string_backward(messageview->textview,
-					str, case_sens);
-	case MVIEW_MIME:
-		if (messageview->mimeview->type == MIMEVIEW_TEXT)
-			return textview_search_string_backward(messageview->mimeview->textview,
-						str, case_sens);
-		else
-			return FALSE;
-	default:
-		return FALSE;
-	}
-		
+	return textview_search_string_backward(messageview->textview,
+					       str, case_sens);
 	return FALSE;
-
 }
 
 GtkWidget *messageview_get_text_widget(MessageView *messageview)

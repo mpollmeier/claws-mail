@@ -394,7 +394,9 @@ static void copy_cb		 (MainWindow	*mainwin,
 static void allsel_cb		 (MainWindow	*mainwin,
 				  guint		 action,
 				  GtkWidget	*widget);
-
+static void selthread_cb	 (MainWindow	*mainwin,
+				  guint		 action,
+				  GtkWidget	*widget);
 static void create_filter_cb	 (MainWindow	*mainwin,
 				  guint		 action,
 				  GtkWidget	*widget);
@@ -474,6 +476,7 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_Edit"),				NULL, NULL, 0, "<Branch>"},
 	{N_("/_Edit/_Copy"),			"<control>C", copy_cb, 0, NULL},
 	{N_("/_Edit/Select _all"),		"<control>A", allsel_cb, 0, NULL},
+	{N_("/_Edit/Select thread"),		"<control>Z", selthread_cb, 0, NULL},
 	{N_("/_Edit/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_Edit/_Find in current message..."),
 						"<control>F", search_cb, 0, NULL},
@@ -482,10 +485,10 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_Edit/Actio_ns"),			NULL, NULL, 0, "<Branch>"},
 
 	{N_("/_View"),				NULL, NULL, 0, "<Branch>"},
-	{N_("/_View/_Folder tree"),		NULL, NULL, SEPARATE_ACTION + SEPARATE_FOLDER,  "<ToggleItem>"},
-	{N_("/_View/_Message view"),		NULL, NULL, SEPARATE_ACTION + SEPARATE_MESSAGE, "<ToggleItem>"},
-	{N_("/_View/E_xpand Summary View"),		"V", toggle_expand_summaryview_cb, 0, "<ToggleItem>"},
-	{N_("/_View/Ex_pand Message View"),		"<shift>V", toggle_expand_messageview_cb, 0, "<ToggleItem>"},
+	{N_("/_View/Separate _Folder Tree"),	NULL, NULL, SEPARATE_ACTION + SEPARATE_FOLDER,  "<ToggleItem>"},
+	{N_("/_View/Separate _Message View"),	NULL, NULL, SEPARATE_ACTION + SEPARATE_MESSAGE, "<ToggleItem>"},
+	{N_("/_View/E_xpand Summary View"),	"V", toggle_expand_summaryview_cb, 0, "<ToggleItem>"},
+	{N_("/_View/Ex_pand Message View"),	"<shift>V", toggle_expand_messageview_cb, 0, "<ToggleItem>"},
 	{N_("/_View/_Toolbar"),			NULL, NULL, 0, "<Branch>"},
 	{N_("/_View/_Toolbar/Icon _and text"),	NULL, toggle_toolbar_cb, TOOLBAR_BOTH, "<RadioItem>"},
 	{N_("/_View/_Toolbar/_Icon"),		NULL, toggle_toolbar_cb, TOOLBAR_ICON, "/View/Toolbar/Icon and text"},
@@ -532,6 +535,8 @@ static GtkItemFactoryEntry mainwin_entries[] =
 #endif
 	{N_("/_View/_Code set/Western European (ISO-8859-_1)"),
 	 CODESET_ACTION(C_ISO_8859_1)},
+	{N_("/_View/_Code set/Western European (ISO-8859-15)"),
+	 CODESET_ACTION(C_ISO_8859_15)},
 	CODESET_SEPARATOR,
 #if HAVE_LIBJCONV
 	{N_("/_View/_Code set/Central European (ISO-8859-_2)"),
@@ -764,6 +769,7 @@ MainWindow *main_window_create(SeparateType type)
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title(GTK_WINDOW(window), PROG_VERSION);
 	gtk_window_set_policy(GTK_WINDOW(window), TRUE, TRUE, FALSE);
+	gtk_window_set_wmclass(GTK_WINDOW(window), "main_window", "Sylpheed");
 	gtk_signal_connect(GTK_OBJECT(window), "delete_event",
 			   GTK_SIGNAL_FUNC(main_window_close_cb), mainwin);
 	MANAGE_WINDOW_SIGNALS_CONNECT(window);
@@ -1423,8 +1429,8 @@ static SensitiveCond main_window_get_current_state(MainWindow *mainwin)
 			state |= M_THREADED;
 		else
 			state |= M_UNTHREADED;	
-		if (item->folder->type != F_NEWS)
-			state |= M_ALLOW_DELETE;
+		/*		if (item->folder->type != F_NEWS) */
+		state |= M_ALLOW_DELETE;
 
 		if (selection == SUMMARY_NONE && item->hide_read_msgs
 		    || selection != SUMMARY_NONE)
@@ -1531,6 +1537,7 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 		{"/File/Exit" , M_UNLOCKED},
 
 		{"/Edit/Actions"		   , M_MSG_EXIST},
+		{"/Edit/Select thread"		   , M_SINGLE_TARGET_EXIST},
 		{"/View/Sort"                      , M_MSG_EXIST},
 		{"/View/Thread view"               , M_EXEC},
 		{"/View/Hide read messages"	   , M_HIDE_READ_MSG},
@@ -2524,13 +2531,13 @@ static void sel_download_cb(MainWindow *mainwin, guint action,
 
 static void inc_mail_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
 {
-	inc_mail(mainwin);
+	inc_mail(mainwin, prefs_common.newmail_notify_manu);
 }
 
 static void inc_all_account_mail_cb(MainWindow *mainwin, guint action,
 				    GtkWidget *widget)
 {
-	inc_all_account_mail(mainwin);
+	inc_all_account_mail(mainwin, prefs_common.newmail_notify_manu);
 }
 
 static void send_queue_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
@@ -2863,6 +2870,12 @@ static void allsel_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
 	else if (mainwin->summaryview->msg_is_toggled_on &&
 		 GTK_WIDGET_HAS_FOCUS(mainwin->messageview->textview->text))
 		messageview_select_all(mainwin->messageview);
+}
+
+static void selthread_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
+{
+	if (mainwin->summaryview->msg_is_toggled_on)
+		summary_select_thread(mainwin->summaryview);
 }
 
 static void create_filter_cb(MainWindow *mainwin, guint action,

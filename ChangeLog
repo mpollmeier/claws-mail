@@ -1,3 +1,104 @@
+2002-03-03
+
+	* version 0.7.3
+
+2002-03-03
+
+	* src/mimeview.c: mimeview_create(): set the initial notebook page
+	  to 0.
+	* src/folderview.c: folderview_selected(): scroll the view if the
+	  selected row is hidden.
+	* src/prefs_filter.c: prefs_filter_register_cb(): scroll the view
+	  and select the added row.
+	* src/summaryview.c: fix threading for null message ids.
+
+2002-03-02
+
+	* src/textview.c: textview_show_message(): follow message/rfc822
+	  parts.
+	  textview_add_part(): add a caption before the attached text files.
+	  textview_show_header(): don't add the newline.
+	* src/messageview.c: enabled message search also in MIME mode.
+
+2002-03-01
+
+	* src/messageview.c: messageview_show(): set header state of
+	  MimeView's TextView, too.
+	* src/mimeview.c: mimeview_show_message(): call
+	  textview_show_message() to display message.
+	* src/textview.c: textview_add_part(): new. It adds the content
+	  of message part without clearing the view.
+	  textview_show_message(): display all parts with appropriate
+	  style.
+	  textview_write_body(): separated from textview_show_part().
+
+2002-02-28
+
+	* src/mainwindow.c
+	  src/prefs_common.c: added ISO-8859-15 to the codesets for
+	  displaying and sending.
+	* src/codeconv.c: conv_codeset_strdup(): return NULL if code
+	  conversion failed, and made caller deal with it.
+	* src/compose.c: compose_write_to_file(): show error dialog when
+	  code conversion failed, and let user select whether to send it
+	  as is or not.
+	* src/textview.c: textview_write_line(): show the original string
+	  if code conversion failed.
+
+2002-02-27
+
+	* src/inc.c: get_spool(): fixed a bug that failed to unlock mbox
+	  if copy_mbox() failed (thanks to Alexander Kabaev).
+	* src/prefs_account.[ch]: added separate user ID / password setting
+	  for SMTP AUTH.
+	* src/send.c: send_message_smtp(): use separate user ID / password
+	  for SMTP AUTH if it is specified.
+
+2002-02-26
+
+	* src/inc.[ch]
+	  src/pop.[ch]: refactored the UIDL management.
+	  store the information of messages into the array of Pop3MsgInfo
+	  structure, and do full scanning of not retrieved messages.
+
+2002-02-26
+
+	* src/filesel.c
+	  src/foldersel.c
+	  src/mainwindow.c: set WMCLASS for window/dialog.
+	* src/codeconv.c: conv_codeset_strdup(): return source string
+	  when jconv_alloc_conv() failed.
+
+2002-02-25
+
+	* src/mh.c: mh_scan_tree_recursive(): changed the hardcoded directory
+	  name to the macros.
+
+2002-02-24
+
+	* src/messageview.c
+	  src/mimeview.[ch]
+	  src/summaryview.c: implemented the new notebook tab interface for
+	  MIME message.
+	* src/textview.[ch]: fixed line space related glitches.
+
+2002-02-23
+
+	* src/prefs_filter.c:
+	  prefs_filter_rename_path()
+	  prefs_filter_delete_path(): fixed a crash when flt->dest was NULL.
+
+2002-02-23
+
+	* src/recv.[ch]: cancel data receiving if RecvUIFunc returns FALSE.
+	* src/pop.c: pop3_retr_recv(): fixed false 'No space' when cancelled
+	  while getting data.
+	* src/inc.c: inc_pop3_recv_func(): abort data receiving when
+	  cancelled, and fixed potential crash bug.
+	* src/grouplistdialog.c: enabled cancelling of data receiving.
+	* src/news.c: news_get_group_list(): destroy current session if
+	  retrieving failed.
+
 2002-02-22
 
 	* src/manage_window.[ch]: fixed a bug that caused crash when
@@ -23,7 +124,7 @@
 	  src/prefs_filter.c
 	  src/prefs_template.c
 	  src/summary_search.c
-	  src/summaryview.c: use MANAGE_WINDO_SIGNALS_CONNECT() macro to
+	  src/summaryview.c: use MANAGE_WINDOW_SIGNALS_CONNECT() macro to
 	  connect signals for window management.
 
 2002-02-21
@@ -2117,7 +2218,7 @@
 
 	* src/alertpanel.c: alertpanel_create(): fixed truncated message.
 	* src/rfc2015.c: rfc2015_decrypt_message(): fixed the case problem
-	  of content-type (thanks to René Rebe for the patch).
+	  of content-type (thanks to René Rebe for the patch).
 	* src/codeconv.c: code_get_code_conv_func(): fixed the ISO-8859-1
 	  detection.
 	* src/prefs_common.c: prefs_send_create(): made some more character
@@ -3246,7 +3347,7 @@
 	  src/mainwindow.c
 	  src/summaryview.[ch]
 	  src/sourcewindow.[ch]: integrated the viewing source patch from
-	  DINH V. Hoà (thanks!).
+	  DINH V. Hoßþ(thanks!).
 
 2001-03-10
 

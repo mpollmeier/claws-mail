@@ -115,6 +115,9 @@ static void inc_all_spool(void);
 static void inc_autocheck_timer_set_interval	(guint		 interval);
 static gint inc_autocheck_func			(gpointer	 data);
 
+static void inc_notify_cmd		(gint new_msgs, 
+ 					 gboolean notify);
+
 #define FOLDER_SUMMARY_MISMATCH(f, s) \
 	(f) && (s) ? ((s)->newmsgs != (f)->new) || ((f)->unread != (s)->unread) || ((f)->total != (s)->messages) \
 	: FALSE
@@ -154,7 +157,7 @@ static void inc_finished(MainWindow *mainwin, gboolean new_messages)
 	}
 }
 
-void inc_mail(MainWindow *mainwin)
+void inc_mail(MainWindow *mainwin, gboolean notify)
 {
 	gint new_msgs = 0;
 
@@ -183,6 +186,7 @@ void inc_mail(MainWindow *mainwin)
 
 	inc_finished(mainwin, new_msgs > 0);
 	main_window_unlock(mainwin);
+ 	inc_notify_cmd(new_msgs, notify);
 	inc_autocheck_timer_set();
 }
 
@@ -225,7 +229,7 @@ static gint inc_account_mail(PrefsAccount *account, MainWindow *mainwin)
 	return inc_start(inc_dialog);
 }
 
-void inc_all_account_mail(MainWindow *mainwin)
+void inc_all_account_mail(MainWindow *mainwin, gboolean notify)
 {
 	GList *list, *queue_list = NULL;
 	IncProgressDialog *inc_dialog;
@@ -244,6 +248,7 @@ void inc_all_account_mail(MainWindow *mainwin)
 	if (!list) {
 		inc_finished(mainwin, new_msgs > 0);
 		main_window_unlock(mainwin);
+ 		inc_notify_cmd(new_msgs, notify);
 		inc_autocheck_timer_set();
 		return;
 	}
@@ -271,6 +276,7 @@ void inc_all_account_mail(MainWindow *mainwin)
 	if (!queue_list) {
 		inc_finished(mainwin, new_msgs > 0);
 		main_window_unlock(mainwin);
+ 		inc_notify_cmd(new_msgs, notify);
 		inc_autocheck_timer_set();
 		return;
 	}
@@ -294,6 +300,7 @@ void inc_all_account_mail(MainWindow *mainwin)
 
 	inc_finished(mainwin, new_msgs > 0);
 	main_window_unlock(mainwin);
+ 	inc_notify_cmd(new_msgs, notify);
 	inc_autocheck_timer_set();
 }
 
@@ -389,8 +396,6 @@ static Pop3State *inc_pop3_state_new(PrefsAccount *account)
 	state->ac_prefs = account;
 	state->folder_table = g_hash_table_new(NULL, NULL);
 	state->id_table = inc_get_uidl_table(account);
-	state->id_list = NULL;
-	state->new_id_list = NULL;
 	state->inc_state = INC_SUCCESS;
 
 	return state;
@@ -398,17 +403,18 @@ static Pop3State *inc_pop3_state_new(PrefsAccount *account)
 
 static void inc_pop3_state_destroy(Pop3State *state)
 {
+	gint n;
+
 	g_hash_table_destroy(state->folder_table);
-	g_free(state->sizes);
+
+	for (n = 1; n <= state->count; n++)
+		g_free(state->msg[n].uidl);
+	g_free(state->msg);
 
 	if (state->id_table) {
 		hash_free_strings(state->id_table);
 		g_hash_table_destroy(state->id_table);
 	}
-	slist_free_strings(state->id_list);
-	slist_free_strings(state->new_id_list);
-	g_slist_free(state->id_list);
-	g_slist_free(state->new_id_list);
 
 	g_free(state->greeting);
 	g_free(state->user);
@@ -503,6 +509,46 @@ static gint inc_start(IncProgressDialog *inc_dialog)
 		}
 
 		statusbar_pop_all();
+
+		/* CLAWS: perform filtering actions on dropped message */
+		if (global_processing != NULL) {
+			FolderItem *processing, *inbox;
+			Folder *folder;
+			MsgInfo *msginfo;
+			GSList *msglist, *msglist_element;
+
+			/* CLAWS: get default inbox (perhaps per account) */
+			if (pop3_state->ac_prefs->inbox) {
+				/* CLAWS: get destination folder / mailbox */
+				inbox = folder_find_item_from_identifier(pop3_state->ac_prefs->inbox);
+				if (!inbox)
+					inbox = folder_get_default_inbox();
+			} else
+				inbox = folder_get_default_inbox();
+
+			/* get list of messages in processing */
+			processing = folder_get_default_processing();
+			folder_item_scan(processing);
+			msglist = msgcache_get_msg_list(processing->cache);
+
+			/* process messages */
+			for(msglist_element = msglist; msglist_element != NULL; msglist_element = msglist_element->next) {
+				msginfo = (MsgInfo *) msglist_element->data;
+				/* filter if enabled in prefs or move to inbox if not */
+				if(pop3_state->ac_prefs->filter_on_recv) {
+					filter_message_by_msginfo_with_inbox(global_processing, msginfo,
+						    			     pop3_state->folder_table,
+									     inbox);
+				} else {
+					folder_item_move_msg(inbox, msginfo);
+					g_hash_table_insert(pop3_state->folder_table, inbox,
+							    GINT_TO_POINTER(1));
+				}
+				procmsg_msginfo_free(msginfo);
+			}
+			g_slist_free(msglist);
+		}
+
 
 		new_msgs += pop3_state->cur_total_num;
 
@@ -722,9 +768,7 @@ static void inc_write_uidl_list(Pop3State *state)
 {
 	gchar *path;
 	FILE *fp;
-	GSList *cur;
-
-	if (!state->id_list) return;
+	gint n;
 
 	path = g_strconcat(get_rc_dir(), G_DIR_SEPARATOR_S,
 			   "uidl-", state->ac_prefs->recv_server,
@@ -735,14 +779,17 @@ static void inc_write_uidl_list(Pop3State *state)
 		return;
 	}
 
-	for (cur = state->id_list; cur != NULL; cur = cur->next) {
-		if (fputs((gchar *)cur->data, fp) == EOF) {
-			FILE_OP_ERROR(path, "fputs");
-			break;
-		}
-		if (fputc('\n', fp) == EOF) {
-			FILE_OP_ERROR(path, "fputc");
-			break;
+	for (n = 1; n <= state->count; n++) {
+		if (state->msg[n].uidl && state->msg[n].received &&
+		    !state->msg[n].deleted) {
+			if (fputs(state->msg[n].uidl, fp) == EOF) {
+				FILE_OP_ERROR(path, "fputs");
+				break;
+			}
+			if (fputc('\n', fp) == EOF) {
+				FILE_OP_ERROR(path, "fputc");
+				break;
+			}
 		}
 	}
 
@@ -919,13 +966,6 @@ gint inc_drop_message(const gchar *file, Pop3State *state)
 		return -1;
 	}
 
-	/* CLAWS: perform filtering actions on dropped message */
-	if (global_processing != NULL) { 
-		if (state->ac_prefs->filter_on_recv)
-			filter_message(global_processing, inbox, msgnum,
-				       state->folder_table);
-	}
-
 	return 0;
 }
 
@@ -1027,8 +1067,10 @@ static gint get_spool(FolderItem *dest, const gchar *mbox)
 	g_snprintf(tmp_mbox, sizeof(tmp_mbox), "%s%ctmpmbox%d",
 		   get_rc_dir(), G_DIR_SEPARATOR, (gint)mbox);
 
-	if (copy_mbox(mbox, tmp_mbox) < 0)
+	if (copy_mbox(mbox, tmp_mbox) < 0) {
+		unlock_mbox(mbox, lockfd, LOCK_FLOCK);
 		return -1;
+	}
 
 	debug_print(_("Getting new messages from %s into %s...\n"),
 		    mbox, dest->path);
@@ -1069,6 +1111,26 @@ void inc_unlock(void)
 static guint autocheck_timer = 0;
 static gpointer autocheck_data = NULL;
 
+static void inc_notify_cmd(gint new_msgs, gboolean notify)
+{
+
+	gchar *buf;
+
+	if (!(new_msgs && notify && prefs_common.newmail_notify_cmd &&
+	    *prefs_common.newmail_notify_cmd))
+		     return;
+	if ((buf = strchr(prefs_common.newmail_notify_cmd, '%')) &&
+		buf[1] == 'd' && !strchr(&buf[1], '%'))
+		buf = g_strdup_printf(prefs_common.newmail_notify_cmd, 
+				      new_msgs);
+	else
+		buf = g_strdup(prefs_common.newmail_notify_cmd);
+
+	system(buf);
+
+	g_free(buf);
+}
+ 
 void inc_autocheck_timer_init(MainWindow *mainwin)
 {
 	autocheck_data = mainwin;
@@ -1110,7 +1172,7 @@ static gint inc_autocheck_func(gpointer data)
 		return FALSE;
 	}
 
-	inc_all_account_mail(mainwin);
+ 	inc_all_account_mail(mainwin, prefs_common.newmail_notify_auto);
 
 	return FALSE;
 }

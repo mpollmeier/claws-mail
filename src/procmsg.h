@@ -90,13 +90,14 @@ typedef enum
 	MSG_ENCRYPTED   = 1 << 18,
 	MSG_IMAP	= 1 << 19,
 	MSG_NEWS	= 1 << 20,
+	MSG_SIGNED	= 1 << 21,
 
 	MSG_MIME	= 1 << 29,
 
 	MSG_CACHED	= 1 << 31
 } MsgTmpFlags;
 
-#define MSG_CACHED_FLAG_MASK	(MSG_MIME | MSG_ENCRYPTED)
+#define MSG_CACHED_FLAG_MASK	(MSG_MIME | MSG_ENCRYPTED | MSG_SIGNED)
 
 #define MSG_SET_FLAGS(msg, flags)	{ (msg) |= (flags); }
 #define MSG_UNSET_FLAGS(msg, flags)	{ (msg) &= ~(flags); }
@@ -128,6 +129,7 @@ typedef enum
 #define MSG_IS_QUEUED(msg)		(((msg).tmp_flags & MSG_QUEUED) != 0)
 #define MSG_IS_DRAFT(msg)		(((msg).tmp_flags & MSG_DRAFT) != 0)
 #define MSG_IS_ENCRYPTED(msg)		(((msg).tmp_flags & MSG_ENCRYPTED) != 0)
+#define MSG_IS_SIGNED(msg)		(((msg).tmp_flags & MSG_SIGNED) != 0)
 #define MSG_IS_IMAP(msg)		(((msg).tmp_flags & MSG_IMAP) != 0)
 #define MSG_IS_NEWS(msg)		(((msg).tmp_flags & MSG_NEWS) != 0)
 #define MSG_IS_MIME(msg)		(((msg).tmp_flags & MSG_MIME) != 0)
@@ -201,6 +203,8 @@ struct _MsgInfo
 	/* used only for encrypted messages */
 	gchar *plaintext_file;
 	guint decryption_failed : 1;
+
+	gchar *tmpfile;
 };
 
 GHashTable *procmsg_msg_hash_table_create	(GSList		*mlist);

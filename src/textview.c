@@ -92,16 +92,31 @@ static GdkColor emphasis_color = {
 	(gushort)0xcfff
 };
 
+#if 0
 static GdkColor error_color = {
 	(gulong)0,
 	(gushort)0xefff,
 	(gushort)0,
 	(gushort)0
 };
+#endif
 
+static GdkFont *text_sb_font;
+static GdkFont *text_mb_font;
+static gint text_sb_font_orig_ascent;
+static gint text_sb_font_orig_descent;
+static gint text_mb_font_orig_ascent;
+static gint text_mb_font_orig_descent;
 static GdkFont *spacingfont;
 
 static void textview_show_ertf		(TextView	*textview,
+					 FILE		*fp,
+					 CodeConverter	*conv);
+static void textview_add_part		(TextView	*textview,
+					 MimeInfo	*mimeinfo,
+					 FILE		*fp);
+static void textview_write_body		(TextView	*textview,
+					 MimeInfo	*mimeinfo,
 					 FILE		*fp,
 					 CodeConverter	*conv);
 static void textview_show_html		(TextView	*textview,
@@ -227,6 +242,8 @@ TextView *textview_create(void)
 	vbox = gtk_vbox_new(FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), scrolledwin_sb, TRUE, TRUE, 0);
 
+	gtk_widget_show(vbox);
+
 	textview->vbox             = vbox;
 	textview->scrolledwin      = scrolledwin_sb;
 	textview->scrolledwin_sb   = scrolledwin_sb;
@@ -276,48 +293,73 @@ void textview_update_message_colors(void)
 void textview_show_message(TextView *textview, MimeInfo *mimeinfo,
 			   const gchar *file)
 {
+	GtkSText *text = GTK_STEXT(textview->text);
 	FILE *fp;
+	const gchar *charset = NULL;
+	GPtrArray *headers = NULL;
 
 	if ((fp = fopen(file, "r")) == NULL) {
 		FILE_OP_ERROR(file, "fopen");
 		return;
 	}
 
-	textview_show_part(textview, mimeinfo, fp);
+	if (prefs_common.force_charset)
+		charset = prefs_common.force_charset;
+	else if (mimeinfo->charset)
+		charset = mimeinfo->charset;
+	textview_set_font(textview, charset);
+	textview_clear(textview);
+	textview->body_pos = 0;
+	textview->cur_pos  = 0;
+
+	gtk_stext_freeze(text);
+
+	if (fseek(fp, mimeinfo->fpos, SEEK_SET) < 0) perror("fseek");
+	headers = textview_scan_header(textview, fp);
+	if (headers) {
+		textview_show_header(textview, headers);
+		procheader_header_array_destroy(headers);
+		textview->body_pos = gtk_stext_get_length(text);
+	}
+
+	while (mimeinfo != NULL) {
+		textview_add_part(textview, mimeinfo, fp);
+		if (mimeinfo->parent && mimeinfo->parent->content_type &&
+		    !strcasecmp(mimeinfo->parent->content_type,
+				"multipart/alternative"))
+			mimeinfo = mimeinfo->parent->next;
+		else
+			mimeinfo = procmime_mimeinfo_next(mimeinfo);
+	}
+
+	gtk_stext_thaw(text);
 
 	fclose(fp);
 }
 
 void textview_show_part(TextView *textview, MimeInfo *mimeinfo, FILE *fp)
 {
-	GtkSText *text;
+	GtkSText *text = GTK_STEXT(textview->text);
 	gchar buf[BUFFSIZE];
 	const gchar *boundary = NULL;
 	gint boundary_len = 0;
 	const gchar *charset = NULL;
-	FILE *tmpfp;
 	GPtrArray *headers = NULL;
 	CodeConverter *conv;
 
 	g_return_if_fail(mimeinfo != NULL);
 	g_return_if_fail(fp != NULL);
 
-	if (mimeinfo->mime_type == MIME_MULTIPART) {
-		if (mimeinfo->sub) {
-			mimeinfo = mimeinfo->sub;
-			if (fseek(fp, mimeinfo->fpos, SEEK_SET) < 0) {
-				perror("fseek");
-				return;
-			}
-		} else
-			return;
-	}
+	if (mimeinfo->mime_type == MIME_MULTIPART) return;
+
 	if (mimeinfo->parent && mimeinfo->parent->boundary) {
 		boundary = mimeinfo->parent->boundary;
 		boundary_len = strlen(boundary);
 	}
 
-	if (!boundary && (mimeinfo->mime_type == MIME_TEXT || mimeinfo->mime_type == MIME_TEXT_HTML || mimeinfo->mime_type == MIME_TEXT_ENRICHED)) {
+	if (!boundary && (mimeinfo->mime_type == MIME_TEXT || 
+			  mimeinfo->mime_type == MIME_TEXT_HTML || 
+			  mimeinfo->mime_type == MIME_TEXT_ENRICHED)) {
 	
 		if (fseek(fp, mimeinfo->fpos, SEEK_SET) < 0)
 			perror("fseek");
@@ -370,10 +412,7 @@ void textview_show_part(TextView *textview, MimeInfo *mimeinfo, FILE *fp)
 		charset = mimeinfo->charset;
 	textview_set_font(textview, charset);
 
-	conv = conv_code_converter_new(charset);
-
 	textview_clear(textview);
-	text = GTK_STEXT(textview->text);
 	gtk_stext_freeze(text);
 
 	textview->body_pos = 0;
@@ -381,32 +420,86 @@ void textview_show_part(TextView *textview, MimeInfo *mimeinfo, FILE *fp)
 
 	if (headers) {
 		textview_show_header(textview, headers);
+		gtk_stext_insert(text, NULL, NULL, NULL, "\n", 1);
 		procheader_header_array_destroy(headers);
+		textview->body_pos = gtk_stext_get_length(text);
 	}
 
-/* #if 0 */
-	tmpfp = procmime_decode_content(NULL, fp, mimeinfo);
-
-	if (tmpfp) {
-		if (mimeinfo->mime_type == MIME_TEXT_HTML)
-			textview_show_html(textview, tmpfp, conv);
-		else if (mimeinfo->mime_type == MIME_TEXT_ENRICHED)
-			textview_show_ertf(textview, tmpfp, conv);
-		else
-			while (fgets(buf, sizeof(buf), tmpfp) != NULL)
-				textview_write_line(textview, buf, conv);
-		fclose(tmpfp);
-	}
-/* #else
-	tmpfp = procmime_get_text_content(mimeinfo, fp);
-
-	while (fgets(buf, sizeof(buf), tmpfp) != NULL)
-		textview_write_line(textview, buf, conv);
-
-	fclose(tmpfp);
-#endif */
-
+	conv = conv_code_converter_new(charset);
+	textview_write_body(textview, mimeinfo, fp, conv);
 	conv_code_converter_destroy(conv);
+
+	gtk_stext_thaw(text);
+}
+
+static void textview_add_part(TextView *textview, MimeInfo *mimeinfo, FILE *fp)
+{
+	GtkSText *text = GTK_STEXT(textview->text);
+	gchar buf[BUFFSIZE];
+	const gchar *boundary = NULL;
+	gint boundary_len = 0;
+	const gchar *charset = NULL;
+	GPtrArray *headers = NULL;
+	CodeConverter *conv;
+
+	g_return_if_fail(mimeinfo != NULL);
+	g_return_if_fail(fp != NULL);
+
+	if (mimeinfo->mime_type == MIME_MULTIPART) return;
+
+	if (fseek(fp, mimeinfo->fpos, SEEK_SET) < 0) {
+		perror("fseek");
+		return;
+	}
+
+	if (mimeinfo->parent && mimeinfo->parent->boundary) {
+		boundary = mimeinfo->parent->boundary;
+		boundary_len = strlen(boundary);
+	}
+
+	while (fgets(buf, sizeof(buf), fp) != NULL)
+		if (buf[0] == '\r' || buf[0] == '\n') break;
+
+	if (mimeinfo->mime_type == MIME_MESSAGE_RFC822) {
+		headers = textview_scan_header(textview, fp);
+		if (headers) {
+			gtk_stext_insert(text, NULL, NULL, NULL, "\n", 1);
+			textview_show_header(textview, headers);
+			procheader_header_array_destroy(headers);
+		}
+		return;
+	}
+
+	gtk_stext_freeze(text);
+
+	if (mimeinfo->filename || mimeinfo->name)
+		g_snprintf(buf, sizeof(buf), "\n[%s  %s (%d bytes)]\n",
+			   mimeinfo->filename ? mimeinfo->filename :
+			   mimeinfo->name,
+			   mimeinfo->content_type, mimeinfo->size);
+	else
+		g_snprintf(buf, sizeof(buf), "\n[%s (%d bytes)]\n",
+			   mimeinfo->content_type, mimeinfo->size);
+
+	if (mimeinfo->mime_type != MIME_TEXT &&
+	    mimeinfo->mime_type != MIME_TEXT_HTML &&
+	    mimeinfo->mime_type != MIME_TEXT_ENRICHED) {
+		gtk_stext_insert(text, NULL, NULL, NULL, buf, -1);
+	} else {
+		if (!mimeinfo->main &&
+		    mimeinfo->parent &&
+		    mimeinfo->parent->children != mimeinfo)
+			gtk_stext_insert(text, NULL, NULL, NULL, buf, -1);
+		else
+			gtk_stext_insert(text, NULL, NULL, NULL, "\n", 1);
+		if (prefs_common.force_charset)
+			charset = prefs_common.force_charset;
+		else if (mimeinfo->charset)
+			charset = mimeinfo->charset;
+		conv = conv_code_converter_new(charset);
+		textview_write_body(textview, mimeinfo, fp, conv);
+		conv_code_converter_destroy(conv);
+	}
 
 	gtk_stext_thaw(text);
 }
@@ -467,6 +560,25 @@ void textview_show_signature_part(TextView *textview, MimeInfo *partinfo)
 #endif /* USE_GPGME */
 
 #undef TEXT_INSERT
+
+static void textview_write_body(TextView *textview, MimeInfo *mimeinfo,
+				FILE *fp, CodeConverter *conv)
+{
+	FILE *tmpfp;
+	gchar buf[BUFFSIZE];
+
+	tmpfp = procmime_decode_content(NULL, fp, mimeinfo);
+	if (tmpfp) {
+		if (mimeinfo->mime_type == MIME_TEXT_HTML)
+			textview_show_html(textview, tmpfp, conv);
+		else if (mimeinfo->mime_type == MIME_TEXT_ENRICHED)
+			textview_show_ertf(textview, tmpfp, conv);
+		else
+			while (fgets(buf, sizeof(buf), tmpfp) != NULL)
+				textview_write_line(textview, buf, conv);
+		fclose(tmpfp);
+	}
+}
 
 static void textview_show_html(TextView *textview, FILE *fp,
 			       CodeConverter *conv)
@@ -750,6 +862,7 @@ static void textview_make_clickable_parts(TextView *textview,
 	static struct table parser[] = {
 		{"http://",  strcasestr, get_uri_part,   make_uri_string},
 		{"https://", strcasestr, get_uri_part,   make_uri_string},
+		{"www.",     strcasestr, get_uri_part,	 make_uri_string},
 		{"ftp://",   strcasestr, get_uri_part,   make_uri_string},
 		{"mailto:",  strcasestr, get_uri_part,   make_uri_string},
 		{"@",        strcasestr, get_email_part, make_email_string}
@@ -843,6 +956,7 @@ static void textview_write_link(TextView *textview, const gchar *url,
 
     /* this part is taken from textview_write_line. Right now the only place
      * that calls this function passes NULL for conv, but you never know. */
+#if 0
     if (!conv)
 	    strncpy2(buf, str, sizeof(buf));
     else if (conv_convert(conv, buf, sizeof(buf), str) < 0) {
@@ -853,6 +967,7 @@ static void textview_write_link(TextView *textview, const gchar *url,
 		            -1);
 	    return;
     }
+#endif
 
     /* this part is based on the code in make_clickable_parts */
     if (prefs_common.enable_color) {
@@ -875,6 +990,7 @@ static void textview_write_line(TextView *textview, const gchar *str,
 	GdkColor *fg_color;
 	gint quotelevel = -1;
 
+#if 0
 	if (!conv)
 		strncpy2(buf, str, sizeof(buf));
 	else if (conv_convert(conv, buf, sizeof(buf), str) < 0) {
@@ -885,6 +1001,9 @@ static void textview_write_line(TextView *textview, const gchar *str,
 				-1);
 		return;
 	}
+#endif
+	if (!conv || conv_convert(conv, buf, sizeof(buf), str) < 0)
+		strncpy2(buf, str, sizeof(buf));
 
 	strcrchomp(buf);
 	if (prefs_common.conv_mb_alnum) conv_mb_alnum(buf);
@@ -946,11 +1065,8 @@ void textview_destroy(TextView *textview)
 	if (!textview->scrolledwin_mb->parent)
 		gtk_widget_destroy(textview->scrolledwin_mb);
 
-	if (textview->msgfont) {
-		textview->msgfont->ascent = textview->prev_ascent;
-		textview->msgfont->descent = textview->prev_descent;
+	if (textview->msgfont)
 		gdk_font_unref(textview->msgfont);
-	}
 	if (textview->boldfont)
 		gdk_font_unref(textview->boldfont);
 
@@ -1007,39 +1123,57 @@ void textview_set_font(TextView *textview, const gchar *codeset)
 	}
 
 	if (prefs_common.textfont) {
-		if (textview->msgfont) {
-			textview->msgfont->ascent = textview->prev_ascent;
-			textview->msgfont->descent = textview->prev_descent;
-			gdk_font_unref(textview->msgfont);
-			textview->msgfont = NULL;
-		}
-		if (use_fontset)
-			textview->msgfont =
-				gdk_fontset_load(prefs_common.textfont);
-		else {
+		GdkFont *font;
+
+		if (use_fontset) {
+			if (text_mb_font) {
+				text_mb_font->ascent = text_mb_font_orig_ascent;
+				text_mb_font->descent = text_mb_font_orig_descent;
+			}
+			font = gdk_fontset_load(prefs_common.textfont);
+			if (font && text_mb_font != font) {
+				if (text_mb_font)
+					gdk_font_unref(text_mb_font);
+				text_mb_font = font;
+				text_mb_font_orig_ascent = font->ascent;
+				text_mb_font_orig_descent = font->descent;
+			}
+		} else {
+			if (text_sb_font) {
+				text_sb_font->ascent = text_sb_font_orig_ascent;
+				text_sb_font->descent = text_sb_font_orig_descent;
+			}
 			if (MB_CUR_MAX > 1) {
-				FONT_LOAD(textview->msgfont,
-					  "-*-courier-medium-r-normal--14-*-*-*-*-*-iso8859-1");
+				FONT_LOAD(font, "-*-courier-medium-r-normal--14-*-*-*-*-*-iso8859-1");
 			} else {
-				FONT_LOAD(textview->msgfont,
-					  prefs_common.textfont);
+				FONT_LOAD(font, prefs_common.textfont);
+			}
+			if (font && text_sb_font != font) {
+				if (text_sb_font)
+					gdk_font_unref(text_sb_font);
+				text_sb_font = font;
+				text_sb_font_orig_ascent = font->ascent;
+				text_sb_font_orig_descent = font->descent;
 			}
 		}
 
-		if (textview->msgfont) {
+		if (font) {
 			gint ascent, descent;
 
-			textview->prev_ascent = textview->msgfont->ascent;
-			textview->prev_descent = textview->msgfont->descent;
 			descent = prefs_common.line_space / 2;
 			ascent  = prefs_common.line_space - descent;
-			textview->msgfont->ascent  += ascent;
-			textview->msgfont->descent += descent;
+			font->ascent  += ascent;
+			font->descent += descent;
+
+			if (textview->msgfont)
+				gdk_font_unref(textview->msgfont);
+			textview->msgfont = font;
+			gdk_font_ref(font);
 		}
 	}
 
-	if (!textview->boldfont)
-		FONT_LOAD(textview->boldfont, BOLD_FONT);
+	if (!textview->boldfont && prefs_common.boldfont)
+		FONT_LOAD(textview->boldfont, prefs_common.boldfont);
 	if (!spacingfont)
 		spacingfont = gdk_font_load("-*-*-medium-r-normal--6-*");
 }
@@ -1171,9 +1305,7 @@ static void textview_show_header(TextView *textview, GPtrArray *headers)
 		gtk_stext_insert(text, textview->msgfont, NULL, NULL, "\n", 1);
 	}
 
-	gtk_stext_insert(text, textview->msgfont, NULL, NULL, "\n", 1);
 	gtk_stext_thaw(text);
-	textview->body_pos = gtk_stext_get_length(text);
 }
 
 gboolean textview_search_string(TextView *textview, const gchar *str,
