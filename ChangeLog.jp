@@ -1,3 +1,12 @@
+2001-11-12
+
+	* src/compose.c: compose_forward(): 転送時の引用符を使用していな
+	  かったバグを修正(岩根さん thanks)。
+	* src/codeconv.[ch]
+	  src/mainwindow.c
+	  src/prefs_common.c: タイ語のエンコーディングを追加(Manrat
+	  Chobchuen さん thanks)。
+
 2001-11-08
 
 	* src/socket.c: sock_connect_by_hostname(): h_errno を削除。

@@ -1,3 +1,12 @@
+2001-11-12
+
+	* src/compose.c: compose_forward(): fixed a bug that forward
+	  quote mark wasn't used (thanks to Hironori IWANE).
+	* src/codeconv.[ch]
+	  src/mainwindow.c
+	  src/prefs_common.c: added Thai encodings (thanks to Manrat
+	  Chobchuen).
+
 2001-11-08
 
 	* src/socket.c: sock_connect_by_hostname(): removed h_errno.
