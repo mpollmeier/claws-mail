@@ -21,19 +21,17 @@
 #  include "config.h"
 #endif
 
-#if USE_SSL
+#if USE_OPENSSL
 
 #include <openssl/ssl.h>
 #include <glib.h>
 #include "ssl_certificate.h"
-#include "alertpanel.h"
 #include "utils.h"
 #include "intl.h"
-#include "prefs_common.h"
-#include "socket.h"
 #include "log.h"
+#include "socket.h"
+#include "hooks.h"
 
-static char *ssl_certificate_check_signer (X509 *cert); 
 static SSLCertificate *ssl_certificate_new_lookup(X509 *x509_cert, gchar *host, gushort port, gboolean lookup);
 
 static char * get_fqdn(char *host)
@@ -50,7 +48,7 @@ static char * get_fqdn(char *host)
 		return g_strdup(hp->h_name);
 }
 
-static char * readable_fingerprint(unsigned char *src, int len) 
+char * readable_fingerprint(unsigned char *src, int len) 
 {
 	int i=0;
 	char * ret;
@@ -115,7 +113,7 @@ static void ssl_certificate_save (SSLCertificate *cert)
 	fp = fopen(file, "wb");
 	if (fp == NULL) {
 		g_free(file);
-		alertpanel_error(_("Can't save certificate !"));
+		debug_print("Can't save certificate !\n");
 		return;
 	}
 	i2d_X509_fp(fp, cert->x509_cert);
@@ -293,12 +291,11 @@ static gboolean ssl_certificate_compare (SSLCertificate *cert_a, SSLCertificate 
 		return FALSE;
 }
 
-static char *ssl_certificate_check_signer (X509 *cert) 
+char *ssl_certificate_check_signer (X509 *cert) 
 {
 	X509_STORE_CTX store_ctx;
 	X509_STORE *store;
 	int ok = 0;
-	char *cert_file = NULL;
 	char *err_msg = NULL;
 
 	store = X509_STORE_new();
@@ -306,20 +303,14 @@ static char *ssl_certificate_check_signer (X509 *cert)
 		printf("Can't create X509_STORE\n");
 		return NULL;
 	}
-	if (X509_STORE_set_default_paths(store)) 
-		ok++;
-	if (X509_STORE_load_locations(store, cert_file, NULL))
-		ok++;
-
-	if (ok == 0) {
+	if (!X509_STORE_set_default_paths(store)) {
 		X509_STORE_free (store);
 		return g_strdup(_("Can't load X509 default paths"));
 	}
 	
 	X509_STORE_CTX_init (&store_ctx, store, cert, NULL);
-	ok = X509_verify_cert (&store_ctx);
-	
-	if (ok == 0) {
+
+	if(!X509_verify_cert (&store_ctx)) {
 		err_msg = g_strdup(X509_verify_cert_error_string(
 					X509_STORE_CTX_get_error(&store_ctx)));
 		debug_print("Can't check signer: %s\n", err_msg);
@@ -337,7 +328,8 @@ gboolean ssl_certificate_check (X509 *x509_cert, gchar *host, gushort port)
 {
 	SSLCertificate *current_cert = ssl_certificate_new(x509_cert, host, port);
 	SSLCertificate *known_cert;
-
+	SSLCertHookData cert_hook_data;
+	
 	if (current_cert == NULL) {
 		debug_print("Buggy certificate !\n");
 		return FALSE;
@@ -346,11 +338,11 @@ gboolean ssl_certificate_check (X509 *x509_cert, gchar *host, gushort port)
 	known_cert = ssl_certificate_find (host, port);
 
 	if (known_cert == NULL) {
-		gint val;
 		gchar *err_msg, *cur_cert_str, *sig_status;
 		
 		sig_status = ssl_certificate_check_signer(x509_cert);
 
+#if 0 /* disabled pref for now */
 		if (sig_status == NULL && !prefs_common.ssl_ask_unknown_valid) {
 			/* trust and accept silently if hostnames match */
 			char *buf; /* don't free buf ! */
@@ -363,7 +355,7 @@ gboolean ssl_certificate_check (X509 *x509_cert, gchar *host, gushort port)
 					return TRUE;		
 				}
 		}
-
+#endif
 		g_free(sig_status);
 
 		cur_cert_str = ssl_certificate_to_string(current_cert);
@@ -373,6 +365,7 @@ gboolean ssl_certificate_check (X509 *x509_cert, gchar *host, gushort port)
 					  cur_cert_str);
 		g_free (cur_cert_str);
 
+#if 0 /* disabled for now */
 		if (prefs_common.no_recv_err_panel) {
 			log_error(_("%s\n\nMail won't be retrieved on this account until you save the certificate.\n(Uncheck the \"%s\" preference).\n"),
 					err_msg,
@@ -380,24 +373,25 @@ gboolean ssl_certificate_check (X509 *x509_cert, gchar *host, gushort port)
 			g_free(err_msg);
 			return FALSE;
 		}
-		 
-		val = alertpanel(_("Warning"),
-			       err_msg,
-			       _("Accept and save"), _("Cancel connection"), NULL);
+#endif
+		cert_hook_data.cert = current_cert;
+		cert_hook_data.old_cert = NULL;
+		cert_hook_data.accept = FALSE;
+		
+		hooks_invoke(SSLCERT_ASK_HOOKLIST, &cert_hook_data);
+		
 		g_free(err_msg);
 
-		switch (val) {
-			case G_ALERTALTERNATE:
-				ssl_certificate_destroy(current_cert);
-				return FALSE;
-			default:
-				ssl_certificate_save(current_cert);
-				ssl_certificate_destroy(current_cert);
-				return TRUE;
+		if (!cert_hook_data.accept) {
+			ssl_certificate_destroy(current_cert);
+			return FALSE;
+		} else {
+			ssl_certificate_save(current_cert);
+			ssl_certificate_destroy(current_cert);
+			return TRUE;
 		}
 	}
 	else if (!ssl_certificate_compare (current_cert, known_cert)) {
-		gint val;
 		gchar *err_msg, *known_cert_str, *cur_cert_str;
 		
 		known_cert_str = ssl_certificate_to_string(known_cert);
@@ -409,6 +403,7 @@ gboolean ssl_certificate_check (X509 *x509_cert, gchar *host, gushort port)
 		g_free (cur_cert_str);
 		g_free (known_cert_str);
 
+#if 0
 		if (prefs_common.no_recv_err_panel) {
 			log_error(_("%s\n\nMail won't be retrieved on this account until you save the certificate.\n(Uncheck the \"%s\" preference).\n"),
 					err_msg,
@@ -416,22 +411,24 @@ gboolean ssl_certificate_check (X509 *x509_cert, gchar *host, gushort port)
 			g_free(err_msg);
 			return FALSE;
 		}
-
-		val = alertpanel(_("Warning"),
-			       err_msg,
-			       _("Accept and save"), _("Cancel connection"), NULL);
+#endif
+		cert_hook_data.cert = current_cert;
+		cert_hook_data.old_cert = known_cert;
+		cert_hook_data.accept = FALSE;
+		
+		hooks_invoke(SSLCERT_ASK_HOOKLIST, &cert_hook_data);
+		
 		g_free(err_msg);
 
-		switch (val) {
-			case G_ALERTALTERNATE:
-				ssl_certificate_destroy(current_cert);
-				ssl_certificate_destroy(known_cert);
-				return FALSE;
-			default:
-				ssl_certificate_save(current_cert);
-				ssl_certificate_destroy(current_cert);
-				ssl_certificate_destroy(known_cert);
-				return TRUE;
+		if (!cert_hook_data.accept) {
+			ssl_certificate_destroy(current_cert);
+			ssl_certificate_destroy(known_cert);
+			return FALSE;
+		} else {
+			ssl_certificate_save(current_cert);
+			ssl_certificate_destroy(current_cert);
+			ssl_certificate_destroy(known_cert);
+			return TRUE;
 		}
 	}
 
@@ -440,4 +437,4 @@ gboolean ssl_certificate_check (X509 *x509_cert, gchar *host, gushort port)
 	return TRUE;
 }
 
-#endif /* USE_SSL */
+#endif /* USE_OPENSSL */

@@ -21,7 +21,7 @@
 #define __NNTP_H__
 
 #include "socket.h"
-#if USE_SSL
+#if USE_OPENSSL
 #  include "ssl.h"
 #endif
 
@@ -52,7 +52,7 @@ struct _NNTPSockInfo
 #define NNTPBUFSIZE	8192
 #endif
 
-#if USE_SSL
+#if USE_OPENSSL
 NNTPSockInfo *nntp_open		(const gchar	*server,
 				 gushort	 port,
 				 gchar		*buf,

@@ -24,11 +24,13 @@
 #  include "config.h"
 #endif
 
-#if USE_SSL
+#if USE_OPENSSL
 
 #include <openssl/ssl.h>
 #include <openssl/objects.h>
 #include <glib.h>
+
+#define SSLCERT_ASK_HOOKLIST "sslcert_ask"
 
 typedef struct _SSLCertificate SSLCertificate;
 
@@ -39,12 +41,23 @@ struct _SSLCertificate
 	gushort port;
 };
 
+typedef struct _SSLCertHookData SSLCertHookData;
+
+struct _SSLCertHookData
+{
+	SSLCertificate *cert;
+	SSLCertificate *old_cert;
+	gboolean accept;
+};
+
 SSLCertificate *ssl_certificate_find (gchar *host, gushort port);
 SSLCertificate *ssl_certificate_find_lookup (gchar *host, gushort port, gboolean lookup);
 gboolean ssl_certificate_check (X509 *x509_cert, gchar *host, gushort port);
 char* ssl_certificate_to_string(SSLCertificate *cert);
 void ssl_certificate_destroy(SSLCertificate *cert);
 void ssl_certificate_delete_from_disk(SSLCertificate *cert);
+char * readable_fingerprint(unsigned char *src, int len);
+char *ssl_certificate_check_signer (X509 *cert);
 
-#endif /* USE_SSL */
+#endif /* USE_OPENSSL */
 #endif /* SSL_CERTIFICATE_H */

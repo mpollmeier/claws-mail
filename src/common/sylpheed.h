@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2001 Hiroyuki Yamamoto
+ * Copyright (C) 1999,2000 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,13 +17,4 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef SSL_MANAGER_H
-#define SSL_MANAGER_H
-#ifdef USE_OPENSSL
-#include "mainwindow.h"
-
-void ssl_manager_create (void); 
-void ssl_manager_open 	(MainWindow *mainwin); 
-
-#endif
-#endif
+gboolean sylpheed_init	(int *argc, char ***argv);

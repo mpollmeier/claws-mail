@@ -31,9 +31,8 @@
 #include <ctype.h>
 
 #include "intl.h"
-#include "main.h"
-#include "template.h"
 #include "utils.h"
+#include "template.h"
 
 static GSList *template_list;
 
@@ -174,7 +173,7 @@ void template_write_config(GSList *tmpl_list)
 
 	if (!is_dir_exist(path)) {
 		if (is_file_exist(path)) {
-			g_warning(_("file %s already exists\n"), path);
+			g_warning("file %s already exists\n", path);
 			return;
 		}
 		if (make_dir(path) < 0)

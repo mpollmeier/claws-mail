@@ -17,13 +17,26 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef SSL_MANAGER_H
-#define SSL_MANAGER_H
-#ifdef USE_OPENSSL
-#include "mainwindow.h"
+#ifndef __SSL_CERTWINDOW_H__
+#define __SSL_CERTWINDOW_H__
 
-void ssl_manager_create (void); 
-void ssl_manager_open 	(MainWindow *mainwin); 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
 
-#endif
-#endif
+#if USE_OPENSSL
+
+#include <openssl/ssl.h>
+#include <openssl/objects.h>
+#include <glib.h>
+#include <gtk/gtk.h>
+#include "../common/ssl_certificate.h"
+
+GtkWidget *cert_presenter(SSLCertificate *cert);
+void sslcertwindow_show_cert(SSLCertificate *cert);
+void sslcertwindow_register_hook(void);
+gboolean sslcertwindow_ask_new_cert(SSLCertificate *cert);
+gboolean sslcertwindow_ask_changed_cert(SSLCertificate *old_cert, SSLCertificate *new_cert);
+
+#endif /* USE_SSL */
+#endif /* __SSL_CERTWINDOW_H__ */
