@@ -159,7 +159,8 @@ static GtkWidget *compose_account_option_menu_create
 						(Compose	*compose);
 static void compose_set_template_menu		(Compose	*compose);
 static void compose_template_apply		(Compose	*compose,
-						 Template	*tmpl);
+						 Template	*tmpl,
+						 gboolean	 replace);
 static void compose_destroy			(Compose	*compose);
 
 static void compose_entries_set			(Compose	*compose,
@@ -4925,8 +4926,8 @@ void compose_reflect_prefs_pixmap_theme(void)
 	}
 }
 
-
-static void compose_template_apply(Compose *compose, Template *tmpl)
+static void compose_template_apply(Compose *compose, Template *tmpl,
+				   gboolean replace)
 {
 	gchar *qmark;
 	gchar *parsed_str;
@@ -4941,7 +4942,8 @@ static void compose_template_apply(Compose *compose, Template *tmpl)
 	if (tmpl->to && *tmpl->to != '\0')
 		compose_entry_append(compose, tmpl->to, COMPOSE_TO);
 
-	gtk_stext_clear(GTK_STEXT(compose->text));
+	if (replace)
+		gtk_stext_clear(GTK_STEXT(compose->text));
 
 	if (compose->replyinfo == NULL) {
 		MsgInfo dummyinfo;
@@ -4959,8 +4961,16 @@ static void compose_template_apply(Compose *compose, Template *tmpl)
 					       tmpl->value, qmark, NULL);
 	}
 
-	if (parsed_str && prefs_common.auto_sig)
+	if (replace && parsed_str && prefs_common.auto_sig)
 		compose_insert_sig(compose);
+
+	if (replace && parsed_str) {
+		gtk_editable_set_position(GTK_EDITABLE(compose->text), 0);
+		gtk_stext_set_point(GTK_STEXT(compose->text), 0);
+	}
+
+	if (parsed_str)
+		compose_changed_cb(NULL, compose);
 
 	gtk_stext_thaw(GTK_STEXT(compose->text));
 }
@@ -6085,11 +6095,22 @@ static void compose_template_activate_cb(GtkWidget *widget, gpointer data)
 {
 	Compose *compose = (Compose *)data;
 	Template *tmpl;
+	gchar *msg;
+	AlertValue val;
 
 	tmpl = gtk_object_get_data(GTK_OBJECT(widget), "template");
 	g_return_if_fail(tmpl != NULL);
 
-	compose_template_apply(compose, tmpl);
+	msg = g_strdup_printf(_("Do you want to apply the template `%s' ?"),
+			      tmpl->name);
+	val = alertpanel(_("Apply template"), msg,
+			 _("Replace"), _("Insert"), _("Cancel"));
+	g_free(msg);
+
+	if (val == G_ALERTDEFAULT)
+		compose_template_apply(compose, tmpl, TRUE);
+	else if (val == G_ALERTALTERNATE)
+		compose_template_apply(compose, tmpl, FALSE);
 }
 
 static void compose_ext_editor_cb(gpointer data, guint action,

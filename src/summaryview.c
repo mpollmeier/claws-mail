@@ -4052,6 +4052,12 @@ void summary_filter_open(SummaryView *summaryview, PrefsFilterType type)
 		break;
 	}
 
+	/*
+	 * NOTE: key may be allocated on the stack, so 
+	 * prefs_filter[ing]_open() should have completed 
+	 * and have set entries. Otherwise we're hosed.  
+	 */
+
 	if (global_processing)
 		prefs_filtering_open(NULL, header, key);
 	else
@@ -5270,6 +5276,23 @@ void summary_reflect_prefs_pixmap_theme(SummaryView *summaryview)
 	folderview_select(summaryview->folderview, summaryview->folder_item);
 }
 
+/*
+ * Gather addresses for selected messages in summary view.
+ */
+void summary_gather_address( SummaryView *summaryview ) {
+	GtkCTree *ctree = GTK_CTREE( summaryview->ctree );
+	GList *cur;
+	GList *msgList;
+	MsgInfo *msginfo;
+
+	msgList = NULL;
+	for( cur = GTK_CLIST(ctree)->selection; cur != NULL; cur = cur->next ) {
+		msginfo = gtk_ctree_node_get_row_data( ctree, GTK_CTREE_NODE(cur->data) );
+		msgList = g_list_append( msgList, GUINT_TO_POINTER( msginfo->msgnum ) );
+	}
+	addressbook_gather( summaryview->folder_item, msgList );
+	g_list_free( msgList );
+}
 
 /*
  * End of Source.
