@@ -34,6 +34,8 @@
 #include "alertpanel.h"
 #include "passphrase.h"
 #include "intl.h"
+#include "prefs_gpg.h"
+#include "select-keys.h"
 
 static void idle_function_for_gpgme(void)
 {
@@ -110,20 +112,17 @@ static const gchar *get_validity_str(unsigned long validity)
 
 gchar *sgpgme_sigstat_info_short(GpgmeCtx ctx, GpgmeSigStat status)
 {
-	GpgmeKey key;
-
 	switch (status) {
 	case GPGME_SIG_STAT_GOOD:
 	{
-		unsigned long validity = 0, val, i;	
+		GpgmeKey key;
+		unsigned long validity = 0;
 	
-		if (gpgme_get_sig_key(ctx, 0, &key) != GPGME_No_Error)
-			return g_strdup(_("Error"));
-		
-		i = 0;
-		while ((val = gpgme_key_get_ulong_attr(key, GPGME_ATTR_VALIDITY, NULL, i++)) > 0)
-			if (val > validity)
-				validity = val;
+        	if (gpgme_get_sig_key(ctx, 0, &key) != GPGME_No_Error)
+                	return g_strdup(_("Error"));
+
+		validity = gpgme_get_sig_ulong_attr(ctx, 0,
+			GPGME_ATTR_VALIDITY, 0);
 		
 		return g_strdup_printf(_("Valid signature by %s (Trust: %s)"),
 			gpgme_key_get_string_attr(key, GPGME_ATTR_NAME, NULL, 0),
@@ -217,7 +216,7 @@ gchar *sgpgme_sigstat_info_full(GpgmeCtx ctx, GpgmeSigStat status)
 				format = _("Signature expires %s\n");
 			else
 				format = _("Signature expired %s\n");
-			g_string_sprintfa(siginfo, format, time);
+			g_string_sprintfa(siginfo, format, timestr);
 		}
 		
 		g_string_append(siginfo, "\n");
@@ -234,7 +233,7 @@ GpgmeData sgpgme_data_from_mimeinfo(MimeInfo *mimeinfo)
 	GpgmeData data;
 	
 	gpgme_data_new_from_filepart(&data,
-		mimeinfo->filename,
+		mimeinfo->data.filename,
 		NULL,
 		mimeinfo->offset,
 		mimeinfo->length);
@@ -242,18 +241,14 @@ GpgmeData sgpgme_data_from_mimeinfo(MimeInfo *mimeinfo)
 	return data;
 }
 
-GpgmeData sgpgme_decrypt(GpgmeData cipher)
+GpgmeData sgpgme_decrypt_verify(GpgmeData cipher, GpgmeSigStat *status, GpgmeCtx ctx)
 {
-	GpgmeCtx ctx;
 	struct passphrase_cb_info_s info;
 	GpgmeData plain;
 	GpgmeError err;
 
 	memset (&info, 0, sizeof info);
 	
-	if (gpgme_new(&ctx) != GPGME_No_Error)
-		return NULL;
-
 	if (gpgme_data_new(&plain) != GPGME_No_Error) {
 		gpgme_release(ctx);
 		return NULL;
@@ -264,8 +259,7 @@ GpgmeData sgpgme_decrypt(GpgmeData cipher)
         	gpgme_set_passphrase_cb (ctx, gpgmegtk_passphrase_cb, &info);
     	}
 
-	err = gpgme_op_decrypt(ctx, cipher, plain);
-	gpgme_release(ctx);
+	err = gpgme_op_decrypt_verify(ctx, cipher, plain, status);
 
 	if (err != GPGME_No_Error) {
 		gpgmegtk_free_passphrase();
@@ -276,6 +270,73 @@ GpgmeData sgpgme_decrypt(GpgmeData cipher)
 	return plain;
 }
 
+gchar *sgpgme_get_encrypt_data(GSList *recp_names)
+{
+
+	GpgmeRecipients recp;
+	GString *encdata;
+	void *iter;
+	const gchar *recipient;
+	gchar *data;
+
+	recp = gpgmegtk_recipient_selection(recp_names);
+	if (recp == NULL)
+		return NULL;
+
+	if (gpgme_recipients_enum_open(recp, &iter) != GPGME_No_Error) {
+		gpgme_recipients_release(recp);
+		return NULL;
+	}
+
+	encdata = g_string_sized_new(64);
+	while ((recipient = gpgme_recipients_enum_read(recp, &iter)) != NULL) {
+		if (encdata->len > 0)
+			g_string_append_c(encdata, ' ');
+		g_string_append(encdata, recipient);
+	}
+
+	gpgme_recipients_release(recp);
+
+	data = encdata->str;
+	g_string_free(encdata, FALSE);
+
+	return data;
+}
+
+gboolean sgpgme_setup_signers(GpgmeCtx ctx, PrefsAccount *account)
+{
+	GPGAccountConfig *config;
+
+	gpgme_signers_clear(ctx);
+
+	config = prefs_gpg_account_get_config(account);
+
+	if (config->sign_key != SIGN_KEY_DEFAULT) {
+		gchar *keyid;
+		GpgmeKey key;
+
+		if (config->sign_key == SIGN_KEY_BY_FROM)
+			keyid = account->address;
+		else if (config->sign_key == SIGN_KEY_CUSTOM)
+			keyid = config->sign_key_id;
+		else
+			return FALSE;
+
+		gpgme_op_keylist_start(ctx, keyid, 1);
+		while (!gpgme_op_keylist_next(ctx, &key)) {
+			debug_print("adding key: %s\n", 
+				gpgme_key_get_string_attr(key, GPGME_ATTR_KEYID, NULL, 0));
+			gpgme_signers_add(ctx, key);
+			gpgme_key_release(key);
+		}
+		gpgme_op_keylist_end(ctx);
+	}
+
+	prefs_gpg_account_free_config(config);
+
+	return TRUE;
+}
+
 void sgpgme_init()
 {
 	if (gpgme_engine_check_version(GPGME_PROTOCOL_OpenPGP) != 
@@ -284,15 +345,16 @@ void sgpgme_init()
 		debug_print("gpgme_engine_version:\n%s\n",
 			    gpgme_get_engine_info());
 
-		if (prefs_common.gpg_warning) {
+		if (prefs_gpg_get_config()->gpg_warning) {
 			AlertValue val;
 
 			val = alertpanel_message_with_disable
 				(_("Warning"),
-				 _("GnuPG is not installed properly, or needs to be upgraded.\n"
-				   "OpenPGP support disabled."));
+				 _("GnuPG is not installed properly, or needs "
+				   "to be upgraded.\n"
+				   "OpenPGP support disabled."), ALERT_WARNING);
 			if (val & G_ALERTDISABLE)
-				prefs_common.gpg_warning = FALSE;
+				prefs_gpg_get_config()->gpg_warning = FALSE;
 		}
 	}
 
@@ -302,6 +364,7 @@ void sgpgme_init()
 void sgpgme_done()
 {
         gpgmegtk_free_passphrase();
+	gpgme_register_idle(NULL);
 }
 
 #endif /* USE_GPGME */

@@ -17,7 +17,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#  include "config.h"
+#  include <config.h>
 #endif
 
 #if USE_GPGME
@@ -25,11 +25,13 @@
 #include <string.h>
 #include <sys/types.h>
 #ifndef WIN32
-# include <sys/mman.h>
-# include <gdk/gdkx.h>  /* GDK_DISPLAY() */
+#include <sys/mman.h>
 #endif
 #include <glib.h>
 #include <gdk/gdkkeysyms.h>
+#ifndef WIN32
+#include <gdk/gdkx.h>  /* GDK_DISPLAY() */
+#endif
 #include <gtk/gtkmain.h>
 #include <gtk/gtkwidget.h>
 #include <gtk/gtkwindow.h>
@@ -47,6 +49,7 @@
 #include "prefs_common.h"
 #include "manage_window.h"
 #include "utils.h"
+#include "prefs_gpg.h"
 
 static int grab_all = 0;
 
@@ -155,40 +158,39 @@ passphrase_mbox (const gchar *desc)
     
     gtk_widget_show_all(window);
 
-    if (grab_all) {
+    /* don't use XIM on entering passphrase */
+    gtkut_editable_disable_im(GTK_EDITABLE(pass_entry));
+
 #ifndef WIN32
+    if (grab_all) {
         XGrabServer(GDK_DISPLAY());
-#endif
         if ( gdk_pointer_grab ( window->window, TRUE, 0,
                                 NULL, NULL, GDK_CURRENT_TIME)) {
-#ifndef WIN32
             XUngrabServer ( GDK_DISPLAY() );
-#endif
             g_warning ("OOPS: Could not grab mouse\n");
             gtk_widget_destroy (window);
             return NULL;
         }
         if ( gdk_keyboard_grab( window->window, FALSE, GDK_CURRENT_TIME )) {
             gdk_pointer_ungrab (GDK_CURRENT_TIME);
-#ifndef WIN32
             XUngrabServer ( GDK_DISPLAY() );
-#endif
             g_warning ("OOPS: Could not grab keyboard\n");
             gtk_widget_destroy (window);
             return NULL;
         }
     }
+#endif
 
     gtk_main();
 
-    if (grab_all) {
 #ifndef WIN32
+    if (grab_all) {
         XUngrabServer (GDK_DISPLAY());
-#endif
         gdk_pointer_ungrab (GDK_CURRENT_TIME);
         gdk_keyboard_ungrab (GDK_CURRENT_TIME);
         gdk_flush();
     }
+#endif
 
     manage_window_focus_out(window, NULL, NULL);
 
@@ -302,11 +304,11 @@ gpgmegtk_passphrase_cb (void *opaque, const char *desc, void **r_hd)
         /* FIXME: cleanup by looking at *r_hd */
         return NULL;
     }
-    if (prefs_common.store_passphrase && last_pass != NULL &&
+    if (prefs_gpg_get_config()->store_passphrase && last_pass != NULL &&
         strncmp(desc, "TRY_AGAIN", 9) != 0)
         return g_strdup(last_pass);
 
-    gpgmegtk_set_passphrase_grab (prefs_common.passphrase_grab);
+    gpgmegtk_set_passphrase_grab (prefs_gpg_get_config()->passphrase_grab);
     debug_print ("%% requesting passphrase for `%s': ", desc);
     pass = passphrase_mbox (desc);
     gpgmegtk_free_passphrase();
@@ -315,15 +317,15 @@ gpgmegtk_passphrase_cb (void *opaque, const char *desc, void **r_hd)
         gpgme_cancel (ctx);
     }
     else {
-        if (prefs_common.store_passphrase) {
+        if (prefs_gpg_get_config()->store_passphrase) {
             last_pass = g_strdup(pass);
 #ifndef WIN32
             if (mlock(last_pass, strlen(last_pass)) == -1)
                 debug_print("%% locking passphrase failed");
 #endif
 
-            if (prefs_common.store_passphrase_timeout > 0) {
-                gtk_timeout_add(prefs_common.store_passphrase_timeout*60*1000,
+            if (prefs_gpg_get_config()->store_passphrase_timeout > 0) {
+                gtk_timeout_add(prefs_gpg_get_config()->store_passphrase_timeout*60*1000,
                                 free_passphrase, NULL);
             }
         }

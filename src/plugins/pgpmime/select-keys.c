@@ -17,7 +17,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#  include "config.h"
+#  include <config.h>
 #endif
 
 #ifdef USE_GPGME
@@ -486,7 +486,7 @@ cmp_attr (gconstpointer pa, gconstpointer pb, GpgmeAttr attr)
         return !!sb;
     if (!sb)
         return -1;
-    return strcasecmp(sa, sb);
+    return g_strcasecmp(sa, sb);
 }
 
 static gint 
