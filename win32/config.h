@@ -3,7 +3,7 @@
  */
 
 /* Define if you use PSPELL to support spell checking */
-/* #define USE_ASPELL 1 */
+#define USE_ASPELL 1
 
 /* GPGME has no VC project * Define if you use GPGME to support OpenPGP */
 #define USE_GPGME 1
@@ -39,7 +39,7 @@
 /* #undef USE_LDAP */
 
 /* Define if you use gdk-pixbuf to support image viewer */
-/* #undef HAVE_GDK_PIXBUF */
+#define HAVE_GDK_PIXBUF 1
 
 /* Define if you use gdk_imlib to support image viewer */
 /* #undef HAVE_GDK_IMLIB */

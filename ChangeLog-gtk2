@@ -1,3 +1,31 @@
+2004-01-25 Thorsten Maerz <torte@netztorte.de>
+	* src/gtk/gtkaspell.[ch]
+	  src/compose.c
+		reimplement spellchecker
+
+2004-01-25 Thorsten Maerz <torte@netztorte.de>
+	* src/gtk/filesel.c
+		crash when inserting file in compose window
+		(TODO: keep old selection on clicks)
+	* src/main.c
+		use gtkrc-2.0 instead of gtkrc
+
+2004-01-25 Thorsten Maerz <torte@netztorte.de>
+	* src/messageview.c
+		remove orphaned mimeview unref()
+
+2004-01-20 Thorsten Maerz <torte@netztorte.de>
+	* src/grouplistdialog.c
+		expand nodes containing subscribed groups
+
+2004-01-19 Thorsten Maerz <torte@netztorte.de>
+	* src/textview.c
+		textview: hide cursor, restore old click behaviour
+
+2004-01-18 Thorsten Maerz <torte@netztorte.de>
+	* src/textview.c
+		variable names messed up
+
 2004-01-17 Colin Leroy <colin@colino.net>
 	* src/addr_compl.c
 		Fix completion address too thin
