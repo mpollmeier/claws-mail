@@ -1,5 +1,5 @@
 dnl Autoconf macros for libpspell
-dnl $Id: pspell.m4,v 1.1 2001-09-18 16:11:48 mhadasht Exp $
+dnl $Id: pspell.m4,v 1.2 2001-09-21 18:59:10 mhadasht Exp $
 
 # Configure paths for PSPELL
 # Shamelessly stolen from the one of GPGME by Werner Koch 
@@ -43,7 +43,6 @@ dnl
     PSPELL_CFLAGS="-I$pspell_includes"
     PSPELL_LIBS="-L$pspell_libs -lpspell"
     pspell_config_version=`$PSPELL_CONFIG version`
-    PSPELL_PATH=`$PSPELL_CONFIG pkgdatadir`
     if test "x$enable_pspelltest" = "xyes" ; then
       ac_save_CFLAGS="$CFLAGS"
       ac_save_LIBS="$LIBS"
@@ -131,7 +130,6 @@ echo "*** pspell-config script: $PSPELL_CONFIG"
   fi
   AC_SUBST(PSPELL_CFLAGS)
   AC_SUBST(PSPELL_LIBS)
-  AC_SUBST(PSPELL_PATH)
   rm -f conf.pspelltest
 ])
 
