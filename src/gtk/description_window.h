@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2002 Hiroyuki Yamamoto and the Sylpheed-Claws Team
+ * Copyright (C) 1999-2001 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,31 +17,22 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef PREFSWINDOW_H
-#define PREFSWINDOW_H 1
+#ifndef _DESCRIPTION_WINDOW_H
+#define _DESCRIPTION_WINDOW_H
 
-#include <glib.h>
-#include <gtk/gtk.h>
+typedef struct _DescriptionWindow DescriptionWindow;
 
-typedef struct _PrefsPage PrefsPage;
-
-typedef void (*PrefsCreateWidgetFunc) (PrefsPage *, gpointer);
-typedef void (*PrefsDestroyWidgetFunc) (PrefsPage *);
-typedef void (*PrefsSavePageFunc) (PrefsPage *);
-typedef void (*PrefsDestroyPageFunc) (PrefsPage *);
-
-struct _PrefsPage
+struct _DescriptionWindow
 {
-	gchar *path;
-	gboolean page_open;
-	GtkWidget *widget;
-
-	PrefsCreateWidgetFunc create_widget;
-	PrefsDestroyWidgetFunc destroy_widget;
-	PrefsSavePageFunc save_page;
-	PrefsDestroyPageFunc destroy_page;
+	GtkWidget 	* window;
+	/** Number of columns for each line of data **/
+	int		  columns;
+	/** title of the window **/
+	gchar		* title;
+	/** points to the table of strings to be show in the window */
+	gchar 		** symbol_table;
 };
 
-void prefswindow_open			();
+void description_window_create(DescriptionWindow *dwindow);
 
-#endif
+#endif /* _DESCRIPTION_WINDOW_H */
