@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2001 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2002 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,26 +17,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef __SSL_CERTWINDOW_H__
-#define __SSL_CERTWINDOW_H__
+#ifndef __QUOTED_PRINTABLE_H__
+#define __QUOTED_PRINTABLE_H__
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
-
-#if USE_OPENSSL
-
-#include <openssl/ssl.h>
-#include <openssl/objects.h>
 #include <glib.h>
-#include <gtk/gtk.h>
-#include "ssl_certificate.h"
 
-GtkWidget *cert_presenter(SSLCertificate *cert);
-void sslcertwindow_show_cert(SSLCertificate *cert);
-void sslcertwindow_register_hook(void);
-gboolean sslcertwindow_ask_new_cert(SSLCertificate *cert);
-gboolean sslcertwindow_ask_changed_cert(SSLCertificate *old_cert, SSLCertificate *new_cert);
+gint qp_decode_line		(gchar		*str);
+gint qp_decode_q_encoding	(guchar		*out,
+				 const gchar	*in,
+				 gint		 inlen);
+gint qp_get_q_encoding_len	(const guchar	*str);
+void qp_q_encode		(gchar		*out,
+				 const guchar	*in);
 
-#endif /* USE_SSL */
-#endif /* __SSL_CERTWINDOW_H__ */
+#endif /* __QUOTED_PRINTABLE_H__ */
