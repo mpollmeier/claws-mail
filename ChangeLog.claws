@@ -1,3 +1,15 @@
+2002-01-20 [melvin] 0.7.0claws18
+
+	* src/addressbook.c
+		Made "Bcc" sensitive when addressbook is called from
+		compose window (it was a Claws only bug).
+
+2002-01-19 [alfons] 0.7.0claws17
+
+	* src/inc.c
+		prevent unnecessary updates when currently selected folder has
+		no new messages 
+
 2002-01-19 [alfons] 0.7.0claws16
 	
 	* src/summaryview.c
@@ -52,7 +64,6 @@
 	* src/addrbook.[ch]
 	* src/addrbook.[ch]
 		
-
 2002-01-18 [paul]	0.7.0claws13
 
 	* sync with sylpheed 0.7.0cvs8

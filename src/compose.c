@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2001 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2002 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -344,6 +344,7 @@ typedef enum {
 	COMPOSE_CALL_GTK_STEXT_DELETE_FORWARD_WORD,
 	COMPOSE_CALL_GTK_STEXT_DELETE_BACKWARD_WORD,
 	COMPOSE_CALL_GTK_STEXT_DELETE_LINE,
+	COMPOSE_CALL_GTK_STEXT_DELETE_LINE_N,
 	COMPOSE_CALL_GTK_STEXT_DELETE_TO_LINE_END
 } ComposeCallGtkStextAction;
 
@@ -495,6 +496,7 @@ static GtkItemFactoryEntry compose_entries[] =
 	{N_("/_Edit/A_dvanced/Delete a word backward"),	"<control>w", compose_gtk_stext_action_cb, COMPOSE_CALL_GTK_STEXT_DELETE_BACKWARD_WORD, NULL},
 	{N_("/_Edit/A_dvanced/Delete a word forward"),	"<alt>D", compose_gtk_stext_action_cb, COMPOSE_CALL_GTK_STEXT_DELETE_FORWARD_WORD, NULL},
 	{N_("/_Edit/A_dvanced/Delete line"),	"<control>U", compose_gtk_stext_action_cb, COMPOSE_CALL_GTK_STEXT_DELETE_LINE, NULL},
+	{N_("/_Edit/A_dvanced/Delete line+"),	NULL, compose_gtk_stext_action_cb, COMPOSE_CALL_GTK_STEXT_DELETE_LINE_N, NULL},
 	{N_("/_Edit/A_dvanced/Delete to end of line"),	"<control>K", compose_gtk_stext_action_cb, COMPOSE_CALL_GTK_STEXT_DELETE_TO_LINE_END, NULL},
 	{N_("/_Edit/---"),		NULL, NULL, 0, "<Separator>"},
 #if USE_PSPELL
@@ -2365,6 +2367,11 @@ static void compose_wrap_line_all(Compose *compose)
 				if (clen == 1 && cb[0] == '\n')
 					do_delete = FALSE;
 			}
+
+			/* skip delete if it is continuous URL */
+			if (do_delete && (line_pos - p_pos <= i_len) &&
+			    gtkut_stext_is_uri_string(text, line_pos, tlen))
+				do_delete = FALSE;
 
 #ifdef WRAP_DEBUG
 			printf("qlen=%d l_len=%d wrap_len=%d do_del=%d\n",
@@ -6137,6 +6144,10 @@ static void compose_gtk_stext_action_cb	(Compose *compose, ComposeCallGtkStextAc
 			break;
 		case COMPOSE_CALL_GTK_STEXT_DELETE_LINE:
 			gtk_stext_delete_line(GTK_STEXT(compose->focused_editable));
+			break;
+		case COMPOSE_CALL_GTK_STEXT_DELETE_LINE_N:
+			gtk_stext_delete_line(GTK_STEXT(compose->focused_editable));
+			gtk_stext_delete_forward_character(GTK_STEXT(compose->focused_editable));
 			break;
 		case COMPOSE_CALL_GTK_STEXT_DELETE_TO_LINE_END:
 			gtk_stext_delete_to_line_end(GTK_STEXT(compose->focused_editable));

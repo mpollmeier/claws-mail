@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2001 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2002 Hiroyuki Yamamoto
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -232,6 +232,12 @@ static void toggle_toolbar_cb	 (MainWindow	*mainwin,
 static void toggle_statusbar_cb	 (MainWindow	*mainwin,
 				  guint		 action,
 				  GtkWidget	*widget);
+static void toggle_expand_summaryview_cb	 (MainWindow	*mainwin,
+				  guint		 action,
+				  GtkWidget	*widget);
+static void toggle_expand_messageview_cb	 (MainWindow	*mainwin,
+				  guint		 action,
+				  GtkWidget	*widget);
 static void separate_widget_cb	(GtkCheckMenuItem *checkitem,
 				 guint action,
 				 GtkWidget *widget);
@@ -378,6 +384,10 @@ static void allsel_cb		 (MainWindow	*mainwin,
 				  guint		 action,
 				  GtkWidget	*widget);
 
+static void create_filter_cb	 (MainWindow	*mainwin,
+				  guint		 action,
+				  GtkWidget	*widget);
+
 static void prefs_common_open_cb (MainWindow	*mainwin,
 				  guint		 action,
 				  GtkWidget	*widget);
@@ -415,6 +425,14 @@ static void activate_compose_button (MainWindow *mainwin,
 				ToolbarStyle      style,
 				ComposeButtonType type);
 
+static void menuitem_expandsummaryview_statechanged (GtkWidget *widget,
+				GtkStateType state,
+				gpointer data);
+
+static void key_pressed (GtkWidget *widget, 
+				GdkEventKey *event,
+				gpointer data);
+
 #define  SEPARATE_ACTION  667
 
 static GtkItemFactoryEntry mainwin_entries[] =
@@ -448,6 +466,8 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_View"),				NULL, NULL, 0, "<Branch>"},
 	{N_("/_View/_Folder tree"),		NULL, NULL, SEPARATE_ACTION + SEPARATE_FOLDER,  "<ToggleItem>"},
 	{N_("/_View/_Message view"),		NULL, NULL, SEPARATE_ACTION + SEPARATE_MESSAGE, "<ToggleItem>"},
+	{N_("/_View/E_xpand Summary View"),		"V", toggle_expand_summaryview_cb, 0, "<ToggleItem>"},
+	{N_("/_View/Ex_pand Message View"),		"<shift>V", toggle_expand_messageview_cb, 0, "<ToggleItem>"},
 	{N_("/_View/_Toolbar"),			NULL, NULL, 0, "<Branch>"},
 	{N_("/_View/_Toolbar/Icon _and text"),	NULL, toggle_toolbar_cb, TOOLBAR_BOTH, "<RadioItem>"},
 	{N_("/_View/_Toolbar/_Icon"),		NULL, toggle_toolbar_cb, TOOLBAR_ICON, "/View/Toolbar/Icon and text"},
@@ -623,6 +643,15 @@ static GtkItemFactoryEntry mainwin_entries[] =
 						NULL, add_address_cb, 0, NULL},
 	{N_("/_Tool/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_Tool/_Filter messages"),		NULL, filter_cb, 0, NULL},
+	{N_("/_Tool/_Create filter rule"),	NULL, NULL, 0, "<Branch>"},
+	{N_("/_Tool/_Create filter rule/_Automatically"),
+						NULL, create_filter_cb, FILTER_BY_AUTO, NULL},
+	{N_("/_Tool/_Create filter rule/by _From"),
+						NULL, create_filter_cb, FILTER_BY_FROM, NULL},
+	{N_("/_Tool/_Create filter rule/by _To"),
+						NULL, create_filter_cb, FILTER_BY_TO, NULL},
+	{N_("/_Tool/_Create filter rule/by _Subject"),
+						NULL, create_filter_cb, FILTER_BY_SUBJECT, NULL},
 	{N_("/_Tool/---"),			NULL, NULL, 0, "<Separator>"},
 	{N_("/_Tool/E_xecute"),			"x", execute_summary_cb, 0, NULL},
 	{N_("/_Tool/---"),			NULL, NULL, 0, "<Separator>"},
@@ -638,9 +667,9 @@ static GtkItemFactoryEntry mainwin_entries[] =
 	{N_("/_Configuration/_Filtering ..."),
 						NULL, prefs_filtering_open_cb, 0, NULL},
 	{N_("/_Configuration/_Template..."),	NULL, prefs_template_open_cb, 0, NULL},
+	{N_("/_Configuration/---"),		NULL, NULL, 0, "<Separator>"},
 	{N_("/_Configuration/_Preferences for current account..."),
 						NULL, prefs_account_open_cb, 0, NULL},
-	{N_("/_Configuration/---"),		NULL, NULL, 0, "<Separator>"},
 	{N_("/_Configuration/Create _new account..."),
 						NULL, new_account_cb, 0, NULL},
 	{N_("/_Configuration/_Edit accounts..."),
@@ -722,6 +751,8 @@ MainWindow *main_window_create(SeparateType type)
 			   GTK_SIGNAL_FUNC(manage_window_focus_in), NULL);
 	gtk_signal_connect(GTK_OBJECT(window), "focus_out_event",
 			   GTK_SIGNAL_FUNC(manage_window_focus_out), NULL);
+	gtk_signal_connect(GTK_OBJECT(window), "key_press_event",
+				GTK_SIGNAL_FUNC(key_pressed), mainwin);
 
 	gtk_widget_realize(window);
 	gtk_widget_add_events(window, GDK_KEY_PRESS_MASK|GDK_KEY_RELEASE_MASK);
@@ -931,8 +962,11 @@ MainWindow *main_window_create(SeparateType type)
 	gtk_object_set_data(GTK_OBJECT(menuitem), "mainwindow", mainwin);
 	gtk_signal_connect(GTK_OBJECT(menuitem), "toggled", GTK_SIGNAL_FUNC(separate_widget_cb), 
 					   GUINT_TO_POINTER(SEPARATE_MESSAGE));
-
-
+	
+	menuitem = gtk_item_factory_get_item(ifactory, "/View/Expand Summary View");
+	gtk_signal_connect(GTK_OBJECT(menuitem), "state-changed", GTK_SIGNAL_FUNC(menuitem_expandsummaryview_statechanged),
+						mainwin);
+		
 	menu_set_sensitive(ifactory, "/View/Thread view",
 			   prefs_common.enable_thread ? FALSE : TRUE);
 	menu_set_sensitive(ifactory, "/View/Unthread view",
@@ -1474,6 +1508,7 @@ void main_window_set_menu_sensitive(MainWindow *mainwin)
 
 		{"/Tool/Add sender to address book", M_SINGLE_TARGET_EXIST},
 		{"/Tool/Filter messages"           , M_MSG_EXIST|M_EXEC|M_UNLOCKED},
+		{"/Tool/Create filter rule"        , M_SINGLE_TARGET_EXIST|M_UNLOCKED},
 		{"/Tool/Execute"                   , M_MSG_EXIST|M_EXEC|M_UNLOCKED},
 
 		{"/Configuration", M_UNLOCKED},
@@ -1551,6 +1586,7 @@ static void main_window_set_widgets(MainWindow *mainwin, SeparateType type)
 	GtkWidget *vpaned;
 	GtkWidget *vbox_body = mainwin->vbox_body;
 	GtkItemFactory *ifactory=gtk_item_factory_from_widget(mainwin->menubar);
+	GtkWidget *menuitem;
 
 	debug_print(_("Setting widgets..."));
 
@@ -1624,6 +1660,10 @@ static void main_window_set_widgets(MainWindow *mainwin, SeparateType type)
 
 		menu_set_sensitive(ifactory, "/View/Message view", TRUE);
 		menu_set_sensitive(ifactory, "/View/Folder tree", TRUE);
+		menu_set_sensitive(ifactory, "/View/Expand Summary View", TRUE);
+		menu_set_sensitive(ifactory, "/View/Expand Message View", TRUE);
+		menuitem = gtk_item_factory_get_widget(ifactory, "/View/Expand Message View");
+		gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), FALSE);
 		
 		mainwin->win.sep_none.hpaned = hpaned;
 		mainwin->win.sep_none.vpaned = vpaned;
@@ -1685,7 +1725,9 @@ static void main_window_set_widgets(MainWindow *mainwin, SeparateType type)
 	
 		menu_set_sensitive(ifactory, "/View/Message view", TRUE);
 		menu_set_sensitive(ifactory, "/View/Folder tree", TRUE);
-
+		menu_set_sensitive(ifactory, "/View/Expand Summary View", FALSE);
+		menu_set_sensitive(ifactory, "/View/Expand Message View", FALSE);
+		
 		mainwin->win.sep_message.messagewin = messagewin;
 		mainwin->win.sep_message.hpaned     = hpaned;
 
@@ -2390,6 +2432,16 @@ static void toggle_statusbar_cb(MainWindow *mainwin, guint action,
 	}
 }
 
+static void toggle_expand_summaryview_cb(MainWindow *mainwin, guint action,	GtkWidget *widget)
+{
+	summary_toggle_view_real(mainwin->summaryview);
+}
+
+static void toggle_expand_messageview_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
+{
+	messageview_toggle_view_real(mainwin->messageview);
+}
+
 static void separate_widget_cb(GtkCheckMenuItem *checkitem, guint action, GtkWidget *widget)
 
 {
@@ -2834,6 +2886,12 @@ static void allsel_cb(MainWindow *mainwin, guint action, GtkWidget *widget)
 		messageview_select_all(mainwin->messageview);
 }
 
+static void create_filter_cb(MainWindow *mainwin, guint action,
+			     GtkWidget *widget)
+{
+	summary_filter_open(mainwin->summaryview, (PrefsFilterType)action);
+}
+
 static void prefs_common_open_cb(MainWindow *mainwin, guint action,
 				 GtkWidget *widget)
 {
@@ -2843,7 +2901,7 @@ static void prefs_common_open_cb(MainWindow *mainwin, guint action,
 static void prefs_filter_open_cb(MainWindow *mainwin, guint action,
 				 GtkWidget *widget)
 {
-	prefs_filter_open();
+	prefs_filter_open(NULL, NULL);
 }
 
 static void prefs_scoring_open_cb(MainWindow *mainwin, guint action,
@@ -2942,3 +3000,34 @@ void main_window_toolbar_set_compose_button(MainWindow *mainwin, ComposeButtonTy
 					prefs_common.toolbar_style,
 					compose_btn_type);
 }
+
+static void menuitem_expandsummaryview_statechanged (GtkWidget *widget, GtkStateType state, gpointer data)
+{
+	MainWindow *mainwin = (MainWindow*) data;
+	
+	if (!mainwin) return;
+		
+	gtk_widget_set_sensitive(GTK_WIDGET(mainwin->summaryview->toggle_view_btn), GTK_WIDGET_IS_SENSITIVE(widget));
+}
+
+#define BREAK_ON_MODIFIER_KEY() \
+	if ((event->state & (GDK_MOD1_MASK|GDK_CONTROL_MASK)) != 0) break
+
+static void key_pressed (GtkWidget *widget, GdkEventKey *event,	gpointer data)
+{
+	MainWindow *mainwin = (MainWindow*) data;
+	
+	if (!mainwin || !event) return;
+		
+	switch (event->keyval) {
+	case GDK_Q:             /* Quit */
+		BREAK_ON_MODIFIER_KEY();
+
+		app_exit_cb(mainwin, 0, NULL);
+		return;
+	default:
+		break;
+	}
+}
+
+#undef BREAK_ON_MODIFIER_KEY
