@@ -643,9 +643,14 @@ void procmsg_copy_messages(GSList *mlist)
 
 	if (!mlist) return;
 
+	/* 
+	
+	Horrible: Scanning 2 times for every copy!
+
 	hash = procmsg_to_folder_hash_table_create(mlist);
 	folder_item_scan_foreach(hash);
 	g_hash_table_destroy(hash);
+	*/
 
 	for (cur = mlist; cur != NULL; cur = cur->next) {
 		msginfo = (MsgInfo *)cur->data;

@@ -756,6 +756,8 @@ gboolean summary_show(SummaryView *summaryview, FolderItem *item,
 	main_window_cursor_wait(summaryview->mainwin);
 
 	mlist = item->folder->get_msg_list(item->folder, item, !update_cache);
+	if(!item->cache)
+		folder_item_read_cache(item);
 
 	summary_processing(summaryview, mlist);
 
@@ -3381,7 +3383,7 @@ static void summary_execute_copy(SummaryView *summaryview)
 	if (summaryview->mlist) {
 		procmsg_copy_messages(summaryview->mlist);
 
-		folder_item_scan_foreach(summaryview->folder_table);
+		/* folder_item_scan_foreach(summaryview->folder_table); */
 		folderview_update_item_foreach(summaryview->folder_table);
 
 		g_slist_free(summaryview->mlist);

@@ -36,6 +36,7 @@ typedef struct _FolderItem	FolderItem;
 #include "prefs_account.h"
 #include "session.h"
 #include "procmsg.h"
+#include "msgcache.h"
 
 #define FOLDER(obj)		((Folder *)obj)
 #define FOLDER_TYPE(obj)	(FOLDER(obj)->type)
@@ -189,6 +190,8 @@ struct _FolderItem
 	gint total;
 
 	gint last_num;
+
+	MsgCache *cache;
 
 	/* special flags */
 	guint no_sub         : 1; /* no child allowed?    */
