@@ -1,7 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * 
- * Copyright (C) 2000-2004 by Alfons Hoogervorst & The Sylpheed Claws Team. 
+ * Copyright (C) 2004 Hiroyuki Yamamoto & The Sylpheed-Claws Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,25 +16,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
- 
-#ifndef __ADDR_COMPL_H__
-#define __ADDR_COMPL_H__
 
-#include <gtk/gtk.h>
+#ifndef FOLDERUTILS_H
+#define FOLDERUTILS_H 1
 
-gint start_address_completion		(void);
-guint complete_address			(const gchar *str);
-gchar *get_complete_address		(gint index);
-gint invalidate_address_completion	(void);
-gint end_address_completion		(void);
+#include "folder.h"
 
-/* ui functions */
-void address_completion_start		(GtkWidget *mainwindow);
-void address_completion_register_entry	(GtkEntry  *entry);
-void address_completion_unregister_entry(GtkEntry  *entry);
-void address_completion_end		(GtkWidget *mainwindow);
+void folderutils_delete_duplicates(FolderItem *item);
 
-void addrcompl_initialize	( void );
-void addrcompl_teardown		( void );
-
-#endif /* __ADDR_COMPL_H__ */
+#endif /* FOLDERUTILS_H */

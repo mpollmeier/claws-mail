@@ -1,5 +1,5 @@
 dnl Autoconf macros for libgpgme
-dnl $Id: gpgme.m4,v 1.2.10.1 2004-01-08 20:54:47 netztorte Exp $
+dnl $Id: gpgme.m4,v 1.2.10.2 2004-02-21 11:00:04 netztorte Exp $
 
 # Configure paths for GPGME
 # Shamelessly stolen from the one of XDELTA by Owen Taylor
