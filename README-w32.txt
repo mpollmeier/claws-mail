@@ -1,4 +1,4 @@
-# README-w32.txt $Revision: 1.1.2.12 $ $Date: 2003-09-08 10:18:56 $
+# README-w32.txt $Revision: 1.1.2.13 $ $Date: 2003-10-12 14:50:30 $
 
                 S Y L P H E E D   -   C L A W S   /   W I N 3 2
                ==================================================
@@ -47,6 +47,7 @@ homepage. Please refer to the link section below.
     openssl                     (claws_w32_ssl_dev_030904.zip)
     libcrypt                    (crypt-2.2.5-lib.zip)
     pthreads                    (pthreads-2002-11-04.exe)
+    libjconv                    (libjconv-2.8.1-dev.zip)
 * unix build tools (diff,patch,msgfmt,grep,sed,bison,flex,cvs)
     unix-tools                  (unix-tools.zip)
 
@@ -56,7 +57,8 @@ homepage. Please refer to the link section below.
 
   1. Create \dev.
   2. Extract glib-dev, gtk+-dev, libiconv, gettext, libcrypt,
-     pthreads directly into \dev (this creates \dev\lib, \dev\include, etc.).
+     pthreads, libjconv directly into \dev (this creates \dev\lib,
+     \dev\include, etc.).
   3. Extract or checkout the sources into \dev\lib\proj\sylpheed-claws.
   4. Extract fnmatch, libcompface, regex, w32lib to \dev\proj
      (creates \dev\proj\fnmatch, etc.).
