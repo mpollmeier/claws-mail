@@ -89,6 +89,7 @@
 #include "imap_gtk.h"
 #include "news_gtk.h"
 #include "matcher.h"
+#include "imap-thread.h"
 
 #if USE_OPENSSL
 #  include "ssl.h"
@@ -334,7 +335,8 @@ int main(int argc, char *argv[])
 #endif
 	
 	sock_set_io_timeout(prefs_common.io_timeout_secs);
-
+	imap_main_set_timeout(prefs_common.io_timeout_secs);
+	
 	prefs_actions_read_config();
 	prefs_display_header_read_config();
 	/* prefs_filtering_read_config(); */
@@ -448,6 +450,8 @@ int main(int argc, char *argv[])
 	if (cmd.send)
 		send_queue();
 	
+	imap_main_init();
+	
 	gtk_main();
 
 	exit_sylpheed(mainwin);
@@ -468,6 +472,8 @@ static void exit_sylpheed(MainWindow *mainwin)
 
 	debug_print("shutting down\n");
 
+	imap_main_done();
+	
 	inc_autocheck_timer_remove();
 
 	if (prefs_common.clean_on_exit)
