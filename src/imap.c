@@ -47,7 +47,6 @@
 #include "imap.h"
 #include "imap_gtk.h"
 #include "socket.h"
-#include "ssl.h"
 #include "recv.h"
 #include "procheader.h"
 #include "prefs_account.h"
@@ -689,12 +688,15 @@ static IMAPSession *imap_session_new(Folder * folder,
 					      port);
 	}
 	else {
+#ifdef USE_OPENSSL
 		if (ssl_type == SSL_TUNNEL) {
 			r = imap_threaded_connect_ssl(folder,
 						      account->recv_server,
 						      port);
 		}
-		else {
+		else 
+#endif
+		{
 			r = imap_threaded_connect(folder,
 						  account->recv_server,
 						  port);
