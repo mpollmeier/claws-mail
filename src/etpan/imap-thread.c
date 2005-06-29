@@ -93,14 +93,20 @@ void imap_done(Folder * folder)
 	struct etpan_thread * thread;
 	chashdatum key;
 	chashdatum value;
+	int r;
 	
 	key.data = &folder;
 	key.len = sizeof(folder);
 	
-	chash_get(imap_hash, &key, &value);
+	r = chash_get(imap_hash, &key, &value);
+	if (r < 0)
+		return;
+	
 	thread = value.data;
 	
-	etpan_thread_free(thread);
+	etpan_thread_stop(thread);
+	
+	chash_delete(imap_hash, &key, NULL);
 }
 
 static struct etpan_thread * get_thread(Folder * folder)
