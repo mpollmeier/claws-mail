@@ -3310,10 +3310,13 @@ static /*gint*/ void *imap_get_flags_thread(void *data)
 			return GINT_TO_POINTER(-1);
 		}
 
+		if (unseen_cnt > exists_cnt / 2)
+			reverse_seen = TRUE;
 	} 
-
-	if (unseen_cnt > exists_cnt / 2)
-		reverse_seen = TRUE;
+	else {
+		if (item->unread_msgs > item->total_msgs / 2)
+			reverse_seen = TRUE;
+	}
 
 	cmd_buf = g_string_new(NULL);
 

@@ -377,6 +377,8 @@ int main(int argc, char *argv[])
 			exit_sylpheed(mainwin);
 	}
 
+	imap_main_init();
+	
 	account_set_missing_folder();
 	folder_set_missing_folders();
 	folderview_set(folderview);
@@ -449,8 +451,6 @@ int main(int argc, char *argv[])
 	}
 	if (cmd.send)
 		send_queue();
-	
-	imap_main_init();
 	
 	gtk_main();
 

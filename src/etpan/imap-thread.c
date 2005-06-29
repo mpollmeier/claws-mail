@@ -1507,7 +1507,8 @@ static int imap_get_msg_att_info(struct mailimap_msg_att * msg_att,
 	      ref_size = item->att_data.att_static->att_data.att_rfc822_size;
 	      break;
       }
-
+      break;
+      
     case MAILIMAP_MSG_ATT_ITEM_DYNAMIC:
       if (att_dyn == NULL) {
 	att_dyn = item->att_data.att_dyn;
