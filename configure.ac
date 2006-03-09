@@ -6,19 +6,18 @@ AC_CONFIG_AUX_DIR(config)
 PACKAGE=sylpheed-claws
 
 dnl version number
-MAJOR_VERSION=2
+MAJOR_VERSION=1
 MINOR_VERSION=0
-MICRO_VERSION=0
+MICRO_VERSION=5
 INTERFACE_AGE=0
 BINARY_AGE=0
-EXTRA_VERSION=125
+EXTRA_VERSION=0
 EXTRA_RELEASE=
-EXTRA_GTK2_VERSION=
 
 if test \( $EXTRA_VERSION -eq 0 \) -o \( "x$EXTRA_RELEASE" != "x" \); then
-    VERSION=${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION}${EXTRA_RELEASE}${EXTRA_GTK2_VERSION}
+    VERSION=${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION}${EXTRA_RELEASE}
 else
-    VERSION=${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION}cvs${EXTRA_VERSION}${EXTRA_GTK2_VERSION}
+    VERSION=${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION}cvs${EXTRA_VERSION}
 fi
 
 dnl set $target
@@ -49,10 +48,6 @@ if test "$GNOME_CONFIG" != no; then
 fi
 AM_CONDITIONAL(SYLPHEED_GNOME, test -n "$gnomedatadir")
 
-dnl GNOME 2.x installed?
-PKG_CHECK_MODULES(GNOME2, libgnome-2.0 >= 2.0, ac_enable_gnome2=yes, ac_enable_gnome2=no)
-AM_CONDITIONAL(SYLPHEED_GNOME2, test x"$ac_enable_gnome2" = x"yes")
-
 dnl Claws version
 AC_DEFINE(CLAWS, 1, Compiling Claws branch of sylpheed)
 
@@ -82,117 +77,30 @@ AC_PROG_CPP
 dnl AC_PROG_RANLIB
 AM_PROG_LEX
 AC_PROG_YACC
-AC_LIB_PREFIX
-AC_LIBTOOL_WIN32_DLL
-AC_LIBTOOL_RC
 AC_PROG_LIBTOOL
 
 SYLPHEED_ACLOCAL_INCLUDE(m4)
-  
-dnl ******************************
-dnl Checks for host
-dnl Not needed anymore because we 
-dnl do AC_CANONICAL_SYSTEM above
-dnl ******************************
-dnl AC_CANONICAL_HOST
 
-dnl Copied from the official gtk+-2 configure.in
-AC_MSG_CHECKING([for some Win32 platform])
-case "$host" in
-  *-*-mingw*|*-*-cygwin*)
-    platform_win32=yes
-    LDFLAGS="$LDFLAGS -mwindows"
-    ;;
-  *)
-    platform_win32=no
-    ;;
-esac
-AC_MSG_RESULT([$platform_win32])
-AM_CONDITIONAL(PLATFORM_WIN32, test x"$platform_win32" = x"yes")
-
-AC_MSG_CHECKING([for native Win32])
-case "$host" in
-  *-*-mingw*)
-    os_win32=yes
-    ;;
-  *)
-    os_win32=no
-    ;;
-esac
-AC_MSG_RESULT([$os_win32])
-AM_CONDITIONAL(OS_WIN32, test x"$os_win32" = x"yes")
-
-AC_MSG_CHECKING([for Cygwin])
-case "$host" in
-  *-*-cygwin*)
-    env_cygwin=yes
-    ;;
-  *)
-    env_cygwin=no
-    ;;
-esac
-AC_MSG_RESULT([$env_cygwin])
-AM_CONDITIONAL(CYGWIN, test x"$env_cygwin" = x"yes")
-
-CFLAGS="$CFLAGS -Wall"
-
-pthread_name=
 case "$target" in
 *-darwin*)
-	CFLAGS="$CFLAGS -no-cpp-precomp -fno-common"
-	;;
-*-*-mingw*)
-        # Note that we need to link to pthreadGC2 in all cases. This
-        # is because some locking is used even when pthread support is
-        # disabled.
-        pthread_name=pthreadGC2
-	CFLAGS="$CFLAGS -mms-bitfields"
-	LIBS="$LIBS -l${pthread_name} -lws2_32 -lregex"
+	CFLAGS="$CFLAGS -traditional-cpp -fno-common"
 	;;
 esac
-  
-dnl Checks for iconv
+
 AM_ICONV
 
-dnl
-dnl Check for bind_textdomain_codeset, including -lintl if GLib brings it in.
-dnl
-syl_save_LIBS=$LIBS
-LIBS="$LIBS $GTK_LIBS"
-AC_CHECK_FUNCS(bind_textdomain_codeset)
-LIBS=$syl_save_LIBS
-
 dnl for gettext
-ALL_LINGUAS="bg ca cs de el en_GB es fi fr hr hu it ja ko nb nl pl pt_BR ru sk sr sv zh_CN zh_TW"
-GETTEXT_PACKAGE=sylpheed-claws
-AC_SUBST(GETTEXT_PACKAGE)
-AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Define text domain.])
-
-AM_GNU_GETTEXT_VERSION([0.14.5])
-AM_GNU_GETTEXT([external])
-
-if test "x${DATADIRNAME}" = "x"; then
-  DATADIRNAME="share"
-  AC_SUBST(DATADIRNAME)
-fi
-
-localedir='${prefix}/${DATADIRNAME}/locale'
-AC_ARG_WITH(localedir,
-	[  --with-localedir=DIR    Locale directory],
-	[localedir="$withval"])
+ALL_LINGUAS="bg ca cs de el en_GB es fi fr hr hu it ja ko nl pl pt_BR ru sk sr sv zh_CN zh_TW.Big5"
+AM_GNU_GETTEXT([use-libtool])
+AM_GNU_GETTEXT_VERSION(0.12.1)
+dnl AC_CHECK_FUNC(gettext, AC_CHECK_LIB(intl, gettext))
+localedir='${datadir}/locale'
 AC_SUBST(localedir)
 
 manualdir='${prefix}/${DATADIRNAME}/${PACKAGE}/manual'
-AC_ARG_WITH(manualdir,
-	[  --with-manualdir=DIR    Manual directory],
-	[manualdir="$withval"])
 AC_SUBST(manualdir)
-
-AC_ARG_ENABLE(manual,
-	[  --disable-manual           Disable manual support],
-	[ac_cv_enable_manual=$enableval], [ac_cv_enable_manual=yes])
-
-AM_CONDITIONAL(BUILD_MANUAL, test x"$ac_cv_enable_manual" = xyes)
+faqdir='${prefix}/${DATADIRNAME}/${PACKAGE}/faq'
+AC_SUBST(faqdir)
 
 dnl Set PACKAGE_DATA_DIR in config.h.
 if test "x${datadir}" = 'x${prefix}/share'; then
@@ -239,16 +147,13 @@ if test $ac_cv_dirent_d_type = yes; then
 		  Define if `struct dirent' has `d_type' member.)
 fi
 
-# Check whether mkdir does not take the permission argument.
-GNUPG_FUNC_MKDIR_TAKES_ONE_ARG
-
 dnl Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(fcntl.h sys/file.h unistd.h paths.h \
 		 sys/param.h sys/utsname.h sys/select.h \
-		 wchar.h wctype.h locale.h netdb.h)
+		 wchar.h wctype.h locale.h)
 
 dnl alf - Check for apache installation f*ck up. apache may also install an 
 dnl fnmatch, which includes their own regex stuff if USE_HSREGEX is defined
@@ -290,22 +195,16 @@ AC_CHECK_FUNCS(gethostname mkdir mktime socket strstr strchr \
 	       wcsstr wcswcs iswalnum iswspace towlower \
 	       wcslen wcscpy wcsncpy \
 	       uname flock lockf inet_aton inet_addr \
-	       fchmod mkstemp truncate getuid regcomp)
+	       fchmod mkstemp)
 
 dnl *****************
 dnl ** common code **
 dnl *****************
 
 dnl check for glib
-AM_PATH_GLIB_2_0(2.0.0,,
+AM_PATH_GLIB(1.2.6,,
 	AC_MSG_ERROR(Test for GLIB failed. See the file 'INSTALL' for help.),
-	gmodule gobject gthread)
-
-dnl Check for bind_textdomain_codeset, including -lintl if GLib brings it in.
-syl_save_LIBS=$LIBS
-LIBS="$LIBS $GTK_LIBS"
-AC_CHECK_FUNCS(bind_textdomain_codeset)
-LIBS=$syl_save_LIBS
+	gthread)
 
 dnl check for IPv6 option
 AC_ARG_ENABLE(ipv6,
@@ -337,20 +236,13 @@ fi
 
 dnl Check for OpenSSL
 AC_ARG_ENABLE(openssl,
-	[  --disable-openssl    Do not use OpenSSL for SSL support.],
+	[  --enable-openssl    Attempt to use OpenSSL for SSL support.],
 	[ac_cv_enable_openssl=$enableval], [ac_cv_enable_openssl=yes])
-AC_MSG_CHECKING([whether to use OpenSSL])
 if test x"$ac_cv_enable_openssl" = xyes; then
-	AC_MSG_RESULT(yes)
 	PKG_CHECK_MODULES(OPENSSL, openssl >= 0.9.7, :, ac_cv_enable_openssl=no)
 	if test x$ac_cv_enable_openssl = xyes; then
 		AC_DEFINE(USE_OPENSSL, 1, Define if you want OpenSSL support)
-	else
-		AC_MSG_RESULT(not found)
-		AC_MSG_WARN([*** OpenSSL will not be supported ***])
 	fi
-else
-	AC_MSG_RESULT(no)
 fi
 AC_SUBST(OPENSSL_CFLAGS)
 AC_SUBST(OPENSSL_LIBS)
@@ -368,10 +260,10 @@ AC_ARG_WITH(passcrypt-key, [  --with-passcrypt-key=KEY     Key used to encode pa
 AC_SUBST(PASSCRYPT_KEY, $with_passcrypt_key)
 
 dnl RC dir (will be default at a certain point in time)
-AC_ARG_WITH(config-dir,    [  --with-config-dir=RCDIR      Local configuration dir (default: .sylpheed-claws)],
-	      ac_cv_with_config_dir="$withval", ac_cv_with_config_dir=".sylpheed-claws")
+AC_ARG_WITH(config-dir,    [  --with-config-dir=RCDIR      Local configuration dir (default: .sylpheed)],
+	      ac_cv_with_config_dir="$withval", ac_cv_with_config_dir=".sylpheed")
 if test x"$ac_cv_with_config_dir" = x""; then
-	ac_cv_with_config_dir=".sylpheed-claws"
+	ac_cv_with_config_dir=".sylpheed"
 fi 
 AC_DEFINE_UNQUOTED(CFG_RC_DIR, "$ac_cv_with_config_dir", Configuration directory)
 
@@ -380,20 +272,30 @@ dnl ** GTK user interface **
 dnl ************************
 
 dnl Checks for GTK
-AM_PATH_GTK_2_0(2.4.0,,
+AM_PATH_GTK(1.2.6,,
 	AC_MSG_ERROR(Test for GTK failed. See the file 'INSTALL' for help.))
 
-dnl --disable-deprecated switch for GTK2 purification
-AC_ARG_ENABLE(deprecated, [  --disable-deprecated  Disable deprecated GTK functions. ],
-			  [GTK_CFLAGS="$GTK_CFLAGS -DG_DISABLE_DEPRECATED -DGTK_DISABLE_DEPRECATED"], [])
-
-AC_SUBST(GTK_CFLAGS)
-AC_SUBST(GTK_LIBS)
+dnl check if gdk / gtk was compiled with USE_XIM
+AC_MSG_CHECKING([whether GTK was compiled with XIM support])
+CFLAGS_SAVE="$CFLAGS"
+LDFLAGS_SAVE="$LDFLAGS"
+CFLAGS="$CFLAGS `$GTK_CONFIG --cflags`"
+LDFLAGS="$LDFLAGS `$GTK_CONFIG --libs`"
+AC_CACHE_VAL(ac_cv_use_xim, [
+	AC_TRY_LINK_FUNC([gdk_ic_attr_new],
+			 ac_cv_use_xim=yes, ac_cv_use_xim=no)
+])
+AC_MSG_RESULT($ac_cv_use_xim)
+if test $ac_cv_use_xim = yes; then
+	AC_DEFINE(USE_XIM, 1, Whether GTK was compiled with XIM support or not)
+fi
+CFLAGS="$CFLAGS_SAVE"
+LDFLAGS="$LDFLAGS_SAVE"
 
 dnl GNU/Aspell is used for spell checking
 AC_ARG_ENABLE(aspell,
-	[  --disable-aspell         Disable GNU/aspell support [default=yes]],
-	[ac_cv_enable_aspell=$enableval], [ac_cv_enable_aspell=yes])
+	[  --enable-aspell         Enable GNU/aspell support [default=no]],
+	[ac_cv_enable_aspell=$enableval], [ac_cv_enable_aspell=no])
 AC_MSG_CHECKING([whether to use GNU/aspell])
 if test $ac_cv_enable_aspell = yes; then
 	AC_MSG_RESULT(yes)
@@ -447,61 +349,22 @@ if test x$ac_cv_enable_pthread = xno; then
 else
 	AC_MSG_RESULT(yes)
 
-        # For W32 we need to use a special ptrhead lib. In this case we can't
-        # use AC_CHECK_LIB because it has no means of checking for a
-        # library installed under a different name.  Checking for the
-        # header is okay.
-        if test -n "${pthread_name}" ; then
-           ac_cv_enable_pthread=yes
-        else
 	AC_CHECK_LIB(pthread, pthread_create, :, ac_cv_enable_pthread=no)
-        fi
 	AC_CHECK_HEADERS(pthread.h, :, ac_cv_enable_pthread=no)
 
 	if test x$ac_cv_enable_pthread = xyes; then
 		AC_DEFINE(USE_PTHREAD, 1, Define if you have pthread)
-                if test -z "${pthread_name}" ; then
 		PTHREAD_LIBS="-lpthread"
-	fi
 	fi
 
 fi
 AC_SUBST(PTHREAD_LIBS)
 
-dnl
-dnl Check whether we need to pass -lresolv
-dnl We know that we don't need it for W32.
-dnl
-if test x$os_win32 = xno; then
-  t_oldLibs="$LIBS"
-  LIBS="$LIBS"
-  ac_cv_var__res_options=no
-  AC_TRY_LINK([#include <sys/types.h>
- 	     #include <sys/socket.h>
-	     #include <netinet/in.h>
- 	     #include <arpa/nameser.h>
-	     #include <resolv.h>],
- 	  	[_res.options = RES_INIT;],
- 	 	ac_cv_var__res_options=yes);
-  if test "$ac_cv_var__res_options" != "yes"; then
-	LIBRESOLV="-lresolv"
-  fi
-  LIBS="$t_oldLibs"
-
-  if test "x$LIBRESOLV" = "x"; then
-	AC_CHECK_LIB(resolv, res_query, [LIBRESOLV=-lresolv])
-	LIBS="$t_oldLibs"
-  fi
-fi
-AC_SUBST(LIBRESOLV)
-
-LIBS="$LIBS $LIBRESOLV"
- 	  	 
 dnl for LDAP support in addressbook
 dnl no check for libraries; dynamically loaded
 AC_ARG_ENABLE(ldap,
-	[  --disable-ldap         Do not build LDAP support [default=yes]],
-	[ac_cv_enable_ldap=$enableval], [ac_cv_enable_ldap=yes])
+	[  --enable-ldap           Enable LDAP support [default=no]],
+	[ac_cv_enable_ldap=$enableval], [ac_cv_enable_ldap=no])
 AC_MSG_CHECKING([whether to use LDAP])
 if test x"$ac_cv_enable_ldap" = xno; then
 	AC_MSG_RESULT(no)
@@ -542,8 +405,9 @@ else
 	AC_MSG_RESULT($ac_cv_have_tls)
 
 	if test "$ac_cv_enable_ldap" = yes; then
+		CFLAGS="$CFLAGS `$GLIB_CONFIG --cflags gthread`"
+		LDAP_LIBS="$LDAP_LIBS -lldap `$GLIB_CONFIG --libs gthread`"
 		AC_DEFINE(USE_LDAP, 1, Define if you want LDAP support in addressbook.)
-		LDAP_LIBS="$LDAP_LIBS -lldap"
 		AC_SUBST(LDAP_LIBS)
 		if test "$ac_cv_have_tls" = yes; then
 			AC_DEFINE(USE_LDAP_TLS, 1, Define if you want LDAP TLS support in addressbook.)
@@ -554,8 +418,8 @@ fi
 dnl for JPilot support in addressbook
 dnl no check for libraries; these are dynamically loaded
 AC_ARG_ENABLE(jpilot,
-	[  --disable-jpilot         Enable JPilot support [default=yes]],
-	[ac_cv_enable_jpilot=$enableval], [ac_cv_enable_jpilot=yes])
+	[  --enable-jpilot         Enable JPilot support [default=no]],
+	[ac_cv_enable_jpilot=$enableval], [ac_cv_enable_jpilot=no])
 AC_MSG_CHECKING([whether to use JPilot])
 if test "$ac_cv_enable_jpilot" = yes; then
 	AC_MSG_RESULT(yes)
@@ -607,102 +471,93 @@ dnl *************************
 PLUGINS=""
 
 dnl --- Trayicon ---
-AC_MSG_CHECKING([whether to build Trayicon plugin])
 AC_ARG_ENABLE(trayicon-plugin,
 	[  --disable-trayicon-plugin         Do not build System Tray Icon plugin],
 	[ac_cv_enable_trayicon_plugin=$enableval], [ac_cv_enable_trayicon_plugin=yes])
 if test x"$ac_cv_enable_trayicon_plugin" = xyes; then
-	AC_MSG_RESULT(yes)
 	PLUGINS="trayicon $PLUGINS"
-else
-	AC_MSG_RESULT(no)
 fi
 AM_CONDITIONAL(BUILD_TRAYICON_PLUGIN, test x"$ac_cv_enable_trayicon_plugin" = xyes)
 
 dnl --- SpamAssassin ---
-AC_MSG_CHECKING([whether to build SpamAssassin plugin])
 AC_ARG_ENABLE(spamassassin-plugin,
-	[  --disable-spamassassin-plugin      Build SpamAssassin plugin [default=yes]],
-	[ac_cv_enable_spamassassin_plugin=$enableval], [ac_cv_enable_spamassassin_plugin=yes])
+	[  --enable-spamassassin-plugin      Build SpamAssassin plugin [default=no]],
+	[ac_cv_enable_spamassassin_plugin=$enableval], [ac_cv_enable_spamassassin_plugin=no])
 if test x"$ac_cv_enable_spamassassin_plugin" = xyes; then
-	AC_MSG_RESULT(yes)
 	AC_SPAMASSASSIN
 	PLUGINS="spamassassin $PLUGINS"
-	AC_DEFINE(USE_SPAMASSASSIN_PLUGIN, 1, Define if spamassassin plugin is being build.)
-else
-	AC_MSG_RESULT(no)
 fi
 AM_CONDITIONAL(BUILD_SPAMASSASSIN_PLUGIN, test x"$ac_cv_enable_spamassassin_plugin" = xyes)
 
-dnl --- PGP/CORE ---
-AC_MSG_CHECKING([whether to build PGP/CORE plugin])
-AC_ARG_ENABLE(pgpcore-plugin,
-	[  --disable-pgpcore-plugin           Do not build PGP/Core plugin],
-	[ac_cv_enable_pgpcore_plugin=$enableval], [ac_cv_enable_pgpcore_plugin=yes])
-if test x"$ac_cv_enable_pgpcore_plugin" = xyes; then
-	AC_MSG_RESULT(yes)
-	AM_PATH_GPGME(1.0.0, AC_DEFINE(USE_GPGME, 1, Define if you use GPGME to support OpenPGP.),
-		      [ac_cv_enable_pgpcore_plugin=no])
-	if test x"$ac_cv_enable_pgpcore_plugin" = xyes; then
-		PLUGINS="pgpcore $PLUGINS"
-                AM_PATH_GPGME(1.1.1,
-                              AC_DEFINE(HAVE_GPGME_PKA_TRUST, 1,
-                                        [Define if GPGME supports PKA.]))
-		#needed to get GPGME_LIBS and al correctly
-		AM_PATH_GPGME(1.0.0, AC_DEFINE(USE_GPGME, 1, Define if you use GPGME to support OpenPGP.),
-		    	  [ac_cv_enable_pgpcore_plugin=no])
-	else
-		AC_MSG_WARN([*** PGP/CORE plugin will not be built ***])
-	fi
-else
-	AC_MSG_RESULT(no)
-fi
-AM_CONDITIONAL(BUILD_PGPCORE_PLUGIN, test x"$ac_cv_enable_pgpcore_plugin" = xyes)
-
-AC_MSG_CHECKING([whether to build PGP/MIME plugin])
+dnl --- PGP/MIME ---
 AC_ARG_ENABLE(pgpmime-plugin,
 	[  --disable-pgpmime-plugin           Do not build PGP/MIME plugin],
 	[ac_cv_enable_pgpmime_plugin=$enableval], [ac_cv_enable_pgpmime_plugin=yes])
 if test x"$ac_cv_enable_pgpmime_plugin" = xyes; then
-	AC_MSG_RESULT(yes)
-	if test x"$ac_cv_enable_pgpcore_plugin" = xyes; then
+	AM_PATH_GPGME(0.3.10, AC_DEFINE(USE_GPGME, 1, Define if you use GPGME to support OpenPGP.),
+		      [ac_cv_enable_pgpmime_plugin=no])
+
+	if test x"$ac_cv_enable_pgpmime_plugin" = xyes; then
 		PLUGINS="pgpmime $PLUGINS"
-	else
-		AC_MSG_WARN([*** PGP/MIME plugin cannot be built ***])
-		AC_MSG_WARN([*** without the PGP/CORE plugin     ***])
 	fi
-else
-	AC_MSG_RESULT(no)
 fi
 AM_CONDITIONAL(BUILD_PGPMIME_PLUGIN, test x"$ac_cv_enable_pgpmime_plugin" = xyes)
 
-AC_MSG_CHECKING([whether to build PGP/Inline plugin])
-AC_ARG_ENABLE(pgpinline-plugin,
-	[  --disable-pgpinline-plugin           Do not build PGP/Inline plugin],
-	[ac_cv_enable_pgpinline_plugin=$enableval], [ac_cv_enable_pgpinline_plugin=yes])
-if test x"$ac_cv_enable_pgpinline_plugin" = xyes; then
-	AC_MSG_RESULT(yes)
-	if test x"$ac_cv_enable_pgpcore_plugin" = xyes; then
-		PLUGINS="pgpinline $PLUGINS"
-	else
-		AC_MSG_WARN([*** PGP/Inline plugin cannot be built ***])
-		AC_MSG_WARN([*** without the PGP/CORE plugin     ***])
+dnl --- MathML Viewer ---
+AC_ARG_ENABLE(mathml-viewer-plugin,
+	[  --disable-mathml-viewer-plugin    Do not build MathML-Viewer plugin],
+	[ac_cv_enable_mathml_viewer_plugin=$enableval], [ac_cv_enable_mathml_viewer_plugin=yes])
+if test x"$ac_cv_enable_mathml_viewer_plugin" = xyes; then
+	PKG_CHECK_MODULES(GTK_MATH_VIEW, gtkmathview >= 0.4.2 gtkmathview < 0.5, :, ac_cv_enable_mathml_viewer_plugin=no)
+
+	if test x"$ac_cv_enable_mathml_viewer_plugin" = xyes; then
+
+		PLUGINS="mathml-viewer $PLUGINS"
 	fi
-else
-	AC_MSG_RESULT(no)
 fi
-AM_CONDITIONAL(BUILD_PGPINLINE_PLUGIN, test x"$ac_cv_enable_pgpinline_plugin" = xyes)
+AC_SUBST(GTK_MATH_VIEW_CFLAGS)
+AC_SUBST(GTK_MATH_VIEW_LIBS)
+AM_CONDITIONAL(BUILD_MATHML_VIEWER_PLUGIN, test x"$ac_cv_enable_mathml_viewer_plugin" = xyes)
+
+dnl --- Image Viewer ---
+AC_ARG_ENABLE(image-viewer-plugin,
+	[  --disable-image-viewer-plugin     Do not build image viewer plugin],
+	[ac_cv_enable_image_viewer_plugin=$enableval], [ac_cv_enable_image_viewer_plugin=yes])
+if test x"$ac_cv_enable_image_viewer_plugin" = xyes; then
+	AC_ARG_ENABLE(gdk-pixbuf,
+		[  --disable-gdk-pixbuf              Do not use gdk-pixbuf],
+		[ac_cv_enable_gdk_pixbuf=$enableval], [ac_cv_enable_gdk_pixbuf=yes])
+	AC_ARG_ENABLE(imlib,
+		[  --disable-imlib                   Do not use imlib],
+		[ac_cv_enable_imlib=$enableval], [ac_cv_enable_imlib=yes])
+
+	if test "$ac_cv_enable_gdk_pixbuf" = yes; then
+		AM_PATH_GDK_PIXBUF(0.8.0,
+			[AC_DEFINE(HAVE_GDK_PIXBUF, 1, Define if you use gdk-pixbuf to support image viewer)
+			 ac_cv_enable_imlib=no], [ac_cv_enable_gdk_pixbuf=no])
+	fi
+	if test "$ac_cv_enable_imlib" = yes; then
+		AM_PATH_GDK_IMLIB(1.9,
+			AC_DEFINE(HAVE_GDK_IMLIB, 1, Define if you use gdk_imlib to support image viewer),
+			[ac_cv_enable_imlib=no])
+	fi
+
+	if test "$ac_cv_enable_gdk_pixbuf" = yes; then
+		PLUGINS="image-viewer(gdk-pixbuf) $PLUGINS"
+	elif test "$ac_cv_enable_imlib" = yes; then
+		PLUGINS="image-viewer(gdk_imlib) $PLUGINS"
+	else
+		ac_cv_enable_image_viewer_plugin=no
+	fi
+fi
+AM_CONDITIONAL(BUILD_IMAGE_VIEWER_PLUGIN, test x"$ac_cv_enable_image_viewer_plugin" = xyes)
 
 dnl --- Dillo Viewer ---
-AC_MSG_CHECKING([whether to build Dillo plugin])
 AC_ARG_ENABLE(dillo-viewer-plugin,
 	[  --disable-dillo-viewer-plugin     Do not build Dillo plugin for html mail rendering],
 	[ac_cv_enable_dillo_viewer_plugin=$enableval], [ac_cv_enable_dillo_viewer_plugin=yes])
 if test x"$ac_cv_enable_dillo_viewer_plugin" = xyes; then
-	AC_MSG_RESULT(yes)
 	PLUGINS="dillo-viewer $PLUGINS"
-else
-	AC_MSG_RESULT(no)
 fi
 AM_CONDITIONAL(BUILD_DILLO_VIEWER_PLUGIN, test x"$ac_cv_enable_dillo_viewer_plugin" = xyes)
 
@@ -716,88 +571,22 @@ fi
 AM_CONDITIONAL(BUILD_DEMO_PLUGIN, test x"$ac_cv_enable_demo_plugin" = xyes)
 
 dnl --- ClamAV ---
-AC_MSG_CHECKING([whether to build ClamAV plugin])
 AC_ARG_ENABLE(clamav-plugin,
 	[  --disable-clamav-plugin           Do not build Clam AntiVirus plugin],
 	[ac_cv_enable_clamav_plugin=$enableval], [ac_cv_enable_clamav_plugin=yes])
 if test x"$ac_cv_enable_clamav_plugin" = xyes; then
-	AC_MSG_RESULT(yes)
-	PKG_CHECK_MODULES(CLAMAV, libclamav, ac_cv_enable_clamav_plugin=yes,
-			  ac_cv_enable_clamav_plugin=no)
+	AC_CHECK_LIB(clamav, cl_scanfile, clamav_lib=-lclamav, ac_cv_enable_clamav_plugin=no)
+	AC_CHECK_HEADERS(clamav.h, :, ac_cv_enable_clamav_plugin=no)
 	if test x"$ac_cv_enable_clamav_plugin" = xyes; then
+		CLAMAV_LIBS="${clamav_lib}"
+
 		PLUGINS="clamav $PLUGINS"
 	else
-		AC_MSG_RESULT(not found)
-		AC_MSG_WARN([*** ClamAV plugin will not be built ***])
+		AC_MSG_NOTICE([clamav library not found, will not build clamav plugin])
 	fi
-else
-	AC_MSG_RESULT(no)
 fi
 AC_SUBST(CLAMAV_LIBS)
 AM_CONDITIONAL(BUILD_CLAMAV_PLUGIN, test x"$ac_cv_enable_clamav_plugin" = xyes)
-
-dnl Libetpan
-AC_MSG_CHECKING([whether to use libetpan])
-AC_ARG_ENABLE(libetpan,
-	[  --disable-libetpan		Do not compile IMAP4 support with libetpan],
-	[ac_cv_enable_libetpan=$enableval], [ac_cv_enable_libetpan=yes])
-if test x"$ac_cv_enable_libetpan" = xyes; then
-	AC_MSG_RESULT(yes)
-	libetpan_result=no
-	AC_PATH_PROG(libetpanconfig, [libetpan-config])
-	if test "x$libetpanconfig" != "x"; then
-	  CPPFLAGS="$CPPFLAGS `$libetpanconfig --cflags 2>/dev/null`"
-	  AC_CHECK_HEADER(libetpan/libetpan.h, [libetpan_result=yes])
-	  if test "x$libetpan_result" = "xyes"; then
-	    AC_MSG_CHECKING([whether libetpan-config hints compiles and links fine])
-	    LIBS="$LIBS `$libetpanconfig --libs 2>/dev/null`"
-	    AC_TRY_LINK([#include <libetpan/dbstorage.h>], [db_mailstorage_init(NULL, NULL);], [libetpan_result=yes], [libetpan_result=no])
-	    AC_MSG_RESULT([$libetpan_result])
-	  fi
-	fi
-	if test "x$libetpan_result" = "xyes"; then
-	   LIBETPAN_CPPFLAGS="`$libetpanconfig --cflags`"
-	   LIBETPAN_LIBS="`$libetpanconfig --libs`"
-	   LIBETPAN_VERSION=`$libetpanconfig --version | sed "s/\.//g" | sed "s/-.*$//"`
-	   if test "$LIBETPAN_VERSION" -lt "041"; then
-		AC_MSG_RESULT([*** Sylpheed requires libetpan 0.41 or newer. See http://www.etpan.org/])
-		AC_MSG_RESULT([*** You can use --disable-libetpan if you don't need IMAP4 support.])
-                AC_MSG_ERROR([libetpan 0.41 not found])
-	   fi
-	   AC_SUBST(LIBETPAN_FLAGS)
-	   AC_SUBST(LIBETPAN_LIBS)
-	   AC_DEFINE(HAVE_LIBETPAN, 1, Define if you want IMAP support.)
-	else
-	   AC_MSG_RESULT([*** Sylpheed requires libetpan 0.41 or newer. See http://www.etpan.org/ ])
-	   AC_MSG_RESULT([*** You can use --disable-libetpan if you don't need IMAP4 support.])
-           AC_MSG_ERROR([libetpan 0.41 not found])
-	fi
-else
-	AC_MSG_RESULT(no)
-fi
-AM_CONDITIONAL(SYLPHEED_LIBETPAN, test "x$libetpan_result" = "xyes")
-
-
-dnl Libgnomeprint
-AC_MSG_CHECKING([whether to use libgnomeprint])
-AC_ARG_ENABLE(gnomeprint,
-	[  --disable-gnomeprint		Do not use libgnomeprint for printing],
-	[ac_cv_enable_gnomeprint=$enableval], [ac_cv_enable_gnomeprint=yes])
-if test x$ac_cv_enable_gnomeprint = xyes; then
-	AC_MSG_RESULT(yes)
-	PKG_CHECK_MODULES(GNOMEPRINT, libgnomeprint-2.2 libgnomeprintui-2.2,
-			  ac_cv_enable_gnomeprint=yes, ac_cv_enable_gnomeprint=no)
-	if test x"$ac_cv_enable_gnomeprint" = xyes; then
-		AC_DEFINE(USE_GNOMEPRINT, 1, Define if you want libgnomeprint support)
-	else
-		AC_MSG_RESULT(not found)
-     		AC_MSG_WARN([*** libgnomeprintui wasn't found    ***])
-		AC_MSG_WARN([*** using built-in printing support ***])
-	fi
-else
-	AC_MSG_RESULT(no)
-fi
-AM_CONDITIONAL(SYLPHEED_GNOMEPRINT, test x"$ac_cv_enable_gnomeprint" = x"yes")
 
 dnl ****************************
 dnl ** Final configure output **
@@ -805,6 +594,8 @@ dnl ****************************
 
 AC_OUTPUT([
 Makefile
+sylpheed.spec
+intl/Makefile
 m4/Makefile
 po/Makefile.in
 src/common/version.h
@@ -812,28 +603,32 @@ src/Makefile
 src/common/Makefile
 src/common/passcrypt.h
 src/gtk/Makefile
-src/etpan/Makefile
 src/plugins/Makefile
 src/plugins/demo/Makefile
 src/plugins/spamassassin/Makefile
+src/plugins/mathml_viewer/Makefile
 src/plugins/dillo_viewer/Makefile
+src/plugins/image_viewer/Makefile
 src/plugins/trayicon/Makefile
 src/plugins/trayicon/libeggtrayicon/Makefile
 src/plugins/clamav/Makefile
-src/plugins/pgpcore/Makefile
 src/plugins/pgpmime/Makefile
-src/plugins/pgpinline/Makefile
 doc/Makefile
+doc/faq/Makefile
+doc/faq/de/Makefile
+doc/faq/en/Makefile
+doc/faq/es/Makefile
+doc/faq/fr/Makefile
+doc/faq/it/Makefile
 doc/man/Makefile
+doc/manual/Makefile
+doc/manual/de/Makefile
+doc/manual/en/Makefile
+doc/manual/es/Makefile
+doc/manual/fr/Makefile
+doc/manual/ja/Makefile
 tools/Makefile
 config/Makefile
-manual/Makefile
-manual/dtd/Makefile
-manual/dist/Makefile
-manual/dist/pdf/Makefile
-manual/dist/ps/Makefile
-manual/dist/html/Makefile
-manual/dist/txt/Makefile
 sylpheed-claws.pc
 ])
 
@@ -848,10 +643,7 @@ echo "iconv         : $am_cv_func_iconv"
 echo "compface      : $ac_cv_enable_compface"
 echo "IPv6          : $ac_cv_enable_ipv6"
 echo "GNU/aspell    : $ac_cv_enable_aspell"
-echo "IMAP4         : $ac_cv_enable_libetpan"
 echo "Crash dialog  : $ac_cv_enable_crash_dialog"
-echo "Libgnomeprint : $ac_cv_enable_gnomeprint"
-echo "Manual        : $ac_cv_enable_manual"
 echo "Plugins       : $PLUGINS"
 echo "Config dir    : $ac_cv_with_config_dir"
 echo ""
