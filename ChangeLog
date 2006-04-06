@@ -1,41 +1,10 @@
-2006-04-06 [colin]	2.1.0cvs5
+2006-04-06 [colin]	2.1.0cvs1-stable
 
 	* src/addressbook.c
+		From 2.1.0cvs5
 		Fix crash with empty columns
-
-2006-04-05 [colin]	2.1.0cvs4
-
-	* src/wizard.c
-	* src/prefs_gtk.c
-		Allow wizard customization with pre-filled values
-
-2006-04-05 [colin]	2.1.0cvs3
-
-	* src/textview.c
-	* src/mimeview.c
-	* src/mimeview.h
-		Nicer messages in mimeview
-
-2006-04-05 [colin]	2.1.0cvs2
-
-	* src/addressbook.c
-	* src/prefs_summaries.c
-		i18n fix
-
-2006-04-05 [colin]	2.1.0cvs1
-
-	* src/plugins/pgpcore/plugin.c
-	* src/plugins/pgpcore/select-keys.c
-	* src/plugins/pgpcore/select-keys.h
-	* src/plugins/pgpcore/sgpgme.c
-	* src/plugins/pgpcore/sgpgme.h
-	* src/plugins/pgpinline/pgpinline.c
-	* src/plugins/pgpinline/plugin.c
-	* src/plugins/pgpmime/pgpmime.c
-	* src/plugins/pgpmime/plugin.c
-		Factorize and generalize a bit 
-		Drop S/MIME signature verification from PGP/MIME
-		(adding it as another, more complete plugin)
+	* commitHelper
+		mod for stable branch
 
 2006-04-05 [paul]	2.1.0
 
