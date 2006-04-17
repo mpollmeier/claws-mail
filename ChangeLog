@@ -1,3 +1,9 @@
+2006-04-17 [colin]	2.1.1cvs3-stable
+
+	* configure.ac
+		From 2.1.1cvs11
+		Fix search on encrpyt function on dragonfly
+
 2006-04-17 [colin]	2.1.1cvs2-stable
 
 	* src/prefs_account.c
