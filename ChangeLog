@@ -1,3 +1,9 @@
+2006-04-17 [colin]	2.1.1cvs1-stable
+
+	* src/etpan/imap-thread.c
+		From 2.1.1cvs9
+		Fix build on DragonFly
+
 2006-04-17 [paul]	2.1.1
 
 	2.1.1 released
