@@ -1,3 +1,9 @@
+2006-04-17 [colin]	2.1.1cvs2-stable
+
+	* src/prefs_account.c
+		From 2.1.1cvs10
+		By default, leave mails for 7 days on the server
+
 2006-04-17 [colin]	2.1.1cvs1-stable
 
 	* src/etpan/imap-thread.c
