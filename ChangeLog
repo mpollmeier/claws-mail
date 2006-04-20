@@ -1,3 +1,9 @@
+2006-04-20 [colin]	2.1.1cvs4-stable
+
+	* src/gtk/gtksctree.c
+		From 2.1.1cvs13
+		Fix flicker in summaryview
+
 2006-04-17 [colin]	2.1.1cvs3-stable
 
 	* configure.ac
