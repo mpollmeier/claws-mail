@@ -1396,3 +1396,4 @@
 ( cvs diff -u -r 1.105.2.50.2.1 -r 1.105.2.50.2.2 src/prefs_account.c;  ) > 2.1.1cvs2-stable.patchset
 ( cvs diff -u -r 1.654.2.1417.2.24 -r 1.654.2.1417.2.25 configure.ac;  ) > 2.1.1cvs3-stable.patchset
 ( cvs diff -u -r 1.1.4.15 -r 1.1.4.16 src/gtk/gtksctree.c;  ) > 2.1.1cvs4-stable.patchset
+( cvs diff -u -r 1.43.2.36 -r 1.43.2.37 src/prefs_matcher.c;  ) > 2.1.1cvs5-stable.patchset

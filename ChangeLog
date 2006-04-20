@@ -1,3 +1,10 @@
+2006-04-20 [colin]	2.1.1cvs5-stable
+
+	* src/prefs_matcher.c
+		From 2.1.1cvs16
+		Fix ~test and test conditions not updating
+		properly
+
 2006-04-20 [colin]	2.1.1cvs4-stable
 
 	* src/gtk/gtksctree.c
