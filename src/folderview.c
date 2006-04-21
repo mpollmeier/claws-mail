@@ -1863,8 +1863,10 @@ static void folderview_selected(GtkCTree *ctree, GtkCTreeNode *row,
 	}
 	
 	if (!can_select || summary_is_locked(folderview->summaryview)) {
-		gtkut_ctree_set_focus_row(ctree, folderview->opened);
-		gtk_ctree_select(ctree, folderview->opened);
+		if (folderview->opened) {
+			gtkut_ctree_set_focus_row(ctree, folderview->opened);
+			gtk_ctree_select(ctree, folderview->opened);
+		}
 		return;
 	}
 
