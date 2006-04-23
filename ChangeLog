@@ -1,3 +1,10 @@
+2006-04-23 [colin]	2.1.1cvs8-stable
+
+	* src/folder.c
+		From 2.1.1cvs28
+		Fix bug #912 (new count randomly set to
+		message count)
+
 2006-04-23 [colin]	2.1.1cvs7-stable
 
 	* src/gtk/quicksearch.c
