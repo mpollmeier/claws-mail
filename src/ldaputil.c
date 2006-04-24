@@ -49,7 +49,7 @@
 static GList *ldaputil_test_v3( LDAP *ld, gint tov ) {
 	GList *baseDN = NULL;
 	gint rc, i;
-	LDAPMessage *result, *e;
+	LDAPMessage *result = NULL, *e;
 	gchar *attribs[2];
 	BerElement *ber;
 	gchar *attribute;
@@ -103,7 +103,8 @@ static GList *ldaputil_test_v3( LDAP *ld, gint tov ) {
 			ber = NULL;
 		}
 	}
-	ldap_msgfree( result );
+	if (result)
+		ldap_msgfree( result );
 	return baseDN;
 }
 
@@ -117,7 +118,7 @@ static GList *ldaputil_test_v3( LDAP *ld, gint tov ) {
 static GList *ldaputil_test_v2( LDAP *ld, gint tov ) {
 	GList *baseDN = NULL;
 	gint rc, i;
-	LDAPMessage *result, *e;
+	LDAPMessage *result = NULL, *e;
 	gchar *attribs[1];
 	BerElement *ber;
 	gchar *attribute;
@@ -181,7 +182,8 @@ static GList *ldaputil_test_v2( LDAP *ld, gint tov ) {
 			ber = NULL;
 		}
 	}
-	ldap_msgfree( result );
+	if (result)
+		ldap_msgfree( result );
 	return baseDN;
 }
 

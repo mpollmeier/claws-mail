@@ -1,3 +1,13 @@
+2006-04-24 [colin]	2.1.1cvs9-stable
+
+	* src/compose.c
+	* src/ldaputil.c
+	* src/summaryview.c
+		From 2.1.1cvs29 and 2.1.1cvs30
+		Fix logic on error when send dialog is on
+		Fix possible free of uninitialized value
+		Fix 'context-menu' key
+
 2006-04-23 [colin]	2.1.1cvs8-stable
 
 	* src/folder.c
