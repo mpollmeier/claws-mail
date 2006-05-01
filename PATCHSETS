@@ -1403,3 +1403,4 @@
 ( cvs diff -u -r 1.382.2.258.2.2 -r 1.382.2.258.2.3 src/compose.c;  cvs diff -u -r 1.1.4.2 -r 1.1.4.3 src/ldaputil.c;  cvs diff -u -r 1.395.2.190 -r 1.395.2.191 src/summaryview.c;  ) > 2.1.1cvs9-stable.patchset
 ( cvs diff -u -r 1.213.2.87.2.1 -r 1.213.2.87.2.2 src/folder.c;  cvs diff -u -r 1.87.2.26 -r 1.87.2.27 src/folder.h;  cvs diff -u -r 1.207.2.91.2.1 -r 1.207.2.91.2.2 src/folderview.c;  ) > 2.1.1cvs10-stable.patchset
 ( cvs diff -u -r 1.75.2.19 -r 1.75.2.20 src/matcher.c;  ) > 2.1.1cvs11-stable.patchset
+( cvs diff -u -r 1.12.2.33 -r 1.12.2.34 src/action.c;  ) > 2.1.1cvs12-stable.patchset

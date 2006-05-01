@@ -1,3 +1,10 @@
+2006-05-01 [colin]	2.1.1cvs12-stable
+
+	* src/action.c
+		From 2.1.1cvs44
+		Don't update messageview when result of action
+		is piped.
+
 2006-04-28 [paul]	2.1.1cvs11-stable
 
 	* src/matcher.c
