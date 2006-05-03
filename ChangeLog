@@ -1,3 +1,11 @@
+2006-05-03 [colin]	2.1.1cvs13-stable
+
+	* src/imap.c
+	* src/imap.h
+	* src/imap_gtk.c
+		From 2.1.1cvs45
+		Fix creating folders with namespace separator
+
 2006-05-01 [colin]	2.1.1cvs12-stable
 
 	* src/action.c
