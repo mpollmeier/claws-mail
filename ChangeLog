@@ -1,3 +1,11 @@
+2006-05-03 [colin]	2.1.1cvs14-stable
+
+	* src/imap.c
+		From 2.1.1cvs46
+		Be sure to have a session when
+		getting separator
+
+
 2006-05-03 [colin]	2.1.1cvs13-stable
 
 	* src/imap.c
