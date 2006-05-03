@@ -1,3 +1,9 @@
+2006-05-03 [colin]	2.1.1cvs15-stable
+
+	* src/imap.c
+		From 2.1.1cvs47
+		I'm idiot
+
 2006-05-03 [colin]	2.1.1cvs14-stable
 
 	* src/imap.c
