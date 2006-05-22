@@ -1,421 +1,38 @@
-2006-05-22 [wwp]	2.2.0cvs47
+2006-05-22 [colin]	2.2.0cvs1-stable
 
-	* manual/fr/advanced.xml
-		updated.
-
-2006-05-22 [colin]	2.2.0cvs46
-
+	* src/action.c
+	* src/export.c
 	* src/filtering.c
-		Fix possible infinite loop. 'copy' is not a 
-		final action, so when encountering a 'copy',
-		we have to check if a previous one was set
-		and do it. In the same way, if we encounter
-		a 'move' we have to perform a possibly 
-		pending 'copy'. This will slow down filtering
-		on IMAP if move+copy or multiple copy actions
-		are to be done, but handling it via the batch
-		would be really too convoluted.
-
-2006-05-22 [wwp]	2.2.0cvs45
-
-	* manual/fr/advanced.xml
-	* manual/fr/faq.xml
-	* manual/fr/glossary.xml
-	* manual/fr/handling.xml
-	* manual/fr/intro.xml
-	* manual/fr/plugins.xml
-	* manual/fr/sylpheed-claws-manual.xml
-		sync w/ the english manual: updates URIs, documented mailing-list
-		support, better explanation about the enabled/disabled feature
-		in filtering/processing rules by Paul.
-
-2006-05-21 [colin]	2.2.0cvs44
-
-	* src/summaryview.c
-		Don't expand after building threads, but during
-
-2006-05-21 [colin]	2.2.0cvs43
-
-	* src/procmsg.c
-	* src/summaryview.c
-		More timing possibilities... For next time I have 
-		to find out how the hell some 3GHz computer takes
-		one minute to open a 30k folder...
-
-2006-05-21 [colin]	2.2.0cvs42
-
-	* manual/pl/advanced.xml
-	* manual/pl/faq.xml
-	* manual/pl/glossary.xml
-	* manual/pl/handling.xml
-	* manual/pl/intro.xml
-	* manual/pl/plugins.xml
-	* manual/pl/sylpheed-claws-manual.xml
-		Polish manual updated by Pawel
-
-2006-05-20 [colin]
-
-	* 2.3.0-rc3 released
-
-2006-05-20 [colin]	2.2.0cvs41
-
-	* src/imap.c
-		Fix -rc2 problems:
-		- remove cache of moved messages from original folder
-		- apply new flags to messages even if they aren't appliable
-		  via IMAP.
-
-2006-05-20 [colin]
-
-	* 2.3.0-rc2 released
-
-2006-05-19 [colin]	2.2.0cvs40
-
-	* src/imap.c
-		Don't issue SELECT in imap_change_flags
-		before having checked that we indeed have
-		some flags to change. MSG_POSTFILTERED for
-		example can't be used on IMAP.
-		Fixes bug #955 (copying messages between 
-		imap folders is extremely slow), which was
-		a regression.
-
-2006-05-19 [colin]	2.2.0cvs39
-
 	* src/folder.c
 	* src/folder.h
 	* src/folderview.c
-		Try to fix bug #830 (Some unread messages 
-		get marked read in IMAP inbox):
-		- Prevent scanning a folder if it's being 
-		  opened via the GUI
-		- Postpone opening via the GUI of a folder
-		  currently scanned.
-
-
-2006-05-19 [wwp]	2.2.0cvs38
-
-	* manual/advanced.xml
-		fix English+typo (thanks to Paul).
-
-2006-05-19 [wwp]	2.2.0cvs37
-
-	* manual/advanced.xml
-	* manual/fr/advanced.xml
-	* src/gtk/logwindow.c
-	* src/prefs_common.c
-	* src/prefs_common.h
-		added hidden prefs to allow customization of colors used in
-		protocol log window (useful for dark gtk+ themes).
-
-2006-05-19 [wwp]	2.2.0cvs36
-
-	* ChangeLog
-		fix an old erroneous changelog entry (thanks to Fabien Vantard).
-
-2006-05-19 [paul]	2.2.0cvs35
-
-	* src/textview.c
-		make Reply-To fully clickable
-	* src/gtk/logwindow.c
-		more colouring (SMTP ESMTP)
-	Both patches by Pawel Pekala
-
-2006-05-19 [cleroy]	2.2.0cvs34
-
-	* src/mh.c
-		Don't update flags from current folder
-		Probably fixes bug #935 (Read Messages 
-		Revert to Being Marked as Unread)
-
-2006-05-18 [colin]	2.2.0cvs33
-
-	* src/imap.c
-		Warning fix
-	* src/compose.c
-	* src/mainwindow.c
-	* src/summaryview.c
-	* src/toolbar.c
-		Allow replying to multiple emails
-		in multiple windows
-	* src/mimeview.c
-	* src/etpan/imap-thread.c
-		Leak fixes
-
-2006-05-18 [paul]	2.2.0cvs32
-
-	* src/summaryview.c
-		keep Mailing-List menu refreshed
-		Thanks to Colin
-
-2006-05-18 [paul]	2.2.0cvs31
-
-	* manual/advanced.xml
-	* manual/faq.xml
-	* manual/glossary.xml
-	* manual/handling.xml
-	* manual/intro.xml
-	* manual/plugins.xml
-	* manual/sylpheed-claws-manual.xml
-		update URLs
-		add info about mailing-list support
-		edit filtering info
-	* src/wizard.c
-	* src/common/defs.h
-	* src/gtk/about.c
-	* src/plugins/dillo_viewer/README
-		update URLs
-
-2006-05-17 [wwp]	2.2.0cvs30
-
-	* manual/handling.xml
-	* manual/fr/handling.xml
-		documented the ability to enabled/disable filtering/processing rules.
-
-2006-05-17 [colin]	2.2.0cvs29
-
-	* src/main.c
-		Don't initialize g_thread subsystem if it's 
-		already done (thanks to Hiro)
-	* src/mimeview.c
-		Fix saving of parts when there name can't be
-		converted from UTF-8.
-
-2006-05-17 [paul]	2.2.0cvs28
-
-	* po/Makefile.in.in
-		fix config.status warning with autoconf 2.60
-
-2006-05-17 [paul]	2.2.0cvs27
-
-	* po/POTFILES.in
-		add src/mbox.c
-
-2006-05-17 [wwp]	2.2.0cvs26
-
-	* src/mainwindow.c
-		fix useless and potentially dangerous buffer walking (thanks to Colin).
-
-2006-05-17 [wwp]	2.2.0cvs25
-
-	* src/plugins/demo/demo.c
-		updated product name in plugin demo (many plugins need to be
-		sync'ed w/ that change).
-
-2006-05-17 [colin]	2.2.0cvs24
-
-	* src/mh.c
-		Fix leak
-
-2006-05-16 [colin]	2.2.0cvs23
-
-	* src/mainwindow.c
-		Stupid me hit again. Fix cvs22.
-
-2006-05-16 [colin]	2.2.0cvs22
-
-	* src/mainwindow.c
-		Fix bug #922 (sylpheed-claws crashed after 
-		pushing on Inbox folder)
-
-2006-05-16 [colin]	2.2.0cvs21
-
-	* src/compose.c
-		Make From header be copy/paste/select-able
-
-2006-05-16 [wwp]	2.2.0cvs20
-
-	* src/export.c
-	* src/matcher.c
-	* src/summaryview.c
-	* src/etpan/imap-thread.c
-		fix some compiler warnings (thanks to Colin).
-
-2006-05-16 [wwp]	2.2.0cvs19
-
-	* src/action.c
 	* src/gedit-print.c
-	* src/inc.c
-	* src/mainwindow.c
-	* src/mh.c
-	* src/statusbar.c
-	* src/send_message.c
-	* src/summaryview.c
-		get rid of some gtk warning/errors at runtime (and avoid divide-by-0).
-
-2006-05-15 [colin]	2.2.0cvs18
-
-	* src/procmsg.c
-		Fix automatic rule creation with List-Post
-
-2006-05-15 [paul]	2.2.0cvs17
-
-	* tools/filter_conv_new.pl
-		updated for rule enabling/disabling
-		claws version >= 2.3.x required
-
-2006-05-15 [cleroy]	2.2.0cvs16
-
-	* src/main.c
-		Revert test
-
-2006-05-15 [cleroy]	2.2.0cvs15
-
-	* src/main.c
-		test
-
-2006-05-15 [wwp]	2.2.0cvs14
-
-	* manual/pl/.cvsignore
-		ignore generated files.
-
-2006-05-14 [wwp]	2.3.0-rc1
-
-	* 2.3.0-rc1 released
-
-2006-05-13 [wwp]	2.2.0cvs13
-
-	* src/filtering.c
-	* src/filtering.h
-	* src/matcher.c
-	* src/matcher_parser_lex.l
-	* src/matcher_parser_parse.y
-	* src/prefs_filtering.c
-		new feature: provide the ability to disable filtering and processing
-		rules. Patch by Fabien Vantard <fzzzzz@gmail.com>, w/ some minor
-		adaptations.
-
-2006-05-13 [colin]	2.2.0cvs12
-
-	* src/compose.c
-		Remove useless if (a) b; else b;
-		Thanks to wwp
-
-2006-05-13 [wwp]	2.2.0cvs11
-
-	* src/export.c
+	* src/imap.c
 	* src/import.c
+	* src/inc.c
+	* src/main.c
 	* src/mainwindow.c
+	* src/matcher.c
 	* src/mbox.c
+	* src/mh.c
+	* src/mimeview.c
+	* src/procmsg.c
+	* src/send_message.c
+	* src/statusbar.c
 	* src/summaryview.c
 	* src/summaryview.h
-		no more silent failures (or at least less ones) when importing
-		or exporting from/to mbox. Also start importing/exporting if
-		the necessary info is set.
-
-2006-05-13 [wwp]	2.2.0cvs10
-
-	* RELEASE_NOTES
-		restored up-to-date release notes.
-
-2006-05-13 [paul]	2.2.0cvs9
-
-	* po/nl.po
-	* po/ru.po
-		updated by Tim Dijkstra and Pavlo Bohmat
-
-2006-05-12 [colin]	2.2.0cvs8
-
-	* src/gtk/quicksearch.c
-		Add "k" as shortcut for "colorlabel". Patch
-		by ath42@users.sf.net.
-
-2006-05-12 [paul]	2.2.0cvs7
-
-	* src/prefs_common.h
-	* src/prefs_summaries.c
-	* src/summaryview.c
-		when entering a folder also allow
-		going directly to first Marked message
-
-2006-05-12 [paul]	2.2.0cvs6
-
-	* src/summaryview.c
-		always obey 'confirm before marking all
-		mails read' option
-
-2006-05-12 [paul]	2.2.0cvs5
-
-	* src/textview.c
-		make Sender fully clickable
-
-2006-05-12 [colin]	2.2.0cvs4
-
-	* src/compose.c
-	* src/compose.h
-		Let From be editable
-	* src/main.c
-	* src/mh.c
-		Full support of .mh_sequences' Unseen seq
-
-2006-05-12 [colin]	2.2.0cvs3
-
-	* src/folder.c
-	* src/mainwindow.c
-	* src/mainwindow.h
-	* src/messageview.c
-	* src/prefs_spelling.c
-	* src/procheader.c
-	* src/procmsg.c
-	* src/procmsg.h
-	* src/summaryview.c
-	* src/toolbar.c
-	* src/toolbar.h
-		Add contextual menu on Compose toolbar
-                button. Fixes bug #944 (Automatic
-                addresses not applied when changing account
-                from compose window)
-                add Mailing List support
-                based on the old 0.6.5claws25 patch by
-                Melvin Hadasht, with finishing touches
-                by Colin
-                Fix "ignore thread" when mails are threaded by
-                subject (and weren't ignored although appearing
-                in the thread).
-                GUI rework.
-                Both patches by Pawel.
-
-2006-05-08 [paul]	2.2.0cvs2
-
-	* src/mainwindow.c
-	* src/mainwindow.h
-	* src/messageview.c
-	* src/procheader.c
-	* src/procmsg.c
-	* src/procmsg.h
-	* src/summaryview.c
-		add Mailing List support
-		based on the old 0.6.5claws25 patch by 
-		Melvin Hadasht, with finishing touches
-		by Colin
-
-2006-05-08 [colin]	2.2.0cvs1
-
-	* src/mainwindow.c
-	* src/toolbar.c
-	* src/toolbar.h
-		Add contextual menu on Compose toolbar 
-		button. Fixes bug #944 (Automatic 
-		addresses not applied when changing account 
-		from compose window)
-
-2006-05-08 [paul]	2.2.0
-
-	2.2.0 released
-
-2006-05-08 [paul]	2.1.1cvs51
-
-	* po/cs.po
-	* po/de.po
-	* po/en_GB.po
-	* po/fi.po
-	* po/fr.po
-	* po/pt_BR.po
-	* po/sr.po
-	* po/zh_CN.po
-		updated by Tim, Stephan Sachse, me, Flammie Pirinen,
-		Fabien Vantard, Frederico Goncalves Guimaraes,
-		Aleksandar Urosevic, and Ralgh Young
+	* src/etpan/imap-thread.c
+		Backport fixes from 2.2.0cvs{6,11,18,19,20,29,39,40,41,46}:
+		always obey 'confirm before marking all mails read' option
+		fix mbox import/export behaviour on failure
+		fix automatic rule creation with List-Post
+		get rid of some gtk warning/errors at runtime (and avoid divide-by-0).
+		fix some compiler warnings
+		don't initialize g_thread subsystem if it's already done
+		fix saving of parts when there name can't be converted from UTF-8.
+		fix bug #830 (Some unread messages get marked read in IMAP inbox)
+		fix bug #955 (copying messages between imap folders is extremely slow)
+		fix infinite loop in filtering when encountering move+copy
 
 2006-05-12 [colin]	2.1.1cvs50
 
@@ -561,9 +178,8 @@
 	* src/gtk/gtkaspell.c
 		Fix crash on redirect (related to the return 
 		of the aspell menu in compose's toolbar)
- 	* src/prefs_msg_colors.c
-		Fix sensitivity widgets
 	* src/image_viewer.c
+	* src/prefs_msg_colors.c
 	* src/gtk/pluginwindow.c
 	* src/gtk/prefswindow.c
 		Change released signals to clicked (Fabien)

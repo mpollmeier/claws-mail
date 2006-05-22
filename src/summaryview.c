@@ -751,7 +751,6 @@ void summary_init(SummaryView *summaryview)
 	summary_clear_list(summaryview);
 	summary_set_column_titles(summaryview);
 	summary_colorlabel_menu_create(summaryview, FALSE);
-	main_create_mailing_list_menu (summaryview->mainwin, NULL);	
 	summary_set_menu_sensitive(summaryview);
 
 }
@@ -848,9 +847,6 @@ gboolean summary_show(SummaryView *summaryview, FolderItem *item)
 
 	is_refresh = (item == summaryview->folder_item) ? TRUE : FALSE;
 
-	if (!is_refresh)
-		main_create_mailing_list_menu (summaryview->mainwin, NULL);
-
 	if (!prefs_common.summary_quicksearch_sticky
 	 && !prefs_common.summary_quicksearch_recurse
 	 && !quicksearch_is_running(summaryview->quicksearch)
@@ -899,11 +895,7 @@ gboolean summary_show(SummaryView *summaryview, FolderItem *item)
 	buf = NULL;
 	if (!item || !item->path || !folder_item_parent(item) || item->no_select) {
 		g_free(buf);
-		debug_print("empty folder (%p %s %p %d)\n\n",
-				item, 
-				item?item->path:"NULL",
-				item?folder_item_parent(item):0x0,
-				item?item->no_select:FALSE);
+		debug_print("empty folder\n\n");
 		summary_set_hide_read_msgs_menu(summaryview, FALSE);
 		summary_clear_all(summaryview);
 		summaryview->folder_item = item;
@@ -1067,62 +1059,16 @@ gboolean summary_show(SummaryView *summaryview, FolderItem *item)
 		}
 	} else {
  		switch (prefs_common.select_on_entry) {
- 			case SELECTONENTRY_MNU:
-				node = summary_find_next_flagged_msg(summaryview, NULL,
-								     MSG_MARKED, FALSE);
-				if (node == NULL)
-					node = summary_find_next_flagged_msg(summaryview, NULL,
-								     MSG_NEW, FALSE);
-				if (node == NULL)
-					node = summary_find_next_flagged_msg(summaryview, NULL,
-								     MSG_UNREAD, FALSE);
-				break;
- 			case SELECTONENTRY_MUN:
-				node = summary_find_next_flagged_msg(summaryview, NULL,
-								     MSG_MARKED, FALSE);
-				if (node == NULL)
-					node = summary_find_next_flagged_msg(summaryview, NULL,
-								     MSG_UNREAD, FALSE);
-				if (node == NULL)
-					node = summary_find_next_flagged_msg(summaryview, NULL,
-								     MSG_NEW, FALSE);
-				break;
- 			case SELECTONENTRY_NMU:
-				node = summary_find_next_flagged_msg(summaryview, NULL,
-								     MSG_NEW, FALSE);
-				if (node == NULL)
-					node = summary_find_next_flagged_msg(summaryview, NULL,
-								     MSG_MARKED, FALSE);
-				if (node == NULL)
-					node = summary_find_next_flagged_msg(summaryview, NULL,
-								     MSG_UNREAD, FALSE);
-				break;
- 			case SELECTONENTRY_NUM:
+ 			case SELECTONENTRY_NEW:
 				node = summary_find_next_flagged_msg(summaryview, NULL,
 								     MSG_NEW, FALSE);
 				if (node == NULL)
 					node = summary_find_next_flagged_msg(summaryview, NULL,
 								     MSG_UNREAD, FALSE);
-				if (node == NULL)
-					node = summary_find_next_flagged_msg(summaryview, NULL,
-								     MSG_MARKED, FALSE);
 				break;
- 			case SELECTONENTRY_UNM:
+ 			case SELECTONENTRY_UNREAD:
 				node = summary_find_next_flagged_msg(summaryview, NULL,
 								     MSG_UNREAD, FALSE);
-				if (node == NULL)
-					node = summary_find_next_flagged_msg(summaryview, NULL,
-								     MSG_NEW, FALSE);
-				if (node == NULL)
-					node = summary_find_next_flagged_msg(summaryview, NULL,
-								     MSG_MARKED, FALSE);
-				break;
- 			case SELECTONENTRY_UMN:
-				node = summary_find_next_flagged_msg(summaryview, NULL,
-								     MSG_UNREAD, FALSE);
-				if (node == NULL)
-					node = summary_find_next_flagged_msg(summaryview, NULL,
-								     MSG_MARKED, FALSE);
 				if (node == NULL)
 					node = summary_find_next_flagged_msg(summaryview, NULL,
 								     MSG_NEW, FALSE);
@@ -1313,15 +1259,15 @@ void summary_set_menu_sensitive(SummaryView *summaryview)
 		gchar *const entry;
 		SensitiveCond cond;
 	} entry[] = {
-		{"/Reply"			, M_HAVE_ACCOUNT|M_TARGET_EXIST},
-		{"/Reply to"			, M_HAVE_ACCOUNT|M_TARGET_EXIST},
-		{"/Reply to/all"		, M_HAVE_ACCOUNT|M_TARGET_EXIST},
-		{"/Reply to/sender"             , M_HAVE_ACCOUNT|M_TARGET_EXIST},
-		{"/Reply to/mailing list"       , M_HAVE_ACCOUNT|M_TARGET_EXIST},
+		{"/Reply"			, M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
+		{"/Reply to"			, M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
+		{"/Reply to/all"		, M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
+		{"/Reply to/sender"             , M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
+		{"/Reply to/mailing list"       , M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
 
 		{"/Forward"			, M_HAVE_ACCOUNT|M_TARGET_EXIST},
 		{"/Forward as attachment"	, M_HAVE_ACCOUNT|M_TARGET_EXIST},
-        	{"/Redirect"			, M_HAVE_ACCOUNT|M_TARGET_EXIST},
+        	{"/Redirect"			, M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST},
 
 		{"/Move..."			, M_TARGET_EXIST|M_ALLOW_DELETE|M_NOT_NEWS},
 		{"/Copy..."			, M_TARGET_EXIST|M_EXEC},
@@ -2244,7 +2190,6 @@ void summary_sort(SummaryView *summaryview,
 	GtkCTree *ctree = GTK_CTREE(summaryview->ctree);
 	GtkCList *clist = GTK_CLIST(summaryview->ctree);
 	GtkCListCompareFunc cmp_func = NULL;
-	START_TIMING("summary_sort");
 	g_signal_handlers_block_by_func(G_OBJECT(summaryview->ctree),
 				       G_CALLBACK(summary_tree_expanded), summaryview);
 	gtk_clist_freeze(GTK_CLIST(summaryview->ctree));
@@ -2330,7 +2275,6 @@ unlock:
 	gtk_clist_thaw(GTK_CLIST(summaryview->ctree));
 	g_signal_handlers_unblock_by_func(G_OBJECT(summaryview->ctree),
 				       G_CALLBACK(summary_tree_expanded), summaryview);
-	END_TIMING();
 }
 
 gboolean summary_insert_gnode_func(GtkCTree *ctree, guint depth, GNode *gnode,
@@ -2347,8 +2291,8 @@ gboolean summary_insert_gnode_func(GtkCTree *ctree, guint depth, GNode *gnode,
 	summary_set_header(summaryview, text, msginfo, &free_from);
 
 	gtk_sctree_set_node_info(ctree, cnode, text[col_pos[S_COL_SUBJECT]], 2,
-				NULL, NULL, NULL, NULL, FALSE, summaryview->threaded && !summaryview->thread_collapsed);
-				//gnode->parent->parent ? TRUE : FALSE);
+				NULL, NULL, NULL, NULL, FALSE,
+				gnode->parent->parent ? TRUE : FALSE);
 #define SET_TEXT(col) \
 	gtk_ctree_node_set_text(ctree, cnode, col_pos[col], \
 				text[col_pos[col]])
@@ -2408,7 +2352,7 @@ static void summary_set_ctree_from_list(SummaryView *summaryview,
 	
 	if (summaryview->threaded) {
 		GNode *root, *gnode;
-		START_TIMING("summaryview_set_ctree_from_list(1)");
+
 		root = procmsg_get_thread_tree(mlist);
 
 		for (gnode = root->children; gnode != NULL;
@@ -2420,13 +2364,12 @@ static void summary_set_ctree_from_list(SummaryView *summaryview,
 
 		g_node_destroy(root);
                 
-		//summary_thread_init(summaryview);
-		END_TIMING();
+		summary_thread_init(summaryview);
 	} else {
 		gchar *text[N_SUMMARY_COLS];
 		gboolean free_from = FALSE;
 		gint *col_pos = summaryview->col_pos;
-		START_TIMING("summaryview_set_ctree_from_list(2)");
+
 		cur = mlist;
 		for (; mlist != NULL; mlist = mlist->next) {
 			msginfo = (MsgInfo *)mlist->data;
@@ -2453,7 +2396,6 @@ static void summary_set_ctree_from_list(SummaryView *summaryview,
 					     node);
 		}
 		mlist = cur;
-		END_TIMING();
 	}
 
 	if (prefs_common.enable_hscrollbar &&
@@ -2484,14 +2426,12 @@ static void summary_set_ctree_from_list(SummaryView *summaryview,
 	node = GTK_CTREE_NODE(GTK_CLIST(ctree)->row_list);
 
 	if (prefs_common.bold_unread) {
-		START_TIMING("summaryview_set_ctree_from_list(3)");
 		while (node) {
 			GtkCTreeNode *next = GTK_CTREE_NODE_NEXT(node);
 			if (GTK_CTREE_ROW(node)->children)
 				summary_set_row_marks(summaryview, node);
 			node = next;
 		}
-		END_TIMING();
 	}
 
 	g_signal_handlers_unblock_by_func(G_OBJECT(ctree),
@@ -4215,7 +4155,7 @@ static void summary_thread_init(SummaryView *summaryview)
 	GtkCTree *ctree = GTK_CTREE(summaryview->ctree);
 	GtkCTreeNode *node = GTK_CTREE_NODE(GTK_CLIST(ctree)->row_list);
 	GtkCTreeNode *next;
-	START_TIMING("summary_thread_init");
+
 	if (!summaryview->thread_collapsed) {
 		g_signal_handlers_block_by_func(G_OBJECT(ctree),
 				       G_CALLBACK(summary_tree_expanded), summaryview);
@@ -4228,7 +4168,6 @@ static void summary_thread_init(SummaryView *summaryview)
 		g_signal_handlers_unblock_by_func(G_OBJECT(ctree),
 				       G_CALLBACK(summary_tree_expanded), summaryview);
 	} 
-	END_TIMING();
 }
 
 static void summary_unthread_for_exec(SummaryView *summaryview)
@@ -5081,7 +5020,6 @@ static void summary_selected(GtkCTree *ctree, GtkCTreeNode *row,
 	msginfo = gtk_ctree_node_get_row_data(ctree, row);
 	g_return_if_fail(msginfo != NULL);
 
-	main_create_mailing_list_menu (summaryview->mainwin, msginfo);
 	toolbar_set_learn_button
 		(summaryview->mainwin->toolbar,
 		 MSG_IS_SPAM(msginfo->flags)?LEARN_HAM:LEARN_SPAM);

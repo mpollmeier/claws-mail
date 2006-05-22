@@ -2280,7 +2280,7 @@ static gchar imap_get_path_separator(IMAPFolder *folder, const gchar *path)
 {
 	IMAPNameSpace *namespace;
 	gchar separator = '/';
-	IMAPSession *session = imap_session_get(FOLDER(folder));
+	Session *session = imap_session_get(folder);
 	g_return_val_if_fail(session != NULL, '/');
 
 	if (folder->last_seen_separator == 0) {

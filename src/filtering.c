@@ -82,15 +82,13 @@ void filteringaction_free(FilteringAction * action)
 	g_free(action);
 }
 
-FilteringProp * filteringprop_new(gboolean enabled,
-				  const gchar *name,
+FilteringProp * filteringprop_new(const gchar *name,
 				  MatcherList * matchers,
 				  GSList * action_list)
 {
 	FilteringProp * filtering;
 
 	filtering = g_new0(FilteringProp, 1);
-	filtering->enabled = enabled;
 	filtering->name = name ? g_strdup(name): NULL;
 	filtering->matchers = matchers;
 	filtering->action_list = action_list;
@@ -145,7 +143,6 @@ FilteringProp * filteringprop_copy(FilteringProp *src)
                     filteringaction_copy(filtering_action));
         }
 
-	new->enabled = src->enabled;
 	new->name = g_strdup(src->name);
 
 	return new;
@@ -286,13 +283,6 @@ static gboolean filteringaction_apply(FilteringAction * action, MsgInfo * info)
 			return FALSE;
 		}
 
-		/* check if mail is set to copy already, 
-		 * in which case we have to do it */
-		if (info->is_copy && info->to_filter_folder) {
-			debug_print("should cp and mv !\n");
-			folder_item_copy_msg(info->to_filter_folder, info);
-			info->is_copy = FALSE;
-		}
 		/* mark message to be copied */		
 		info->is_copy = TRUE;
 		info->to_filter_folder = dest_folder;
@@ -486,7 +476,7 @@ static gboolean filter_msginfo(GSList * filtering_list, MsgInfo * info)
 	for (l = filtering_list, final = FALSE, apply_next = FALSE; l != NULL; l = g_slist_next(l)) {
 		FilteringProp * filtering = (FilteringProp *) l->data;
 
-		if (filtering->enabled && filtering_match_condition(filtering, info)) {
+		if (filtering_match_condition(filtering, info)) {
 			apply_next = filtering_apply_rule(filtering, info, &final);
                         if (final)
                                 break;
