@@ -57,14 +57,8 @@ typedef enum {
 
 typedef enum
 {
-/* U = unread, N = new, M = marked */
-	SELECTONENTRY_NOTHING,
-	SELECTONENTRY_UNM,
-	SELECTONENTRY_UMN,
-	SELECTONENTRY_NUM,
-	SELECTONENTRY_NMU,
-	SELECTONENTRY_MNU,
-	SELECTONENTRY_MUN
+	SELECTONENTRY_UNREAD = 1 << 0,
+	SELECTONENTRY_NEW    = 1 << 1
 } SelectOnEntry;
 
 typedef enum
@@ -308,15 +302,10 @@ struct _PrefsCommon
 	gchar *print_cmd;
 	gchar *ext_editor_cmd;
 
-    gboolean cliplog;
-    guint loglength;
-	gulong log_msg_color;
-	gulong log_warn_color;
-	gulong log_error_color;
-	gulong log_in_color;
-	gulong log_out_color;
+        gboolean cliplog;
+        guint loglength;
 
-    gboolean confirm_on_exit;
+        gboolean confirm_on_exit;
 	gboolean clean_on_exit;
 	gboolean ask_on_clean;
 	gboolean warn_queued_on_exit;
@@ -371,6 +360,7 @@ struct _PrefsCommon
 
 	gint warn_dnd;
 	gint broken_are_utf8;
+	gint skip_ssl_cert_check;
 };
 
 extern PrefsCommon prefs_common;

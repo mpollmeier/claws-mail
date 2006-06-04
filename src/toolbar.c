@@ -1432,7 +1432,6 @@ Toolbar *toolbar_create(ToolbarType 	 type,
 	ComboButton *replylist_combo;
 	ComboButton *replysender_combo;
 	ComboButton *fwd_combo;
-	ComboButton *compose_combo;
 
 	GtkTooltips *toolbar_tips;
 	ToolbarSylpheedActions *action_item;
@@ -1524,14 +1523,6 @@ Toolbar *toolbar_create(ToolbarType 	 type,
 			gtk_tooltips_set_tip(GTK_TOOLTIPS(toolbar_tips), 
 					     toolbar_data->compose_news_btn,
 					   _("Compose News"), NULL);
-			compose_combo = gtkut_combo_button_create(toolbar_data->compose_mail_btn, NULL, 0,
-					"<Compose>", (gpointer)toolbar_item);
-			gtk_button_set_relief(GTK_BUTTON(compose_combo->arrow),
-					      GTK_RELIEF_NONE);
-			gtk_toolbar_append_widget(GTK_TOOLBAR(toolbar),
-				  		  GTK_WIDGET_PTR(compose_combo),
-				 		  _("Compose with selected Account"), "Compose");
-			toolbar_data->compose_combo = compose_combo;
 			break;
 		case A_LEARN_SPAM:
 			icon_ham = stock_pixmap_widget(container, STOCK_PIXMAP_HAM_BTN);
@@ -1866,38 +1857,34 @@ void toolbar_main_set_sensitive(gpointer data)
 	if (toolbar->getall_btn)
 		SET_WIDGET_COND(GTK_WIDGET_PTR(toolbar->getall_combo),
 			M_HAVE_ACCOUNT|M_UNLOCKED);
-	if (toolbar->compose_mail_btn)
-		SET_WIDGET_COND(GTK_WIDGET_PTR(toolbar->compose_combo),
-			M_HAVE_ACCOUNT);
 	SET_WIDGET_COND(toolbar->compose_news_btn, M_HAVE_ACCOUNT);
 	SET_WIDGET_COND(toolbar->reply_btn,
-			M_HAVE_ACCOUNT|M_TARGET_EXIST);
+			M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST);
 	if (toolbar->reply_btn)
 		SET_WIDGET_COND(GTK_WIDGET_PTR(toolbar->reply_combo),
-			M_HAVE_ACCOUNT|M_TARGET_EXIST);
-	if (toolbar->replyall_btn)
-		SET_WIDGET_COND(toolbar->replyall_btn,
-			M_HAVE_ACCOUNT|M_TARGET_EXIST);
+			M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST);
+	SET_WIDGET_COND(toolbar->replyall_btn,
+			M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST);
 	if (toolbar->replyall_btn)
 		SET_WIDGET_COND(GTK_WIDGET_PTR(toolbar->replyall_combo),
-			M_HAVE_ACCOUNT|M_TARGET_EXIST);
+			M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST);
 	SET_WIDGET_COND(toolbar->replylist_btn,
-			M_HAVE_ACCOUNT|M_TARGET_EXIST);
+			M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST);
 	if (toolbar->replylist_btn) 
 		SET_WIDGET_COND(GTK_WIDGET_PTR(toolbar->replylist_combo),
-			M_HAVE_ACCOUNT|M_TARGET_EXIST);
+			M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST);
 	SET_WIDGET_COND(toolbar->replysender_btn,
-			M_HAVE_ACCOUNT|M_TARGET_EXIST);
+			M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST);
 	if (toolbar->replysender_btn)
 		SET_WIDGET_COND(GTK_WIDGET_PTR(toolbar->replysender_combo),
-			M_HAVE_ACCOUNT|M_TARGET_EXIST);
+			M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST);
 	SET_WIDGET_COND(toolbar->fwd_btn, M_HAVE_ACCOUNT|M_TARGET_EXIST);
 	if (toolbar->fwd_btn)
 		SET_WIDGET_COND(GTK_WIDGET_PTR(toolbar->fwd_combo),
 			M_HAVE_ACCOUNT|M_TARGET_EXIST); 
 	if (toolbar->fwd_combo) {
 		GtkWidget *submenu = gtk_item_factory_get_widget(toolbar->fwd_combo->factory, "/Redirect");
-		SET_WIDGET_COND(submenu, M_HAVE_ACCOUNT|M_TARGET_EXIST); 
+		SET_WIDGET_COND(submenu, M_HAVE_ACCOUNT|M_SINGLE_TARGET_EXIST); 
 	}
 
 	if (prefs_common.next_unread_msg_dialog == NEXTUNREADMSGDIALOG_ASSUME_NO) {
@@ -2000,7 +1987,6 @@ void toolbar_init(Toolbar * toolbar) {
 	toolbar->send_btn         	= NULL;
 	toolbar->compose_mail_btn 	= NULL;
 	toolbar->compose_news_btn 	= NULL;
-	toolbar->compose_combo	 	= NULL;
 	toolbar->reply_btn        	= NULL;
 	toolbar->replysender_btn  	= NULL;
 	toolbar->replyall_btn     	= NULL;
@@ -2084,6 +2070,7 @@ void send_queue_cb(gpointer data, guint action, GtkWidget *widget)
 {
 	GList *list;
 	gboolean found;
+	gboolean got_error = FALSE;
 
 	if (prefs_common.work_offline)
 		if (alertpanel(_("Offline warning"), 
@@ -2120,10 +2107,12 @@ void send_queue_cb(gpointer data, guint action, GtkWidget *widget)
 		if (folder->queue) {
 			if (procmsg_send_queue(folder->queue, 
 					       prefs_common.savemsg) < 0)
-				alertpanel_error(_("Some errors occurred while "
-						   "sending queued messages."));
+				got_error = TRUE;
 		}
 	}
+	if (got_error)
+		alertpanel_error(_("Some errors occurred while "
+				   "sending queued messages."));
 }
 
 void compose_mail_cb(gpointer data, guint action, GtkWidget *widget)

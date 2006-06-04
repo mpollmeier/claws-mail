@@ -46,7 +46,6 @@
 #include "addressbook.h"
 #include "alertpanel.h"
 #include "inputdialog.h"
-#include "mainwindow.h"
 #include "manage_window.h"
 #include "procmsg.h"
 #include "procheader.h"
@@ -546,7 +545,7 @@ static gint disposition_notification_send(MsgInfo *msginfo)
 		gchar *to_addr = g_strdup(to);
 		extract_address(to_addr);
 		extract_address(buf);
-		ok = strcmp(to_addr, buf);
+		ok = strcasecmp(to_addr, buf);
 		g_free(to_addr);
 	} else {
 		strncpy(buf, _("<No Return-Path found>"), 
@@ -839,8 +838,6 @@ gint messageview_show(MessageView *messageview, MsgInfo *msginfo,
 	}
 
 	messageview_set_position(messageview, 0);
-
-	main_create_mailing_list_menu(messageview->mainwin, messageview->msginfo);
 
 	if (messageview->msginfo->partial_recv)
 		partial_recv_show(messageview->noticeview, 

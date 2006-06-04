@@ -1259,21 +1259,17 @@ static Compose *compose_generic_reply(MsgInfo *msginfo, gboolean quote,
 		reply_account = account;
 
 	compose = compose_create(account, COMPOSE_REPLY, FALSE);
+
+	compose->updating = TRUE;
+
 	ifactory = gtk_item_factory_from_widget(compose->menubar);
 
 	menu_set_active(ifactory, "/Options/Remove references", FALSE);
 	menu_set_sensitive(ifactory, "/Options/Remove references", TRUE);
 
-	compose->updating = TRUE;
 	compose->replyinfo = procmsg_msginfo_get_full_info(msginfo);
 	if (!compose->replyinfo)
 		compose->replyinfo = procmsg_msginfo_copy(msginfo);
-	compose->updating = FALSE;
-
-	if (compose->deferred_destroy) {
-		compose_destroy(compose);
-		return NULL;
-	}
 
 	compose_extract_original_charset(compose);
 	
@@ -1343,6 +1339,14 @@ static Compose *compose_generic_reply(MsgInfo *msginfo, gboolean quote,
 		
 	compose->modified = FALSE;
 	compose_set_title(compose);
+
+	compose->updating = FALSE;
+
+	if (compose->deferred_destroy) {
+		compose_destroy(compose);
+		return NULL;
+	}
+
 	return compose;
 }
 
@@ -1377,12 +1381,6 @@ Compose *compose_forward(PrefsAccount *account, MsgInfo *msginfo,
 	compose->fwdinfo = procmsg_msginfo_get_full_info(msginfo);
 	if (!compose->fwdinfo)
 		compose->fwdinfo = procmsg_msginfo_copy(msginfo);
-	compose->updating = FALSE;
-
-	if (compose->deferred_destroy) {
-		compose_destroy(compose);
-		return NULL;
-	}
 
 	compose_extract_original_charset(compose);
 
@@ -1420,16 +1418,9 @@ Compose *compose_forward(PrefsAccount *account, MsgInfo *msginfo,
 		gchar *qmark;
 		MsgInfo *full_msginfo;
 
-		compose->updating = TRUE;
 		full_msginfo = procmsg_msginfo_get_full_info(msginfo);
 		if (!full_msginfo)
 			full_msginfo = procmsg_msginfo_copy(msginfo);
-		compose->updating = FALSE;
-
-		if (compose->deferred_destroy) {
-			compose_destroy(compose);
-			return NULL;
-		}
 
 		if (prefs_common.fw_quotemark &&
 		    *prefs_common.fw_quotemark)
@@ -1476,6 +1467,14 @@ Compose *compose_forward(PrefsAccount *account, MsgInfo *msginfo,
 	
 	compose->modified = FALSE;
 	compose_set_title(compose);
+
+	compose->updating = FALSE;
+
+	if (compose->deferred_destroy) {
+		compose_destroy(compose);
+		return NULL;
+	}
+
         return compose;
 }
 
@@ -1515,20 +1514,16 @@ Compose *compose_forward_multiple(PrefsAccount *account, GSList *msginfo_list)
 
 	compose = compose_create(account, COMPOSE_FORWARD, FALSE);
 
+	compose->updating = TRUE;
+
 	textview = GTK_TEXT_VIEW(compose->text);
 	textbuf = gtk_text_view_get_buffer(textview);
 	compose_create_tags(textview, compose);
 	
 	undo_block(compose->undostruct);
 	for (msginfo = msginfo_list; msginfo != NULL; msginfo = msginfo->next) {
-		compose->updating = TRUE;
 		msgfile = procmsg_get_message_file_path((MsgInfo *)msginfo->data);
-		compose->updating = FALSE;
-		if (compose->deferred_destroy) {
-			compose_destroy(compose);
-			g_free(msgfile);
-			return NULL;
-		}
+
 		if (!is_file_exist(msgfile))
 			g_warning("%s: file not exist\n", msgfile);
 		else
@@ -1573,6 +1568,14 @@ Compose *compose_forward_multiple(PrefsAccount *account, GSList *msginfo_list)
 	undo_unblock(compose->undostruct);
 	compose->modified = FALSE;
 	compose_set_title(compose);
+
+	compose->updating = FALSE;
+
+	if (compose->deferred_destroy) {
+		compose_destroy(compose);
+		return NULL;
+	}
+
 	return compose;
 }
 
@@ -1706,6 +1709,9 @@ void compose_reedit(MsgInfo *msginfo)
 	g_return_if_fail(account != NULL);
 
 	compose = compose_create(account, COMPOSE_REEDIT, FALSE);
+	
+	compose->updating = TRUE;
+	
 	if (privacy_system != NULL) {
 		compose->privacy_system = privacy_system;
 		compose_use_signing(compose, use_signing);
@@ -1715,14 +1721,7 @@ void compose_reedit(MsgInfo *msginfo)
 		activate_privacy_system(compose, account, FALSE);
 	}
 
-	compose->updating = TRUE;
 	compose->targetinfo = procmsg_msginfo_copy(msginfo);
-	compose->updating = FALSE;
-	
-	if (compose->deferred_destroy) {
-		compose_destroy(compose);
-		return;
-	}
 
 	compose_extract_original_charset(compose);
 
@@ -1749,6 +1748,8 @@ void compose_reedit(MsgInfo *msginfo)
 	}
 	
 	if (compose_parse_header(compose, msginfo) < 0) {
+		compose->updating = FALSE;
+		compose_destroy(compose);
 		return;
 	}
 	compose_reedit_set_entry(compose, msginfo);
@@ -1804,6 +1805,12 @@ void compose_reedit(MsgInfo *msginfo)
 	}
 	compose->modified = FALSE;
 	compose_set_title(compose);
+
+	compose->updating = FALSE;
+
+	if (compose->deferred_destroy) {
+		compose_destroy(compose);
+	}
 }
 
 Compose *compose_redirect(PrefsAccount *account, MsgInfo *msginfo,
@@ -1822,6 +1829,9 @@ Compose *compose_redirect(PrefsAccount *account, MsgInfo *msginfo,
 	g_return_val_if_fail(account != NULL, NULL);
 
 	compose = compose_create(account, COMPOSE_REDIRECT, batch);
+
+	compose->updating = TRUE;
+
 	ifactory = gtk_item_factory_from_widget(compose->menubar);
 	compose_create_tags(GTK_TEXT_VIEW(compose->text), compose);
 	compose->replyinfo = NULL;
@@ -1831,18 +1841,14 @@ Compose *compose_redirect(PrefsAccount *account, MsgInfo *msginfo,
 
 	gtk_widget_grab_focus(compose->header_last->entry);
 
-	compose->updating = TRUE;
 	filename = procmsg_get_message_file_path(msginfo);
-	compose->updating = FALSE;
 
-	if (compose->deferred_destroy) {
+	if (filename == NULL) {
+		compose->updating = FALSE;
 		compose_destroy(compose);
-		g_free(filename);
+
 		return NULL;
 	}
-
-	if (filename == NULL)
-		return NULL;
 
 	compose->redirect_filename = filename;
 	
@@ -1901,7 +1907,14 @@ Compose *compose_redirect(PrefsAccount *account, MsgInfo *msginfo,
 
 	compose->modified = FALSE;
 	compose_set_title(compose);
-        return compose;
+	compose->updating = FALSE;
+
+	if (compose->deferred_destroy) {
+		compose_destroy(compose);
+		return NULL;
+	}
+	
+	return compose;
 }
 
 GList *compose_get_compose_list(void)
@@ -2645,7 +2658,6 @@ static void compose_reedit_set_entry(Compose *compose, MsgInfo *msginfo)
 	g_return_if_fail(msginfo != NULL);
 
 	SET_ENTRY(subject_entry, msginfo->subject);
-	SET_ENTRY(from_name, msginfo->from);
 	SET_ADDRESS(COMPOSE_TO, msginfo->to);
 	SET_ADDRESS(COMPOSE_CC, compose->cc);
 	SET_ADDRESS(COMPOSE_BCC, compose->bcc);
@@ -3773,83 +3785,14 @@ compose_current_mail_account(void)
 	return ac;
 }
 
-#define QUOTE_IF_REQUIRED(out, str)					\
-{									\
-	if (*str != '"' && strpbrk(str, ",.[]<>")) {			\
-		gchar *__tmp;						\
-		gint len;						\
-									\
-		len = strlen(str) + 3;					\
-		if ((__tmp = alloca(len)) == NULL) {			\
-			g_warning("can't allocate memory\n");		\
-			g_string_free(header, TRUE);			\
-			return NULL;					\
-		}							\
-		g_snprintf(__tmp, len, "\"%s\"", str);			\
-		out = __tmp;						\
-	} else {							\
-		gchar *__tmp;						\
-									\
-		if ((__tmp = alloca(strlen(str) + 1)) == NULL) {	\
-			g_warning("can't allocate memory\n");		\
-			g_string_free(header, TRUE);			\
-			return NULL;					\
-		} else 							\
-			strcpy(__tmp, str);				\
-									\
-		out = __tmp;						\
-	}								\
-}
-
-#define QUOTE_IF_REQUIRED_NORMAL(out, str, errret)			\
-{									\
-	if (*str != '"' && strpbrk(str, ",.[]<>")) {			\
-		gchar *__tmp;						\
-		gint len;						\
-									\
-		len = strlen(str) + 3;					\
-		if ((__tmp = alloca(len)) == NULL) {			\
-			g_warning("can't allocate memory\n");		\
-			errret;						\
-		}							\
-		g_snprintf(__tmp, len, "\"%s\"", str);			\
-		out = __tmp;						\
-	} else {							\
-		gchar *__tmp;						\
-									\
-		if ((__tmp = alloca(strlen(str) + 1)) == NULL) {	\
-			g_warning("can't allocate memory\n");		\
-			errret;						\
-		} else 							\
-			strcpy(__tmp, str);				\
-									\
-		out = __tmp;						\
-	}								\
-}
-
 static void compose_select_account(Compose *compose, PrefsAccount *account,
 				   gboolean init)
 {
 	GtkItemFactory *ifactory;
-	gchar *from = NULL;
 
 	g_return_if_fail(account != NULL);
 
 	compose->account = account;
-
-	if (account->name && *account->name) {
-		gchar *buf;
-		QUOTE_IF_REQUIRED_NORMAL(buf, account->name, return);
-		from = g_strdup_printf("%s <%s>",
-				       buf, account->address);
-		gtk_entry_set_text(GTK_ENTRY(compose->from_name), from);
-	} else {
-		from = g_strdup_printf("<%s>",
-				       account->address);
-		gtk_entry_set_text(GTK_ENTRY(compose->from_name), from);
-	}
-
-	g_free(from);
 
 	compose_set_title(compose);
 
@@ -4707,7 +4650,6 @@ static gint compose_queue_sub(Compose *compose, gint *msgnum, FolderItem **item,
 	if (newsac)
 		fprintf(fp, "NAID:%d\n", newsac->account_id);
 
-	
 	if (compose->privacy_system != NULL) {
 		fprintf(fp, "X-Sylpheed-Privacy-System:%s\n", compose->privacy_system);
 		fprintf(fp, "X-Sylpheed-Sign:%d\n", compose->use_signing);
@@ -4890,6 +4832,34 @@ static void compose_add_attachments(Compose *compose, MimeInfo *parent)
 	} while (gtk_tree_model_iter_next(model, &iter));
 }
 
+#define QUOTE_IF_REQUIRED(out, str)					\
+{									\
+	if (*str != '"' && strpbrk(str, ",.[]<>")) {			\
+		gchar *__tmp;						\
+		gint len;						\
+									\
+		len = strlen(str) + 3;					\
+		if ((__tmp = alloca(len)) == NULL) {			\
+			g_warning("can't allocate memory\n");		\
+			g_string_free(header, TRUE);			\
+			return NULL;					\
+		}							\
+		g_snprintf(__tmp, len, "\"%s\"", str);			\
+		out = __tmp;						\
+	} else {							\
+		gchar *__tmp;						\
+									\
+		if ((__tmp = alloca(strlen(str) + 1)) == NULL) {	\
+			g_warning("can't allocate memory\n");		\
+			g_string_free(header, TRUE);			\
+			return NULL;					\
+		} else 							\
+			strcpy(__tmp, str);				\
+									\
+		out = __tmp;						\
+	}								\
+}
+
 #define IS_IN_CUSTOM_HEADER(header) \
 	(compose->account->add_customhdr && \
 	 custom_header_find(compose->account->customhdr_list, header) != NULL)
@@ -4958,8 +4928,6 @@ static gchar *compose_get_header(Compose *compose)
 	GSList *list;
 	gchar *std_headers[] = {"To:", "Cc:", "Bcc:", "Newsgroups:", "Reply-To:", "Followup-To:", NULL};
 	GString *header;
-	gchar *from_name = NULL, *from_address = NULL;
-	gchar *tmp;
 
 	g_return_val_if_fail(compose->account != NULL, NULL);
 	g_return_val_if_fail(compose->account->address != NULL, NULL);
@@ -4973,52 +4941,16 @@ static gchar *compose_get_header(Compose *compose)
 	}
 
 	/* From */
-	
 	if (compose->account->name && *compose->account->name) {
-		gchar *buf;
-		QUOTE_IF_REQUIRED(buf, compose->account->name);
-		tmp = g_strdup_printf("%s <%s>",
-			buf, compose->account->address);
-	} else {
-		tmp = g_strdup_printf("%s",
-			compose->account->address);
-	}
-	if (!strcmp(gtk_entry_get_text(GTK_ENTRY(compose->from_name)), tmp)
-	||  strlen(gtk_entry_get_text(GTK_ENTRY(compose->from_name))) == 0) {
-		/* use default */
-		from_name = compose->account->name ? g_strdup(compose->account->name):NULL;
-		from_address = g_strdup(compose->account->address);
-	} else {
-		gchar *spec = gtk_editable_get_chars(GTK_EDITABLE(compose->from_name), 0, -1);
-		/* extract name and address */
-		if (strstr(spec, " <") && strstr(spec, ">")) {
-			from_address = g_strdup(strrchr(spec, '<')+1);
-			*(strrchr(from_address, '>')) = '\0';
-			from_name = g_strdup(spec);
-			*(strrchr(from_name, '<')) = '\0';
-		} else {
-			from_name = NULL;
-			from_address = g_strdup(spec);
-		}
-		g_free(spec);
-	}
-	g_free(tmp);
-	
-	
-	if (from_name && *from_name) {
 		compose_convert_header
-			(compose, buf, sizeof(buf), from_name,
+			(compose, buf, sizeof(buf), compose->account->name,
 			 strlen("From: "), TRUE);
 		QUOTE_IF_REQUIRED(name, buf);
-		
 		g_string_append_printf(header, "From: %s <%s>\n",
-			name, from_address);
+			name, compose->account->address);
 	} else
-		g_string_append_printf(header, "From: %s\n", from_address);
+		g_string_append_printf(header, "From: %s\n", compose->account->address);
 	
-	g_free(from_name);
-	g_free(from_address);
-
 	/* To */
 	compose_add_headerfield_from_headerlist(compose, header, "To", ", ");
 
@@ -5319,8 +5251,6 @@ static void compose_create_header_entry(Compose *compose)
 	/* Entry field */
 	entry = gtk_entry_new(); 
 	gtk_widget_show(entry);
-	gtk_tooltips_set_tip(compose->tooltips, entry,
-		_("Use <tab> to autocomplete from addressbook"), NULL);
 	gtk_table_attach(GTK_TABLE(compose->header_table), entry, 1, 2, compose->header_nextrow, compose->header_nextrow+1, GTK_EXPAND | GTK_FILL, GTK_FILL, 0, 0);
 
         g_signal_connect(G_OBJECT(entry), "key-press-event", 
@@ -5390,11 +5320,11 @@ static GtkWidget *compose_create_header(Compose *compose)
 	hbox = gtk_hbox_new(FALSE, 0);
 	label = gtk_label_new(prefs_common.trans_hdr ? _("From:") : "From:");
 	gtk_box_pack_end(GTK_BOX(hbox), label, FALSE, FALSE, 0);
-	//gtk_table_attach(GTK_TABLE(header_table), hbox, 0, 1, count, count + 1,
-	//		 GTK_FILL, 0, 2, 0);
+	gtk_table_attach(GTK_TABLE(header_table), hbox, 0, 1, count, count + 1,
+			 GTK_FILL, 0, 2, 0);
 	from_optmenu_hbox = compose_account_option_menu_create(compose);
 	gtk_table_attach(GTK_TABLE(header_table), from_optmenu_hbox,
-				  0, 2, count, count + 1, GTK_EXPAND | GTK_FILL, GTK_SHRINK, 0, 0);
+				  1, 2, count, count + 1, GTK_EXPAND | GTK_FILL, GTK_SHRINK, 0, 0);
 	count++;
 
 	compose->header_table = header_table;
@@ -5689,7 +5619,6 @@ static void compose_spell_menu_changed(void *data)
 }
 #endif
 
-static gboolean compose_force_window_origin = TRUE;
 static Compose *compose_create(PrefsAccount *account, ComposeMode mode,
 						 gboolean batch)
 {
@@ -5750,8 +5679,6 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode,
 	compose->mutex = g_mutex_new();
 	compose->set_cursor_pos = -1;
 
-	compose->tooltips = gtk_tooltips_new();
-
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
 	gtk_widget_set_size_request(window, -1, prefs_common.compose_height);
@@ -5769,9 +5696,7 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode,
 	}
 	gtk_window_set_geometry_hints(GTK_WINDOW(window), NULL,
 				      &geometry, GDK_HINT_MIN_SIZE);
-	
-	if (compose_force_window_origin)
-		gtk_widget_set_uposition(window, prefs_common.compose_x, 
+	gtk_widget_set_uposition(window, prefs_common.compose_x, 
 				 prefs_common.compose_y);
 
 	g_signal_connect(G_OBJECT(window), "delete_event",
@@ -6106,54 +6031,45 @@ static Compose *compose_create(PrefsAccount *account, ComposeMode mode,
 static GtkWidget *compose_account_option_menu_create(Compose *compose)
 {
 	GList *accounts;
-	GtkWidget *hbox;
 	GtkWidget *optmenu;
 	GtkWidget *menu;
-	GtkWidget *from_name = NULL;
-
 	gint num = 0, def_menu = 0;
-	
+
 	accounts = account_get_list();
 	g_return_val_if_fail(accounts != NULL, NULL);
 
 	optmenu = gtk_option_menu_new();
 	menu = gtk_menu_new();
 
-	hbox = gtk_hbox_new(FALSE, 6);
-	from_name = gtk_entry_new();
-	
-	g_signal_connect_after(G_OBJECT(from_name), "grab_focus",
-			 G_CALLBACK(compose_grab_focus_cb), compose);
-
 	for (; accounts != NULL; accounts = accounts->next, num++) {
 		PrefsAccount *ac = (PrefsAccount *)accounts->data;
 		GtkWidget *menuitem;
-		gchar *name, *from = NULL;
+		gchar *name;
 
 		if (ac == compose->account) def_menu = num;
 
-		name = g_markup_printf_escaped("From: <i>%s</i>",
-				       ac->account_name);
-		
-		if (ac == compose->account) {
-			if (ac->name && *ac->name) {
-				gchar *buf;
-				QUOTE_IF_REQUIRED_NORMAL(buf, ac->name, return NULL);
-				from = g_strdup_printf("%s <%s>",
-						       buf, ac->address);
-				gtk_entry_set_text(GTK_ENTRY(from_name), from);
-			} else {
-				from = g_strdup_printf("%s",
-						       ac->address);
-				gtk_entry_set_text(GTK_ENTRY(from_name), from);
-			}
+		if (prefs_common.compose_no_markup) {
+			if (ac->name)
+				name = g_markup_printf_escaped("%s : %s &lt;%s&gt;",
+						       ac->account_name,
+						       ac->name, ac->address);
+			else
+				name = g_markup_printf_escaped("%s : &lt;%s&gt;",
+						       ac->account_name, ac->address);
+		} else {
+			if (ac->name)
+				name = g_markup_printf_escaped("<i>%s</i> : %s &lt;<b>%s</b>&gt;",
+						       ac->account_name,
+						       ac->name, ac->address);
+			else
+				name = g_markup_printf_escaped("<i>%s</i> : &lt;<b>%s</b>&gt;",
+						       ac->account_name, ac->address);
 		}
 		MENUITEM_ADD(menu, menuitem, name, ac->account_id);
 		gtk_label_set_use_markup (
 				GTK_LABEL (gtk_bin_get_child (GTK_BIN (menuitem))),
 				TRUE);
 		g_free(name);
-		g_free(from);
 		g_signal_connect(G_OBJECT(menuitem), "activate",
 				 G_CALLBACK(account_activated),
 				 compose);
@@ -6162,17 +6078,7 @@ static GtkWidget *compose_account_option_menu_create(Compose *compose)
 	gtk_option_menu_set_menu(GTK_OPTION_MENU(optmenu), menu);
 	gtk_option_menu_set_history(GTK_OPTION_MENU(optmenu), def_menu);
 
-	gtk_box_pack_start(GTK_BOX(hbox), optmenu, FALSE, FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(hbox), from_name, TRUE, TRUE, 0);
-	
-	gtk_tooltips_set_tip(compose->tooltips, optmenu,
-		_("Account to use for this email"), NULL);
-	gtk_tooltips_set_tip(compose->tooltips, from_name,
-		_("Sender address to be used"), NULL);
-
-	compose->from_name = from_name;
-	
-	return hbox;
+	return optmenu;
 }
 
 static void compose_set_priority_cb(gpointer data,
@@ -7538,7 +7444,6 @@ static void compose_draft_cb(gpointer data, guint action, GtkWidget *widget)
 	/* Save draft infos */
 	fprintf(fp, "X-Sylpheed-Account-Id:%d\n", compose->account->account_id);
 	fprintf(fp, "S:%s\n", compose->account->address);
-
 	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(compose->savemsg_checkbtn))) {
 		gchar *savefolderid;
 
@@ -7718,7 +7623,7 @@ static gint compose_delete_cb(GtkWidget *widget, GdkEventAny *event,
 	prefs_common.compose_x = x;
 	prefs_common.compose_y = y;
 
-	if (compose->sending)
+	if (compose->sending || compose->updating)
 		return TRUE;
 	compose_close_cb(compose, 0, NULL);
 	return TRUE;
@@ -8791,10 +8696,10 @@ static void compose_add_field_list( Compose *compose, GList *listAddress ) {
 	}
 }
 
-static void compose_reply_from_messageview_real(MessageView *msgview, GSList *msginfo_list, 
-				    guint action, gboolean opening_multiple)
+void compose_reply_from_messageview(MessageView *msgview, GSList *msginfo_list, 
+				    guint action)
 {
-	gchar *body = NULL;
+	gchar *body;
 	GSList *new_msglist = NULL;
 	MsgInfo *tmp_msginfo = NULL;
 	gboolean originally_enc = FALSE;
@@ -8804,7 +8709,7 @@ static void compose_reply_from_messageview_real(MessageView *msgview, GSList *ms
 
 	g_return_if_fail(msginfo_list != NULL);
 
-	if (g_slist_length(msginfo_list) == 1 && !opening_multiple) {
+	if (g_slist_length(msginfo_list) == 1) {
 		MimeInfo *mimeinfo = messageview_get_selected_mime_part(msgview);
 		MsgInfo *orig_msginfo = (MsgInfo *)msginfo_list->data;
 		
@@ -8821,8 +8726,7 @@ static void compose_reply_from_messageview_real(MessageView *msgview, GSList *ms
 		}
 	}
 
-	if (!opening_multiple)
-		body = messageview_get_selection(msgview);
+	body = messageview_get_selection(msgview);
 
 	if (new_msglist) {
 		compose = compose_reply_mode((ComposeMode)action, new_msglist, body);
@@ -8836,41 +8740,6 @@ static void compose_reply_from_messageview_real(MessageView *msgview, GSList *ms
 	}
 
 	g_free(body);
-}
-
-void compose_reply_from_messageview(MessageView *msgview, GSList *msginfo_list, 
-				    guint action)
-{
-	if ((!prefs_common.forward_as_attachment || action != COMPOSE_FORWARD) 
-	&&  action != COMPOSE_FORWARD_AS_ATTACH && g_slist_length(msginfo_list) > 1) {
-		GSList *cur = msginfo_list;
-		gchar *msg = g_strdup_printf(_("You are about to reply to %d "
-					       "messages. Opening the windows "
-					       "could take some time. Do you "
-					       "want to continue?"), 
-					       g_slist_length(msginfo_list));
-		if (g_slist_length(msginfo_list) > 9
-		&&  alertpanel(_("Warning"), msg, GTK_STOCK_CANCEL, "+" GTK_STOCK_YES, NULL)
-		    != G_ALERTALTERNATE) {
-		    	g_free(msg);
-			return;
-		}
-		g_free(msg);
-		/* We'll open multiple compose windows */
-		/* let the WM place the next windows */
-		compose_force_window_origin = FALSE;
-		for (; cur; cur = cur->next) {
-			GSList tmplist;
-			tmplist.data = cur->data;
-			tmplist.next = NULL;
-			compose_reply_from_messageview_real(msgview, &tmplist, action, TRUE);
-		}
-		compose_force_window_origin = TRUE;
-	} else {
-		/* forwarding multiple mails as attachments is done via a
-		 * single compose window */
-		compose_reply_from_messageview_real(msgview, msginfo_list, action, FALSE);
-	}
 }
 
 void compose_set_position(Compose *compose, gint pos)

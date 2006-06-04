@@ -644,16 +644,6 @@ static PrefParam param[] = {
 	 NULL, NULL, NULL},
 	{"log_length", "500", &prefs_common.loglength, P_INT,
 	 NULL, NULL, NULL},
-	{"log_msg_color", "#00af00", &prefs_common.log_msg_color, P_COLOR,
-	 NULL, NULL, NULL},
-	{"log_warn_color", "#af0000", &prefs_common.log_warn_color, P_COLOR,
-	 NULL, NULL, NULL},
-	{"log_error_color", "#af0000", &prefs_common.log_error_color, P_COLOR,
-	 NULL, NULL, NULL},
-	{"log_in_color", "#000000", &prefs_common.log_in_color, P_COLOR,
-	 NULL, NULL, NULL},
-	{"log_out_color", "#0000ef", &prefs_common.log_out_color, P_COLOR,
-	 NULL, NULL, NULL},
 
 	{"color_new", "179", &prefs_common.color_new, P_COLOR,
 	 NULL, NULL, NULL},
@@ -765,6 +755,8 @@ static PrefParam param[] = {
 	{"statusbar_update_step", "10", &prefs_common.statusbar_update_step, P_INT,
 	 NULL, NULL, NULL},
 	{"compose_no_markup", "FALSE", &prefs_common.compose_no_markup, P_BOOL,
+	 NULL, NULL, NULL},
+	{"skip_ssl_cert_check", "FALSE", &prefs_common.skip_ssl_cert_check, P_BOOL,
 	 NULL, NULL, NULL},
 
 	{NULL, NULL, NULL, P_OTHER, NULL, NULL, NULL}
