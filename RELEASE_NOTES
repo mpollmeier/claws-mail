@@ -1,4 +1,4 @@
-8th May 2006                                     Sylpheed-Claws 2.2.0
+5th June 2006                                     Sylpheed-Claws 2.2.1
 
 		    SYLPHEED-CLAWS  RELEASE NOTES
                       http://claws.sylpheed.org
@@ -9,91 +9,65 @@ email client.
 Notes for this release:
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-* S/MIME signature verification has been removed from the PGP/MIME
-  plugin as it is now provided by the S/MIME plugin.
+* This is a bugfix release.
 
 New in this release:
 ~~~~~~~~~~~~~~~~~~~~
 
-* IMAP users will see significant speed improvements.
+* Always obey the "confirm before marking all mails read" option
 
-* ANONYMOUS auth has been added for IMAP
+* Fixed MBOX import/export's behaviour on failure
 
-* In the Compose window all spell-checker options are now available
-  from the /Spelling/Options menu. 
-	
-* Syntax errors in the extended Quick Search are now indicated by
-  a pink/red background.
+* Fixed automatic rule creation with List-Post
 
-* An encrypt-to-self option has been added to the Account Privacy
-  options.
+* Fixed some GTK+ warnings and errors at runtime
 
-* Sysadmins can now provide their users with pre-filled values in
-  the Setup Wizard. See the manual, '6.6. Deploying Sylpheed-Claws',
-  for details.
+* Fixed some compiler warnings
 
-* Various GUI improvements have been added.
+* Fixed double init of the g_thread subsystem
 
-* A new command line option has been added: --select 'folder[/msg]'
-  This can be used at startup and causes the specified folder/message
-  to be selected. 'folder' is a folder id like '#mh/Mailbox/inbox'
+* Fixed saving of parts with names that can't be converted to UTF-8
 
-* Optional background colouring of quotes has been added. It can be
-  configured from the Colour Preferences dialogue.
-  GTK+-2.8.x or newer is required for this feature.
+* Fixed a possible infinite loop when filtering moved and copied some
+  mails
 
-* In the Compose window, multiple quote levels are now coloured in
-  the same way as the Message View.
+* Fixed a buffer overflow in Russian locale 
 
-* A warning is now displayed on expired SSL certificates and the 
-  expiration date is shown.
+* Fixed a memory leak in expired SSL certificate check
 
-* A hidden option has been added, 'compose_no_markup', this prohibits
-  the use of bold and italic text in Compose dialogue's account 
-  selector.
+* Fixed bolding of folder names in the folder selector window with
+  GLib 2.10
 
-* LDAPS support has been added.
+* Added an hidden preference, 'ssl_skip_cert_check', to avoid
+  duplicates of bug #959 - if libetpan is linked against gnutls, there
+  can be bugs on 64 bits systems. Gnutls fixed them in their 1.2.4 
+  release.
 
-* The user manual has been updated, and French and Polish 
-  translations are now also included.
+* The SSL "expired certificate" warning is now presented only once per
+  session
 
-* updated Brazilian Portuguese, British English, Czech, Dutch,
-  Finnish, French, German, Serbian, Simplified Chinese, and 
-  Spanish translations.
+* Fixed races when reusing the SMTP sessions
 
-* Bugfixes: 
-	o bug 859, 'problems with cyrilic input in search panel'
-	o bug 912, '"new" count randomly set to message count'
-	o bug 919, 'libetpan: SEGV when connecting using command'
-	o bug 925, 'File accountrc does not store non-ascii 
-		    characters correctly'
-	o bug 933, 'Crash re-entering the custom headers list dialog
-		    in accounts prefs'
-	o bug 943, 'Incorrectly parsed email address list in short
-		    headers on message view and in printouts'
-	* src/compose.c
-		Fix inserting files not in utf8 when locale is utf8
-	* Don't show error dialog when cancelling connection
-	* src/summary_search.c
-		'stop' button was sticky when searching in an empty
-  		folder.
-	* src/addressbook.c
-		Fix crash with empty columns
-	* src/plugins/spamassassin/spamassassin_gtk.c
-		Fix missing set_text on unix socket
-	* src/send_message.c
-		enforce a check for domain in account prefs (a 
-		sending error could be faced if domain was checked 
-		but no value set)
-	* src/prefs_matcher.c
-		Fix values when reselecting a ~test rule
-	* IMAP: fix preventing renaming with namespace separator
-	* Fix build on DragonFly
-	* Fix occasional flicker in folderview
-	* Fix crash on redirect (related to the return of the aspell
-	  menu in compose's toolbar)
-	* Fix returned quick search results when search term contains
-	  an underscore
+* Added the missing timeout on SMTP sessions
+
+* Fixed a few leaks
+
+* Fixed a crash in PGP plugins, which could happen when signing fails
+  for unknown reasons
+
+* Fixed SpamAssassin plugin, which stayed disabled as long as the
+  transport wasn't reselected
+
+* Fixed bug #830 (Some unread messages get marked read in IMAP inbox)
+
+* Fixed bug #955 (copying messages between imap folders is extremely
+  slow)
+
+* Fixed bug #961 (return receipt dialog complains incorrectly about
+  return-path email adress being different)
+
+* Fixed bug #962 (Manual and/or UI should warn about incompatible
+  locking causing dataloss)
 
 For further details of the numbered bugs listed above consult
 http://www.thewildbeast.co.uk/sylpheed-claws/bugzilla/index.cgi
@@ -103,4 +77,3 @@ http://www.thewildbeast.co.uk/sylpheed-claws/bugzilla/index.cgi
 ---------------------------------------------------------------------
 See ChangeLog and README for full information regarding changes in
 this release.
-
