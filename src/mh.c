@@ -134,8 +134,10 @@ static gboolean mh_scan_required	(Folder		*folder,
 					 FolderItem	*item);
 static int mh_item_close		(Folder		*folder,
 					 FolderItem	*item);
+#if 0
 static gint mh_get_flags		(Folder *folder, FolderItem *item,
                            		 MsgInfoList *msginfo_list, GRelation *msgflags);
+#endif
 static void mh_write_sequences		(FolderItem 	*item, gboolean remove_unseen);
 
 static FolderClass mh_class;
@@ -461,6 +463,7 @@ static gint mh_copy_msgs(Folder *folder, FolderItem *dest, MsgInfoList *msglist,
 	gint filemode = 0;
 	FolderItemPrefs *prefs;
 	MsgInfo *msginfo = NULL;
+	gboolean remove_special_headers = FALSE;
 	MsgInfoList *cur = NULL;
 	gint curnum = 0, total = 0;
 	gchar *srcpath = NULL;
@@ -485,6 +488,19 @@ static gint mh_copy_msgs(Folder *folder, FolderItem *dest, MsgInfoList *msglist,
 		mh_get_last_num(folder, dest);
 		if (dest->last_num < 0) return -1;
 	}
+
+	if ((MSG_IS_QUEUED(msginfo->flags) || MSG_IS_DRAFT(msginfo->flags))
+	&& !folder_has_parent_of_type(dest, F_QUEUE)
+	&& !folder_has_parent_of_type(dest, F_DRAFT)) {
+		/* as every msginfo comes from the same folder, it is supposed they
+		 * will either match the preceding condition either all or none.
+		 */
+		remove_special_headers = TRUE;
+	} else if (!(MSG_IS_QUEUED(msginfo->flags) || MSG_IS_DRAFT(msginfo->flags))
+	&& (folder_has_parent_of_type(dest, F_QUEUE)
+	 || folder_has_parent_of_type(dest, F_DRAFT))) {
+		return -1;
+	} 
 
 	prefs = dest->prefs;
 
@@ -530,7 +546,13 @@ static gint mh_copy_msgs(Folder *folder, FolderItem *dest, MsgInfoList *msglist,
 			    msginfo->msgnum, dest->path);
 
 
-		if (MSG_IS_MOVE(msginfo->flags)) {
+		if (remove_special_headers) {
+			if (procmsg_remove_special_headers(srcfile, destfile) !=0) {
+				g_free(srcfile);
+				g_free(destfile);
+				goto err_reset_status;
+			}
+		} else if (MSG_IS_MOVE(msginfo->flags)) {
 			if (move_file(srcfile, destfile, TRUE) < 0) {
 				FILE_OP_ERROR(srcfile, "move");
 				if (copy_file(srcfile, destfile, TRUE) < 0) {
@@ -1183,6 +1205,7 @@ static gchar *get_unseen_seq_name(void)
 	return seq_name;	
 }
 
+#if 0
 static gint mh_get_flags(Folder *folder, FolderItem *item,
                            MsgInfoList *msginfo_list, GRelation *msgflags)
 {
@@ -1278,6 +1301,7 @@ next_token:
 */
 	return 0;
 }
+#endif
 
 static void mh_write_sequences(FolderItem *item, gboolean remove_unseen)
 {
