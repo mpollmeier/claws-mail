@@ -265,19 +265,21 @@ static gboolean compose_check_entries		(Compose	*compose,
 						 gboolean 	check_subject);
 static gint compose_write_to_file		(Compose	*compose,
 						 FILE		*fp,
-						 gint 		 action,
-						 gboolean	 attach_parts);
+						 gint 		 action);
 static gint compose_write_body_to_file		(Compose	*compose,
 						 const gchar	*file);
 static gint compose_remove_reedit_target	(Compose	*compose,
 						 gboolean	 force);
 void compose_remove_draft			(Compose	*compose);
+static gint compose_queue			(Compose	*compose,
+						 gint		*msgnum,
+						 FolderItem	**item,
+						 gchar		**msgpath);
 static gint compose_queue_sub			(Compose	*compose,
 						 gint		*msgnum,
 						 FolderItem	**item,
 						 gchar		**msgpath,
-						 gboolean	check_subject,
-						 gboolean 	remove_reedit_target);
+						 gboolean	check_subject);
 static void compose_add_attachments		(Compose	*compose,
 						 MimeInfo	*parent);
 static gchar *compose_get_header		(Compose	*compose);
@@ -503,6 +505,8 @@ static void compose_check_forwards_go	   (Compose *compose);
 
 static gint compose_defer_auto_save_draft	(Compose	*compose);
 static PrefsAccount *compose_guess_forward_account_from_msginfo	(MsgInfo *msginfo);
+
+static gboolean compose_close	(Compose *compose);
 
 static GtkItemFactoryEntry compose_popup_entries[] =
 {
@@ -1622,7 +1626,7 @@ static void compose_colorize_signature(Compose *compose)
 		}
 }
 
-Compose *compose_reedit(MsgInfo *msginfo, gboolean batch)
+void compose_reedit(MsgInfo *msginfo)
 {
 	Compose *compose = NULL;
 	PrefsAccount *account = NULL;
@@ -1636,11 +1640,11 @@ Compose *compose_reedit(MsgInfo *msginfo, gboolean batch)
 	gboolean use_encryption = FALSE;
 	gchar *privacy_system = NULL;
 
-	g_return_val_if_fail(msginfo != NULL, NULL);
-	g_return_val_if_fail(msginfo->folder != NULL, NULL);
+	g_return_if_fail(msginfo != NULL);
+	g_return_if_fail(msginfo->folder != NULL);
 
 	if (compose_put_existing_to_front(msginfo)) {
-		return NULL;
+		return;
 	}
 
         if (folder_has_parent_of_type(msginfo->folder, F_QUEUE) ||
@@ -1702,9 +1706,9 @@ Compose *compose_reedit(MsgInfo *msginfo, gboolean batch)
         if (!account) {
         	account = cur_account;
         }
-	g_return_val_if_fail(account != NULL, NULL);
+	g_return_if_fail(account != NULL);
 
-	compose = compose_create(account, COMPOSE_REEDIT, batch);
+	compose = compose_create(account, COMPOSE_REEDIT, FALSE);
 	
 	compose->updating = TRUE;
 	
@@ -1746,7 +1750,7 @@ Compose *compose_reedit(MsgInfo *msginfo, gboolean batch)
 	if (compose_parse_header(compose, msginfo) < 0) {
 		compose->updating = FALSE;
 		compose_destroy(compose);
-		return NULL;
+		return;
 	}
 	compose_reedit_set_entry(compose, msginfo);
 
@@ -1806,9 +1810,7 @@ Compose *compose_reedit(MsgInfo *msginfo, gboolean batch)
 
 	if (compose->deferred_destroy) {
 		compose_destroy(compose);
-		return NULL;
 	}
-	return compose;
 }
 
 Compose *compose_redirect(PrefsAccount *account, MsgInfo *msginfo,
@@ -3947,9 +3949,6 @@ static gboolean compose_check_for_set_recipients(Compose *compose)
 		}
 		if (!found_other) {
 			AlertValue aval;
-			if (compose->batch) {
-				gtk_widget_show_all(compose->window);
-			}
 			aval = alertpanel(_("Send"),
 					  _("The only recipient is the default CC address. Send anyway?"),
 					  GTK_STOCK_CANCEL, _("+_Send"), NULL);
@@ -3978,9 +3977,6 @@ static gboolean compose_check_for_set_recipients(Compose *compose)
 		}
 		if (!found_other) {
 			AlertValue aval;
-			if (compose->batch) {
-				gtk_widget_show_all(compose->window);
-			}
 			aval = alertpanel(_("Send"),
 					  _("The only recipient is the default BCC address. Send anyway?"),
 					  GTK_STOCK_CANCEL, _("+_Send"), NULL);
@@ -3996,9 +3992,6 @@ static gboolean compose_check_entries(Compose *compose, gboolean check_subject)
 	const gchar *str;
 
 	if (compose_check_for_valid_recipient(compose) == FALSE) {
-		if (compose->batch) {
-			gtk_widget_show_all(compose->window);
-		}
 		alertpanel_error(_("Recipient is not specified."));
 		return FALSE;
 	}
@@ -4026,11 +4019,11 @@ static gboolean compose_check_entries(Compose *compose, gboolean check_subject)
 gint compose_send(Compose *compose)
 {
 	gint msgnum;
-	FolderItem *folder = NULL;
+	FolderItem *folder;
 	gint val = -1;
 	gchar *msgpath = NULL;
 	gboolean discard_window = FALSE;
-	gchar *errstr = NULL;
+
 	if (prefs_common.send_dialog_mode != SEND_DIALOG_ALWAYS
 			|| compose->batch == TRUE)
 		discard_window = TRUE;
@@ -4045,7 +4038,7 @@ gint compose_send(Compose *compose)
 		goto bail;
 	}
 
-	val = compose_queue(compose, &msgnum, &folder, &msgpath, TRUE);
+	val = compose_queue(compose, &msgnum, &folder, &msgpath);
 
 	if (val) {
 		if (compose->batch) {
@@ -4085,10 +4078,10 @@ gint compose_send(Compose *compose)
 	
 	if (msgpath == NULL) {
 		msgpath = folder_item_fetch_msg(folder, msgnum);
-		val = procmsg_send_message_queue(msgpath, &errstr);
+		val = procmsg_send_message_queue(msgpath);
 		g_free(msgpath);
 	} else {
-		val = procmsg_send_message_queue(msgpath, &errstr);
+		val = procmsg_send_message_queue(msgpath);
 		g_unlink(msgpath);
 		g_free(msgpath);
 	}
@@ -4107,17 +4100,9 @@ gint compose_send(Compose *compose)
 		if (!discard_window)
 			compose_close(compose);
 	} else {
-		if (errstr) {
-			gchar *tmp = g_strdup_printf(_("%s\nUse \"Send queued messages\" from "
-				   "the main window to retry."), errstr);
-			g_free(errstr);
-			alertpanel_error_log(tmp);
-			g_free(tmp);
-		} else {
-			alertpanel_error_log(_("The message was queued but could not be "
+		alertpanel_error(_("The message was queued but could not be "
 				   "sent.\nUse \"Send queued messages\" from "
 				   "the main window to retry."));
-		}
 		if (!discard_window) {
 			goto bail;		
 		}
@@ -4339,7 +4324,7 @@ error:
 	return -1;
 }
 
-static gint compose_write_to_file(Compose *compose, FILE *fp, gint action, gboolean attach_parts)
+static gint compose_write_to_file(Compose *compose, FILE *fp, gint action)
 {
 	GtkTextBuffer *buffer;
 	GtkTextIter start, end;
@@ -4349,9 +4334,6 @@ static gint compose_write_to_file(Compose *compose, FILE *fp, gint action, gbool
 	EncodingType encoding;
 	MimeInfo *mimemsg, *mimetext;
 	gint line;
-
-	if (action == COMPOSE_WRITE_FOR_SEND)
-		attach_parts = TRUE;
 
 	/* create message MimeInfo */
 	mimemsg = procmime_mimeinfo_new();
@@ -4499,7 +4481,7 @@ static gint compose_write_to_file(Compose *compose, FILE *fp, gint action, gbool
 		procmime_encode_content(mimetext, encoding);
 
 	/* append attachment parts */
-	if (compose_use_attach(compose) && attach_parts) {
+	if (compose_use_attach(compose)) {
 		MimeInfo *mimempart;
 		gchar *boundary = NULL;
 		mimempart = procmime_mimeinfo_new();
@@ -4626,14 +4608,11 @@ void compose_remove_draft(Compose *compose)
 
 }
 
-gint compose_queue(Compose *compose, gint *msgnum, FolderItem **item, gchar **msgpath,
-		   gboolean remove_reedit_target)
+static gint compose_queue(Compose *compose, gint *msgnum, FolderItem **item, gchar **msgpath)
 {
-	return compose_queue_sub (compose, msgnum, item, msgpath, FALSE, remove_reedit_target);
+	return compose_queue_sub (compose, msgnum, item, msgpath, FALSE);
 }
-static gint compose_queue_sub(Compose *compose, gint *msgnum, FolderItem **item, 
-			      gchar **msgpath, gboolean check_subject,
-			      gboolean remove_reedit_target)
+static gint compose_queue_sub(Compose *compose, gint *msgnum, FolderItem **item, gchar **msgpath, gboolean check_subject)
 {
 	FolderItem *queue;
 	gchar *tmp;
@@ -4650,9 +4629,6 @@ static gint compose_queue_sub(Compose *compose, gint *msgnum, FolderItem **item,
 	
 	if (compose_check_entries(compose, check_subject) == FALSE) {
                 lock = FALSE;
-		if (compose->batch) {
-			gtk_widget_show_all(compose->window);
-		}
                 return -1;
 	}
 
@@ -4690,7 +4666,6 @@ static gint compose_queue_sub(Compose *compose, gint *msgnum, FolderItem **item,
 	if ((fp = g_fopen(tmp, "wb")) == NULL) {
 		FILE_OP_ERROR(tmp, "fopen");
 		g_free(tmp);
-		lock = FALSE;
 		return -2;
 	}
 
@@ -4802,9 +4777,7 @@ static gint compose_queue_sub(Compose *compose, gint *msgnum, FolderItem **item,
 		fprintf(fp, "FMID:%s\t%d\t%s\n", folderid, compose->fwdinfo->msgnum, compose->fwdinfo->msgid);
 		g_free(folderid);
 	}
-
-	/* end of headers */
-	fprintf(fp, "X-Sylpheed-End-Special-Headers: 1\n");
+	fprintf(fp, "\n");
 
 	if (compose->redirect_filename != NULL) {
 		if (compose_redirect_write_to_file(compose, fp) < 0) {
@@ -4816,7 +4789,7 @@ static gint compose_queue_sub(Compose *compose, gint *msgnum, FolderItem **item,
 		}
 	} else {
 		gint result = 0;
-		if ((result = compose_write_to_file(compose, fp, COMPOSE_WRITE_FOR_SEND, TRUE)) < 0) {
+		if ((result = compose_write_to_file(compose, fp, COMPOSE_WRITE_FOR_SEND)) < 0) {
 			lock = FALSE;
 			fclose(fp);
 			g_unlink(tmp);
@@ -4829,20 +4802,14 @@ static gint compose_queue_sub(Compose *compose, gint *msgnum, FolderItem **item,
 		FILE_OP_ERROR(tmp, "fclose");
 		g_unlink(tmp);
 		g_free(tmp);
-		lock = FALSE;
 		return -2;
 	}
 
-	if (item && *item) {
-		queue = *item;
-	} else {
-		queue = account_get_special_folder(compose->account, F_QUEUE);
-	}
+	queue = account_get_special_folder(compose->account, F_QUEUE);
 	if (!queue) {
 		g_warning("can't find queue folder\n");
 		g_unlink(tmp);
 		g_free(tmp);
-		lock = FALSE;
 		return -1;
 	}
 	folder_item_scan(queue);
@@ -4850,7 +4817,6 @@ static gint compose_queue_sub(Compose *compose, gint *msgnum, FolderItem **item,
 		g_warning("can't queue the message\n");
 		g_unlink(tmp);
 		g_free(tmp);
-		lock = FALSE;
 		return -1;
 	}
 	
@@ -4860,7 +4826,7 @@ static gint compose_queue_sub(Compose *compose, gint *msgnum, FolderItem **item,
 	} else
 		*msgpath = tmp;
 
-	if (compose->mode == COMPOSE_REEDIT && remove_reedit_target) {
+	if (compose->mode == COMPOSE_REEDIT) {
 		compose_remove_reedit_target(compose, FALSE);
 	}
 
@@ -7515,12 +7481,10 @@ static void compose_send_later_cb(gpointer data, guint action,
 	Compose *compose = (Compose *)data;
 	gint val;
 
-	val = compose_queue_sub(compose, NULL, NULL, NULL, TRUE, TRUE);
+	val = compose_queue_sub(compose, NULL, NULL, NULL, TRUE);
 	if (!val) 
 		compose_close(compose);
-	else if (val == -1) {
-		alertpanel_error(_("Could not queue message."));
-	} else if (val == -2) {
+	else if (val == -2) {
 		alertpanel_error(_("Could not queue message:\n\n%s."), strerror(errno));
 	} else if (val == -3) {
 		alertpanel_error(_("Could not queue message for sending:\n\n"
@@ -7596,11 +7560,9 @@ static void compose_draft_cb(gpointer data, guint action, GtkWidget *widget)
 		fprintf(fp, "X-Sylpheed-Encrypt:%d\n", compose->use_encryption);
 		fprintf(fp, "X-Sylpheed-Privacy-System:%s\n", compose->privacy_system);
 	}
+	fprintf(fp, "\n");
 
-	/* end of headers */
-	fprintf(fp, "X-Sylpheed-End-Special-Headers: 1\n");
-
-	if (compose_write_to_file(compose, fp, COMPOSE_WRITE_FOR_STORE, action != COMPOSE_AUTO_SAVE) < 0) {
+	if (compose_write_to_file(compose, fp, COMPOSE_WRITE_FOR_STORE) < 0) {
 		fclose(fp);
 		g_unlink(tmp);
 		g_free(tmp);
@@ -7636,7 +7598,7 @@ static void compose_draft_cb(gpointer data, guint action, GtkWidget *widget)
 			procmsg_msginfo_set_flags(newmsginfo, MSG_LOCKED, MSG_DRAFT);
 		else
 			procmsg_msginfo_set_flags(newmsginfo, 0, MSG_DRAFT);
-		if (compose_use_attach(compose) && action != COMPOSE_AUTO_SAVE)
+		if (compose_use_attach(compose))
 			procmsg_msginfo_set_flags(newmsginfo, 0,
 						  MSG_HAS_ATTACHMENT);
 
@@ -8798,7 +8760,7 @@ static PrefsAccount *compose_guess_forward_account_from_msginfo(MsgInfo *msginfo
 	return account;
 }
 
-gboolean compose_close(Compose *compose)
+static gboolean compose_close(Compose *compose)
 {
 	gint x, y;
 

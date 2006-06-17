@@ -529,7 +529,7 @@ static gint disposition_notification_send(MsgInfo *msginfo)
 	gchar *path;
         gchar *addr;
         gchar *addrp;
-	gchar *foo = NULL;
+
 	if ((!msginfo->returnreceiptto) && 
 	    (!msginfo->dispositionnotificationto)) 
 		return -1;
@@ -654,7 +654,7 @@ static gint disposition_notification_send(MsgInfo *msginfo)
 		g_free(path);
 	}		
 
-	fprintf(fp, "X-Sylpheed-End-Special-Headers: 1\n");
+	fprintf(fp, "\n");
 	
 	/* Date */
 	get_rfc822_date(buf, sizeof(buf));
@@ -709,9 +709,8 @@ static gint disposition_notification_send(MsgInfo *msginfo)
 
 	/* send it */
 	path = folder_item_fetch_msg(queue, num);
-	ok = procmsg_send_message_queue(path, &foo);
+	ok = procmsg_send_message_queue(path);
 	g_free(path);
-	g_free(foo);
 	folder_item_remove_msg(queue, num);
 
 	return ok;
@@ -1562,7 +1561,7 @@ static void reedit_cb(gpointer data, guint action, GtkWidget *widget)
 	    !folder_has_parent_of_type(msginfo->folder, F_QUEUE)) 
 		return;
 
-	compose_reedit(msginfo, FALSE);
+	compose_reedit(msginfo);
 }
 
 static void addressbook_open_cb(gpointer data, guint action, GtkWidget *widget)
