@@ -1,3 +1,14 @@
+2006-07-27 [colin]	2.3.1cvs1-stable
+
+	* src/imap.c 
+	* src/news.c
+	* src/procheader.c
+	* src/unmime.c
+	* src/etpan/imap-thread.c
+		From gtk2 branch
+		Really fix #968 (Rockliffe workaround)
+		Fix returns in headers
+
 2006-06-20 [paul]	2.3.1
 
 	2.3.1 released
