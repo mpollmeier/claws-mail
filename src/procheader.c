@@ -435,8 +435,6 @@ static MsgInfo *parse_stream(void *data, gboolean isstring, MsgFlags flags,
 	gchar *hp;
 	HeaderEntry *hentry;
 	gint hnum;
-	void *orig_data = data;
-
 	get_one_field_func get_one_field =
 		isstring ? (get_one_field_func)string_get_one_field
 			 : (get_one_field_func)procheader_get_one_field;
@@ -444,22 +442,8 @@ static MsgInfo *parse_stream(void *data, gboolean isstring, MsgFlags flags,
 	hentry = procheader_get_headernames(full);
 
 	if (MSG_IS_QUEUED(flags) || MSG_IS_DRAFT(flags)) {
-		while (get_one_field(buf, sizeof(buf), data, NULL) != -1) {
-			if (!strncmp(buf, "X-Sylpheed-End-Special-Headers: 1",
-				strlen("X-Sylpheed-End-Special-Headers:")))
-				break;
-			/* from other mailers */
-			if (!strncmp(buf, "Date: ", 6)
-			||  !strncmp(buf, "To: ", 4)
-			||  !strncmp(buf, "From: ", 6)
-			||  !strncmp(buf, "Subject: ", 9)) {
-				if (isstring)
-					data = orig_data;
-				else 
-					rewind((FILE *)data);
-				break;
-			}
-		}
+		while (get_one_field(buf, sizeof(buf), data, NULL) != -1)
+			; /* loop */
 	}
 
 	msginfo = procmsg_msginfo_new();
@@ -502,11 +486,12 @@ static MsgInfo *parse_stream(void *data, gboolean isstring, MsgFlags flags,
 			if (msginfo->from) break;
                         msginfo->from = conv_unmime_header(hp, NULL);
 			msginfo->fromname = procheader_get_fromname(msginfo->from);
-			replace_returns(msginfo->from);
-			replace_returns(msginfo->fromname);
+			remove_return(msginfo->from);
+			remove_return(msginfo->fromname);
 			break;
 		case H_TO:
                         tmp = conv_unmime_header(hp, NULL);
+			remove_return(tmp);
 			if (msginfo->to) {
 				p = msginfo->to;
 				msginfo->to =
@@ -518,6 +503,7 @@ static MsgInfo *parse_stream(void *data, gboolean isstring, MsgFlags flags,
 			break;
 		case H_CC:
                         tmp = conv_unmime_header(hp, NULL);
+			remove_return(tmp);
 			if (msginfo->cc) {
 				p = msginfo->cc;
 				msginfo->cc =
@@ -539,7 +525,7 @@ static MsgInfo *parse_stream(void *data, gboolean isstring, MsgFlags flags,
 		case H_SUBJECT:
 			if (msginfo->subject) break;
                         msginfo->subject = conv_unmime_header(hp, NULL);
-			replace_returns(msginfo->subject);
+			remove_return(msginfo->subject);
 			break;
 		case H_MSG_ID:
 			if (msginfo->msgid) break;
@@ -636,6 +622,7 @@ static MsgInfo *parse_stream(void *data, gboolean isstring, MsgFlags flags,
 		case H_FROM_SPACE:
 			if (msginfo->fromspace) break;
 			msginfo->fromspace = g_strdup(hp);
+			remove_return(msginfo->fromspace);
 			break;
  		case H_LIST_POST:
 			msginfo->list_post = g_strdup(hp);
