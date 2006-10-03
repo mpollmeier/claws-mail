@@ -30,7 +30,12 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <time.h>
+
+#undef MEASURE_TIME
+
+#ifdef MEASURE_TIME
+#  include <sys/time.h>
+#endif
 
 #include "folder.h"
 #include "mh.h"
@@ -40,7 +45,6 @@
 #include "codeconv.h"
 #include "statusbar.h"
 #include "gtkutils.h"
-#include "timing.h"
 
 /* Define possible missing constants for Windows. */
 #ifdef G_OS_WIN32
@@ -306,7 +310,7 @@ gint mh_get_num_list(Folder *folder, FolderItem *item, GSList **list, gboolean *
 	}
 	closedir(dp);
 
-	mh_set_mtime(item);
+	item->mtime = time(NULL);
 	return nummsgs;
 }
 
@@ -571,9 +575,9 @@ static gint mh_copy_msgs(Folder *folder, FolderItem *dest, MsgInfoList *msglist,
 	g_free(srcpath);
 	mh_write_sequences(dest, TRUE);
 
-	if (dest->mtime == last_mtime && !dest_need_scan) {
-		mh_set_mtime(dest);
-	}
+	if (dest->mtime == last_mtime && !dest_need_scan)
+		dest->mtime = time(NULL);
+	
 	if (total > 100) {
 		statusbar_progress_all(0,0,0);
 		statusbar_pop_all();
@@ -610,9 +614,9 @@ static gint mh_remove_msg(Folder *folder, FolderItem *item, gint num)
 		return -1;
 	}
 
-	if (item->mtime == last_mtime && !need_scan) {
-		mh_set_mtime(item);
-	}
+	if (item->mtime == last_mtime && !need_scan)
+		item->mtime = time(NULL);
+
 	g_free(file);
 	return 0;
 }
@@ -669,9 +673,8 @@ static gint mh_remove_msgs(Folder *folder, FolderItem *item,
 		statusbar_progress_all(0,0,0);
 		statusbar_pop_all();
 	}
-	if (item->mtime == last_mtime && !need_scan) {
-		mh_set_mtime(item);
-	}
+	if (item->mtime == last_mtime && !need_scan)
+		item->mtime = time(NULL);
 
 	g_free(path);
 	return 0;
@@ -1070,10 +1073,13 @@ static void mh_scan_tree_recursive(FolderItem *item)
 			node = item->node;
 			for (node = node->children; node != NULL; node = node->next) {
 				FolderItem *cur_item = FOLDER_ITEM(node->data);
-				if (!strcmp2(cur_item->path, entry)) {
+				gchar *curpath = mh_filename_from_utf8(cur_item->path);
+				if (!strcmp2(curpath, entry)) {
 					new_item = cur_item;
+					g_free(curpath);
 					break;
 				}
+				g_free(curpath);
 			}
 			if (!new_item) {
 				debug_print("new folder '%s' found.\n", entry);
@@ -1119,7 +1125,7 @@ static void mh_scan_tree_recursive(FolderItem *item)
 	closedir(dp);
 #endif
 
-	mh_set_mtime(item);
+	item->mtime = time(NULL);
 }
 
 static gboolean mh_rename_folder_func(GNode *node, gpointer data)
@@ -1318,8 +1324,10 @@ static void mh_write_sequences(FolderItem *item, gboolean remove_unseen)
 	FILE *mh_sequences_old_fp, *mh_sequences_new_fp;
 	gchar buf[BUFFSIZE];
 	gchar *path = NULL;
-	START_TIMING("");
-
+/*
+	GTimer *timer = g_timer_new();
+	g_timer_start(timer);
+*/
 	if (!item)
 		return;
 	
@@ -1335,7 +1343,6 @@ static void mh_write_sequences(FolderItem *item, gboolean remove_unseen)
 		MsgInfo *info = NULL;
 		gint start = -1, end = -1;
 		gchar *sequence = g_strdup("");
-		gint seq_len = 0;
 		msglist = g_slist_sort(msglist, sort_cache_list_by_msgnum);
 		cur = msglist;
 		
@@ -1349,18 +1356,12 @@ static void mh_write_sequences(FolderItem *item, gboolean remove_unseen)
 					end = info->msgnum;
 			} else {
 				if (start > 0 && end > 0) {
-					gchar tmp[32];
-					gint tmp_len = 0;
+					gchar *tmp = sequence;
 					if (start != end)
-						snprintf(tmp, 31, " %d-%d", start, end);
+						sequence = g_strdup_printf("%s %d-%d ", tmp, start, end);
 					else
-						snprintf(tmp, 31, " %d", start);
-					
-					tmp_len = strlen(tmp);
-					sequence = g_realloc(sequence, seq_len+tmp_len+1);
-					strcpy(sequence+seq_len, tmp);
-					seq_len += tmp_len;
-
+						sequence = g_strdup_printf("%s %d ", tmp, start);
+					g_free(tmp);
 					start = end = -1;
 				}
 			}
@@ -1381,12 +1382,7 @@ static void mh_write_sequences(FolderItem *item, gboolean remove_unseen)
 			fclose(mh_sequences_old_fp);
 		}
 		
-		fflush(mh_sequences_new_fp);
-#if 0
-		fsync(fileno(mh_sequences_new_fp));
-#endif
 		fclose(mh_sequences_new_fp);
-
 		g_rename(mh_sequences_new, mh_sequences_old);
 		g_free(sequence);
 		procmsg_msg_list_free(msglist);
@@ -1394,39 +1390,15 @@ static void mh_write_sequences(FolderItem *item, gboolean remove_unseen)
 	g_free(mh_sequences_old);
 	g_free(mh_sequences_new);
 	g_free(path);
-
-	END_TIMING();
+/*
+	g_timer_stop(timer);
+	printf("mh_get_flags: %f secs\n", g_timer_elapsed(timer, NULL));
+	g_timer_destroy(timer);
+*/
 }
 
 static int mh_item_close(Folder *folder, FolderItem *item)
 {
-	time_t last_mtime = (time_t)0;
-	gboolean need_scan = mh_scan_required(item->folder, item);
-	last_mtime = item->mtime;
-
 	mh_write_sequences(item, FALSE);
-
-	if (item->mtime == last_mtime && !need_scan) {
-		mh_set_mtime(item);
-	}
-
 	return 0;
-}
-
-void mh_set_mtime(FolderItem *item)
-{
-	struct stat s;
-	gchar *path = folder_item_get_path(item);
-
-	g_return_if_fail(path != NULL);
-
-	if (stat(path, &s) < 0) {
-		FILE_OP_ERROR(path, "stat");
-		g_free(path);
-		return;
-	}
-
-	item->mtime = s.st_mtime;
-	debug_print("MH: forced mtime of %s to %ld\n", item->name, item->mtime);
-	g_free(path);
 }
