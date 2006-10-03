@@ -1571,6 +1571,7 @@ void folder_item_process_open (FolderItem *item,
 	/* Processing */
 	buf = g_strdup_printf(_("Processing (%s)...\n"), 
 			      item->path ? item->path : item->name);
+	debug_print("%s\n", buf);
 	g_free(buf);
 
 	if (before_proc_func)
@@ -1581,6 +1582,7 @@ void folder_item_process_open (FolderItem *item,
 	if (after_proc_func)
 		after_proc_func(data);
 
+	debug_print("done.\n");
 	item->processing_pending = FALSE;
 	return;	
 }
@@ -2303,9 +2305,8 @@ void folder_item_write_cache(FolderItem *item)
         }
 
 	if (!need_scan && FOLDER_TYPE(item->folder) == F_MH) {
-		if (item->mtime == last_mtime) {
-			mh_set_mtime(item);
-		}
+		if (item->mtime == last_mtime)
+			item->mtime = time(NULL);
 	}
 
 	g_free(cache_file);
@@ -3764,7 +3765,6 @@ void folder_item_apply_processing(FolderItem *item)
 	&&  !post_global_processing)
 		return;
 
-	debug_print("processing %s\n", item->name);
 	folder_item_update_freeze();
 
 	mlist = folder_item_get_msg_list(item);
@@ -3970,6 +3970,10 @@ gboolean folder_has_parent_of_type(FolderItem *item,
 			/* here's an exception: Inbox subfolders are normal. */
 			if (item->parent_stype == -1 && cur->stype == F_INBOX 
 			&& item != cur) {
+				debug_print("set item %s parent type to %d "
+					"even if %s is F_INBOX\n",
+					item->path ? item->path : "(null)",
+					0, cur->path);
 				item->parent_stype = F_NORMAL;
 				break;
 			}
@@ -3977,11 +3981,21 @@ gboolean folder_has_parent_of_type(FolderItem *item,
 			 * well copy it instead of going up the full way */
 			if (cur->parent_stype != -1) {
 				item->parent_stype = cur->parent_stype;
+				debug_print("set item %s parent type to %d "
+					"from %s's parent type\n",
+					item->path ? item->path : "(null)",
+					cur->parent_stype ? cur->parent_stype : 0, 
+					cur->path ? cur->path : "(null)");
 				break;
 			}
 			/* we found a parent that has a special type. That's 
 			 * our parent type. */
 			if (cur->stype != F_NORMAL) {
+				debug_print("set item %s parent type to %d "
+					"from %s's type\n",
+					item->path ? item->path : "(null)",
+					cur->stype ? cur->stype : 0, 
+					cur->path ? cur->path : "(null)");
 				cur->parent_stype = cur->stype;
 				item->parent_stype = cur->stype;
 				break;
@@ -3992,6 +4006,8 @@ gboolean folder_has_parent_of_type(FolderItem *item,
 		/* as we still didn't find anything, our parents must all be 
 		 * normal. */
 		if (item->parent_stype == -1) {
+			debug_print("set item %s to 0 from default\n", 
+				item->path ? item->path : "(null)");
 			item->parent_stype = F_NORMAL;
 		}
 	}
