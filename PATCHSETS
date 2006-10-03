@@ -1914,42 +1914,4 @@
 ( cvs diff -u -r 1.1.2.12 -r 1.1.2.13 src/partial_download.c;  ) > 2.5.1cvs3.patchset
 ( cvs diff -u -r 1.28.2.27 -r 1.28.2.28 src/mbox.c;  ) > 2.5.1cvs4.patchset
 ( cvs diff -u -r 1.75.2.30 -r 1.75.2.31 src/matcher.c;  ) > 2.5.1cvs5.patchset
-( cvs diff -u -r 1.155.2.41 -r 1.155.2.42 src/Makefile.am;  cvs diff -u -r 1.27.2.20 -r 1.27.2.21 src/addr_compl.c;  cvs diff -u -r 1.8.2.5 -r 1.8.2.6 src/addr_compl.h;  cvs diff -u -r 1.22.2.8 -r 1.22.2.9 src/addrbook.c;  cvs diff -u -r 1.7.2.1 -r 1.7.2.2 src/addrbook.h;  cvs diff -u -r 1.60.2.63 -r 1.60.2.64 src/addressbook.c;  cvs diff -u -r 1.28.2.18 -r 1.28.2.19 src/addrindex.c;  cvs diff -u -r 1.9.2.7 -r 1.9.2.8 src/addrindex.h;  cvs diff -u -r 1.382.2.310 -r 1.382.2.311 src/compose.c;  cvs diff -u -r 1.204.2.102 -r 1.204.2.103 src/prefs_common.c;  cvs diff -u -r 1.1.4.30 -r 1.1.4.31 src/prefs_filtering_action.c;  cvs diff -u -r 1.52.2.23 -r 1.52.2.24 src/prefs_folder_item.c;  cvs diff -u -r 1.12.2.30 -r 1.12.2.31 src/prefs_template.c;  cvs diff -u -r 1.25.2.27 -r 1.25.2.28 src/stock_pixmap.c;  cvs diff -u -r 1.18.2.18 -r 1.18.2.19 src/stock_pixmap.h;  diff -u /dev/null src/pixmaps/addr_one.xpm;  diff -u /dev/null src/pixmaps/addr_two.xpm;  ) > 2.5.2cvs1.patchset
-( cvs diff -u -r 1.27.2.21 -r 1.27.2.22 src/addr_compl.c;  cvs diff -u -r 1.8.2.6 -r 1.8.2.7 src/addr_compl.h;  ) > 2.5.2cvs2.patchset
-( cvs diff -u -r 1.27.2.22 -r 1.27.2.23 src/addr_compl.c;  ) > 2.5.2cvs3.patchset
-( cvs diff -u -r 1.100.2.42 -r 1.100.2.43 AUTHORS;  cvs diff -u -r 1.105.2.66 -r 1.105.2.67 src/prefs_account.c;  cvs diff -u -r 1.1.2.24 -r 1.1.2.25 src/gtk/authors.h;  ) > 2.5.2cvs4.patchset
-( cvs diff -u -r 1.12.2.13 -r 1.12.2.14 src/html.c;  ) > 2.5.2cvs5.patchset
-( cvs diff -u -r 1.382.2.311 -r 1.382.2.312 src/compose.c;  cvs diff -u -r 1.50.2.26 -r 1.50.2.27 src/compose.h;  cvs diff -u -r 1.274.2.150 -r 1.274.2.151 src/mainwindow.c;  cvs diff -u -r 1.96.2.150 -r 1.96.2.151 src/textview.c;  cvs diff -u -r 1.43.2.52 -r 1.43.2.53 src/toolbar.c;  ) > 2.5.2cvs6.patchset
-( cvs diff -u -r 1.60.2.64 -r 1.60.2.65 src/addressbook.c;  ) > 2.5.2cvs7.patchset
-( cvs diff -u -r 1.654.2.1971 -r 1.654.2.1972 configure.ac;  cvs diff -u -r 1.115.2.104 -r 1.115.2.105 src/main.c;  cvs diff -u -r 1.39.2.23 -r 1.39.2.24 src/mainwindow.h;  ) > 2.5.2cvs8.patchset
-( cvs diff -u -r 1.11.2.12 -r 1.11.2.13 src/editgroup.c;  cvs diff -u -r 1.17.2.32 -r 1.17.2.33 src/send_message.c;  cvs diff -u -r 1.149.2.58 -r 1.149.2.59 src/inc.c;  cvs diff -u -r 1.204.2.103 -r 1.204.2.104 src/prefs_common.c;  cvs diff -u -r 1.103.2.61 -r 1.103.2.62 src/prefs_common.h;  cvs diff -u -r 1.1.4.18 -r 1.1.4.19 src/gtk/progressdialog.c;  ) > 2.5.2cvs9.patchset
-( cvs diff -u -r 1.60.2.65 -r 1.60.2.66 src/addressbook.c;  ) > 2.5.2cvs10.patchset
-( cvs diff -u -r 1.1.2.25 -r 1.1.2.26 src/gtk/authors.h;  cvs diff -u -r 1.1.2.4 -r 1.1.2.5 doc/man/sylpheed-claws.1;  cvs diff -u -r 1.1.2.6 -r 1.1.2.7 manual/ack.xml;  cvs diff -u -r 1.1.2.2 -r 1.1.2.3 manual/es/ack.xml;  cvs diff -u -r 1.1.2.5 -r 1.1.2.6 manual/fr/ack.xml;  cvs diff -u -r 1.1.2.2 -r 1.1.2.3 manual/pl/ack.xml;  ) > 2.5.2cvs11.patchset
-( cvs diff -u -r 1.654.2.1975 -r 1.654.2.1976 configure.ac;  ) > 2.5.2cvs12.patchset
-( cvs diff -u -r 1.8.2.19 -r 1.8.2.20 src/export.c;  cvs diff -u -r 1.94.2.106 -r 1.94.2.107 src/messageview.c;  cvs diff -u -r 1.83.2.90 -r 1.83.2.91 src/mimeview.c;  cvs diff -u -r 1.101.2.30 -r 1.101.2.31 src/news.c;  cvs diff -u -r 1.56.2.43 -r 1.56.2.44 src/pop.c;  cvs diff -u -r 1.3.2.43 -r 1.3.2.44 src/prefs_themes.c;  cvs diff -u -r 1.150.2.79 -r 1.150.2.80 src/procmsg.c;  cvs diff -u -r 1.17.2.33 -r 1.17.2.34 src/send_message.c;  cvs diff -u -r 1.395.2.255 -r 1.395.2.256 src/summaryview.c;  cvs diff -u -r 1.23.2.8 -r 1.23.2.9 src/common/session.c;  cvs diff -u -r 1.11.2.17 -r 1.11.2.18 src/common/smtp.c;  cvs diff -u -r 1.4.2.12 -r 1.4.2.13 src/common/ssl_certificate.c;  cvs diff -u -r 1.36.2.79 -r 1.36.2.80 src/common/utils.c;  ) > 2.5.2cvs13.patchset
-( cvs diff -u -r 1.155.2.42 -r 1.155.2.43 src/Makefile.am;  ) > 2.5.2cvs14.patchset
-( cvs diff -u -r 1.60.2.66 -r 1.60.2.67 src/addressbook.c;  ) > 2.5.2cvs15.patchset
-( cvs diff -u -r 1.207.2.123 -r 1.207.2.124 src/folderview.c;  cvs diff -u -r 1.1.4.32 -r 1.1.4.33 src/gtk/gtksctree.c;  cvs diff -u -r 1.1.4.8 -r 1.1.4.9 src/gtk/gtksctree.h;  ) > 2.5.2cvs16.patchset
-( cvs diff -u -r 1.115.2.105 -r 1.115.2.106 src/main.c;  ) > 2.5.2cvs17.patchset
-( cvs diff -u -r 1.395.2.256 -r 1.395.2.257 src/summaryview.c;  cvs diff -u -r 1.68.2.27 -r 1.68.2.28 src/summaryview.h;  ) > 2.5.2cvs18.patchset
-( cvs diff -u -r 1.12.2.37 -r 1.12.2.38 src/action.c;  cvs diff -u -r 1.382.2.312 -r 1.382.2.313 src/compose.c;  cvs diff -u -r 1.207.2.124 -r 1.207.2.125 src/folderview.c;  cvs diff -u -r 1.274.2.151 -r 1.274.2.152 src/mainwindow.c;  cvs diff -u -r 1.94.2.107 -r 1.94.2.108 src/messageview.c;  cvs diff -u -r 1.15.2.33 -r 1.15.2.34 src/summary_search.c;  cvs diff -u -r 1.43.2.53 -r 1.43.2.54 src/toolbar.c;  ) > 2.5.2cvs19.patchset
-( cvs diff -u -r 1.1.4.33 -r 1.1.4.34 src/gtk/gtksctree.c;  cvs diff -u -r 1.1.4.9 -r 1.1.4.10 src/gtk/gtksctree.h;  ) > 2.5.2cvs20.patchset
-( cvs diff -u -r 1.65.2.49 -r 1.65.2.50 src/codeconv.c;  cvs diff -u -r 1.96.2.151 -r 1.96.2.152 src/textview.c;  ) > 2.5.2cvs21.patchset
-( cvs diff -u -r 1.4.2.4 -r 1.4.2.5 src/matcher_parser.h;  cvs diff -u -r 1.25.2.17 -r 1.25.2.18 src/matcher_parser_parse.y;  cvs diff -u -r 1.59.2.49 -r 1.59.2.50 src/prefs_filtering.c;  cvs diff -u -r 1.5.2.10 -r 1.5.2.11 src/statusbar.c;  cvs diff -u -r 1.15.2.34 -r 1.15.2.35 src/summary_search.c;  cvs diff -u -r 1.395.2.257 -r 1.395.2.258 src/summaryview.c;  cvs diff -u -r 1.1.2.45 -r 1.1.2.46 src/gtk/quicksearch.c;  cvs diff -u -r 1.1.2.7 -r 1.1.2.8 src/gtk/quicksearch.h;  ) > 2.5.2cvs22.patchset
-( cvs diff -u -r 1.1.2.2 -r 1.1.2.3 tools/fix_date.sh;  ) > 2.5.2cvs23.patchset
-( cvs diff -u -r 1.16.2.40 -r 1.16.2.41 src/msgcache.c;  cvs diff -u -r 1.150.2.80 -r 1.150.2.81 src/procmsg.c;  cvs diff -u -r 1.36.2.80 -r 1.36.2.81 src/common/utils.c;  ) > 2.5.2cvs24.patchset
-( cvs diff -u -r 1.213.2.115 -r 1.213.2.116 src/folder.c;  cvs diff -u -r 1.395.2.258 -r 1.395.2.259 src/summaryview.c;  ) > 2.5.2cvs25.patchset
-( cvs diff -u -r 1.79.2.41 -r 1.79.2.42 src/mh.c;  ) > 2.5.2cvs26.patchset
-( cvs diff -u -r 1.79.2.42 -r 1.79.2.43 src/mh.c;  ) > 2.5.2cvs27.patchset
-( cvs diff -u -r 1.213.2.116 -r 1.213.2.117 src/folder.c;  cvs diff -u -r 1.115.2.106 -r 1.115.2.107 src/main.c;  ) > 2.5.2cvs28.patchset
-( cvs diff -u -r 1.213.2.117 -r 1.213.2.118 src/folder.c;  cvs diff -u -r 1.79.2.43 -r 1.79.2.44 src/mh.c;  ) > 2.5.2cvs29.patchset
-( cvs diff -u -r 1.115.2.107 -r 1.115.2.108 src/main.c;  ) > 2.5.2cvs30.patchset
-( cvs diff -u -r 1.16.2.41 -r 1.16.2.42 src/msgcache.c;  ) > 2.5.2cvs31.patchset
-( cvs diff -u -r 1.79.2.44 -r 1.79.2.45 src/mh.c;  cvs diff -u -r 1.16.2.42 -r 1.16.2.43 src/msgcache.c;  ) > 2.5.2cvs32.patchset
-( cvs diff -u -r 1.213.2.118 -r 1.213.2.119 src/folder.c;  cvs diff -u -r 1.79.2.45 -r 1.79.2.46 src/mh.c;  cvs diff -u -r 1.9.2.3 -r 1.9.2.4 src/mh.h;  cvs diff -u -r 1.16.2.43 -r 1.16.2.44 src/msgcache.c;  ) > 2.5.2cvs33.patchset
-( cvs diff -u -r 1.79.2.46 -r 1.79.2.47 src/mh.c;  cvs diff -u -r 1.395.2.259 -r 1.395.2.260 src/summaryview.c;  ) > 2.5.2cvs34.patchset
-( cvs diff -u -r 1.47.2.33 -r 1.47.2.34 src/procheader.c;  cvs diff -u -r 1.395.2.260 -r 1.395.2.261 src/summaryview.c;  cvs diff -u -r 1.36.2.81 -r 1.36.2.82 src/common/utils.c;  cvs diff -u -r 1.20.2.38 -r 1.20.2.39 src/common/utils.h;  ) > 2.5.2cvs35.patchset
-( cvs diff -u -r 1.207.2.125 -r 1.207.2.126 src/folderview.c;  ) > 2.5.2cvs36.patchset
-( cvs diff -u -r 1.207.2.126 -r 1.207.2.127 src/folderview.c;  ) > 2.5.2cvs37.patchset
-( cvs diff -u -r 1.207.2.127 -r 1.207.2.128 src/folderview.c;  ) > 2.5.2cvs38.patchset
-( cvs diff -u -r 1.60.2.21 -r 1.60.2.22 src/filtering.c;  cvs diff -u -r 1.213.2.119 -r 1.213.2.120 src/folder.c;  cvs diff -u -r 1.149.2.59 -r 1.149.2.60 src/inc.c;  cvs diff -u -r 1.28.2.28 -r 1.28.2.29 src/mbox.c;  ) > 2.5.2cvs39.patchset
+( cvs diff -u -r 1.654.2.1964 -r 1.654.2.1965 configure.ac;  ) > 2.5.2cvs1.patchset
