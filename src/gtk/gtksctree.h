@@ -33,7 +33,7 @@ struct _GtkSCTree {
 	gint dnd_select_pending;
 	guint dnd_select_pending_state;
 	gint dnd_select_pending_row;
-	gint selecting_range;
+	gboolean selecting_range;
 	gboolean sorting;
 
 	/* (dis)allow fancy color stripes */
