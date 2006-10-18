@@ -918,9 +918,9 @@ Compose *compose_new(PrefsAccount *account, const gchar *mailto,
 	return compose_generic_new(account, mailto, NULL, attach_files, NULL);
 }
 
-Compose *compose_new_with_folderitem(PrefsAccount *account, FolderItem *item, const gchar *mailto)
+Compose *compose_new_with_folderitem(PrefsAccount *account, FolderItem *item)
 {
-	return compose_generic_new(account, mailto, item, NULL, NULL);
+	return compose_generic_new(account, NULL, item, NULL, NULL);
 }
 
 Compose *compose_new_with_list( PrefsAccount *account, GList *listAddress )
@@ -4342,26 +4342,38 @@ static gint compose_redirect_write_to_file(Compose *compose, FILE *fdest)
 	FILE *fp;
 	size_t len;
 	gchar buf[BUFFSIZE];
-
+	int i = 0;
+	gboolean skip = FALSE;
+	gchar *not_included[]={
+		"Return-Path:",		"Delivered-To:",	"Received:",
+		"Subject:",		"X-UIDL:",		"AF:",
+		"NF:",			"PS:",			"SRH:",
+		"SFN:",			"DSR:",			"MID:",
+		"CFG:",			"PT:",			"S:",
+		"RQ:",			"SSV:",			"NSV:",
+		"SSH:",			"R:",			"MAID:",
+		"NAID:",		"RMID:",		"FMID:",
+		"SCF:",			"RRCPT:",		"NG:",
+		"X-Sylpheed-Privacy",	"X-Sylpheed-Sign:",	"X-Sylpheed-Encrypt",
+		"X-Sylpheed-End-Special-Headers:",
+		NULL
+		};
 	if ((fp = g_fopen(compose->redirect_filename, "rb")) == NULL) {
 		FILE_OP_ERROR(compose->redirect_filename, "fopen");
 		return -1;
 	}
 
 	while (procheader_get_one_field_asis(buf, sizeof(buf), fp) != -1) {
-		/* should filter returnpath, delivered-to */
-		if (g_ascii_strncasecmp(buf, "Return-Path:",
-				   	strlen("Return-Path:")) == 0 ||
-		    g_ascii_strncasecmp(buf, "Delivered-To:",
-				  	strlen("Delivered-To:")) == 0 ||
-		    g_ascii_strncasecmp(buf, "Received:",
-				  	strlen("Received:")) == 0 ||
-		    g_ascii_strncasecmp(buf, "Subject:",
-				  	strlen("Subject:")) == 0 ||
-		    g_ascii_strncasecmp(buf, "X-UIDL:",
-				  	strlen("X-UIDL:")) == 0)
+		skip = FALSE;
+		for (i = 0; not_included[i] != NULL; i++) {
+			if (g_ascii_strncasecmp(buf, not_included[i],
+						strlen(not_included[i])) == 0) {
+				skip = TRUE;
+				break;
+			}
+		}
+		if (skip)
 			continue;
-
 		if (fputs(buf, fdest) == -1)
 			goto error;
 
@@ -5469,7 +5481,7 @@ static void compose_create_header_entry(Compose *compose)
 			 G_CALLBACK(compose_drag_drop),
 			 compose);
 	
-	address_completion_register_entry(GTK_ENTRY(entry), TRUE);
+	address_completion_register_entry(GTK_ENTRY(entry));
 
         headerentry->compose = compose;
         headerentry->combo = combo;
@@ -8556,7 +8568,7 @@ static void compose_attach_drag_received_cb (GtkWidget		*widget,
 	if (gdk_atom_name(data->type) && 
 	    !strcmp(gdk_atom_name(data->type), "text/uri-list")
 	    && gtk_drag_get_source_widget(context) != 
-	        summary_get_main_widget(mainwindow_get_mainwindow()->summaryview)) {
+	        mainwindow_get_mainwindow()->summaryview->ctree) {
 		list = uri_list_extract_filenames((const gchar *)data->data);
 		for (tmp = list; tmp != NULL; tmp = tmp->next)
 			compose_attach_append
@@ -8566,7 +8578,7 @@ static void compose_attach_drag_received_cb (GtkWidget		*widget,
 		list_free_strings(list);
 		g_list_free(list);
 	} else if (gtk_drag_get_source_widget(context) 
-		   == summary_get_main_widget(mainwindow_get_mainwindow()->summaryview)) {
+		   == mainwindow_get_mainwindow()->summaryview->ctree) {
 		/* comes from our summaryview */
 		SummaryView * summaryview = NULL;
 		GSList * list = NULL, *cur = NULL;
