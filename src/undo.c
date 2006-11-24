@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2006 Hiroyuki Yamamoto and the Claws Mail team
+ * Copyright (C) 1999-2006 Hiroyuki Yamamoto and the Sylpheed-Claws team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -85,7 +85,7 @@ UndoMain *undo_init(GtkWidget *text)
 
 	g_return_val_if_fail(text != NULL, NULL);
 
-	undostruct = g_new(UndoMain, 1);
+	undostruct = g_new0(UndoMain, 1);
 	undostruct->textview = textview;
 	undostruct->undo = NULL;
 	undostruct->redo = NULL;
