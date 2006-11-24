@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2006 Hiroyuki Yamamoto and the Claws Mail team
+ * Copyright (C) 1999-2006 Hiroyuki Yamamoto and the Sylpheed-Claws team
  * This file Copyright (C) 2002-2005 Colin Leroy <colin@colino.net>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -215,8 +215,8 @@ static char *get_server(char *str)
 	int previous_dot_pos;
 
 	first_pos = tmp;
-	while ((tmp = strstr(tmp,".")) != NULL) {
-		*tmp++;
+	while (tmp && (tmp = strstr(tmp,".")) != NULL) {
+		tmp++;
 		previous_pos = last_pos;
 		last_pos = tmp;
 	}
@@ -234,8 +234,8 @@ static char *get_port(char *str)
 	char *ret = NULL, *tmp = g_strdup(str);
 	char *previous_pos = NULL, *last_pos = NULL;
 
-	while ((tmp = strstr(tmp,".")) != NULL) {
-		*tmp++;
+	while (tmp && (tmp = strstr(tmp,".")) != NULL) {
+		tmp++;
 		previous_pos = last_pos;
 		last_pos = tmp;
 	}
