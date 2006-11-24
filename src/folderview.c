@@ -1,6 +1,6 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2006 Hiroyuki Yamamoto and the Claws Mail team
+ * Copyright (C) 1999-2006 Hiroyuki Yamamoto and the Sylpheed-Claws team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -306,7 +306,7 @@ static GtkItemFactoryEntry folder_view_queue_popup_entries[] = {
 
 GtkTargetEntry folderview_drag_types[] =
 {
-	{"claws-mail/internal", GTK_TARGET_SAME_APP, TARGET_DUMMY},
+	{"sylpheed-claws/internal", GTK_TARGET_SAME_APP, TARGET_DUMMY},
 	{"text/uri-list", 0, TARGET_MAIL_URI_LIST}
 };
 
@@ -2752,7 +2752,8 @@ static gboolean folderview_drag_motion_cb(GtkWidget      *widget,
 			/* we are copying messages, so only accept folder items that are not
 			   the source item, are no root items and can copy messages */
 			if (item && item->folder && folder_item_parent(item) != NULL && src_item &&
-			    src_item != item && FOLDER_CLASS(item->folder)->copy_msg != NULL)
+			    src_item != item && FOLDER_CLASS(item->folder)->copy_msg != NULL &&
+			    FOLDER_TYPE(item->folder) != F_UNKNOWN)
 				acceptable = TRUE;
 		} else if (srcwidget == folderview->ctree) {
 			/* comes from folderview */
@@ -2760,14 +2761,17 @@ static gboolean folderview_drag_motion_cb(GtkWidget      *widget,
                            the source items and can copy messages and create folder items */
 			if (item && item->folder && src_item && src_item != item &&
 			    FOLDER_CLASS(item->folder)->copy_msg != NULL &&
-			    FOLDER_CLASS(item->folder)->create_folder != NULL)
+			    FOLDER_CLASS(item->folder)->create_folder != NULL &&
+			    ((FOLDER_TYPE(item->folder) != F_UNKNOWN &&  FOLDER_TYPE(src_item->folder) != F_UNKNOWN)
+			     || item->folder == src_item->folder))
 				acceptable = TRUE;
 		} else {
 			/* comes from another app */
 			/* we are adding messages, so only accept folder items that are 
 			   no root items and can copy messages */
 			if (item && item->folder && folder_item_parent(item) != NULL
-			    && FOLDER_CLASS(item->folder)->add_msg != NULL)
+			    && FOLDER_CLASS(item->folder)->add_msg != NULL &&
+			    FOLDER_TYPE(item->folder) != F_UNKNOWN)
 				acceptable = TRUE;
 		}
 	}
