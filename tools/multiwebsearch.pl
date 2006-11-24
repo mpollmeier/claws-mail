@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-#  * Copyright © 2003 Paul Mangan <claws@thewildbeast.co.uk>
+#  * Copyright 2003 Paul Mangan <paul@claws-mail.org>
 #  *
 #  * This file is free software; you can redistribute it and/or modify it
 #  * under the terms of the GNU General Public License as published by
@@ -50,8 +50,8 @@ if (!$url) {
 	die("No url found with the alias \"$where\"\n");
 } 
 
-open (SYLRC, "<sylpheedrc") 
-	|| die("Can't open ~/.claws-mail/sylpheedrc\n");
+open (SYLRC, "<clawsrc") 
+	|| die("Can't open ~/.claws-mail/clawsrc\n");
 	@rclines = <SYLRC>;
 close SYLRC;
 

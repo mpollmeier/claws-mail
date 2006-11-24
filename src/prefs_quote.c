@@ -33,8 +33,6 @@
 
 #include "prefs_common.h"
 #include "prefs_gtk.h"
-#include "prefs_template.h"
-#include "alertpanel.h"
 
 #include "gtk/gtkutils.h"
 #include "gtk/prefswindow.h"
@@ -257,13 +255,9 @@ void prefs_quote_save(PrefsPage *_page)
 	
 	prefs_common.quotefmt = pref_get_pref_from_textview(
 			GTK_TEXT_VIEW(page->text_quotefmt));
-	if (!prefs_template_string_is_valid(prefs_common.quotefmt))
-		alertpanel_error(_("Message reply quote format error."));
 
 	prefs_common.fw_quotefmt = pref_get_pref_from_textview(
 			GTK_TEXT_VIEW(page->text_fw_quotefmt));
-	if (!prefs_template_string_is_valid(prefs_common.fw_quotefmt))
-		alertpanel_error(_("Message forward quote format error."));
 
 	prefs_common.quotemark = gtk_editable_get_chars(
 			GTK_EDITABLE(page->entry_quotemark), 0, -1);
