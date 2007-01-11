@@ -1,54 +1,28 @@
-2007-01-11 [paul]	2.7.0cvs8
+2007-01-11 [paul]	2.7.0cvs1-stable
 
 	* src/imap.c
+		From 2.7.0cvs8: 
 		Fix recursion when server lists the
 		current subfolder in the response
 	* src/mimeview.c
+		From 2.7.0cvs8:
 		Fix updating of icon_list/ctree
 	* src/plugins/pgpcore/select-keys.c
+		From 2.7.0cvs8:
 		Fix a few annoyances when choosing
 		keys for the CMS (S/MIME) protocol
-
-2007-01-11 [wwp]	2.7.0cvs7
-
-	* src/compose.c
-	* src/prefs_account.c
-	* src/prefs_account.h
-		Add per-account spellcheck default dictionaries settings.
-
-2007-01-10 [colin]	2.7.0cvs6
-
-	* src/prefs_folder_item.c
-		Factorize strings - patch by Fabien
-
-2007-01-10 [colin]	2.7.0cvs5
-
 	* src/mainwindow.c
-		Fix bug 1095, 'Crash while changing folder 
+		From 2.7.0cvs5:
+		Fix bug 1095, 'Crash while changing folder
 		columns during incorporation'
-
-2007-01-09 [colin]	2.7.0cvs4
-
 	* src/gtk/pluginwindow.c
+		From 2.7.0cvs4:
 		Set the plugin window transient. Seems
 		like some window managers hide it in
 		the background after "load plugin"...
-
-2007-01-09 [colin]	2.7.0cvs3
-
 	* src/gtk/filesel.c
+		From 2.7.0cvs3:
 		Use the same type for alloc and free
-
-2007-01-08 [paul]	2.7.0cvs2
-
-	* po/nl.po
-		updated by Tim Dijkstra
-
-2007-01-08 [paul]	2.7.0cvs1
-
-	* src/prefs_themes.c
-	* src/common/utils.c
-		Fix resource leaks
 
 2007-01-08 [paul]	2.7.0
 
