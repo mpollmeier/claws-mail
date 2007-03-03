@@ -1,70 +1,19 @@
-2007-03-02 [colin]	2.8.0cvs9
+2007-03-03 [colin]	2.8.0cvs1-stable
 
+	* src/mainwindow.c
 	* src/mbox.c
+	* src/common/utils.c
+	* src/common/utils.h
+	* src/gtk/gtkutils.c
+		Backport fixes from 2.8.0.cvs{4,5,6,9}:
+		Fix "After receiving new mail, go to inbox" on IMAP,
+		and make it work only on manual reception
+		Use gtk_window_set_role instead of 
+		_set_wmclass
+		Fix '+' in mailto URIs for List-* headers
 		Don't error out on EAGAIN. Fixes 
 		bug 1129, '"local mbox file" account 
 		isn't retrieving mails'
-
-2007-03-01 [wwp]	2.8.0cvs8
-
-	* src/mainwindow.c
-	* src/gtk/colorlabel.c
-		Remove accels for extra color labels until we set better
-		and definitive ones.
-
-2007-02-28 [wwp]	2.8.0cvs7
-
-	* src/mainwindow.c
-	* src/matcher_parser_parse.y
-	* src/prefs_common.c
-	* src/prefs_msg_colors.c
-	* src/procmsg.h
-	* src/gtk/colorlabel.c
-	* src/gtk/colorlabel.h
-		Add more customizable color labels. Cleaned up a bit
-		the color label API to avoid duplicate defines of
-		the max number of colors.
-
-2007-02-27 [colin]	2.8.0cvs6
-
-	* src/mainwindow.c
-	* src/common/utils.c
-	* src/common/utils.h
-		Fix '+' in mailto URIs for List-* headers
-
-2007-02-27 [colin]	2.8.0cvs5
-
-	* src/gtk/gtkutils.c
-		Use gtk_window_set_role instead of 
-		_set_wmclass
-
-2007-02-27 [colin]	2.8.0cvs4
-
-	* src/inc.c
-		Fix "After receiving new mail, go to inbox" on IMAP,
-		and make it work only on manual reception
-
-2007-02-27 [wwp]	2.8.0cvs3
-
-	* src/prefs_filtering.c
-	* src/prefs_filtering_action.c
-	* src/prefs_matcher.c
-		Update filtering matcher's and action's color label menus
-		when re-opening those dialogs (reflect any change to the
-		color labels list in the preferences).
-
-2007-02-27 [colin]	2.8.0cvs2
-
-	* src/imap.c
-	* src/etpan/etpan-thread-manager-types.h
-	* src/etpan/etpan-thread-manager.c
-	* src/etpan/imap-thread.c
-		Log imap ALERTs as errors in the log.
-
-2007-02-26 [paul]	2.8.0cvs1
-
-	* tools/claws.i18n.status.pl
-		updated
 
 2007-02-26 [paul]	2.7.2cvs75
 

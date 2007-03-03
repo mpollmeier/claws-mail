@@ -1037,8 +1037,7 @@ static void mainwindow_colorlabel_menu_create(MainWindow *mainwin, gboolean refr
 		g_object_set_data(G_OBJECT(item), "mainwin",
 				  mainwin);
 		gtk_widget_show(item);
-		if (i < 9)
-			gtk_widget_add_accelerator(item, "activate", 
+		gtk_widget_add_accelerator(item, "activate", 
 				   mainwin->menu_factory->accel_group, 
 				   GDK_1+i, GDK_CONTROL_MASK,
 				   GTK_ACCEL_LOCKED | GTK_ACCEL_VISIBLE);
