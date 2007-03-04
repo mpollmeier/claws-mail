@@ -31,6 +31,7 @@
 #include "imap_gtk.h"
 #include "inc.h"
 #include "xml.h"
+#include "alertpanel.h"
 
 #ifdef HAVE_LIBETPAN
 
@@ -63,7 +64,6 @@
 #include "inputdialog.h"
 #include "log.h"
 #include "remotefolder.h"
-#include "alertpanel.h"
 #include "claws.h"
 #include "statusbar.h"
 #include "msgcache.h"
@@ -1287,7 +1287,6 @@ static gint imap_do_copy_msgs(Folder *folder, FolderItem *dest,
 			g_relation_destroy(uid_mapping);
 			imap_lep_set_free(seq_list);
 			unlock_session();
-			statusbar_pop_all();
 			return -1;
 		}
 	}
