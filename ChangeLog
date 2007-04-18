@@ -1,69 +1,22 @@
-2007-04-18 [paul]	2.9.0cvs8
+2007-04-18 [paul]	2.9.0cvs1-stable
 
-	* src/pop.c
-		fix for CVE-2007-1558 (APOP)
-		Thanks to Colin
-
-2007-04-18 [paul]	2.9.0cvs7
-
+	* configure.ac
+		add EXTRA_GTK2_VERSION=-stable
+	* src/gtk/authors.h
+		backported from 2.9.0cvs1
+		add Pader Rezso
+	* src/gtk/pluginwindow.c
+		backported from 2.9.0cvs6
+		Fix bug 1185, 'Pluginwindow's [X] button doesn't save'
 	* src/messageview.c
 	* src/mimeview.c
 	* src/summaryview.c
 	* src/gtk/filesel.c
-		Fix encoding woes wrt saving of
-		mails and parts
-		Thanks to Colin
-
-2007-04-18 [colin]	2.9.0cvs6
-
-	* src/gtk/pluginwindow.c
-		Fix bug 1185, 'Pluginwindow's [X] button doesn't save'
-
-2007-04-17 [wwp]	2.9.0cvs5
-
-	* src/addressadd.c
-	* src/addressbook.c
-	* src/addrindex.c
-	* src/ldapupdate.c
-		Fix --disable-ldap build,
-		fix some LDAP annoyances on 
-		searches, thanks to Colin.
-
-2007-04-17 [wwp]	2.9.0cvs4
-
-	* src/ldapupdate.c
-		Fix more mixed decls, sensitive w/ strict ANSI-C89 compilers
-		like gcc 2.9x. Thanks to Colin.
-
-2007-04-17 [wwp]	2.9.0cvs3
-
-	* src/Makefile.am
-	* src/addressadd.c
-	* src/addressbook.c
-	* src/addrindex.c
-	* src/addritem.c
-	* src/addritem.h
-	* src/editaddress.c
-	* src/ldapctrl.c
-	* src/ldapctrl.h
-	* src/ldapquery.c
-	* src/ldapserver.c
-	* src/ldapserver.h
-	* src/ldapupdate.c
-	* src/ldapupdate.h
-		Add LDAP write support. Patch mostly by 
-		Michael <mir at datanom dot net>
-
-2007-04-17 [wwp]	2.9.0cvs2
-
-	* src/compose.c
-		Prepend "Add to address book" to the context menu of compose window's sender and
-		recipient fields.
-
-2007-04-16 [paul]	2.9.0cvs1
-
-	* src/gtk/authors.h
-		add Pader Rezso
+		backported from 2.9.0cvs7
+		Fix encoding woes wrt saving of mails and parts
+	* src/pop.c
+		backported from 2.9.0cvs8
+		fix for CVE-2007-1558 (APOP)
 
 2007-04-16 [paul]	2.9.0
 
