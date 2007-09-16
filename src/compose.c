@@ -4495,19 +4495,10 @@ static gboolean compose_check_entries(Compose *compose, gboolean check_everythin
 		if (*str == '\0' && check_everything == TRUE && 
 		    compose->mode != COMPOSE_REDIRECT) {
 			AlertValue aval;
-			gchar *button_label;
-			gchar *message;
 
-			if (compose->sending)
-				button_label = _("+_Send");
-			else
-				button_label = _("+_Queue");
-			message = g_strdup_printf(_("Subject is empty. %s it anyway?"),
-					compose->sending?_("Send"):_("Queue"));
-
-			aval = alertpanel(compose->sending?_("Send"):_("Send later"), message,
-					  GTK_STOCK_CANCEL, button_label, NULL);
-			g_free(message);
+			aval = alertpanel(_("Send"),
+					  _("Subject is empty. Send it anyway?"),
+					  GTK_STOCK_CANCEL, _("+_Send"), NULL);
 			if (aval != G_ALERTALTERNATE)
 				return FALSE;
 		}
@@ -4793,19 +4784,11 @@ static gint compose_redirect_write_headers(Compose *compose, FILE *fp)
 	}
 
 	/* Resent-Message-ID */
-	if (compose->account->set_domain && compose->account->domain) {
-		g_snprintf(buf, sizeof(buf), "%s", compose->account->domain); 
-	} else if (!strncmp(get_domain_name(), "localhost", strlen("localhost"))) {
-		g_snprintf(buf, sizeof(buf), "%s", 
-			strchr(compose->account->address, '@') ?
-				strchr(compose->account->address, '@')+1 :
-				compose->account->address);
-	} else {
-		g_snprintf(buf, sizeof(buf), "%s", "");
+	if (compose->account->gen_msgid) {
+		generate_msgid(buf, sizeof(buf));
+		fprintf(fp, "Resent-Message-ID: <%s>\n", buf);
+		compose->msgid = g_strdup(buf);
 	}
-	generate_msgid(buf, sizeof(buf));
-	fprintf(fp, "Resent-Message-ID: <%s>\n", buf);
-	compose->msgid = g_strdup(buf);
 
 	compose_redirect_write_headers_from_headerlist(compose, fp);
 
@@ -5701,19 +5684,11 @@ static gchar *compose_get_header(Compose *compose)
 	g_free(str);
 
 	/* Message-ID */
-	if (compose->account->set_domain && compose->account->domain) {
-		g_snprintf(buf, sizeof(buf), "%s", compose->account->domain); 
-	} else if (!strncmp(get_domain_name(), "localhost", strlen("localhost"))) {
-		g_snprintf(buf, sizeof(buf), "%s", 
-			strchr(compose->account->address, '@') ?
-				strchr(compose->account->address, '@')+1 :
-				compose->account->address);
-	} else {
-		g_snprintf(buf, sizeof(buf), "%s", "");
+	if (compose->account->gen_msgid) {
+		generate_msgid(buf, sizeof(buf));
+		g_string_append_printf(header, "Message-ID: <%s>\n", buf);
+		compose->msgid = g_strdup(buf);
 	}
-	generate_msgid(buf, sizeof(buf));
-	g_string_append_printf(header, "Message-ID: <%s>\n", buf);
-	compose->msgid = g_strdup(buf);
 
 	if (compose->remove_references == FALSE) {
 		/* In-Reply-To */
