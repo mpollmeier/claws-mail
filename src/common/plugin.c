@@ -57,7 +57,6 @@ struct _Plugin
 const gchar *plugin_feature_names[] =
 	{ N_("Nothing"),
 	  N_("a viewer"),
-	  N_("a MIME parser"),
 	  N_("folders"),
 	  N_("filtering"),
 	  N_("a privacy interface"),
