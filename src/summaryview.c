@@ -4012,10 +4012,13 @@ void summary_delete(SummaryView *summaryview)
 	if (!prefs_common.live_dangerously) {
 		gchar *buf = NULL;
 		int num = g_list_length(GTK_CLIST(summaryview->ctree)->selection);
-		buf = g_strdup_printf(ngettext(
-			"Do you really want to delete the selected message?",
-			"Do you really want to delete the %d selected messages?", num), 
-			num);
+		if (num == 1)
+			buf = g_strdup_printf(_(
+				"Do you really want to delete the selected message?"));
+		else
+			buf = g_strdup_printf(_(
+				"Do you really want to delete the %d selected messages?"), 
+				num);
 		aval = alertpanel(_("Delete message(s)"),
 				  buf,
 				  GTK_STOCK_CANCEL, "+"GTK_STOCK_DELETE, NULL);
@@ -7216,7 +7219,9 @@ gint summaryview_export_mbox_list(SummaryView *summaryview)
 	gchar *mbox = filesel_select_file_save(_("Export to mbox file"), NULL);
 	gint ret;
 	
-	if (mbox == NULL || list == NULL)
+	if (mbox == NULL)
+		return -2;
+	if (list == NULL)
 		return -1;
 		
 	ret = export_list_to_mbox(list, mbox);
