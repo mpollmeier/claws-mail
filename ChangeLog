@@ -1,97 +1,26 @@
-2008-02-13 [colin]	3.3.0cvs12
+2008-02-14 [colin]	3.3.0cvs1-stable
 
+	* commitHelper
+	* po/fr.po
 	* src/folderview.c
-		Fix important warnings
-
-2008-02-12 [colin]	3.3.0cvs11
-
 	* src/imap.c
+	* src/main.c
+	* src/common/utils.c
 	* src/etpan/imap-thread.c
 	* src/etpan/imap-thread.h
+	* src/gtk/about.c
+		Backport 3.3.0cvs{1,2,3,6,9,11,12}:
+		Forbid attaching anything containing "../" or ".ssh/"
+		from mailto: URI
+		Fix compiling issue w/ non-gcc/C99 compilers (suncc).
+		bump the (c) year
+		a few days late for i18n fr update. Sorry.
+		Fix crashy stuff when changing displayed
+		columns
 		Fix handling of $Forwarded flag on Exchange:
 		check for the existence or creatability of a
 		flag before using it.
-
-2008-02-12 [colin]	3.3.0cvs10
-
-	* src/matcher.c
-		Optimise matching on Found in addressbook if
-		the matched header is in cache (From, etc)
-
-2008-02-12 [colin]	3.3.0cvs9
-
-	* src/folderview.c
-		Fix crashy stuff when changing displayed
-		columns
-
-2008-02-12 [wwp]	3.3.0cvs8
-
-	* src/folder.h
-		Remove duplicate func declaration and restore the one
-		a missing one.
-
-2008-02-12 [wwp]	3.3.0cvs7
-
-	* src/compose.c
-	* src/export.c
-	* src/folder.c
-	* src/folder.h
-	* src/foldersel.c
-	* src/foldersel.h
-	* src/imap_gtk.c
-	* src/import.c
-	* src/mainwindow.c
-	* src/messageview.c
-	* src/mh_gtk.c
-	* src/prefs_account.c
-	* src/prefs_filtering_action.c
-	* src/summaryview.c
-	* src/plugins/bogofilter/bogofilter_gtk.c
-	* src/plugins/spamassassin/spamassassin_gtk.c
-		Allow moving/copying folders to root folders when using
-		the folder selection dialog (it was not possible to
-		maemo users to reparent a subfolder to a root folder
-		at all).
-
-2008-02-12 [fabien]	3.3.0cvs6
-
-	* po/fr.po
-		a few days late for i18n fr update. Sorry.
-
-2008-02-11 [colin]	3.3.0cvs5
-
-	* src/main.c
-		Implement support for future /dev/mem_notify.
-		This Linux kernel feature will allow applications
-		to be notified that memory has to be freed
-		before getting OOM-killed. For more information:
-		http://lwn.net/Articles/267013/
-
-2008-02-10 [paul]	3.3.0cvs4
-
-	* src/Makefile.am
-	* src/mimeview.c
-	* src/prefs_toolbar.c
-	* src/stock_pixmap.c
-	* src/stock_pixmap.h
-	* src/pixmaps/mime_text_patch.xpm
-		add an icon for attached patches
-
-2008-02-09 [paul]	3.3.0cvs3
-
-	* src/gtk/about.c
-		bump the (c) year
-
-2008-02-09 [wwp]	3.3.0cvs2
-
-	* src/main.c
-		Fix compiling issue w/ non-gcc/C99 compilers (suncc).
-
-2008-02-08 [colin]	3.3.0cvs1
-
-	* src/common/utils.c
-		Forbid attaching anything containing "../" or ".ssh/"
-		from mailto: URI
+		Fix important warnings
 
 2008-02-08 [paul]	3.3.0
 
