@@ -1499,7 +1499,11 @@ static Compose *compose_generic_reply(MsgInfo *msginfo,
 		g_free(folderidentifier);
 	}
 
-	if (compose_parse_header(compose, msginfo) < 0) return NULL;
+	if (compose_parse_header(compose, msginfo) < 0) {
+		compose->updating = FALSE;
+		compose_destroy(compose);
+		return NULL;
+	}
 
 	textview = (GTK_TEXT_VIEW(compose->text));
 	textbuf = gtk_text_view_get_buffer(textview);
@@ -6407,7 +6411,7 @@ static void compose_savemsg_select_cb(GtkWidget *widget, Compose *compose)
 	FolderItem *dest;
 	gchar * path;
 
-	dest = foldersel_folder_sel(NULL, FOLDER_SEL_COPY, NULL, FALSE);
+	dest = foldersel_folder_sel(NULL, FOLDER_SEL_COPY, NULL);
 	if (!dest) return;
 
 	path = folder_item_get_identifier(dest);
