@@ -1,10 +1,10 @@
 /*
  * Sylpheed -- a GTK+ based, lightweight, and fast e-mail client
- * Copyright (C) 1999-2001 Hiroyuki Yamamoto
+ * Copyright (C) 1999-2009 Hiroyuki Yamamoto and the Claws Mail team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -13,19 +13,17 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * 
  */
-
-/* alfons - all folder item specific settings should migrate into 
- * folderlist.xml!!! the old folderitemrc file will only serve for a few 
- * versions (for compatibility) */
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif
 
-#include "intl.h"
+#include <glib.h>
+#include <glib/gi18n.h>
+
 #include "defs.h"
 #include "folder.h"
 #include "utils.h"
@@ -36,31 +34,6 @@
 FolderItemPrefs tmp_prefs;
 
 static PrefParam param[] = {
-	{"sort_by_number", "FALSE", &tmp_prefs.sort_by_number, P_BOOL,
-	 NULL, NULL, NULL},
-	{"sort_by_size", "FALSE", &tmp_prefs.sort_by_size, P_BOOL,
-	 NULL, NULL, NULL},
-	{"sort_by_date", "FALSE", &tmp_prefs.sort_by_date, P_BOOL,
-	 NULL, NULL, NULL},
-	{"sort_by_from", "FALSE", &tmp_prefs.sort_by_from, P_BOOL,
-	 NULL, NULL, NULL},
-	{"sort_by_subject", "FALSE", &tmp_prefs.sort_by_subject, P_BOOL,
-	 NULL, NULL, NULL},
-	{"sort_by_score", "FALSE", &tmp_prefs.sort_by_score, P_BOOL,
-	 NULL, NULL, NULL},
-	{"sort_descending", "FALSE", &tmp_prefs.sort_descending, P_BOOL,
-	 NULL, NULL, NULL},
-	/*{"enable_thread", "TRUE", &tmp_prefs.enable_thread, P_BOOL,
-	 NULL, NULL, NULL},*/
-#if 0
-	{"hide_score", "-9999", &tmp_prefs.kill_score, P_INT,
-	 NULL, NULL, NULL},
-	{"important_score", "1", &tmp_prefs.important_score, P_INT,
-	 NULL, NULL, NULL},
-#endif
-	/* MIGRATION */	 
-	{"request_return_receipt", "", &tmp_prefs.request_return_receipt, P_BOOL,
-	 NULL, NULL, NULL},
 	{"enable_default_to", "", &tmp_prefs.enable_default_to, P_BOOL,
 	 NULL, NULL, NULL},
 	{"default_to", "", &tmp_prefs.default_to, P_STRING,
@@ -71,8 +44,10 @@ static PrefParam param[] = {
 	 NULL, NULL, NULL},
 	{"enable_simplify_subject", "", &tmp_prefs.enable_simplify_subject, P_BOOL,
 	 NULL, NULL, NULL},
+#ifndef G_OS_WIN32
 	{"simplify_subject_regexp", "", &tmp_prefs.simplify_subject_regexp, P_STRING,
 	 NULL, NULL, NULL},
+#endif
 	{"enable_folder_chmod", "", &tmp_prefs.enable_folder_chmod, P_BOOL,
 	 NULL, NULL, NULL},
 	{"folder_chmod", "", &tmp_prefs.folder_chmod, P_INT,
@@ -81,10 +56,14 @@ static PrefParam param[] = {
 	 NULL, NULL, NULL},
 	{"default_account", NULL, &tmp_prefs.default_account, P_INT,
 	 NULL, NULL, NULL},
-#if USE_ASPELL
+#if USE_ENCHANT
 	{"enable_default_dictionary", "", &tmp_prefs.enable_default_dictionary, P_BOOL,
 	 NULL, NULL, NULL},
 	{"default_dictionary", NULL, &tmp_prefs.default_dictionary, P_STRING,
+	 NULL, NULL, NULL},
+	{"enable_default_alt_dictionary", "", &tmp_prefs.enable_default_alt_dictionary, P_BOOL,
+	 NULL, NULL, NULL},
+	{"default_alt_dictionary", NULL, &tmp_prefs.default_alt_dictionary, P_STRING,
 	 NULL, NULL, NULL},
 #endif	 
 	{"save_copy_to_folder", NULL, &tmp_prefs.save_copy_to_folder, P_BOOL,
@@ -93,7 +72,40 @@ static PrefParam param[] = {
 	 NULL, NULL, NULL},
 	{"enable_processing", "FALSE", &tmp_prefs.enable_processing, P_BOOL,
 	 NULL, NULL, NULL},
+	{"enable_processing_when_opening", "TRUE", &tmp_prefs.enable_processing_when_opening, P_BOOL,
+	 NULL, NULL, NULL},
 	{"newmailcheck", "TRUE", &tmp_prefs.newmailcheck, P_BOOL,
+	 NULL, NULL, NULL},
+	{"offlinesync", "FALSE", &tmp_prefs.offlinesync, P_BOOL,
+	 NULL, NULL, NULL},
+	{"offlinesync_days", "0", &tmp_prefs.offlinesync_days, P_INT,
+	 NULL, NULL, NULL},
+	{"remove_old_bodies", "FALSE", &tmp_prefs.remove_old_bodies, P_BOOL,
+	 NULL, NULL, NULL},
+
+	{"compose_with_format", "FALSE", &tmp_prefs.compose_with_format, P_BOOL,
+	 NULL, NULL, NULL},
+	{"compose_override_from_format", NULL, &tmp_prefs.compose_override_from_format, P_STRING,
+	 NULL, NULL, NULL},
+	{"compose_subject_format", NULL, &tmp_prefs.compose_subject_format, P_STRING,
+	 NULL, NULL, NULL},
+	{"compose_body_format", NULL, &tmp_prefs.compose_body_format, P_STRING,
+	 NULL, NULL, NULL},
+	{"reply_with_format", "FALSE", &tmp_prefs.reply_with_format, P_BOOL,
+	 NULL, NULL, NULL},
+	{"reply_override_from_format", NULL, &tmp_prefs.reply_override_from_format, P_STRING,
+	 NULL, NULL, NULL},
+	{"reply_quotemark", NULL, &tmp_prefs.reply_quotemark, P_STRING,
+	 NULL, NULL, NULL},
+	{"reply_body_format", NULL, &tmp_prefs.reply_body_format, P_STRING,
+	 NULL, NULL, NULL},
+	{"forward_with_format", "FALSE", &tmp_prefs.forward_with_format, P_BOOL,
+	 NULL, NULL, NULL},
+	{"forward_override_from_format", NULL, &tmp_prefs.forward_override_from_format, P_STRING,
+	 NULL, NULL, NULL},
+	{"forward_quotemark", NULL, &tmp_prefs.forward_quotemark, P_STRING,
+	 NULL, NULL, NULL},
+	{"forward_body_format", NULL, &tmp_prefs.forward_body_format, P_STRING,
 	 NULL, NULL, NULL},
 	{NULL, NULL, NULL, P_OTHER, NULL, NULL, NULL}
 };
@@ -103,35 +115,16 @@ static FolderItemPrefs *folder_item_prefs_clear(FolderItemPrefs *prefs);
 void folder_item_prefs_read_config(FolderItem * item)
 {
 	gchar * id;
+	gchar *rcpath;
 
 	id = folder_item_get_identifier(item);
 	folder_item_prefs_clear(&tmp_prefs);
-	prefs_read_config(param, id, FOLDERITEM_RC);
+	rcpath = g_strconcat(get_rc_dir(), G_DIR_SEPARATOR_S, FOLDERITEM_RC, NULL);
+	prefs_read_config(param, id, rcpath, NULL);
 	g_free(id);
+	g_free(rcpath);
 
 	*item->prefs = tmp_prefs;
-
-	/*
-	 * MIGRATION: next lines are migration code. the idea is that
-	 *            if used regularly, claws folder config ends up
-	 *            in the same file as sylpheed-main
-	 */
-
-	item->ret_rcpt = tmp_prefs.request_return_receipt ? TRUE : FALSE;
-
-	/* MIGRATION: 0.7.8main+ has persistent sort order. claws had the sort
-	 *	      order in different members, which is ofcourse a little
-	 *	      bit phoney. */
-	if (item->sort_key == SORT_BY_NONE) {
-		item->sort_key  = (tmp_prefs.sort_by_number  ? SORT_BY_NUMBER  :
-				   tmp_prefs.sort_by_size    ? SORT_BY_SIZE    :
-				   tmp_prefs.sort_by_date    ? SORT_BY_DATE    :
-				   tmp_prefs.sort_by_from    ? SORT_BY_FROM    :
-				   tmp_prefs.sort_by_subject ? SORT_BY_SUBJECT :
-				   tmp_prefs.sort_by_score   ? SORT_BY_SCORE   :
-								 SORT_BY_NONE);
-		item->sort_type = tmp_prefs.sort_descending ? SORT_DESCENDING : SORT_ASCENDING;
-	}								
 }
 
 void folder_item_prefs_save_config(FolderItem * item)
@@ -141,56 +134,68 @@ void folder_item_prefs_save_config(FolderItem * item)
 	tmp_prefs = * item->prefs;
 
 	id = folder_item_get_identifier(item);
-
+	debug_print("saving prefs for %s\n", id?id:"(null)");
 	prefs_write_config(param, id, FOLDERITEM_RC);
 	g_free(id);
-
-	/* MIGRATION: make sure migrated items are not saved
-	 */
 }
 
-void folder_item_prefs_set_config(FolderItem * item,
-				  int sort_type, gint sort_mode)
+static gboolean folder_item_prefs_save_config_func(GNode *node, gpointer data)
 {
-	g_assert(item);
-	g_warning("folder_item_prefs_set_config() should never be called\n");
-	item->sort_key  = sort_type;
-	item->sort_type = sort_mode;
+	FolderItem *item = (FolderItem *) node->data;
+	folder_item_prefs_save_config(item);
+	return FALSE;
+}
+
+void folder_item_prefs_save_config_recursive(FolderItem * item)
+{	
+	g_node_traverse(item->node, G_PRE_ORDER, G_TRAVERSE_ALL,
+			-1, folder_item_prefs_save_config_func, NULL);
 }
 
 static FolderItemPrefs *folder_item_prefs_clear(FolderItemPrefs *prefs)
 {
-	prefs->sort_by_number = FALSE;
-	prefs->sort_by_size = FALSE;
-	prefs->sort_by_date = FALSE;
-	prefs->sort_by_from = FALSE;
-	prefs->sort_by_subject = FALSE;
-	prefs->sort_by_score = FALSE;
-	prefs->sort_descending = FALSE;
-
-	prefs->request_return_receipt = FALSE;
 	prefs->enable_default_to = FALSE;
 	prefs->default_to = NULL;
 	prefs->enable_default_reply_to = FALSE;
 	prefs->default_reply_to = NULL;
 	prefs->enable_simplify_subject = FALSE;
+#ifndef G_OS_WIN32
 	prefs->simplify_subject_regexp = NULL;
+#endif
 	prefs->enable_folder_chmod = FALSE;
 	prefs->folder_chmod = 0;
 	prefs->enable_default_account = FALSE;
 	prefs->default_account = 0;
-#if USE_ASPELL
+#if USE_ENCHANT
 	prefs->enable_default_dictionary = FALSE;
 	prefs->default_dictionary = NULL;
+	prefs->enable_default_alt_dictionary = FALSE;
+	prefs->default_alt_dictionary = NULL;
 #endif
 	prefs->save_copy_to_folder = FALSE;
 	prefs->color = 0;
 
         prefs->enable_processing = TRUE;
+        prefs->enable_processing_when_opening = TRUE;
 	prefs->processing = NULL;
 
 	prefs->newmailcheck = TRUE;
+	prefs->offlinesync = FALSE;
+	prefs->offlinesync_days = 0;
+	prefs->remove_old_bodies = FALSE;
 
+	prefs->compose_with_format = FALSE;
+	prefs->compose_subject_format = NULL;
+	prefs->compose_body_format = NULL;
+	prefs->compose_override_from_format = NULL;
+	prefs->reply_with_format = FALSE;
+	prefs->reply_quotemark = NULL;
+	prefs->reply_body_format = NULL;
+	prefs->reply_override_from_format = NULL;
+	prefs->forward_with_format = FALSE;
+	prefs->forward_quotemark = NULL;
+	prefs->forward_body_format = NULL;
+	prefs->forward_override_from_format = NULL;
 	return prefs;
 }
 
@@ -205,25 +210,18 @@ FolderItemPrefs * folder_item_prefs_new(void)
 
 void folder_item_prefs_free(FolderItemPrefs * prefs)
 {
-	if (prefs->default_to) 
-		g_free(prefs->default_to);
-	if (prefs->default_reply_to) 
-		g_free(prefs->default_reply_to);
+	g_free(prefs->default_to);
+	g_free(prefs->default_reply_to);
+	g_free(prefs->compose_subject_format);
+	g_free(prefs->compose_body_format);
+	g_free(prefs->compose_override_from_format);
+	g_free(prefs->reply_quotemark);
+	g_free(prefs->reply_body_format);
+	g_free(prefs->reply_override_from_format);
+	g_free(prefs->forward_quotemark);
+	g_free(prefs->forward_body_format);
+	g_free(prefs->forward_override_from_format);
 	g_free(prefs);
-}
-
-gint folder_item_prefs_get_sort_mode(FolderItem * item)
-{
-	g_assert(item != NULL);
-	g_warning("folder_item_prefs_get_sort_mode() should never be called\n");
-	return item->sort_key;
-}
-
-gint folder_item_prefs_get_sort_type(FolderItem * item)
-{
-	g_assert(item != NULL);
-	g_warning("folder_item_prefs_get_sort_type() should never be called\n");
-	return item->sort_type;
 }
 
 #define SAFE_STRING(str) \
@@ -235,16 +233,12 @@ void folder_item_prefs_copy_prefs(FolderItem * src, FolderItem * dest)
 	folder_item_prefs_read_config(src);
 
 	tmp_prefs.directory			= g_strdup(src->prefs->directory);
-	tmp_prefs.sort_by_number		= src->prefs->sort_by_number;
-	tmp_prefs.sort_by_size			= src->prefs->sort_by_size;
-	tmp_prefs.sort_by_date			= src->prefs->sort_by_date;
-	tmp_prefs.sort_by_from			= src->prefs->sort_by_from;
-	tmp_prefs.sort_by_subject		= src->prefs->sort_by_subject;
-	tmp_prefs.sort_by_score			= src->prefs->sort_by_score;
-	tmp_prefs.sort_descending		= src->prefs->sort_descending;
-	tmp_prefs.enable_thread			= src->prefs->enable_thread;
         tmp_prefs.enable_processing             = src->prefs->enable_processing;
-    tmp_prefs.newmailcheck             = src->prefs->newmailcheck;
+        tmp_prefs.enable_processing_when_opening = src->prefs->enable_processing_when_opening;
+	tmp_prefs.newmailcheck                  = src->prefs->newmailcheck;
+	tmp_prefs.offlinesync                   = src->prefs->offlinesync;
+	tmp_prefs.offlinesync_days              = src->prefs->offlinesync_days;
+	tmp_prefs.remove_old_bodies             = src->prefs->remove_old_bodies;
 
 	prefs_matcher_read_config();
 
@@ -261,19 +255,36 @@ void folder_item_prefs_copy_prefs(FolderItem * src, FolderItem * dest)
 	tmp_prefs.enable_default_to		= src->prefs->enable_default_to;
 	tmp_prefs.default_to			= g_strdup(src->prefs->default_to);
 	tmp_prefs.enable_default_reply_to	= src->prefs->enable_default_reply_to;
-	tmp_prefs.default_reply_to		= src->prefs->default_reply_to;
+	tmp_prefs.default_reply_to		= g_strdup(src->prefs->default_reply_to);
 	tmp_prefs.enable_simplify_subject	= src->prefs->enable_simplify_subject;
+#ifndef G_OS_WIN32
 	tmp_prefs.simplify_subject_regexp	= g_strdup(src->prefs->simplify_subject_regexp);
+#endif
 	tmp_prefs.enable_folder_chmod		= src->prefs->enable_folder_chmod;
 	tmp_prefs.folder_chmod			= src->prefs->folder_chmod;
 	tmp_prefs.enable_default_account	= src->prefs->enable_default_account;
 	tmp_prefs.default_account		= src->prefs->default_account;
-#if USE_ASPELL
+#if USE_ENCHANT
 	tmp_prefs.enable_default_dictionary	= src->prefs->enable_default_dictionary;
 	tmp_prefs.default_dictionary		= g_strdup(src->prefs->default_dictionary);
+	tmp_prefs.enable_default_alt_dictionary	= src->prefs->enable_default_alt_dictionary;
+	tmp_prefs.default_alt_dictionary	= g_strdup(src->prefs->default_alt_dictionary);
 #endif
 	tmp_prefs.save_copy_to_folder		= src->prefs->save_copy_to_folder;
 	tmp_prefs.color				= src->prefs->color;
+
+	tmp_prefs.compose_with_format = src->prefs->compose_with_format;
+	tmp_prefs.compose_subject_format = g_strdup(src->prefs->compose_subject_format);
+	tmp_prefs.compose_body_format = g_strdup(src->prefs->compose_body_format);
+	tmp_prefs.compose_override_from_format = g_strdup(src->prefs->compose_override_from_format);
+	tmp_prefs.reply_with_format = src->prefs->reply_with_format;
+	tmp_prefs.reply_quotemark = g_strdup(src->prefs->reply_quotemark);
+	tmp_prefs.reply_body_format = g_strdup(src->prefs->reply_body_format);
+	tmp_prefs.reply_override_from_format = g_strdup(src->prefs->reply_override_from_format);
+	tmp_prefs.forward_with_format = src->prefs->forward_with_format;
+	tmp_prefs.forward_quotemark = g_strdup(src->prefs->forward_quotemark);
+	tmp_prefs.forward_body_format = g_strdup(src->prefs->forward_body_format);
+	tmp_prefs.forward_override_from_format = g_strdup(src->prefs->forward_override_from_format);
 
 	*dest->prefs = tmp_prefs;
 	folder_item_prefs_save_config(dest);
