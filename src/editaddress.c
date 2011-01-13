@@ -869,6 +869,28 @@ static gboolean addressbook_edit_person_picture_popup_menu(GtkWidget *widget, gp
 	return TRUE;
 }
 
+static gboolean edit_person_auto_fn_ln(GtkWidget *widget, GdkEventFocus *event, gpointer *data)
+{
+    GtkEntry *entry = GTK_ENTRY(widget);
+    GtkEntry *first_name = GTK_ENTRY(personeditdlg.entry_first);
+    GtkEntry *last_name = GTK_ENTRY(personeditdlg.entry_last);
+
+    const gchar *entry_text = gtk_entry_get_text(entry);
+    const gchar *first_name_text = gtk_entry_get_text(first_name);
+    const gchar *last_name_text = gtk_entry_get_text(last_name);
+    const char *p = NULL;
+    if ((p = strchr(entry_text, 32))) {
+        if (!strlen(first_name_text) && !strlen(last_name_text)) {
+            const gchar *chunk1 = g_strndup(entry_text, strlen(entry_text) - strlen(p));
+            p++;
+            const gchar *chunk2 = p;
+            gtk_entry_set_text(first_name, chunk1);
+            gtk_entry_set_text(last_name, chunk2);
+        }
+    }
+    return FALSE;
+}
+
 static void addressbook_edit_person_page_basic( gint pageNum, gchar *pageLbl ) {
 	GtkWidget *vbox;
 	GtkWidget *hbox;
@@ -983,6 +1005,10 @@ static void addressbook_edit_person_page_basic( gint pageNum, gchar *pageLbl ) {
 	gtk_container_set_border_width( GTK_CONTAINER(table), 8 );
 	gtk_table_set_row_spacings(GTK_TABLE(table), 15);
 	gtk_table_set_col_spacings(GTK_TABLE(table), 8);
+
+	g_signal_connect(G_OBJECT(entry_name),"focus_out_event",
+			G_CALLBACK(edit_person_auto_fn_ln), NULL);
+
 
 	gtk_widget_show_all(vbox);
 	personeditdlg.entry_name  = entry_name;
