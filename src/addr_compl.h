@@ -33,6 +33,7 @@ typedef struct
 {
     gchar *name;
     gchar *address;
+    gchar *lastname;
     GList *grp_emails;
 } address_entry;
 
@@ -52,6 +53,6 @@ void address_completion_end		(GtkWidget *mainwindow);
 void addrcompl_initialize	( void );
 void addrcompl_teardown		( void );
 
-void addr_compl_add_address1(const char *str, address_entry *ae);
+void addr_compl_add_address1(const char *str, address_entry *ae, gint weight);
 
 #endif /* __ADDR_COMPL_H__ */

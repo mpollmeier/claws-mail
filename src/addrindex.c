@@ -2844,13 +2844,14 @@ void addrindex_remove_results( AddressDataSource *ds, ItemFolder *folder ) {
 */
 
 static void addrindex_load_completion_load_persons(
-		gint (*callBackFunc) ( const gchar *, const gchar *, 
+		gint (*callBackFunc) ( const gchar *, const gchar *, const gchar *, 
 				       const gchar *, const gchar *, GList * ),
 		AddressDataSource *ds)
 {
 	GList *listP, *nodeP;
 	GList *nodeM;
 	gchar *sName;
+	gchar *lastname;
 
 	/* Read address book */
 	if( addrindex_ds_get_modify_flag( ds ) ) {
@@ -2872,7 +2873,7 @@ static void addrindex_load_completion_load_persons(
 			if (email->address)
 				emails = g_list_append(emails, email);
 		}
-		callBackFunc( ((AddrItemObject *)group)->name, NULL,
+		callBackFunc( ((AddrItemObject *)group)->name, NULL, NULL,
 			      NULL, NULL, emails );
 		nodeP = g_list_next( nodeP );
 	}
@@ -2884,19 +2885,22 @@ static void addrindex_load_completion_load_persons(
 	nodeP = listP;
 	while( nodeP ) {
 		ItemPerson *person = nodeP->data;
-		nodeM = person->listEMail;
 
 		/* Figure out name to use */
 		sName = ADDRITEM_NAME(person);
 		if( sName == NULL || *sName == '\0' ) {
 			sName = person->nickName;
 		}
+    lastname = person->lastName;
+    if (!lastname)
+      lastname = person->nickName;
 
 		/* Process each E-Mail address */
+		nodeM = person->listEMail;
 		while( nodeM ) {
 			ItemEMail *email = nodeM->data;
 
-			callBackFunc( sName, email->address, person->nickName, 
+			callBackFunc( sName, lastname, email->address, person->nickName, 
 				      ADDRITEM_NAME(email), NULL );
 
 			nodeM = g_list_next( nodeM );
@@ -2920,7 +2924,7 @@ static void addrindex_load_completion_load_persons(
  */
 
 gboolean addrindex_load_completion(
-		gint (*callBackFunc) ( const gchar *, const gchar *, 
+		gint (*callBackFunc) ( const gchar *, const gchar *, const gchar *, 
 				       const gchar *, const gchar *, GList * ),
 		gchar *folderpath )
 {
@@ -2945,6 +2949,7 @@ gboolean addrindex_load_completion(
 			GList *items;
 			GList *nodeM;
 			gchar *sName;
+			gchar *lastname;
 			ItemPerson *person;
 
 			debug_print("addrindex_load_completion: folder %p '%s'\n", folder, folder->obj.name);
@@ -2960,12 +2965,15 @@ gboolean addrindex_load_completion(
 				if( sName == NULL || *sName == '\0' ) {
 					sName = person->nickName;
 				}
+        lastname = person->lastName;
+        if (!lastname)
+          lastname = person->nickName;
 
 				/* Process each E-Mail address */
 				while( nodeM ) {
 					ItemEMail *email = nodeM->data;
 
-					callBackFunc( sName, email->address, person->nickName, 
+					callBackFunc( sName, lastname, email->address, person->nickName, 
 							  ADDRITEM_NAME(email), NULL );
 
 					nodeM = g_list_next( nodeM );

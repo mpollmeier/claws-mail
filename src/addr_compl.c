@@ -226,7 +226,7 @@ static void free_all(void)
  * \param str Index string value.
  * \param ae  Entry containing address data.
  */
-void addr_compl_add_address1(const char *str, address_entry *ae)
+void addr_compl_add_address1(const char *str, address_entry *ae, gint weight)
 {
 	completion_entry *ce1;
 	ce1 = g_new0(completion_entry, 1),
@@ -234,13 +234,17 @@ void addr_compl_add_address1(const char *str, address_entry *ae)
 	ce1->string = g_utf8_strdown(str, -1);
 	ce1->ref = ae;
 
-	g_completion_list = g_list_prepend(g_completion_list, ce1);
+    if (!weight)
+      g_completion_list = g_list_append(g_completion_list, ce1);
+    else
+	    g_completion_list = g_list_prepend(g_completion_list, ce1);
 }
 
 /**
  * Adds address to the completion list. This function looks complicated, but
  * it's only allocation checks. Each value will be included in the index.
  * \param name    Recipient name.
+ * \param lastname Recipient lastname.
  * \param address EMail address.
  * \param alias   Alias to append.
  * \param grp_emails the emails in case of a group. List should be freed later, 
@@ -248,8 +252,8 @@ void addr_compl_add_address1(const char *str, address_entry *ae)
  * \return <code>0</code> if entry appended successfully, or <code>-1</code>
  *         if failure.
  */
-static gint add_address(const gchar *name, const gchar *address, 
-			const gchar *nick, const gchar *alias, GList *grp_emails)
+static gint add_address(const gchar *name, const gchar *lastname, const gchar *address, 
+ 			const gchar *nick, const gchar *alias, GList *grp_emails)
 {
 	address_entry    *ae;
 	gboolean is_group = FALSE;
@@ -266,19 +270,22 @@ static gint add_address(const gchar *name, const gchar *address,
 	cm_return_val_if_fail(ae != NULL, -1);
 
 	ae->name    = g_strdup(name);
+	ae->lastname = g_strdup(lastname);
 	ae->address = g_strdup(address);
 	ae->grp_emails = grp_emails;
 	g_address_list = g_list_prepend(g_address_list, ae);
 
-	addr_compl_add_address1(name, ae);
+	addr_compl_add_address1(name, ae, 1);
+  if (lastname)
+    addr_compl_add_address1(lastname, ae, 0);
 	if (address != NULL && *address != '\0')
-		addr_compl_add_address1(address, ae);
+		addr_compl_add_address1(address, ae, 2);
 
 	if (nick != NULL && *nick != '\0')
-		addr_compl_add_address1(nick, ae);
+		addr_compl_add_address1(nick, ae, 3);
 
 	if ( alias != NULL && *alias != '\0') {
-		addr_compl_add_address1(alias, ae);
+		addr_compl_add_address1(alias, ae, 4);
 	}
 
 	return 0;
