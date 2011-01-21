@@ -158,6 +158,7 @@ struct _PrefsCommon
 	gchar *compose_subject_format;
 	gchar *compose_body_format;
 	gboolean show_compose_margin;
+	gint template_insert_mode; //0:ask, 1: replace, 2: insert
 
 	/* Quote */
 	gboolean reply_with_quote;

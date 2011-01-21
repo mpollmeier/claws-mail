@@ -9827,16 +9827,23 @@ static void compose_template_activate_cb(GtkWidget *widget, gpointer data)
 	tmpl = g_object_get_data(G_OBJECT(widget), "template");
 	cm_return_if_fail(tmpl != NULL);
 
-	msg = g_strdup_printf(_("Do you want to apply the template '%s' ?"),
-			      tmpl->name);
-	val = alertpanel(_("Apply template"), msg,
-			 _("_Replace"), _("_Insert"), GTK_STOCK_CANCEL);
-	g_free(msg);
+	if (prefs_common.template_insert_mode == 0) {
+		msg = g_strdup_printf(_("Do you want to apply the template '%s' ?"),
+					  tmpl->name);
+		val = alertpanel(_("Apply template"), msg,
+				 _("_Replace"), _("_Insert"), GTK_STOCK_CANCEL);
+		g_free(msg);
 
-	if (val == G_ALERTDEFAULT)
-		compose_template_apply(compose, tmpl, TRUE);
-	else if (val == G_ALERTALTERNATE)
+		if (val == G_ALERTDEFAULT)
+			compose_template_apply(compose, tmpl, TRUE);
+		else if (val == G_ALERTALTERNATE)
+			compose_template_apply(compose, tmpl, FALSE);
+	}
+	else if (prefs_common.template_insert_mode == 1)
 		compose_template_apply(compose, tmpl, FALSE);
+	else if (prefs_common.template_insert_mode == 2)
+		compose_template_apply(compose, tmpl, TRUE);
+	// TODO MP make sure cursor is at same position afterwards
 }
 
 static void compose_ext_editor_cb(GtkAction *action, gpointer data)

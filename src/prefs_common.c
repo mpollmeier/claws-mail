@@ -228,6 +228,8 @@ static PrefParam param[] = {
 	 &prefs_common.compose_body_format, P_STRING, NULL, NULL, NULL},
 	{"show_compose_margin", "FALSE", &prefs_common.show_compose_margin, P_BOOL,
 	 NULL, NULL, NULL},
+	 {"template_insert_mode", "1", &prefs_common.template_insert_mode, P_INT,
+	 	 NULL, NULL, NULL},
 	
 
 	{"linewrap_length", "72", &prefs_common.linewrap_len, P_INT,
